@@ -12,7 +12,7 @@ struct ContactPickerView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("Who Do You Want to Track?")
+            Text("Who Do You Want to Stay in Touch With?")
                 .font(.title2)
                 .padding(.top)
 
