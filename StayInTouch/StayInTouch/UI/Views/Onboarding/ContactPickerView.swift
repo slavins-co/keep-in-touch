@@ -35,8 +35,8 @@ struct ContactPickerView: View {
                 .textFieldStyle(.roundedBorder)
                 .padding(.horizontal)
 
-            ZStack(alignment: .trailing) {
-                ScrollViewReader { proxy in
+            ScrollViewReader { proxy in
+                HStack(spacing: 0) {
                     ScrollView {
                         LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
                             ForEach(groupedContacts, id: \.0) { section in
@@ -44,12 +44,7 @@ struct ContactPickerView: View {
                                     ForEach(section.1) { contact in
                                         Button(action: { viewModel.toggleSelection(for: contact.identifier) }) {
                                             HStack {
-                                                VStack(alignment: .leading) {
-                                                    Text(contact.displayName)
-                                                    Text(contact.initials)
-                                                        .font(.caption)
-                                                        .foregroundStyle(.secondary)
-                                                }
+                                                Text(contact.displayName)
                                                 Spacer()
                                                 if viewModel.selectedContactIds.contains(contact.identifier) {
                                                     Image(systemName: "checkmark.circle.fill")
@@ -60,7 +55,7 @@ struct ContactPickerView: View {
                                                 }
                                             }
                                             .padding(.horizontal)
-                                            .padding(.vertical, 8)
+                                            .padding(.vertical, 12)
                                             .background(Color(uiColor: .systemBackground))
                                         }
                                         .buttonStyle(.plain)
@@ -79,7 +74,6 @@ struct ContactPickerView: View {
                                 .id(section.0)
                             }
                         }
-                        .padding(.trailing, 40)
                     }
 
                     SectionIndexView(sections: groupedContacts.map { $0.0 }) { section in
@@ -87,9 +81,7 @@ struct ContactPickerView: View {
                             proxy.scrollTo(section, anchor: .top)
                         }
                     }
-                    .padding(.trailing, 8)
-                    .allowsHitTesting(true)
-                    .zIndex(1)
+                    .padding(.trailing, 4)
                 }
             }
 

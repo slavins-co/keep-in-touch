@@ -12,22 +12,21 @@ struct SectionIndexView: View {
     let onTap: (String) -> Void
 
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 1) {
             ForEach(sections, id: \.self) { section in
                 Button(action: {
                     onTap(section)
                 }) {
                     Text(section)
                         .font(.caption2)
+                        .fontWeight(.semibold)
                         .foregroundColor(.blue)
-                        .frame(minWidth: 20, minHeight: 20)
+                        .frame(minWidth: 24, minHeight: 18)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 6)
-        .background(Color(uiColor: .systemBackground).opacity(0.8))
-        .cornerRadius(8)
+        .padding(.vertical, 4)
+        .padding(.horizontal, 4)
     }
 }
