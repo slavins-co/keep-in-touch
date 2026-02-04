@@ -55,7 +55,7 @@ struct ContactListSection: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .transition(.opacity)
             }
         }
     }
