@@ -1,0 +1,42 @@
+//
+//  GroupPickerSheet.swift
+//  StayInTouch
+//
+//  Created by Codex on 2/2/26.
+//
+
+import SwiftUI
+
+struct GroupPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let groups: [Group]
+    let selectedId: UUID
+    let onSelect: (UUID) -> Void
+
+    var body: some View {
+        NavigationStack {
+            List(groups, id: \.id) { group in
+                Button {
+                    onSelect(group.id)
+                    dismiss()
+                } label: {
+                    HStack {
+                        Text(group.name)
+                        Spacer()
+                        if group.id == selectedId {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Change Cadence")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+}

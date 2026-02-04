@@ -1,0 +1,35 @@
+//
+//  Person.swift
+//  StayInTouch
+//
+//  Created by Codex on 2/2/26.
+//
+
+import Foundation
+
+struct Person: Identifiable, Equatable {
+    let id: UUID
+    var cnIdentifier: String?
+    var displayName: String
+    var initials: String
+    var avatarColor: String
+
+    var groupId: UUID
+    var tagIds: [UUID]
+
+    var lastTouchAt: Date?
+    var lastTouchMethod: TouchMethod?
+    var lastTouchNotes: String?
+
+    var isPaused: Bool
+    var isTracked: Bool
+
+    var notificationsMuted: Bool
+    var customBreachTime: LocalTime?
+
+    var groupAddedAt: Date?
+
+    var createdAt: Date
+    var modifiedAt: Date
+    var sortOrder: Int
+}

@@ -6,11 +6,11 @@
 
 ---
 
-## Quick Start for Claude Code
+## Quick Start for Codex
 
 1. **Read these files in order:**
    - 📖 **This README** (you are here)
-   - 🛠️ **[CLAUDE.md](./CLAUDE.md)** - Workflow, architecture, conventions
+   - 🛠️ **[CODEX.md](./CODEX.md)** - Workflow, architecture, conventions
    - 📋 **[FINAL-PRD.md](./FINAL-PRD.md)** - Complete requirements
    - 🎨 **[ASSETS.md](./ASSETS.md)** - Design system
 
@@ -18,7 +18,7 @@
    - 📝 **[tasks/todo.md](./tasks/todo.md)** - 8 milestones, 4 weeks
 
 3. **Start first task:**
-   - Set up Xcode project scaffold (see CLAUDE.md)
+   - Set up Xcode project scaffold (see CODEX.md)
 
 ---
 
@@ -51,7 +51,7 @@
 ```
 iOS Personal CRM App/
 ├── README.md                    ← You are here (start here!)
-├── CLAUDE.md                    ← Workflow + architecture (read second!)
+├── CODEX.md                    ← Workflow + architecture (read second!)
 ├── FINAL-PRD.md                 ← Complete requirements (read third!)
 ├── ASSETS.md                    ← Design system (reference as needed)
 ├── SUMMARY.md                   ← Executive summary (optional)
@@ -143,7 +143,7 @@ See FINAL-PRD.md Section 1 for complete schema.
 
 ### Core Documentation (Read These!)
 - ✅ **README.md** - This file (overview)
-- ✅ **CLAUDE.md** - Workflow, architecture, conventions (5,000+ words)
+- ✅ **CODEX.md** - Workflow, architecture, conventions (5,000+ words)
 - ✅ **FINAL-PRD.md** - Complete requirements (12,000+ words)
 - ✅ **ASSETS.md** - Design system reference (2,000+ words)
 - ✅ **SUMMARY.md** - Executive summary (2,000+ words)
@@ -171,7 +171,7 @@ Before writing code, verify you understand:
 - [ ] Edge cases (9 scenarios with solutions)
 - [ ] Workflow principles (plan mode, verification, lessons)
 
-**Questions?** Review CLAUDE.md Section "Common Gotchas"
+**Questions?** Review CODEX.md Section "Common Gotchas"
 
 ---
 
@@ -189,7 +189,7 @@ Before writing code, verify you understand:
    - Add NSContactsUsageDescription
    - Add NSUserNotificationsUsageDescription
 
-3. Create folder structure (see CLAUDE.md)
+3. Create folder structure (see CODEX.md)
 
 4. Define Core Data model (.xcdatamodeld)
    - Person entity (15 attributes)
@@ -202,7 +202,7 @@ Before writing code, verify you understand:
 
 6. Verify build succeeds
 
-See CLAUDE.md final section for detailed instructions.
+See CODEX.md final section for detailed instructions.
 
 ---
 
@@ -226,7 +226,7 @@ See CLAUDE.md final section for detailed instructions.
 
 **Within This Project:**
 - Questions about requirements → FINAL-PRD.md
-- Questions about architecture → CLAUDE.md
+- Questions about architecture → CODEX.md
 - Questions about design → ASSETS.md
 - Questions about tasks → tasks/todo.md
 
@@ -295,7 +295,7 @@ See CLAUDE.md final section for detailed instructions.
 
 **Questions About Requirements:**
 - Review FINAL-PRD.md first
-- Check CLAUDE.md "Common Gotchas"
+- Check CODEX.md "Common Gotchas"
 - Ask user if truly blocked
 
 ---
@@ -316,4 +316,4 @@ See CLAUDE.md final section for detailed instructions.
 
 ---
 
-**Ready to build? Start with CLAUDE.md, then dive into M1!** 🚀
+**Ready to build? Start with CODEX.md, then dive into M1!** 🚀

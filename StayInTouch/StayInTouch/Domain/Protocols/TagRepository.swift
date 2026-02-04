@@ -1,0 +1,15 @@
+//
+//  TagRepository.swift
+//  StayInTouch
+//
+//  Created by Codex on 2/2/26.
+//
+
+import Foundation
+
+protocol TagRepository {
+    func fetch(id: UUID) -> Tag?
+    func fetchAll() -> [Tag]
+    func save(_ tag: Tag) throws
+    func delete(id: UUID) throws
+}

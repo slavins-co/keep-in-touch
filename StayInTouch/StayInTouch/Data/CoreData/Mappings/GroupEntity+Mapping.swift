@@ -1,0 +1,36 @@
+//
+//  GroupEntity+Mapping.swift
+//  StayInTouch
+//
+//  Created by Codex on 2/2/26.
+//
+
+import CoreData
+
+extension GroupEntity {
+    func toDomain() -> Group {
+        Group(
+            id: id ?? UUID(),
+            name: name ?? "",
+            slaDays: Int(slaDays),
+            warningDays: Int(warningDays),
+            colorHex: colorHex,
+            isDefault: isDefault,
+            sortOrder: Int(sortOrder),
+            createdAt: createdAt ?? Date(),
+            modifiedAt: modifiedAt ?? Date()
+        )
+    }
+
+    func apply(_ group: Group) {
+        id = group.id
+        name = group.name
+        slaDays = Int64(group.slaDays)
+        warningDays = Int64(group.warningDays)
+        colorHex = group.colorHex
+        isDefault = group.isDefault
+        sortOrder = Int64(group.sortOrder)
+        createdAt = group.createdAt
+        modifiedAt = group.modifiedAt
+    }
+}
