@@ -44,28 +44,29 @@ struct NewContactsPickerView: View {
                     .padding(.horizontal)
                     .padding(.vertical, 8)
 
-                ZStack(alignment: .trailing) {
-                    List(selection: $selection) {
-                        ForEach(groupedContacts, id: \.0) { section in
-                            Section(header: Text(section.0)) {
-                                ForEach(section.1, id: \.identifier) { contact in
-                                    HStack {
-                                        Text(contact.displayName)
-                                        Spacer()
-                                        Text(contact.initials)
-                                            .foregroundStyle(.secondary)
+                ScrollViewReader { proxy in
+                    HStack(spacing: 0) {
+                        List(selection: $selection) {
+                            ForEach(groupedContacts, id: \.0) { section in
+                                Section(header: Text(section.0).id(section.0)) {
+                                    ForEach(section.1, id: \.identifier) { contact in
+                                        HStack {
+                                            Text(contact.displayName)
+                                            Spacer()
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    .listStyle(.plain)
+                        .listStyle(.plain)
 
-                    SectionIndexView(sections: groupedContacts.map { $0.0 }) { _ in
-                        // Scroll functionality would require ScrollViewReader
-                        // Simplified for now - just shows the index
+                        SectionIndexView(sections: groupedContacts.map { $0.0 }) { section in
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                proxy.scrollTo(section, anchor: .top)
+                            }
+                        }
+                        .padding(.trailing, 4)
                     }
-                    .padding(.trailing, 4)
                 }
             }
             .navigationTitle("Add Contacts")
