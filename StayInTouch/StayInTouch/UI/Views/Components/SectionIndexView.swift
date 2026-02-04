@@ -14,15 +14,20 @@ struct SectionIndexView: View {
     var body: some View {
         VStack(spacing: 2) {
             ForEach(sections, id: \.self) { section in
-                Text(section)
-                    .font(.caption2)
-                    .foregroundColor(.blue)
-                    .onTapGesture {
-                        onTap(section)
-                    }
+                Button(action: {
+                    onTap(section)
+                }) {
+                    Text(section)
+                        .font(.caption2)
+                        .foregroundColor(.blue)
+                        .frame(minWidth: 20, minHeight: 20)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.vertical, 8)
-        .padding(.horizontal, 4)
+        .padding(.horizontal, 6)
+        .background(Color(uiColor: .systemBackground).opacity(0.8))
+        .cornerRadius(8)
     }
 }

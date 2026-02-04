@@ -79,6 +79,7 @@ struct ContactPickerView: View {
                                 .id(section.0)
                             }
                         }
+                        .padding(.trailing, 40)
                     }
 
                     SectionIndexView(sections: groupedContacts.map { $0.0 }) { section in
@@ -86,7 +87,9 @@ struct ContactPickerView: View {
                             proxy.scrollTo(section, anchor: .top)
                         }
                     }
-                    .padding(.trailing, 4)
+                    .padding(.trailing, 8)
+                    .allowsHitTesting(true)
+                    .zIndex(1)
                 }
             }
 
