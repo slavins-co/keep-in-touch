@@ -94,17 +94,15 @@ struct SettingsView: View {
 
     private var appearanceSection: some View {
         Section("Appearance") {
-            HStack {
-                Image(systemName: viewModel.settings.theme == .dark ? "moon.fill" : "sun.max.fill")
-                    .foregroundStyle(viewModel.settings.theme == .dark ? .blue : .orange)
-                Text(viewModel.settings.theme == .dark ? "Dark Mode" : "Light Mode")
-                Spacer()
-                Toggle("", isOn: Binding(
-                    get: { viewModel.settings.theme == .dark },
-                    set: { _ in viewModel.toggleTheme() }
-                ))
-                .labelsHidden()
+            Picker("Theme", selection: Binding(
+                get: { viewModel.settings.theme },
+                set: { newTheme in viewModel.setTheme(newTheme) }
+            )) {
+                ForEach(Theme.allCases, id: \.self) { theme in
+                    Text(theme.displayName).tag(theme)
+                }
             }
+            .pickerStyle(.segmented)
         }
     }
 

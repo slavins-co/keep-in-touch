@@ -325,6 +325,88 @@ Move contacts fetch to a detached task and apply updates on background context.
 **Prevention Rule:**
 Contact fetch must always happen off main; only UI updates should be on main.
 
+### 2026-02-04 - 🔧 Git - Commit Attribution Email Association
+
+**What Happened:**
+GitHub displayed commits as authored by "firmlyundecided" even after changing git author name to "slavins-co" because the email address (bradleyslavin+github@gmail.com) was associated with the firmlyundecided GitHub account.
+
+**Root Cause:**
+GitHub determines commit attribution by email address, not by the name in git config. An email can only be associated with one GitHub account. The old email was linked to a different account than the intended one.
+
+**Solution:**
+1. Update git config to use the email associated with the target GitHub account (slavintech@gmail.com)
+2. Rewrite all commit history using `git filter-branch` to update both author name and email
+3. Delete and recreate the repository to push clean commits with correct attribution
+
+**Prevention Rule:**
+Before pushing to GitHub, verify that git config user.email matches an email address associated with the target GitHub account. Check this with `gh auth status` and GitHub account settings. Email address determines attribution, not the name.
+
+**Code Example:**
+```bash
+# Set git config to email associated with target GitHub account
+git config --global user.email "slavintech@gmail.com"
+git config --global user.name "slavins-co"
+
+# Verify configuration
+git config user.email
+git config user.name
+
+# Rewrite commit history if needed
+git filter-branch -f --env-filter '
+OLD_EMAIL="old@example.com"
+CORRECT_NAME="correct-name"
+CORRECT_EMAIL="correct@example.com"
+
+if [ "$GIT_COMMITTER_EMAIL" = "$OLD_EMAIL" ]
+then
+    export GIT_COMMITTER_NAME="$CORRECT_NAME"
+    export GIT_COMMITTER_EMAIL="$CORRECT_EMAIL"
+fi
+if [ "$GIT_AUTHOR_EMAIL" = "$OLD_EMAIL" ]
+then
+    export GIT_AUTHOR_NAME="$CORRECT_NAME"
+    export GIT_AUTHOR_EMAIL="$CORRECT_EMAIL"
+fi
+' --tag-name-filter cat -- --branches --tags
+
+# Clean up old refs
+git reflog expire --expire=now --all
+git gc --prune=now --aggressive
+
+# Verify commits
+git log --format="%an <%ae>"
+```
+
+### 2026-02-04 - 🔧 Git - GitHub CLI Authentication Scopes
+
+**What Happened:**
+Attempting to delete a GitHub repository with `gh repo delete` failed with HTTP 403 "Must have admin rights to Repository" even though the account owned the repository.
+
+**Root Cause:**
+GitHub CLI authentication tokens are scoped, and the initial authentication didn't include the `delete_repo` scope required for repository deletion.
+
+**Solution:**
+Refresh authentication with the required scope: `gh auth refresh -h github.com -s delete_repo`
+
+**Prevention Rule:**
+When using gh CLI for repository management operations (delete, transfer, etc.), ensure authentication includes the necessary scopes. Common scopes:
+- `repo` - Full repository access (create, read, write)
+- `delete_repo` - Delete repositories
+- `workflow` - GitHub Actions management
+- `admin:org` - Organization management
+
+**Code Example:**
+```bash
+# Check current authentication status and scopes
+gh auth status
+
+# Refresh with additional scope
+gh auth refresh -h github.com -s delete_repo
+
+# Or authenticate with multiple scopes initially
+gh auth login --scopes repo,delete_repo,workflow
+```
+
 **Solution:**
 When Sort = Name, show a single globally sorted list regardless of SLA status.
 

@@ -45,8 +45,8 @@ final class SettingsViewModel: ObservableObject {
         pausedCount = personRepository.fetchTracked(includePaused: true).filter { $0.isPaused }.count
     }
 
-    func toggleTheme() {
-        settings.theme = settings.theme == .dark ? .light : .dark
+    func setTheme(_ theme: Theme) {
+        settings.theme = theme
         save()
     }
 
@@ -270,7 +270,7 @@ struct AppSettingsDefaults {
     static func defaultSettings() -> AppSettings {
         AppSettings(
             id: AppSettings.singletonId,
-            theme: .light,
+            theme: .system,
             notificationsEnabled: false,
             breachTimeOfDay: LocalTime(hour: 18, minute: 0),
             digestEnabled: false,

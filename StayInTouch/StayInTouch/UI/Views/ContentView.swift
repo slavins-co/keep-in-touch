@@ -33,8 +33,16 @@ struct ContentView: View {
 
     private func loadTheme() {
         let repo = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext)
-        let theme = repo.fetch()?.theme ?? .light
-        preferredScheme = theme == .dark ? .dark : .light
+        let theme = repo.fetch()?.theme ?? .system
+
+        switch theme {
+        case .dark:
+            preferredScheme = .dark
+        case .light:
+            preferredScheme = .light
+        case .system:
+            preferredScheme = nil // nil = follow system preference
+        }
     }
 }
 

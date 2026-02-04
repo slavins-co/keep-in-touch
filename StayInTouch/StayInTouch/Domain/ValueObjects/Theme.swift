@@ -10,4 +10,13 @@ import Foundation
 enum Theme: String, CaseIterable, Codable {
     case dark = "dark"
     case light = "light"
+    case system = "system"
+
+    var displayName: String {
+        switch self {
+        case .dark: return "Dark"
+        case .light: return "Light"
+        case .system: return "System"
+        }
+    }
 }
