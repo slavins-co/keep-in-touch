@@ -30,6 +30,7 @@ struct SettingsView: View {
             notificationsSection
             dataSection
             pausedSection
+            advancedSection
             aboutSection
         }
         .listStyle(.insetGrouped)
@@ -204,10 +205,6 @@ struct SettingsView: View {
                     Text(option.displayName).tag(option)
                 }
             }
-
-            Button("Send Test Notification") {
-                Task { await viewModel.sendTestNotification() }
-            }
         }
     }
 
@@ -256,11 +253,6 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-
-            Toggle("Demo Mode", isOn: Binding(
-                get: { viewModel.settings.demoModeEnabled },
-                set: { newValue in viewModel.setDemoModeEnabled(newValue) }
-            ))
         }
     }
 
@@ -277,6 +269,14 @@ struct SettingsView: View {
                     Text("\(viewModel.pausedCount)")
                         .foregroundStyle(.secondary)
                 }
+            }
+        }
+    }
+
+    private var advancedSection: some View {
+        Section("Advanced") {
+            NavigationLink(destination: AdvancedSettingsView(viewModel: viewModel)) {
+                Label("Advanced Settings", systemImage: "gearshape.2")
             }
         }
     }
