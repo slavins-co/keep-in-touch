@@ -323,10 +323,12 @@ struct HomeView: View {
     }
 
     private func toggleSection(_ key: String) {
-        if collapsedSections.contains(key) {
-            collapsedSections.remove(key)
-        } else {
-            collapsedSections.insert(key)
+        withAnimation(.easeInOut(duration: 0.3)) {
+            if collapsedSections.contains(key) {
+                collapsedSections.remove(key)
+            } else {
+                collapsedSections.insert(key)
+            }
         }
     }
 
