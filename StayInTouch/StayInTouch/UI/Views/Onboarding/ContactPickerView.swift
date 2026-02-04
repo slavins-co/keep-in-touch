@@ -36,39 +36,58 @@ struct ContactPickerView: View {
                 .padding(.horizontal)
 
             ZStack(alignment: .trailing) {
-                List {
-                    ForEach(groupedContacts, id: \.0) { section in
-                        Section(header: Text(section.0)) {
-                            ForEach(section.1) { contact in
-                                Button(action: { viewModel.toggleSelection(for: contact.identifier) }) {
-                                    HStack {
-                                        VStack(alignment: .leading) {
-                                            Text(contact.displayName)
-                                            Text(contact.initials)
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                            ForEach(groupedContacts, id: \.0) { section in
+                                Section {
+                                    ForEach(section.1) { contact in
+                                        Button(action: { viewModel.toggleSelection(for: contact.identifier) }) {
+                                            HStack {
+                                                VStack(alignment: .leading) {
+                                                    Text(contact.displayName)
+                                                    Text(contact.initials)
+                                                        .font(.caption)
+                                                        .foregroundStyle(.secondary)
+                                                }
+                                                Spacer()
+                                                if viewModel.selectedContactIds.contains(contact.identifier) {
+                                                    Image(systemName: "checkmark.circle.fill")
+                                                        .foregroundStyle(.blue)
+                                                } else {
+                                                    Image(systemName: "circle")
+                                                        .foregroundStyle(.secondary)
+                                                }
+                                            }
+                                            .padding(.horizontal)
+                                            .padding(.vertical, 8)
+                                            .background(Color(uiColor: .systemBackground))
                                         }
-                                        Spacer()
-                                        if viewModel.selectedContactIds.contains(contact.identifier) {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .foregroundStyle(.blue)
-                                        } else {
-                                            Image(systemName: "circle")
-                                                .foregroundStyle(.secondary)
-                                        }
+                                        .buttonStyle(.plain)
+                                        Divider()
+                                            .padding(.leading)
                                     }
+                                } header: {
+                                    Text(section.0)
+                                        .font(.headline)
+                                        .foregroundStyle(.secondary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal)
+                                        .padding(.vertical, 8)
+                                        .background(Color(uiColor: .systemGroupedBackground))
                                 }
+                                .id(section.0)
                             }
                         }
                     }
-                }
-                .listStyle(.plain)
 
-                SectionIndexView(sections: groupedContacts.map { $0.0 }) { _ in
-                    // Scroll functionality would require ScrollViewReader
-                    // Simplified for now - just shows the index
+                    SectionIndexView(sections: groupedContacts.map { $0.0 }) { section in
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo(section, anchor: .top)
+                        }
+                    }
+                    .padding(.trailing, 4)
                 }
-                .padding(.trailing, 4)
             }
 
             Button("Continue") {
