@@ -65,7 +65,7 @@ enum ContactsFetcher {
             throw ContactsFetcherError.permissionDenied
         case .restricted:
             throw ContactsFetcherError.permissionRestricted
-        case .notDetermined, .authorized:
+        case .notDetermined, .authorized, .limited:
             break
         @unknown default:
             break
@@ -110,7 +110,7 @@ enum ContactsFetcher {
             throw ContactsFetcherError.permissionDenied
         case .restricted:
             throw ContactsFetcherError.permissionRestricted
-        case .notDetermined, .authorized:
+        case .notDetermined, .authorized, .limited:
             break
         @unknown default:
             break

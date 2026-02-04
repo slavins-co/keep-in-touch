@@ -14,12 +14,12 @@ struct AdvancedSettingsView: View {
         List {
             Section(header: Text("Testing & Debug")) {
                 Button("Send Test Notification") {
-                    NotificationHelper.scheduleTestNotification()
+                    Task { await viewModel.sendTestNotification() }
                 }
 
                 Toggle("Demo Mode", isOn: Binding(
                     get: { viewModel.settings.demoModeEnabled },
-                    set: { _ in viewModel.toggleDemoMode() }
+                    set: { newValue in viewModel.setDemoModeEnabled(newValue) }
                 ))
             }
 
