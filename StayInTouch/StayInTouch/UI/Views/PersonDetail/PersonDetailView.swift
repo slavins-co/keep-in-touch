@@ -288,7 +288,7 @@ struct PersonDetailView: View {
                 let events = showFullHistory ? viewModel.touchEvents : Array(viewModel.touchEvents.prefix(1))
                 ForEach(events, id: \.id) { event in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(event.method.rawValue) · \(event.at.formatted(date: .abbreviated, time: .shortened))")
+                        Text("\(event.method.rawValue) · \(event.at.formatted(date: .abbreviated, time: .omitted))")
                             .font(.footnote)
                         if let notes = event.notes, !notes.isEmpty {
                             Text(notes)
