@@ -285,6 +285,32 @@ Once in TestFlight, monitor Console.app for:
 
 ---
 
+## Device Testing Feedback (February 2026)
+
+User tested V1.0 build on device and provided feedback. All items filed as GitHub issues.
+
+### Quick Wins (V1.1 Milestone)
+- [Issue #1](https://github.com/slavins-co/stay-in-touch-ios/issues/1): Update onboarding copy → "stay in touch with"
+- [Issue #2](https://github.com/slavins-co/stay-in-touch-ios/issues/2): Remove time display from touch history
+- [Issue #3](https://github.com/slavins-co/stay-in-touch-ios/issues/3): Add system theme option (auto dark mode)
+- [Issue #4](https://github.com/slavins-co/stay-in-touch-ios/issues/4): Animated group expand/collapse
+- [Issue #5](https://github.com/slavins-co/stay-in-touch-ios/issues/5): Move debug features to Advanced Settings
+- [Issue #6](https://github.com/slavins-co/stay-in-touch-ios/issues/6): Contact search and alphabet section index
+
+### Enhancements (V1.2 Milestone)
+- [Issue #7](https://github.com/slavins-co/stay-in-touch-ios/issues/7): Add next touch notes field
+- [Issue #8](https://github.com/slavins-co/stay-in-touch-ios/issues/8): Group assignment in settings import flow
+- [Issue #9](https://github.com/slavins-co/stay-in-touch-ios/issues/9): Custom due date per contact
+
+### Major Features (V2.0 Milestone)
+- [Issue #10](https://github.com/slavins-co/stay-in-touch-ios/issues/10): Self-guided tutorial system
+
+**Status:** All issues created and tracked in GitHub
+**Next Steps:** Implement V1.1 Quick Wins (~6 hours total effort)
+**Documentation:** See [FEEDBACK-TRACKING.md](FEEDBACK-TRACKING.md) for full workflow
+
+---
+
 ## V1.1 Feature Ideas (Based on Audit Insights)
 
 ### Potential Enhancements
