@@ -11,10 +11,12 @@
         <attribute name="lastTouchAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="lastTouchMethod" optional="YES" attributeType="String"/>
         <attribute name="lastTouchNotes" optional="YES" attributeType="String"/>
+        <attribute name="nextTouchNotes" optional="YES" attributeType="String"/>
         <attribute name="isPaused" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="isTracked" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="notificationsMuted" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="customBreachTime" optional="YES" attributeType="String"/>
+        <attribute name="snoozedUntil" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="groupAddedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="modifiedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
@@ -45,6 +47,7 @@
         <attribute name="at" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="method" optional="NO" attributeType="String"/>
         <attribute name="notes" optional="YES" attributeType="String"/>
+        <attribute name="timeOfDay" optional="YES" attributeType="String"/>
         <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="modifiedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
     </entity>

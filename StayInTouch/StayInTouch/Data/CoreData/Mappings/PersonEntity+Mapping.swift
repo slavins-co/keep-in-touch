@@ -20,10 +20,12 @@ extension PersonEntity {
             lastTouchAt: lastTouchAt,
             lastTouchMethod: lastTouchMethod.flatMap(TouchMethod.init(rawValue:)),
             lastTouchNotes: lastTouchNotes,
+            nextTouchNotes: nextTouchNotes,
             isPaused: isPaused,
             isTracked: isTracked,
             notificationsMuted: notificationsMuted,
             customBreachTime: customBreachTime.flatMap(LocalTime.from(jsonString:)),
+            snoozedUntil: snoozedUntil,
             groupAddedAt: groupAddedAt,
             createdAt: createdAt ?? Date(),
             modifiedAt: modifiedAt ?? Date(),
@@ -42,10 +44,12 @@ extension PersonEntity {
         lastTouchAt = person.lastTouchAt
         lastTouchMethod = person.lastTouchMethod?.rawValue
         lastTouchNotes = person.lastTouchNotes
+        nextTouchNotes = person.nextTouchNotes
         isPaused = person.isPaused
         isTracked = person.isTracked
         notificationsMuted = person.notificationsMuted
         customBreachTime = person.customBreachTime?.toJsonString()
+        snoozedUntil = person.snoozedUntil
         groupAddedAt = person.groupAddedAt
         createdAt = person.createdAt
         modifiedAt = person.modifiedAt

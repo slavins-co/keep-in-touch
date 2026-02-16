@@ -11,6 +11,23 @@ import UserNotifications
 final class NotificationScheduler {
     static let shared = NotificationScheduler()
 
+    // MARK: - Notification Templates
+
+    static let singlePersonTemplates: [String] = [
+        "Reach out to %@",
+        "Time to catch up with %@",
+        "Drop %@ a message today",
+        "It's been a while — say hi to %@",
+        "%@ would love to hear from you",
+        "Don't forget about %@ — check in today",
+    ]
+
+    static let multiPersonTemplates: [String] = [
+        "%d people need your attention, including %@",
+        "Catch up with %d people today, including %@",
+        "%d connections are waiting, including %@",
+    ]
+
     private let settingsRepository: AppSettingsRepository
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository
@@ -152,7 +169,7 @@ final class NotificationScheduler {
         for person in people {
             let content = UNMutableNotificationContent()
             content.title = type.title
-            content.body = "Reach out to \(person.displayName)"
+            content.body = String(format: Self.singlePersonTemplates.randomElement()!, person.displayName)
             content.sound = .default
             content.badge = NSNumber(value: badgeCount)
             content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
@@ -191,11 +208,13 @@ final class NotificationScheduler {
 
     private func notificationBody(for people: [Person]) -> String {
         if people.count == 1 {
-            return "Reach out to \(people[0].displayName)"
+            let template = Self.singlePersonTemplates.randomElement()!
+            return String(format: template, people[0].displayName)
         }
 
         let preview = people.prefix(3).map { firstName(from: $0.displayName) }.joined(separator: ", ")
-        return "\(people.count) people, including \(preview)…"
+        let template = Self.multiPersonTemplates.randomElement()!
+        return String(format: template, people.count, preview)
     }
 
     private func notificationUserInfo(for people: [Person], type: String) -> [AnyHashable: Any] {
@@ -246,7 +265,7 @@ private extension NotificationScheduler {
         let triggerDate = nextDailyDate(for: time)
         let content = UNMutableNotificationContent()
         content.title = type.title
-        content.body = "Reach out to \(person.displayName)"
+        content.body = String(format: Self.singlePersonTemplates.randomElement()!, person.displayName)
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]

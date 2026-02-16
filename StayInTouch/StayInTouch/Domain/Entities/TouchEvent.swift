@@ -13,6 +13,7 @@ struct TouchEvent: Identifiable, Equatable {
     var at: Date
     var method: TouchMethod
     var notes: String?
+    var timeOfDay: TimeOfDay?
     var createdAt: Date
     var modifiedAt: Date
 }

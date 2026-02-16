@@ -15,6 +15,7 @@ extension TouchEventEntity {
             at: at ?? Date(),
             method: TouchMethod(rawValue: method ?? TouchMethod.other.rawValue) ?? .other,
             notes: notes,
+            timeOfDay: timeOfDay.flatMap(TimeOfDay.init(rawValue:)),
             createdAt: createdAt ?? Date(),
             modifiedAt: modifiedAt ?? Date()
         )
@@ -26,6 +27,7 @@ extension TouchEventEntity {
         at = touchEvent.at
         method = touchEvent.method.rawValue
         notes = touchEvent.notes
+        timeOfDay = touchEvent.timeOfDay?.rawValue
         createdAt = touchEvent.createdAt
         modifiedAt = touchEvent.modifiedAt
     }

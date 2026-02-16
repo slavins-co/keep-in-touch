@@ -73,10 +73,12 @@ final class RepositoryTests: XCTestCase {
             lastTouchAt: nil,
             lastTouchMethod: nil,
             lastTouchNotes: nil,
+            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
             notificationsMuted: false,
             customBreachTime: nil,
+            snoozedUntil: nil,
             groupAddedAt: nil,
             createdAt: Date(),
             modifiedAt: Date(),
@@ -100,6 +102,7 @@ final class RepositoryTests: XCTestCase {
             at: Date(),
             method: .call,
             notes: "Test",
+            timeOfDay: nil,
             createdAt: Date(),
             modifiedAt: Date()
         )

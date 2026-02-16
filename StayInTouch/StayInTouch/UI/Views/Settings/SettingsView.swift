@@ -19,6 +19,8 @@ struct SettingsView: View {
     @State private var workingTime = Date()
     @State private var showNoNewContactsAlert = false
     @State private var showNewContactsPicker = false
+    @State private var showGroupAssignment = false
+    @State private var selectedForImport: [ContactSummary] = []
     @State private var pendingImportCount = 0
     @State private var isSyncingContacts = false
 
@@ -74,16 +76,30 @@ struct SettingsView: View {
             NewContactsPickerView(
                 contacts: viewModel.pendingNewContacts,
                 onImport: { selected in
-                    Task {
-                        isSyncingContacts = true
-                        await viewModel.importSelectedContacts(selected)
-                        isSyncingContacts = false
-                    }
+                    selectedForImport = selected
                     showNewContactsPicker = false
+                    showGroupAssignment = true
                 },
                 onCancel: {
                     viewModel.pendingNewContacts = []
                     showNewContactsPicker = false
+                }
+            )
+        }
+        .sheet(isPresented: $showGroupAssignment) {
+            SettingsGroupAssignmentView(
+                contacts: selectedForImport,
+                groups: viewModel.allGroups,
+                onImport: { assignments in
+                    Task {
+                        isSyncingContacts = true
+                        await viewModel.importSelectedContacts(selectedForImport, groupAssignments: assignments)
+                        isSyncingContacts = false
+                    }
+                    showGroupAssignment = false
+                },
+                onCancel: {
+                    showGroupAssignment = false
                 }
             )
         }

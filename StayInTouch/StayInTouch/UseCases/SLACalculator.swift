@@ -16,6 +16,7 @@ struct SLACalculator {
 
     func status(for person: Person, in groups: [Group]) -> SLAStatus {
         if person.isPaused { return .inSLA }
+        if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return .inSLA }
         guard let group = groups.first(where: { $0.id == person.groupId }) else {
             return .inSLA
         }
@@ -36,6 +37,7 @@ struct SLACalculator {
 
     func daysOverdue(for person: Person, in groups: [Group]) -> Int {
         if person.isPaused { return 0 }
+        if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return 0 }
         guard let group = groups.first(where: { $0.id == person.groupId }) else {
             return 0
         }

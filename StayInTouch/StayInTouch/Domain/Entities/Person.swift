@@ -20,12 +20,14 @@ struct Person: Identifiable, Equatable {
     var lastTouchAt: Date?
     var lastTouchMethod: TouchMethod?
     var lastTouchNotes: String?
+    var nextTouchNotes: String?
 
     var isPaused: Bool
     var isTracked: Bool
 
     var notificationsMuted: Bool
     var customBreachTime: LocalTime?
+    var snoozedUntil: Date?
 
     var groupAddedAt: Date?
 

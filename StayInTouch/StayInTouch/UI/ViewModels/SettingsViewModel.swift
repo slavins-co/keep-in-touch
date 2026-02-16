@@ -12,6 +12,7 @@ import Contacts
 @MainActor
 final class SettingsViewModel: ObservableObject {
     @Published private(set) var settings: AppSettings
+    @Published private(set) var allGroups: [Group] = []
     @Published private(set) var groupsCount: Int = 0
     @Published private(set) var tagsCount: Int = 0
     @Published private(set) var pausedCount: Int = 0
@@ -40,7 +41,8 @@ final class SettingsViewModel: ObservableObject {
 
     func load() {
         settings = settingsRepository.fetch() ?? AppSettingsDefaults.defaultSettings()
-        groupsCount = groupRepository.fetchAll().count
+        allGroups = groupRepository.fetchAll()
+        groupsCount = allGroups.count
         tagsCount = tagRepository.fetchAll().count
         pausedCount = personRepository.fetchTracked(includePaused: true).filter { $0.isPaused }.count
     }
@@ -162,6 +164,10 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func importSelectedContacts(_ summaries: [ContactSummary]) async {
+        await importSelectedContacts(summaries, groupAssignments: [:])
+    }
+
+    func importSelectedContacts(_ summaries: [ContactSummary], groupAssignments: [String: UUID]) async {
         guard !summaries.isEmpty else { return }
 
         let backgroundContext = CoreDataStack.shared.newBackgroundContext()
@@ -178,28 +184,31 @@ final class SettingsViewModel: ObservableObject {
             let now = Date()
 
             for summary in summaries {
+                let groupId = groupAssignments[summary.identifier] ?? defaultGroupId
                 let person = Person(
                     id: UUID(),
                     cnIdentifier: summary.identifier,
                     displayName: summary.displayName,
                     initials: summary.initials,
                     avatarColor: AvatarColors.randomHex(),
-                    groupId: defaultGroupId,
+                    groupId: groupId,
                     tagIds: [],
                     lastTouchAt: nil,
                     lastTouchMethod: nil,
                     lastTouchNotes: nil,
+                    nextTouchNotes: nil,
                     isPaused: false,
                     isTracked: true,
                     notificationsMuted: false,
                     customBreachTime: nil,
+                    snoozedUntil: nil,
                     groupAddedAt: nil,
                     createdAt: now,
                     modifiedAt: now,
                     sortOrder: sortOrder
                 )
 
-                let assigned = AssignGroupUseCase(referenceDate: now).assign(person: person, to: defaultGroupId)
+                let assigned = AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId)
                 try? peopleRepo.save(assigned)
                 sortOrder += 1
             }

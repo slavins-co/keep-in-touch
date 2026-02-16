@@ -13,8 +13,9 @@ struct LogTouchModal: View {
     @State private var selectedMethod: TouchMethod = .text
     @State private var notes = ""
     @State private var touchDate = Date()
+    @State private var selectedTimeOfDay: TimeOfDay?
 
-    let onSave: (TouchMethod, String?, Date) -> Void
+    let onSave: (TouchMethod, String?, Date, TimeOfDay?) -> Void
 
     var body: some View {
         NavigationStack {
@@ -27,6 +28,13 @@ struct LogTouchModal: View {
 
                 DatePicker("Date", selection: $touchDate, in: ...Date(), displayedComponents: .date)
 
+                Picker("Time of Day", selection: $selectedTimeOfDay) {
+                    Text("None").tag(TimeOfDay?.none)
+                    ForEach(TimeOfDay.allCases, id: \.self) { time in
+                        Text(time.rawValue).tag(TimeOfDay?.some(time))
+                    }
+                }
+
                 TextField("Notes", text: $notes, axis: .vertical)
             }
             .navigationTitle("Log Touch")
@@ -36,7 +44,7 @@ struct LogTouchModal: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        onSave(selectedMethod, notes.isEmpty ? nil : notes, touchDate)
+                        onSave(selectedMethod, notes.isEmpty ? nil : notes, touchDate, selectedTimeOfDay)
                         dismiss()
                     }
                 }

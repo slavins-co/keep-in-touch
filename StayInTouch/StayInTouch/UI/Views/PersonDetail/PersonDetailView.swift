@@ -25,6 +25,10 @@ struct PersonDetailView: View {
     @State private var showRemoveConfirm = false
     @State private var showReminderTimePicker = false
     @State private var workingReminderTime = Date()
+    @State private var showSnoozeDatePicker = false
+    @State private var pickedSnoozeDate = Date()
+    @State private var nextTouchNotesText: String = ""
+    @FocusState private var isNextTouchNotesFocused: Bool
 
     init(person: Person) {
         _viewModel = StateObject(wrappedValue: PersonDetailViewModel(person: person))
@@ -38,6 +42,7 @@ struct PersonDetailView: View {
                     pausedBanner
                 }
                 cadenceCard
+                nextTouchNotesCard
                 historyCard
                 reachOutCard
                 tagsCard
@@ -50,14 +55,14 @@ struct PersonDetailView: View {
         .navigationTitle(viewModel.person.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showLogTouch) {
-            LogTouchModal { method, notes, date in
-                viewModel.logTouch(method: method, notes: notes, date: date)
+            LogTouchModal { method, notes, date, timeOfDay in
+                viewModel.logTouch(method: method, notes: notes, date: date, timeOfDay: timeOfDay)
                 showLogTouch = false
             }
         }
         .sheet(item: $showEditTouch) { touch in
-            EditTouchModal(touch: touch) { method, notes in
-                viewModel.updateTouch(touch, method: method, notes: notes)
+            EditTouchModal(touch: touch) { method, notes, timeOfDay in
+                viewModel.updateTouch(touch, method: method, notes: notes, timeOfDay: timeOfDay)
                 showEditTouch = nil
             }
         }
@@ -153,6 +158,24 @@ struct PersonDetailView: View {
                     }
             }
         }
+        .sheet(isPresented: $showSnoozeDatePicker) {
+            NavigationStack {
+                DatePicker("Snooze until", selection: $pickedSnoozeDate, in: Date()..., displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .padding()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Cancel") { showSnoozeDatePicker = false }
+                        }
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Save") {
+                                viewModel.snooze(until: pickedSnoozeDate)
+                                showSnoozeDatePicker = false
+                            }
+                        }
+                    }
+            }
+        }
         .task {
             await viewModel.refreshContactInfo()
             viewModel.load()
@@ -223,10 +246,60 @@ struct PersonDetailView: View {
             Text(cadenceSubtext())
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+
+            if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
+                HStack {
+                    Image(systemName: "moon.fill")
+                        .foregroundStyle(.purple)
+                    Text("Snoozed until \(snoozedUntil.formatted(date: .abbreviated, time: .omitted))")
+                        .font(.footnote)
+                        .foregroundStyle(.purple)
+                    Spacer()
+                    Button("Clear") { viewModel.clearSnooze() }
+                        .font(.footnote)
+                }
+            } else {
+                Menu {
+                    Button("3 days") { snooze(days: 3) }
+                    Button("1 week") { snooze(days: 7) }
+                    Button("2 weeks") { snooze(days: 14) }
+                    Button("Pick date...") {
+                        pickedSnoozeDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
+                        showSnoozeDatePicker = true
+                    }
+                } label: {
+                    Label("Snooze", systemImage: "moon")
+                        .font(.footnote)
+                }
+            }
         }
         .padding()
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var nextTouchNotesCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Next Time")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            TextField("What to remember next time?", text: $nextTouchNotesText, axis: .vertical)
+                .font(.body)
+                .lineLimit(3...6)
+                .focused($isNextTouchNotesFocused)
+                .onChange(of: isNextTouchNotesFocused) { _, focused in
+                    if !focused {
+                        viewModel.saveNextTouchNotes(nextTouchNotesText)
+                    }
+                }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .onAppear {
+            nextTouchNotesText = viewModel.person.nextTouchNotes ?? ""
+        }
     }
 
     private var tagsCard: some View {
@@ -288,7 +361,7 @@ struct PersonDetailView: View {
                 let events = showFullHistory ? viewModel.touchEvents : Array(viewModel.touchEvents.prefix(1))
                 ForEach(events, id: \.id) { event in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(event.method.rawValue) · \(event.at.formatted(date: .abbreviated, time: .omitted))")
+                        Text("\(event.method.rawValue) · \(event.at.formatted(date: .abbreviated, time: .omitted))\(event.timeOfDay.map { " · \($0.rawValue)" } ?? "")")
                             .font(.footnote)
                         if let notes = event.notes, !notes.isEmpty {
                             Text(notes)
@@ -437,6 +510,11 @@ struct PersonDetailView: View {
             return "Connect every \(group.slaDays) days · Was due \(formatted)"
         }
         return "Connect every \(group.slaDays) days"
+    }
+
+    private func snooze(days: Int) {
+        let date = Calendar.current.date(byAdding: .day, value: days, to: Date()) ?? Date()
+        viewModel.snooze(until: date)
     }
 
     private func open(_ action: QuickActionType) {

@@ -11,16 +11,18 @@ struct EditTouchModal: View {
     @Environment(\.dismiss) private var dismiss
 
     let touch: TouchEvent
-    let onSave: (TouchMethod, String?) -> Void
+    let onSave: (TouchMethod, String?, TimeOfDay?) -> Void
 
     @State private var selectedMethod: TouchMethod
     @State private var notes: String
+    @State private var selectedTimeOfDay: TimeOfDay?
 
-    init(touch: TouchEvent, onSave: @escaping (TouchMethod, String?) -> Void) {
+    init(touch: TouchEvent, onSave: @escaping (TouchMethod, String?, TimeOfDay?) -> Void) {
         self.touch = touch
         self.onSave = onSave
         _selectedMethod = State(initialValue: touch.method)
         _notes = State(initialValue: touch.notes ?? "")
+        _selectedTimeOfDay = State(initialValue: touch.timeOfDay)
     }
 
     var body: some View {
@@ -36,6 +38,13 @@ struct EditTouchModal: View {
                     }
                 }
 
+                Picker("Time of Day", selection: $selectedTimeOfDay) {
+                    Text("None").tag(TimeOfDay?.none)
+                    ForEach(TimeOfDay.allCases, id: \.self) { time in
+                        Text(time.rawValue).tag(TimeOfDay?.some(time))
+                    }
+                }
+
                 TextField("Notes", text: $notes, axis: .vertical)
             }
             .navigationTitle("Edit Touch")
@@ -45,7 +54,7 @@ struct EditTouchModal: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        onSave(selectedMethod, notes.isEmpty ? nil : notes)
+                        onSave(selectedMethod, notes.isEmpty ? nil : notes, selectedTimeOfDay)
                         dismiss()
                     }
                 }

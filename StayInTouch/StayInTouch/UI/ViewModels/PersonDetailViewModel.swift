@@ -96,6 +96,27 @@ final class PersonDetailViewModel: ObservableObject {
         savePerson(updated)
     }
 
+    func saveNextTouchNotes(_ notes: String?) {
+        var updated = person
+        updated.nextTouchNotes = notes?.isEmpty == true ? nil : notes
+        updated.modifiedAt = Date()
+        savePerson(updated)
+    }
+
+    func snooze(until date: Date) {
+        var updated = person
+        updated.snoozedUntil = date
+        updated.modifiedAt = Date()
+        savePerson(updated)
+    }
+
+    func clearSnooze() {
+        var updated = person
+        updated.snoozedUntil = nil
+        updated.modifiedAt = Date()
+        savePerson(updated)
+    }
+
     func restoreNotificationDefaults() {
         var updated = person
         updated.customBreachTime = nil
@@ -116,6 +137,7 @@ final class PersonDetailViewModel: ObservableObject {
                 at: date,
                 method: .other,
                 notes: "Resumed tracking",
+                timeOfDay: nil,
                 createdAt: Date(),
                 modifiedAt: Date()
             )
@@ -151,7 +173,7 @@ final class PersonDetailViewModel: ObservableObject {
         availableTags = tags.filter { !updated.tagIds.contains($0.id) }
     }
 
-    func logTouch(method: TouchMethod, notes: String?, date: Date) {
+    func logTouch(method: TouchMethod, notes: String?, date: Date, timeOfDay: TimeOfDay? = nil) {
         let now = date
         let touch = TouchEvent(
             id: UUID(),
@@ -159,6 +181,7 @@ final class PersonDetailViewModel: ObservableObject {
             at: now,
             method: method,
             notes: notes,
+            timeOfDay: timeOfDay,
             createdAt: now,
             modifiedAt: now
         )
@@ -172,15 +195,17 @@ final class PersonDetailViewModel: ObservableObject {
         updated.lastTouchAt = now
         updated.lastTouchMethod = method
         updated.lastTouchNotes = notes
+        updated.snoozedUntil = nil
         updated.modifiedAt = now
         savePerson(updated)
 
         touchEvents = touchRepository.fetchAll(for: person.id)
     }
 
-    func updateTouch(_ touch: TouchEvent, method: TouchMethod, notes: String?) {
+    func updateTouch(_ touch: TouchEvent, method: TouchMethod, notes: String?, timeOfDay: TimeOfDay? = nil) {
         var updatedTouch = touch
         updatedTouch.method = method
+        updatedTouch.timeOfDay = timeOfDay
         updatedTouch.notes = notes
         updatedTouch.modifiedAt = Date()
         do {

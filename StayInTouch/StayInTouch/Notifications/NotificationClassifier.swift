@@ -33,7 +33,7 @@ enum NotificationClassifier {
         var allOverdue: [Person] = []
         var customOverrides: [CustomNotification] = []
 
-        for person in people where !person.isPaused && !person.notificationsMuted {
+        for person in people where !person.isPaused && !person.notificationsMuted && !(person.snoozedUntil.map { $0 > referenceDate } ?? false) {
             guard let group = groups.first(where: { $0.id == person.groupId }) else { continue }
             guard let lastTouch = SLACalculator(referenceDate: referenceDate).effectiveLastTouchDate(for: person) else { continue }
 
