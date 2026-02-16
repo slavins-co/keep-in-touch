@@ -377,6 +377,80 @@ git gc --prune=now --aggressive
 git log --format="%an <%ae>"
 ```
 
+### 2026-02-04 - 🎨 UI/UX - A-Z Sidebar Requires Layout Isolation
+
+**What Happened:**
+A-Z sidebar in contact picker views appeared non-functional. Tapping letters didn't scroll to sections, and the sidebar was catching scroll gestures from the main list.
+
+**Root Cause:**
+1. Using ZStack placed the sidebar inside the ScrollView/List's gesture handling area
+2. ScrollView/List was intercepting all touch events before they reached the sidebar
+3. Using `.onTapGesture` instead of Button made touch handling less reliable
+4. No ScrollViewReader/scrollTo mechanism to enable programmatic scrolling
+
+**Solution:**
+1. Changed layout from ZStack to HStack to position sidebar outside the scroll container
+2. Wrapped content in ScrollViewReader with proxy parameter
+3. Changed sidebar items from Text with onTapGesture to Button components
+4. Added .id() to section headers for scroll targeting
+5. Implemented proxy.scrollTo(section, anchor: .top) with smooth animation
+
+**Prevention Rule:**
+When adding interactive overlays (like sidebars) to scrollable content:
+- Use HStack/VStack to position them outside the scroll container, not ZStack over it
+- Always use Button for tappable elements instead of onTapGesture when inside complex layouts
+- Use ScrollViewReader + .id() for programmatic scrolling in SwiftUI
+- Test touch interactions early - visual appearance doesn't guarantee functionality
+
+**Code Example:**
+```swift
+// Bad - Sidebar inside scroll area with ZStack
+ZStack(alignment: .trailing) {
+    List { /* content */ }
+    SectionIndexView { /* onTapGesture */ }
+}
+
+// Good - Sidebar outside scroll area with HStack
+ScrollViewReader { proxy in
+    HStack(spacing: 0) {
+        List {
+            Section(header: Text(section.0).id(section.0)) {
+                /* content */
+            }
+        }
+        SectionIndexView { section in
+            proxy.scrollTo(section, anchor: .top)
+        }
+    }
+}
+```
+
+### 2026-02-04 - 🎨 UI/UX - Duplicate Views Need Consistent Fixes
+
+**What Happened:**
+Fixed A-Z sidebar in ContactPickerView (onboarding) but user was testing NewContactsPickerView (Settings → Add from Contacts), which still had the bug.
+
+**Root Cause:**
+App has two similar contact picker views serving different purposes, and the fix was only applied to one of them.
+
+**Solution:**
+Applied the same fix to both ContactPickerView and NewContactsPickerView.
+
+**Prevention Rule:**
+When fixing a bug in a view:
+1. Search codebase for similar/duplicate views with glob/grep
+2. Check if the same pattern exists in multiple places
+3. Apply the fix consistently across all instances
+4. Ask user which view they're testing if uncertain
+
+**Code Example:**
+```bash
+# Search for similar views
+rg "struct.*ContactPicker.*View" --type swift
+# or
+fd -e swift -x grep -l "SectionIndexView"
+```
+
 ### 2026-02-04 - 🔧 Git - GitHub CLI Authentication Scopes
 
 **What Happened:**
