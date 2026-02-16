@@ -130,7 +130,7 @@ final class NotificationScheduler {
         let triggerDate = nextDailyDate(for: settings.breachTimeOfDay)
 
         let content = UNMutableNotificationContent()
-        content.title = "Daily Reminders"
+        content.title = "Your connections today"
         content.body = notificationBody(for: people)
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
@@ -152,7 +152,7 @@ final class NotificationScheduler {
         for person in people {
             let content = UNMutableNotificationContent()
             content.title = type.title
-            content.body = "Reach out to \(person.displayName)."
+            content.body = "Reach out to \(person.displayName)"
             content.sound = .default
             content.badge = NSNumber(value: badgeCount)
             content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
@@ -174,7 +174,7 @@ final class NotificationScheduler {
         let triggerDate = nextWeeklyDate(day: settings.digestDay, time: settings.digestTime)
 
         let content = UNMutableNotificationContent()
-        content.title = "Weekly Digest"
+        content.title = "Your week in touch"
         content.body = notificationBody(for: all)
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
@@ -191,7 +191,7 @@ final class NotificationScheduler {
 
     private func notificationBody(for people: [Person]) -> String {
         if people.count == 1 {
-            return "Reach out to \(people[0].displayName)."
+            return "Reach out to \(people[0].displayName)"
         }
 
         let preview = people.prefix(3).map { firstName(from: $0.displayName) }.joined(separator: ", ")
@@ -246,7 +246,7 @@ private extension NotificationScheduler {
         let triggerDate = nextDailyDate(for: time)
         let content = UNMutableNotificationContent()
         content.title = type.title
-        content.body = "Reach out to \(person.displayName)."
+        content.body = "Reach out to \(person.displayName)"
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
@@ -276,9 +276,9 @@ enum DailyNotificationType {
 
     var title: String {
         switch self {
-        case .dueToday: return "Due Today"
-        case .overdue: return "Overdue"
-        case .dueSoon: return "Due Soon"
+        case .dueToday: return "Time to reconnect"
+        case .overdue: return "Don't lose touch"
+        case .dueSoon: return "Coming up soon"
         }
     }
 
