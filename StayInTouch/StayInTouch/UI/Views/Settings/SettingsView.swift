@@ -281,10 +281,16 @@ struct SettingsView: View {
         }
     }
 
+    private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "v\(version) (\(build))"
+    }
+
     private var aboutSection: some View {
         Section {
             VStack(spacing: 6) {
-                Text("Stay in Touch v1.0")
+                Text("Stay in Touch \(appVersion)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Text("Privacy-first personal CRM")
