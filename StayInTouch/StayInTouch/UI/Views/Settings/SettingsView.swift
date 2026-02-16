@@ -20,6 +20,7 @@ struct SettingsView: View {
     @State private var showNoNewContactsAlert = false
     @State private var showNewContactsPicker = false
     @State private var showGroupAssignment = false
+    @State private var shouldShowGroupAssignment = false
     @State private var selectedForImport: [ContactSummary] = []
     @State private var pendingImportCount = 0
     @State private var isSyncingContacts = false
@@ -77,8 +78,8 @@ struct SettingsView: View {
                 contacts: viewModel.pendingNewContacts,
                 onImport: { selected in
                     selectedForImport = selected
+                    shouldShowGroupAssignment = true
                     showNewContactsPicker = false
-                    showGroupAssignment = true
                 },
                 onCancel: {
                     viewModel.pendingNewContacts = []
@@ -102,6 +103,12 @@ struct SettingsView: View {
                     showGroupAssignment = false
                 }
             )
+        }
+        .onChange(of: showNewContactsPicker) { _, isPresented in
+            if !isPresented && shouldShowGroupAssignment {
+                shouldShowGroupAssignment = false
+                showGroupAssignment = true
+            }
         }
         .onAppear { viewModel.load() }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
