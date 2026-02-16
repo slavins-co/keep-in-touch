@@ -7,8 +7,8 @@
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-3.0-brightgreen.svg)](https://developer.apple.com/xcode/swiftui/)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE)
 
-**Version:** 1.0 (Build 1)
-**Status:** ✅ Device Testing Complete | 🚧 Implementing V1.1 Improvements
+**Version:** 1.1.1 (Build 3)
+**Status:** ✅ V1.1.1 Released | 🧭 Planning V2.0
 
 ---
 
@@ -27,38 +27,44 @@ Never lose track of the people who matter. Stay in Touch helps you maintain frie
 
 ## Current Status
 
-### ✅ V1.0 Complete (February 2026)
+### ✅ V1.0 (February 2026)
 - Full iOS app implementation with Clean Architecture
 - 30+ passing unit tests
 - Security audit completed, all critical issues resolved
 - Device testing with real user feedback collected
 
-### 🚧 V1.1 Quick Wins (In Progress)
-6 high-impact UX improvements based on device testing:
-- [#1](https://github.com/slavins-co/stay-in-touch-ios/issues/1) Update onboarding copy
-- [#2](https://github.com/slavins-co/stay-in-touch-ios/issues/2) Simplify touch time display
-- [#3](https://github.com/slavins-co/stay-in-touch-ios/issues/3) Add system theme auto-detection
-- [#4](https://github.com/slavins-co/stay-in-touch-ios/issues/4) Animate group expand/collapse
+### ✅ V1.1.0 (Released February 4, 2026)
+6 UX improvements based on device testing feedback:
+- [#1](https://github.com/slavins-co/stay-in-touch-ios/issues/1) Updated onboarding copy
+- [#2](https://github.com/slavins-co/stay-in-touch-ios/issues/2) Simplified touch time display
+- [#3](https://github.com/slavins-co/stay-in-touch-ios/issues/3) System theme auto-detection
+- [#4](https://github.com/slavins-co/stay-in-touch-ios/issues/4) Animated group expand/collapse
 - [#5](https://github.com/slavins-co/stay-in-touch-ios/issues/5) Advanced settings section
-- [#6](https://github.com/slavins-co/stay-in-touch-ios/issues/6) Contact search & alphabet index
+- [#6](https://github.com/slavins-co/stay-in-touch-ios/issues/6) Contact search & A-Z alphabet index
 
-**Target:** February 18, 2026 (~6 hours total effort)
+### ✅ V1.1.1 (Released February 16, 2026)
+5 new features + 4 quality-of-life fixes:
+- [#7](https://github.com/slavins-co/stay-in-touch-ios/issues/7) Forward-looking "Next Time" notes per contact
+- [#13](https://github.com/slavins-co/stay-in-touch-ios/issues/13) Time-of-day picker (Morning/Afternoon/Evening) on touch logging
+- [#22](https://github.com/slavins-co/stay-in-touch-ios/issues/22) Randomized notification copy variations
+- [#23](https://github.com/slavins-co/stay-in-touch-ios/issues/23) Snooze/defer due date per contact
+- [#8](https://github.com/slavins-co/stay-in-touch-ios/issues/8) Group assignment step when importing contacts
+- [#18](https://github.com/slavins-co/stay-in-touch-ios/issues/18) Dynamic app version in Settings
+- [#19](https://github.com/slavins-co/stay-in-touch-ios/issues/19) Due date shown in cadence section
+- [#20](https://github.com/slavins-co/stay-in-touch-ios/issues/20) Cleaner notification copy
+- [#21](https://github.com/slavins-co/stay-in-touch-ios/issues/21) Friendlier notification titles
 
-### 📅 V1.2 Enhancements (Planned)
-- [#7](https://github.com/slavins-co/stay-in-touch-ios/issues/7) Next touch notes field
-- [#8](https://github.com/slavins-co/stay-in-touch-ios/issues/8) Group assignment in settings flow
-- [#9](https://github.com/slavins-co/stay-in-touch-ios/issues/9) Custom due dates per contact
+### 🧭 Open Issues (3 remaining)
+- [#24](https://github.com/slavins-co/stay-in-touch-ios/issues/24) Redesign visual language (HIGH priority)
+- [#9](https://github.com/slavins-co/stay-in-touch-ios/issues/9) Custom due dates per contact (MEDIUM priority)
+- [#10](https://github.com/slavins-co/stay-in-touch-ios/issues/10) Self-guided tutorial (LOW priority, deferred to V2)
 
-**Target:** March 15, 2026
-
-### 🔮 V2.0 Major Features (Future)
-- [#10](https://github.com/slavins-co/stay-in-touch-ios/issues/10) Self-guided tutorial system
+### 🔮 V2.0 (Future)
+- Visual redesign and streamlined UI
 - CloudKit sync for multi-device support
-- Statistics dashboard
-- Batch import from CSV
+- Home/Lock screen widgets
 - Shortcuts/Siri integration
-
-**Target:** June 2026
+- Self-guided tutorial system
 
 ---
 
@@ -66,12 +72,18 @@ Never lose track of the people who matter. Stay in Touch helps you maintain frie
 
 ### 📱 Core Functionality
 - ✅ Manual touch logging (Text, Call, IRL, Email, Other)
+- ✅ Time-of-day tracking (Morning, Afternoon, Evening)
 - ✅ SLA-based contact groups with configurable cadences
+- ✅ Snooze/defer due dates per contact (preset + custom)
+- ✅ Forward-looking "Next Time" notes per contact
 - ✅ Tag system (Work, Family, Friend, Mentor + custom)
-- ✅ Local notifications (breach alerts + weekly digest)
+- ✅ Local notifications with randomized copy variations
 - ✅ Full touch history with edit/delete capability
+- ✅ Contact search with A-Z alphabet sidebar
+- ✅ Group assignment when importing contacts
 - ✅ Pause/resume tracking per contact
-- ✅ Dark/light theme support
+- ✅ Dark/light/system theme support
+- ✅ Animated group expand/collapse transitions
 - ✅ Demo mode for testing
 
 ### 🔒 Privacy First
@@ -112,7 +124,7 @@ StayInTouch/
 │   └── StayInTouchApp.swift
 ├── Domain/                      # Pure Swift business logic
 │   ├── Entities/                # Person, Group, Tag, TouchEvent
-│   ├── ValueObjects/            # SLAStatus, Theme, LocalTime
+│   ├── ValueObjects/            # SLAStatus, Theme, LocalTime, TimeOfDay
 │   └── Protocols/               # Repository interfaces
 ├── Data/                        # Persistence layer
 │   ├── CoreData/                # Core Data stack + repositories
@@ -188,7 +200,7 @@ StayInTouch/
 
 ```bash
 # Run all tests
-xcodebuild test -scheme StayInTouch -destination 'platform=iOS Simulator,name=iPhone 15'
+xcodebuild test -scheme StayInTouch -destination 'platform=iOS Simulator,name=iPhone 16'
 
 # Or use Xcode: Cmd+U
 ```
@@ -199,9 +211,9 @@ xcodebuild test -scheme StayInTouch -destination 'platform=iOS Simulator,name=iP
 
 ### Working on Issues
 
-1. **Pick an issue from V1.1 milestone**
+1. **Pick an open issue**
    ```bash
-   gh issue list --milestone "V1.1 Quick Wins"
+   gh issue list --state open
    ```
 
 2. **Create feature branch**
@@ -248,9 +260,8 @@ xcodebuild test -scheme StayInTouch -destination 'platform=iOS Simulator,name=iP
 [Suggest a feature](https://github.com/slavins-co/stay-in-touch-ios/issues/new?labels=feature-request&template=feature_request.md)
 
 ### 📊 View Roadmap
-- [V1.1 Quick Wins](https://github.com/slavins-co/stay-in-touch-ios/milestone/1) - Current sprint
-- [V1.2 Enhancements](https://github.com/slavins-co/stay-in-touch-ios/milestone/2) - Next up
-- [V2.0 Major Features](https://github.com/slavins-co/stay-in-touch-ios/milestone/3) - Future
+- [Open Issues](https://github.com/slavins-co/stay-in-touch-ios/issues) - Current backlog
+- [Releases](https://github.com/slavins-co/stay-in-touch-ios/releases) - Version history
 
 ### 🏷️ Label System
 - **Type:** `ux-improvement`, `feature-request`, `bug-fix`, `feature-simplification`
@@ -384,11 +395,11 @@ xcodebuild test -scheme StayInTouch -destination 'platform=iOS,name=iPhone'
 
 ## Deployment
 
-### TestFlight (Coming Soon)
-V1.1 will be the first TestFlight release.
+### TestFlight
+V1.1.1 is the TestFlight candidate.
 
 **Pre-TestFlight Checklist:**
-- [ ] All V1.1 issues closed
+- [x] All V1.1.x issues closed (15/15)
 - [ ] No crashes in testing
 - [ ] Memory leaks checked (Instruments)
 - [ ] Privacy policy finalized
@@ -459,27 +470,33 @@ See [TESTFLIGHT-PLAN.md](TESTFLIGHT-PLAN.md) for complete guide.
 - ✅ Security audit completed
 - ✅ Device testing with user feedback
 
-### V1.1 (In Progress - Target: February 18, 2026)
+### V1.1.0 (February 4, 2026)
 **UX improvements based on device testing**
-- 🚧 Update onboarding copy to "stay in touch with"
-- 🚧 Simplify touch time display (date only)
-- 🚧 Add system theme auto-detection
-- 🚧 Animate group expand/collapse
-- 🚧 Move debug features to Advanced Settings
-- 🚧 Add contact search and alphabet index
+- ✅ Updated onboarding copy
+- ✅ Simplified touch time display (date only)
+- ✅ System theme auto-detection
+- ✅ Animated group expand/collapse
+- ✅ Advanced settings section
+- ✅ Contact search and A-Z alphabet index
 
-### V1.2 (Planned - Target: March 15, 2026)
-**Feature enhancements**
-- 📅 Next touch notes field
-- 📅 Group assignment in settings import flow
-- 📅 Custom due dates per contact
+### V1.1.1 (February 16, 2026)
+**Snooze, Notes & Quality of Life**
+- ✅ Forward-looking "Next Time" notes per contact (#7)
+- ✅ Time-of-day picker in touch logging (#13)
+- ✅ Randomized notification copy (#22)
+- ✅ Snooze/defer due date per contact (#23)
+- ✅ Group assignment on Settings import (#8)
+- ✅ Dynamic app version in Settings (#18)
+- ✅ Due date in cadence section (#19)
+- ✅ Cleaner notification copy (#20, #21)
 
-### V2.0 (Future - Target: June 2026)
+### V2.0 (Future)
 **Major features**
+- 🔮 Visual redesign (#24)
 - 🔮 CloudKit sync (multi-device)
-- 🔮 Self-guided tutorial system
-- 🔮 Statistics dashboard
+- 🔮 Home/Lock screen widgets
 - 🔮 Shortcuts/Siri integration
+- 🔮 Self-guided tutorial (#10)
 
 ---
 
