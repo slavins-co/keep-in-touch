@@ -416,11 +416,25 @@ struct PersonDetailView: View {
         }
     }
 
+    private static let dueDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMM d"
+        return f
+    }()
+
     private func cadenceSubtext() -> String {
         guard let group = viewModel.group else { return "" }
-        let remaining = group.slaDays - (SLACalculator().daysSinceLastTouch(for: viewModel.person) ?? 0)
-        if remaining > 0 {
-            return "Connect every \(group.slaDays) days · \(remaining)d remaining"
+        let calculator = SLACalculator()
+        let daysSince = calculator.daysSinceLastTouch(for: viewModel.person) ?? 0
+        let remaining = group.slaDays - daysSince
+
+        if let effectiveDate = calculator.effectiveLastTouchDate(for: viewModel.person) {
+            let dueDate = Calendar.current.date(byAdding: .day, value: Int(group.slaDays), to: effectiveDate)
+            let formatted = dueDate.map { Self.dueDateFormatter.string(from: $0) } ?? "?"
+            if remaining > 0 {
+                return "Connect every \(group.slaDays) days · Due \(formatted) · \(remaining)d remaining"
+            }
+            return "Connect every \(group.slaDays) days · Was due \(formatted)"
         }
         return "Connect every \(group.slaDays) days"
     }
