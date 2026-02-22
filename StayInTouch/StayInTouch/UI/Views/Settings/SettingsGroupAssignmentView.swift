@@ -18,7 +18,7 @@ struct SettingsGroupAssignmentView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: DS.Spacing.md) {
-                Text("Assign Groups")
+                Text("Assign Frequencies")
                     .font(DS.Typography.title)
                     .padding(.top)
 
@@ -33,7 +33,7 @@ struct SettingsGroupAssignmentView: View {
                         Text(contact.displayName)
                             .font(DS.Typography.contactName)
 
-                        Picker("Group", selection: binding(for: contact.identifier)) {
+                        Picker("Frequency", selection: binding(for: contact.identifier)) {
                             ForEach(groups, id: \.id) { group in
                                 Text(group.name).tag(group.id)
                             }
@@ -44,7 +44,7 @@ struct SettingsGroupAssignmentView: View {
                 }
                 .listStyle(.plain)
             }
-            .navigationTitle("Assign Groups")
+            .navigationTitle("Assign Frequencies")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {

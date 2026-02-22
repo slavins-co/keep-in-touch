@@ -131,14 +131,14 @@ struct SettingsView: View {
     }
 
     private var groupsSection: some View {
-        Section("Cadence Groups") {
+        Section("Contact Frequency") {
             NavigationLink {
                 ManageGroupsView()
             } label: {
                 HStack {
-                    Image(systemName: "person.3.fill")
+                    Image(systemName: "arrow.triangle.2.circlepath")
                         .foregroundStyle(DS.Colors.accent)
-                    Text("Manage Groups")
+                    Text("Manage Frequencies")
                     Spacer()
                     Text("\(viewModel.groupsCount)")
                         .foregroundStyle(.secondary)
@@ -148,14 +148,14 @@ struct SettingsView: View {
     }
 
     private var tagsSection: some View {
-        Section("Tags") {
+        Section("Groups") {
             NavigationLink {
                 ManageTagsView()
             } label: {
                 HStack {
-                    Image(systemName: "tag.fill")
+                    Image(systemName: "person.3.fill")
                         .foregroundStyle(DS.Colors.accent)
-                    Text("Manage Tags")
+                    Text("Manage Groups")
                     Spacer()
                     Text("\(viewModel.tagsCount)")
                         .foregroundStyle(.secondary)

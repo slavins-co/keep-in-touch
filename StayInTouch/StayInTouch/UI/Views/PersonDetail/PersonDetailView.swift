@@ -67,7 +67,6 @@ struct PersonDetailView: View {
             .padding(.horizontal, DS.Spacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .navigationTitle(viewModel.person.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showLogTouch) {
             LogTouchModal { method, notes, date, timeOfDay in
@@ -202,10 +201,33 @@ struct PersonDetailView: View {
 
     // MARK: - Tier 1: Hero Zone
 
+    private var personTags: [Tag] {
+        viewModel.tags.filter { viewModel.person.tagIds.contains($0.id) }
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Text(viewModel.person.displayName)
-                .font(.title.weight(.bold))
+            HStack(spacing: DS.Spacing.sm) {
+                Text(viewModel.person.displayName)
+                    .font(.title.weight(.bold))
+                    .lineLimit(1)
+                    .layoutPriority(1)
+
+                if !personTags.isEmpty {
+                    HStack(spacing: DS.Spacing.xs) {
+                        ForEach(personTags.prefix(3), id: \.id) { tag in
+                            TagPill(tag: tag)
+                        }
+                        if personTags.count > 3 {
+                            Text("+\(personTags.count - 3)")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(DS.Colors.secondaryText)
+                        }
+                    }
+                    .lineLimit(1)
+                }
+            }
+
             HStack(spacing: DS.Spacing.sm) {
                 StatusIndicator(status: currentStatus, daysOverdue: daysOverdue)
                 Text(statusLabel())
@@ -332,38 +354,52 @@ struct PersonDetailView: View {
                     .foregroundStyle(DS.Colors.tertiaryText)
             } else {
                 let events = showFullHistory ? viewModel.touchEvents : Array(viewModel.touchEvents.prefix(3))
-                ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
-                    let isLatest = index == 0
+                List {
+                    ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
+                        let isLatest = index == 0
 
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(systemName: DS.touchMethodIcon(event.method))
-                                .foregroundStyle(DS.Colors.secondaryText)
-                                .font(.caption)
-                            Text("\(event.method.rawValue) \u{00B7} \(event.at.formatted(date: .abbreviated, time: .omitted))\(event.timeOfDay.map { " \u{00B7} \($0.rawValue)" } ?? "")")
-                                .font(DS.Typography.metadata)
+                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                            HStack(spacing: DS.Spacing.xs) {
+                                Image(systemName: DS.touchMethodIcon(event.method))
+                                    .foregroundStyle(DS.Colors.secondaryText)
+                                    .font(.caption)
+                                Text("\(event.method.rawValue) \u{00B7} \(event.at.formatted(date: .abbreviated, time: .omitted))\(event.timeOfDay.map { " \u{00B7} \($0.rawValue)" } ?? "")")
+                                    .font(DS.Typography.metadata)
+                            }
+                            if let notes = event.notes, !notes.isEmpty {
+                                Text(notes)
+                                    .font(DS.Typography.metadata)
+                                    .foregroundStyle(DS.Colors.secondaryText)
+                            }
                         }
-                        if let notes = event.notes, !notes.isEmpty {
-                            Text(notes)
-                                .font(DS.Typography.metadata)
-                                .foregroundStyle(DS.Colors.secondaryText)
+                        .padding(.leading, DS.Spacing.sm)
+                        .overlay(alignment: .leading) {
+                            if isLatest {
+                                RoundedRectangle(cornerRadius: 1.5)
+                                    .fill(DS.Colors.accent)
+                                    .frame(width: 3)
+                            }
                         }
-                        HStack(spacing: DS.Spacing.md) {
-                            Button("Edit") { showEditTouch = event }
-                            Button("Delete", role: .destructive) { showDeleteConfirm = event }
-                        }
-                        .font(DS.Typography.caption)
-                    }
-                    .padding(.vertical, DS.Spacing.sm)
-                    .padding(.leading, DS.Spacing.sm)
-                    .overlay(alignment: .leading) {
-                        if isLatest {
-                            RoundedRectangle(cornerRadius: 1.5)
-                                .fill(DS.Colors.accent)
-                                .frame(width: 3)
+                        .listRowInsets(EdgeInsets(top: DS.Spacing.sm, leading: 0, bottom: DS.Spacing.sm, trailing: 0))
+                        .listRowSeparator(.hidden)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                showDeleteConfirm = event
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            Button {
+                                showEditTouch = event
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            .tint(DS.Colors.accent)
                         }
                     }
                 }
+                .listStyle(.plain)
+                .scrollDisabled(true)
+                .frame(height: CGFloat(events.count) * 52)
             }
         }
         .padding(.vertical, DS.Spacing.md)
@@ -394,7 +430,7 @@ struct PersonDetailView: View {
     private var cadenceSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text("CADENCE")
+                Text("FREQUENCY")
                     .font(DS.Typography.caption)
                     .foregroundStyle(DS.Colors.tertiaryText)
                     .tracking(0.5)
@@ -402,7 +438,7 @@ struct PersonDetailView: View {
                 Button("Change") { showChangeGroup = true }
                     .font(DS.Typography.caption)
             }
-            Text(viewModel.group?.name ?? "Group")
+            Text(viewModel.group?.name ?? "Frequency")
                 .font(.body)
             Text(cadenceSubtext())
                 .font(DS.Typography.metadata)
@@ -529,12 +565,23 @@ struct PersonDetailView: View {
         return SLACalculator().daysOverdue(for: viewModel.person, in: [group])
     }
 
+    private var daysUntilDue: Int {
+        guard let group = viewModel.group else { return 0 }
+        let calculator = SLACalculator()
+        let daysSince = calculator.daysSinceLastTouch(for: viewModel.person) ?? 0
+        return max(0, group.slaDays - daysSince)
+    }
+
     // MARK: - Helper Functions
 
     private func statusLabel() -> String {
         switch currentStatus {
-        case .inSLA: return "All good"
-        case .dueSoon: return "Check in soon"
+        case .inSLA:
+            let days = daysUntilDue
+            return days > 0 ? "All good · Due in \(days)d" : "All good"
+        case .dueSoon:
+            let days = daysUntilDue
+            return days > 0 ? "Check in soon · Due in \(days)d" : "Check in soon"
         case .outOfSLA: return "Overdue"
         case .unknown: return "Unknown"
         }

@@ -41,14 +41,14 @@ struct ContactListSection: View {
             if !isCollapsed {
                 VStack(spacing: 0) {
                     ForEach(Array(people.enumerated()), id: \.element.id) { index, person in
-                        let groupName = groupsById[person.groupId]?.name ?? "Group"
+                        let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
                         let tags = person.tagIds.compactMap { tagsById[$0] }
                         NavigationLink {
                             PersonDetailView(person: person)
                         } label: {
                             ContactCard(
                                 person: person,
-                                groupName: groupName,
+                                frequencyName: frequencyName,
                                 tags: tags,
                                 status: statusForPerson(person),
                                 daysOverdue: daysOverdueForPerson(person),

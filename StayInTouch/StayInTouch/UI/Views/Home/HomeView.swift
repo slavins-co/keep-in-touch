@@ -21,8 +21,12 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                header
-                filters
+                VStack(spacing: 0) {
+                    header
+                    filters
+                }
+                .background(DS.Colors.secondaryBackground)
+
                 content
                 searchBar
             }
@@ -125,51 +129,123 @@ struct HomeView: View {
 
     private var filters: some View {
         HStack(spacing: DS.Spacing.sm) {
+            // Sort control (icon only)
             Menu {
-                Button("All") { viewModel.selectedGroupId = nil }
+                ForEach(HomeViewModel.SortOption.allCases, id: \.self) { option in
+                    Button {
+                        viewModel.sortOption = option
+                    } label: {
+                        if viewModel.sortOption == option {
+                            Label("Sort by \(option.rawValue)", systemImage: "checkmark")
+                        } else {
+                            Text("Sort by \(option.rawValue)")
+                        }
+                    }
+                }
+            } label: {
+                Image(systemName: viewModel.sortOption == .name
+                      ? "line.3.horizontal.decrease.circle.fill"
+                      : "line.3.horizontal.decrease.circle")
+                    .font(.title3)
+                    .foregroundStyle(viewModel.sortOption == .name ? DS.Colors.accent : DS.Colors.secondaryText)
+            }
+
+            // Frequency filter chip
+            frequencyFilterChip
+
+            // Tag filter chip
+            tagFilterChip
+
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.bottom, DS.Spacing.md)
+    }
+
+    private var frequencyFilterChip: some View {
+        let isActive = viewModel.selectedGroupId != nil
+        let displayText = viewModel.selectedGroupId.flatMap { id in
+            viewModel.groups.first(where: { $0.id == id })?.name
+        } ?? "Frequency"
+
+        return HStack(spacing: DS.Spacing.xs) {
+            Menu {
+                Button("All Frequencies") { viewModel.selectedGroupId = nil }
                 ForEach(viewModel.groups, id: \.id) { group in
                     Button(group.name) { viewModel.selectedGroupId = group.id }
                 }
             } label: {
-                filterLabel(text: viewModel.selectedGroupId.flatMap { id in
-                    viewModel.groups.first(where: { $0.id == id })?.name
-                } ?? "All")
-            }
-
-            Menu {
-                ForEach(HomeViewModel.SortOption.allCases, id: \.self) { option in
-                    Button(option.rawValue) { viewModel.sortOption = option }
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(displayText)
+                        .font(.subheadline)
+                        .lineLimit(1)
+                    if !isActive {
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
+                    }
                 }
-            } label: {
-                filterLabel(text: viewModel.sortOption.rawValue)
             }
 
+            if isActive {
+                Button { viewModel.selectedGroupId = nil } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(DS.Colors.accent)
+                }
+            }
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, 6)
+        .background(isActive ? DS.Colors.accent.opacity(0.12) : Color.clear)
+        .foregroundStyle(isActive ? DS.Colors.accent : DS.Colors.secondaryText)
+        .overlay(
+            Capsule()
+                .stroke(isActive ? Color.clear : DS.Colors.separator, lineWidth: 0.5)
+        )
+        .clipShape(Capsule())
+    }
+
+    private var tagFilterChip: some View {
+        let isActive = viewModel.selectedTagId != nil
+        let displayText = viewModel.selectedTagId.flatMap { id in
+            viewModel.tags.first(where: { $0.id == id })?.name
+        } ?? "Groups"
+
+        return HStack(spacing: DS.Spacing.xs) {
             Menu {
-                Button("All Tags") { viewModel.selectedTagId = nil }
+                Button("All Groups") { viewModel.selectedTagId = nil }
                 ForEach(viewModel.tags, id: \.id) { tag in
                     Button(tag.name) { viewModel.selectedTagId = tag.id }
                 }
             } label: {
-                filterLabel(text: viewModel.selectedTagId.flatMap { id in
-                    viewModel.tags.first(where: { $0.id == id })?.name
-                } ?? "All Tags")
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(displayText)
+                        .font(.subheadline)
+                        .lineLimit(1)
+                    if !isActive {
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
+                    }
+                }
+            }
+
+            if isActive {
+                Button { viewModel.selectedTagId = nil } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(DS.Colors.accent)
+                }
             }
         }
-        .padding(.horizontal)
-        .padding(.bottom, DS.Spacing.sm)
-    }
-
-    private func filterLabel(text: String) -> some View {
-        HStack {
-            Text(text)
-                .font(.callout)
-            Spacer()
-            Image(systemName: "chevron.down")
-                .font(.footnote)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .overlay(Capsule().stroke(DS.Colors.separator, lineWidth: 0.5))
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, 6)
+        .background(isActive ? DS.Colors.accent.opacity(0.12) : Color.clear)
+        .foregroundStyle(isActive ? DS.Colors.accent : DS.Colors.secondaryText)
+        .overlay(
+            Capsule()
+                .stroke(isActive ? Color.clear : DS.Colors.separator, lineWidth: 0.5)
+        )
+        .clipShape(Capsule())
     }
 
     // MARK: - Search Bar
@@ -230,14 +306,14 @@ struct HomeView: View {
                     let calculator = SLACalculator()
                     VStack(spacing: 0) {
                         ForEach(Array(viewModel.nameSortedPeople.enumerated()), id: \.element.id) { index, person in
-                            let groupName = groupsById[person.groupId]?.name ?? "Group"
+                            let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
                             let tags = person.tagIds.compactMap { tagsById[$0] }
                             NavigationLink {
                                 PersonDetailView(person: person)
                             } label: {
                                 ContactCard(
                                     person: person,
-                                    groupName: groupName,
+                                    frequencyName: frequencyName,
                                     tags: tags,
                                     status: calculator.status(for: person, in: viewModel.groups),
                                     daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
@@ -299,6 +375,7 @@ struct HomeView: View {
                 }
             }
             .padding(.horizontal)
+            .padding(.top, DS.Spacing.md)
             .padding(.bottom, DS.Spacing.xxl)
         }
         .refreshable {

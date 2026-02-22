@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ContactCard: View {
     let person: Person
-    let groupName: String
+    let frequencyName: String
     let tags: [Tag]
     let status: SLAStatus
     let daysOverdue: Int
@@ -60,7 +60,7 @@ struct ContactCard: View {
             }
 
             Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
-            Label(groupName, systemImage: "arrow.triangle.2.circlepath")
+            Label(frequencyName, systemImage: "arrow.triangle.2.circlepath")
         }
         .font(DS.Typography.metadata)
         .foregroundStyle(DS.Colors.secondaryText)

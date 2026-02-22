@@ -60,7 +60,7 @@ struct ManageGroupsView: View {
                 }
             }
         }
-        .navigationTitle("Manage Groups")
+        .navigationTitle("Manage Frequencies")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
@@ -96,9 +96,9 @@ struct ManageGroupsView: View {
         .alert("Cannot Delete", isPresented: $showCannotDeleteAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Default groups cannot be deleted.")
+            Text("Default frequencies cannot be deleted.")
         }
-        .alert("Delete Group?", isPresented: $showDeleteConfirm) {
+        .alert("Delete Frequency?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
                 guard let target = deleteTarget else { return }
                 let defaultGroup = viewModel.defaultGroup()
@@ -111,7 +111,7 @@ struct ManageGroupsView: View {
             Button("Cancel", role: .cancel) { deleteTarget = nil }
         } message: {
             if let target = deleteTarget, viewModel.countsByGroup[target.id, default: 0] > 0 {
-                Text("\(viewModel.countsByGroup[target.id, default: 0]) contacts will be moved to the default group.")
+                Text("\(viewModel.countsByGroup[target.id, default: 0]) contacts will be moved to the default frequency.")
             } else {
                 Text("This action cannot be undone.")
             }

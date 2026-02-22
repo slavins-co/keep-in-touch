@@ -36,7 +36,7 @@ struct GroupEditorSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Group Name") {
+                Section("Frequency Name") {
                     TextField("Close Friends", text: $name)
                 }
 
@@ -59,7 +59,7 @@ struct GroupEditorSheet: View {
                     Toggle("Set as default", isOn: $isDefault)
                 }
             }
-            .navigationTitle(group == nil ? "New Group" : "Edit Group")
+            .navigationTitle(group == nil ? "New Frequency" : "Edit Frequency")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {

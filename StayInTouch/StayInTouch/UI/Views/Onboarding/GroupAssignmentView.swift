@@ -12,7 +12,7 @@ struct GroupAssignmentView: View {
 
     var body: some View {
         VStack(spacing: DS.Spacing.md) {
-            Text("Choose a Cadence")
+            Text("Choose a Frequency")
                 .font(DS.Typography.title)
                 .padding(.top)
 
@@ -27,7 +27,7 @@ struct GroupAssignmentView: View {
                     Text(contact.displayName)
                         .font(DS.Typography.contactName)
 
-                    Picker("Group", selection: binding(for: contact.identifier)) {
+                    Picker("Frequency", selection: binding(for: contact.identifier)) {
                         ForEach(viewModel.groups, id: \.id) { group in
                             Text(group.name).tag(group.id)
                         }

@@ -515,6 +515,64 @@ Sanitize phone numbers and show inline feedback when openURL fails.
 **Prevention Rule:**
 Treat external URL launches as fallible and provide user-visible feedback on failure.
 
+### 2026-02-16 - 🎨 UI/UX - SwiftUI Sheet Stacking Timing Bug
+
+**What Happened:**
+Settings → Add from Contacts → Assign Groups showed an empty contact list. The `SettingsGroupAssignmentView` sheet appeared but no contacts were rendered.
+
+**Root Cause:**
+The `onImport` callback dismissed the picker sheet (`showNewContactsPicker = false`) and presented the group assignment sheet (`showGroupAssignment = true`) in the same render cycle. SwiftUI's `.sheet` content closure captured `selectedForImport` at its pre-update (empty) value because state mutations hadn't propagated yet.
+
+Additionally, `NewContactsPickerView` called `dismiss()` after `onImport()`, creating a double-dismiss.
+
+**Solution:**
+Added a `shouldShowGroupAssignment` flag and used `.onChange(of: showNewContactsPicker)` to defer the second sheet presentation until after the first sheet fully dismissed.
+
+**Prevention Rule:**
+Never dismiss one sheet and present another in the same render cycle. Use `.onChange(of:)` to detect when the first sheet has fully dismissed, then present the second. This ensures all state mutations have propagated.
+
+**Code Example:**
+```swift
+// Bad - Sheet stacking in same render cycle
+onImport: { selected in
+    selectedForImport = selected
+    showSheet1 = false       // dismiss
+    showSheet2 = true        // present — captures stale state!
+}
+
+// Good - Deferred presentation via .onChange
+onImport: { selected in
+    selectedForImport = selected
+    shouldShowSheet2 = true
+    showSheet1 = false
+}
+.onChange(of: showSheet1) { _, isPresented in
+    if !isPresented && shouldShowSheet2 {
+        shouldShowSheet2 = false
+        showSheet2 = true    // state is settled
+    }
+}
+```
+
+### 2026-02-16 - 🏗️ Architecture - Person Struct Initializer Blast Radius
+
+**What Happened:**
+Adding `snoozedUntil: Date?` to `Person` required updating ~15 initializer call sites across the app and tests. Same pattern occurred with `timeOfDay: TimeOfDay?` on `TouchEvent` (~4 sites).
+
+**Root Cause:**
+Swift structs use memberwise initializers — every new property requires updating every call site.
+
+**Solution:**
+Used subagents with `replace_all` for consistent patterns (e.g., inserting `snoozedUntil: nil,` after `customBreachTime: nil,` across all files).
+
+**Prevention Rule:**
+When adding optional properties to domain entities:
+1. Always add with default `nil` value
+2. Use `grep` to find ALL initializer call sites before editing
+3. For Person (~15 sites), use `replace_all` on a unique neighboring pattern
+4. For TouchEvent (~4 sites), manual updates are fine
+5. Always build after to catch any missed sites
+
 ---
 
 ## Historical Lessons

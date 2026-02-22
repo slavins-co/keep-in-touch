@@ -32,7 +32,7 @@ struct GroupPickerSheet: View {
                     }
                 }
             }
-            .navigationTitle("Change Cadence")
+            .navigationTitle("Change Frequency")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
