@@ -281,7 +281,6 @@ struct PersonDetailView: View {
 
     private var conversationContextCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            // Notes heading — persistent label even when field has content
             Text("Next Time")
                 .font(DS.Typography.caption)
                 .foregroundStyle(DS.Colors.tertiaryText)
@@ -303,35 +302,6 @@ struct PersonDetailView: View {
                         viewModel.saveNextTouchNotes(nextTouchNotesText)
                     }
                 }
-
-            // Internal separator
-            Rectangle()
-                .fill(DS.Colors.separator.opacity(0.5))
-                .frame(height: 0.5)
-
-            // Last interaction summary
-            if let lastTouch = viewModel.touchEvents.first {
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: DS.touchMethodIcon(lastTouch.method))
-                            .foregroundStyle(DS.Colors.secondaryText)
-                            .font(.caption)
-                        Text("\(lastTouch.method.rawValue) \u{00B7} \(lastTouch.at.formatted(date: .abbreviated, time: .omitted))\(lastTouch.timeOfDay.map { " \u{00B7} \($0.rawValue)" } ?? "")")
-                            .font(DS.Typography.metadata)
-                            .foregroundStyle(DS.Colors.secondaryText)
-                    }
-                    if let notes = lastTouch.notes, !notes.isEmpty {
-                        Text(notes)
-                            .font(DS.Typography.metadata)
-                            .foregroundStyle(DS.Colors.tertiaryText)
-                            .lineLimit(3)
-                    }
-                }
-            } else {
-                Text("No interactions yet")
-                    .font(DS.Typography.metadata)
-                    .foregroundStyle(DS.Colors.tertiaryText)
-            }
         }
         .padding(DS.Spacing.lg)
         .background(DS.Colors.secondaryBackground)
@@ -342,28 +312,29 @@ struct PersonDetailView: View {
         }
     }
 
-    /// Events beyond the first (which is shown in the conversation context card).
-    private var remainingTouchEvents: [TouchEvent] {
-        Array(viewModel.touchEvents.dropFirst())
-    }
-
     private var historyCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            if !remainingTouchEvents.isEmpty {
-                HStack {
-                    Text("Contact History")
-                        .font(DS.Typography.sectionHeader)
-                        .foregroundStyle(DS.Colors.secondaryText)
-                    Spacer()
-                    if remainingTouchEvents.count > 3 {
-                        Button(showFullHistory ? "Hide" : "See All") {
-                            showFullHistory.toggle()
-                        }
+            HStack {
+                Text("Contact History")
+                    .font(DS.Typography.sectionHeader)
+                    .foregroundStyle(DS.Colors.secondaryText)
+                Spacer()
+                if viewModel.touchEvents.count > 3 {
+                    Button(showFullHistory ? "Hide" : "See All") {
+                        showFullHistory.toggle()
                     }
                 }
+            }
 
-                let events = showFullHistory ? remainingTouchEvents : Array(remainingTouchEvents.prefix(3))
-                ForEach(events, id: \.id) { event in
+            if viewModel.touchEvents.isEmpty {
+                Text("No connections yet")
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.tertiaryText)
+            } else {
+                let events = showFullHistory ? viewModel.touchEvents : Array(viewModel.touchEvents.prefix(3))
+                ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
+                    let isLatest = index == 0
+
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         HStack(spacing: DS.Spacing.xs) {
                             Image(systemName: DS.touchMethodIcon(event.method))
@@ -384,6 +355,14 @@ struct PersonDetailView: View {
                         .font(DS.Typography.caption)
                     }
                     .padding(.vertical, DS.Spacing.sm)
+                    .padding(.leading, DS.Spacing.sm)
+                    .overlay(alignment: .leading) {
+                        if isLatest {
+                            RoundedRectangle(cornerRadius: 1.5)
+                                .fill(DS.Colors.accent)
+                                .frame(width: 3)
+                        }
+                    }
                 }
             }
         }
