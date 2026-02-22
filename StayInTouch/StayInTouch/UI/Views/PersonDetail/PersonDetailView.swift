@@ -268,7 +268,7 @@ struct PersonDetailView: View {
         Button {
             showLogTouch = true
         } label: {
-            Label("Log a Touch", systemImage: "plus.circle.fill")
+            Label("Log Connection", systemImage: "plus.circle.fill")
                 .font(.body.weight(.semibold))
                 .frame(maxWidth: .infinity)
         }
@@ -281,8 +281,12 @@ struct PersonDetailView: View {
 
     private var conversationContextCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            // Notes for next time
-            TextField("Notes for next time...", text: $nextTouchNotesText, axis: .vertical)
+            // Notes heading — persistent label even when field has content
+            Text("Next Time")
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Colors.tertiaryText)
+
+            TextField("What to talk about...", text: $nextTouchNotesText, axis: .vertical)
                 .font(.body)
                 .lineLimit(3...6)
                 .focused($isNextTouchNotesFocused)
@@ -338,26 +342,27 @@ struct PersonDetailView: View {
         }
     }
 
+    /// Events beyond the first (which is shown in the conversation context card).
+    private var remainingTouchEvents: [TouchEvent] {
+        Array(viewModel.touchEvents.dropFirst())
+    }
+
     private var historyCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack {
-                Text("Contact History")
-                    .font(DS.Typography.sectionHeader)
-                    .foregroundStyle(DS.Colors.secondaryText)
-                Spacer()
-                if viewModel.touchEvents.count > 3 {
-                    Button(showFullHistory ? "Hide" : "See All") {
-                        showFullHistory.toggle()
+            if !remainingTouchEvents.isEmpty {
+                HStack {
+                    Text("Contact History")
+                        .font(DS.Typography.sectionHeader)
+                        .foregroundStyle(DS.Colors.secondaryText)
+                    Spacer()
+                    if remainingTouchEvents.count > 3 {
+                        Button(showFullHistory ? "Hide" : "See All") {
+                            showFullHistory.toggle()
+                        }
                     }
                 }
-            }
 
-            if viewModel.touchEvents.isEmpty {
-                Text("A house of friendship begins with a single brick.")
-                    .font(DS.Typography.metadata)
-                    .foregroundStyle(DS.Colors.secondaryText)
-            } else {
-                let events = showFullHistory ? viewModel.touchEvents : Array(viewModel.touchEvents.prefix(3))
+                let events = showFullHistory ? remainingTouchEvents : Array(remainingTouchEvents.prefix(3))
                 ForEach(events, id: \.id) { event in
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         HStack(spacing: DS.Spacing.xs) {
