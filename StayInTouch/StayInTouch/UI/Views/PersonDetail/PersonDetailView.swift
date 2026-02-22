@@ -28,6 +28,7 @@ struct PersonDetailView: View {
     @State private var showSnoozeDatePicker = false
     @State private var pickedSnoozeDate = Date()
     @State private var nextTouchNotesText: String = ""
+    @State private var settingsExpanded = false
     @FocusState private var isNextTouchNotesFocused: Bool
 
     init(person: Person) {
@@ -37,35 +38,31 @@ struct PersonDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                // TIER 1: Hero Zone
                 header
-                    .padding(.bottom, DS.Spacing.md)
-                SubtleDivider()
+                    .padding(.bottom, DS.Spacing.lg)
 
                 if viewModel.person.isPaused {
                     pausedBanner
-                    SubtleDivider()
                 }
 
-                cadenceCard
+                reachOutButtons
+
+                logTouchButton
+
                 SubtleDivider()
 
-                nextTouchNotesCard
+                // TIER 2: Context Zone
+                conversationContextCard
+
                 SubtleDivider()
 
                 historyCard
+
                 SubtleDivider()
 
-                reachOutCard
-                SubtleDivider()
-
-                tagsCard
-                SubtleDivider()
-
-                notificationsCard
-                SubtleDivider()
-
-                actionButtons
-                    .padding(.vertical, DS.Spacing.lg)
+                // TIER 3: Settings Zone
+                detailsAndSettings
             }
             .padding(.horizontal, DS.Spacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -203,7 +200,7 @@ struct PersonDetailView: View {
         }
     }
 
-    // MARK: - Header
+    // MARK: - Tier 1: Hero Zone
 
     private var header: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
@@ -218,8 +215,6 @@ struct PersonDetailView: View {
         }
     }
 
-    // MARK: - Paused Banner
-
     private var pausedBanner: some View {
         HStack {
             Text("Tracking paused")
@@ -231,22 +226,200 @@ struct PersonDetailView: View {
         .padding(DS.Spacing.md)
         .background(DS.Colors.statusUnknown.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.bottom, DS.Spacing.md)
+    }
+
+    private var reachOutButtons: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            HStack(spacing: 0) {
+                reachOutButton(icon: "message.fill", label: "Message") { open(.message) }
+                reachOutButton(icon: "phone.fill", label: "Call") { open(.call) }
+                reachOutButton(icon: "envelope.fill", label: "Email") { open(.email) }
+            }
+
+            if let message = viewModel.quickActionMessage {
+                Text(message)
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
+            }
+        }
         .padding(.vertical, DS.Spacing.md)
     }
 
-    // MARK: - Cadence
+    private func reachOutButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: DS.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(DS.Colors.accent)
+                    .frame(width: 48, height: 48)
+                    .background(DS.Colors.accent.opacity(0.12))
+                    .clipShape(Circle())
+                Text(label)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Colors.accent)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+    }
 
-    private var cadenceCard: some View {
+    private var logTouchButton: some View {
+        Button {
+            showLogTouch = true
+        } label: {
+            Label("Log a Touch", systemImage: "plus.circle.fill")
+                .font(.body.weight(.semibold))
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+        .padding(.bottom, DS.Spacing.md)
+    }
+
+    // MARK: - Tier 2: Context Zone
+
+    private var conversationContextCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // Notes for next time
+            TextField("Notes for next time...", text: $nextTouchNotesText, axis: .vertical)
+                .font(.body)
+                .lineLimit(3...6)
+                .focused($isNextTouchNotesFocused)
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            isNextTouchNotesFocused = false
+                        }
+                    }
+                }
+                .onChange(of: isNextTouchNotesFocused) { _, focused in
+                    if !focused {
+                        viewModel.saveNextTouchNotes(nextTouchNotesText)
+                    }
+                }
+
+            // Internal separator
+            Rectangle()
+                .fill(DS.Colors.separator.opacity(0.5))
+                .frame(height: 0.5)
+
+            // Last interaction summary
+            if let lastTouch = viewModel.touchEvents.first {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: DS.touchMethodIcon(lastTouch.method))
+                            .foregroundStyle(DS.Colors.secondaryText)
+                            .font(.caption)
+                        Text("\(lastTouch.method.rawValue) \u{00B7} \(lastTouch.at.formatted(date: .abbreviated, time: .omitted))\(lastTouch.timeOfDay.map { " \u{00B7} \($0.rawValue)" } ?? "")")
+                            .font(DS.Typography.metadata)
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
+                    if let notes = lastTouch.notes, !notes.isEmpty {
+                        Text(notes)
+                            .font(DS.Typography.metadata)
+                            .foregroundStyle(DS.Colors.tertiaryText)
+                            .lineLimit(3)
+                    }
+                }
+            } else {
+                Text("No interactions yet")
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.tertiaryText)
+            }
+        }
+        .padding(DS.Spacing.lg)
+        .background(DS.Colors.secondaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.vertical, DS.Spacing.md)
+        .onAppear {
+            nextTouchNotesText = viewModel.person.nextTouchNotes ?? ""
+        }
+    }
+
+    private var historyCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text("Cadence")
+                Text("Contact History")
                     .font(DS.Typography.sectionHeader)
                     .foregroundStyle(DS.Colors.secondaryText)
                 Spacer()
+                if viewModel.touchEvents.count > 3 {
+                    Button(showFullHistory ? "Hide" : "See All") {
+                        showFullHistory.toggle()
+                    }
+                }
+            }
+
+            if viewModel.touchEvents.isEmpty {
+                Text("A house of friendship begins with a single brick.")
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
+            } else {
+                let events = showFullHistory ? viewModel.touchEvents : Array(viewModel.touchEvents.prefix(3))
+                ForEach(events, id: \.id) { event in
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Image(systemName: DS.touchMethodIcon(event.method))
+                                .foregroundStyle(DS.Colors.secondaryText)
+                                .font(.caption)
+                            Text("\(event.method.rawValue) \u{00B7} \(event.at.formatted(date: .abbreviated, time: .omitted))\(event.timeOfDay.map { " \u{00B7} \($0.rawValue)" } ?? "")")
+                                .font(DS.Typography.metadata)
+                        }
+                        if let notes = event.notes, !notes.isEmpty {
+                            Text(notes)
+                                .font(DS.Typography.metadata)
+                                .foregroundStyle(DS.Colors.secondaryText)
+                        }
+                        HStack(spacing: DS.Spacing.md) {
+                            Button("Edit") { showEditTouch = event }
+                            Button("Delete", role: .destructive) { showDeleteConfirm = event }
+                        }
+                        .font(DS.Typography.caption)
+                    }
+                    .padding(.vertical, DS.Spacing.sm)
+                }
+            }
+        }
+        .padding(.vertical, DS.Spacing.md)
+    }
+
+    // MARK: - Tier 3: Settings Zone
+
+    private var detailsAndSettings: some View {
+        DisclosureGroup(isExpanded: $settingsExpanded) {
+            VStack(alignment: .leading, spacing: 0) {
+                cadenceSection
+                SubtleDivider()
+                tagsSection
+                SubtleDivider()
+                notificationsSection
+                SubtleDivider()
+                dangerSection
+            }
+        } label: {
+            Text("Details & Settings")
+                .font(DS.Typography.sectionHeader)
+                .foregroundStyle(DS.Colors.secondaryText)
+        }
+        .tint(DS.Colors.secondaryText)
+        .padding(.vertical, DS.Spacing.md)
+    }
+
+    private var cadenceSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack {
+                Text("CADENCE")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Colors.tertiaryText)
+                    .tracking(0.5)
+                Spacer()
                 Button("Change") { showChangeGroup = true }
+                    .font(DS.Typography.caption)
             }
             Text(viewModel.group?.name ?? "Group")
-                .font(.title3)
+                .font(.body)
             Text(cadenceSubtext())
                 .font(DS.Typography.metadata)
                 .foregroundStyle(DS.Colors.secondaryText)
@@ -280,48 +453,16 @@ struct PersonDetailView: View {
         .padding(.vertical, DS.Spacing.md)
     }
 
-    // MARK: - Next Touch Notes
-
-    private var nextTouchNotesCard: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text("Next Time")
-                .font(DS.Typography.sectionHeader)
-                .foregroundStyle(DS.Colors.secondaryText)
-
-            TextField("What to remember next time?", text: $nextTouchNotesText, axis: .vertical)
-                .font(.body)
-                .lineLimit(3...6)
-                .focused($isNextTouchNotesFocused)
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") {
-                            isNextTouchNotesFocused = false
-                        }
-                    }
-                }
-                .onChange(of: isNextTouchNotesFocused) { _, focused in
-                    if !focused {
-                        viewModel.saveNextTouchNotes(nextTouchNotesText)
-                    }
-                }
-        }
-        .padding(.vertical, DS.Spacing.md)
-        .onAppear {
-            nextTouchNotesText = viewModel.person.nextTouchNotes ?? ""
-        }
-    }
-
-    // MARK: - Tags
-
-    private var tagsCard: some View {
+    private var tagsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text("Tags")
-                    .font(DS.Typography.sectionHeader)
-                    .foregroundStyle(DS.Colors.secondaryText)
+                Text("TAGS")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Colors.tertiaryText)
+                    .tracking(0.5)
                 Spacer()
                 Button("Manage") { showManageTags = true }
+                    .font(DS.Typography.caption)
             }
 
             if viewModel.person.tagIds.isEmpty {
@@ -343,105 +484,12 @@ struct PersonDetailView: View {
         .padding(.vertical, DS.Spacing.md)
     }
 
-    // MARK: - History
-
-    private var historyCard: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack {
-                Text("Contact History")
-                    .font(DS.Typography.sectionHeader)
-                    .foregroundStyle(DS.Colors.secondaryText)
-                Spacer()
-                if viewModel.touchEvents.count > 1 {
-                    Button(showFullHistory ? "Hide" : "See All") {
-                        showFullHistory.toggle()
-                    }
-                }
-                Button {
-                    showLogTouch = true
-                } label: {
-                    Label("Log Touch", systemImage: "plus.circle.fill")
-                        .font(DS.Typography.metadata)
-                }
-            }
-
-            if viewModel.touchEvents.isEmpty {
-                Text("A house of friendship begins with a single brick.")
-                    .font(DS.Typography.metadata)
-                    .foregroundStyle(DS.Colors.secondaryText)
-            } else {
-                let events = showFullHistory ? viewModel.touchEvents : Array(viewModel.touchEvents.prefix(1))
-                ForEach(events, id: \.id) { event in
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(systemName: DS.touchMethodIcon(event.method))
-                                .foregroundStyle(DS.Colors.secondaryText)
-                                .font(.caption)
-                            Text("\(event.method.rawValue) · \(event.at.formatted(date: .abbreviated, time: .omitted))\(event.timeOfDay.map { " · \($0.rawValue)" } ?? "")")
-                                .font(DS.Typography.metadata)
-                        }
-                        if let notes = event.notes, !notes.isEmpty {
-                            Text(notes)
-                                .font(DS.Typography.metadata)
-                                .foregroundStyle(DS.Colors.secondaryText)
-                        }
-                        HStack(spacing: DS.Spacing.md) {
-                            Button("Edit") { showEditTouch = event }
-                            Button("Delete", role: .destructive) { showDeleteConfirm = event }
-                        }
-                        .font(DS.Typography.caption)
-                    }
-                    .padding(.vertical, DS.Spacing.sm)
-                }
-            }
-        }
-        .padding(.vertical, DS.Spacing.md)
-    }
-
-    // MARK: - Reach Out
-
-    private var reachOutCard: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text("Reach Out")
-                .font(DS.Typography.sectionHeader)
-                .foregroundStyle(DS.Colors.secondaryText)
-
-            HStack(spacing: DS.Spacing.xxxl) {
-                reachOutButton(icon: "message.fill", label: "Message", action: { open(.message) })
-                reachOutButton(icon: "phone.fill", label: "Call", action: { open(.call) })
-                reachOutButton(icon: "envelope.fill", label: "Email", action: { open(.email) })
-            }
-
-            if let message = viewModel.quickActionMessage {
-                Text(message)
-                    .font(DS.Typography.metadata)
-                    .foregroundStyle(DS.Colors.secondaryText)
-            }
-        }
-        .padding(.vertical, DS.Spacing.md)
-    }
-
-    private func reachOutButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: DS.Spacing.xs) {
-                Image(systemName: icon)
-                    .font(.title3)
-                    .foregroundStyle(DS.Colors.accent)
-                Text(label)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Colors.accent)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Notifications
-
-    private var notificationsCard: some View {
+    private var notificationsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text("Notifications")
-                .font(DS.Typography.sectionHeader)
-                .foregroundStyle(DS.Colors.secondaryText)
+            Text("NOTIFICATIONS")
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Colors.tertiaryText)
+                .tracking(0.5)
 
             Toggle(isOn: Binding(
                 get: { viewModel.person.notificationsMuted },
@@ -471,16 +519,18 @@ struct PersonDetailView: View {
         .padding(.vertical, DS.Spacing.md)
     }
 
-    // MARK: - Action Buttons
-
-    @ViewBuilder
-    private var actionButtons: some View {
-        if !viewModel.person.isPaused {
-            Button("Pause") { viewModel.togglePause() }
-                .foregroundStyle(DS.Colors.secondaryText)
+    private var dangerSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            if !viewModel.person.isPaused {
+                Button("Pause Tracking") { viewModel.togglePause() }
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
+            }
+            Button("Remove from App") { showRemoveConfirm = true }
+                .font(DS.Typography.metadata)
+                .foregroundStyle(DS.Colors.destructive)
         }
-        Button("Remove from App") { showRemoveConfirm = true }
-            .foregroundStyle(DS.Colors.destructive)
+        .padding(.vertical, DS.Spacing.md)
     }
 
     // MARK: - Computed Properties
@@ -526,9 +576,9 @@ struct PersonDetailView: View {
             let dueDate = Calendar.current.date(byAdding: .day, value: Int(group.slaDays), to: effectiveDate)
             let formatted = dueDate.map { Self.dueDateFormatter.string(from: $0) } ?? "?"
             if remaining > 0 {
-                return "Connect every \(group.slaDays) days · Due \(formatted) · \(remaining)d remaining"
+                return "Connect every \(group.slaDays) days \u{00B7} Due \(formatted) \u{00B7} \(remaining)d remaining"
             }
-            return "Connect every \(group.slaDays) days · Was due \(formatted)"
+            return "Connect every \(group.slaDays) days \u{00B7} Was due \(formatted)"
         }
         return "Connect every \(group.slaDays) days"
     }
