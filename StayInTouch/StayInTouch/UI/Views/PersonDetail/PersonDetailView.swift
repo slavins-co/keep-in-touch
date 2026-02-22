@@ -292,6 +292,14 @@ struct PersonDetailView: View {
                 .font(.body)
                 .lineLimit(3...6)
                 .focused($isNextTouchNotesFocused)
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            isNextTouchNotesFocused = false
+                        }
+                    }
+                }
                 .onChange(of: isNextTouchNotesFocused) { _, focused in
                     if !focused {
                         viewModel.saveNextTouchNotes(nextTouchNotesText)

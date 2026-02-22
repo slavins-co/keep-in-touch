@@ -17,7 +17,7 @@ struct ContactListSection: View {
     let tagsById: [UUID: Tag]
     let statusForPerson: (Person) -> SLAStatus
     let daysOverdueForPerson: (Person) -> Int
-    let metadataTextForPerson: (Person) -> String
+    let timeAgoForPerson: (Person) -> String
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,7 +52,8 @@ struct ContactListSection: View {
                                 tags: tags,
                                 status: statusForPerson(person),
                                 daysOverdue: daysOverdueForPerson(person),
-                                metadataText: metadataTextForPerson(person)
+                                timeAgo: timeAgoForPerson(person),
+                                lastMethod: person.lastTouchMethod
                             )
                         }
                         .buttonStyle(.plain)

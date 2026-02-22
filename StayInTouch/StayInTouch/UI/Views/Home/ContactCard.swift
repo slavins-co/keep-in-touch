@@ -13,32 +13,57 @@ struct ContactCard: View {
     let tags: [Tag]
     let status: SLAStatus
     let daysOverdue: Int
-    let metadataText: String
+    let timeAgo: String
+    let lastMethod: TouchMethod?
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack {
+            // Row 1: Name + inline tags + status
+            HStack(spacing: DS.Spacing.sm) {
                 Text(person.displayName)
                     .font(DS.Typography.contactName)
                     .lineLimit(1)
-                Spacer()
+                    .layoutPriority(1)
+
+                if !tags.isEmpty {
+                    HStack(spacing: DS.Spacing.xs) {
+                        ForEach(tags.prefix(2), id: \.id) { tag in
+                            TagPill(tag: tag)
+                        }
+                        if tags.count > 2 {
+                            Text("+\(tags.count - 2)")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(DS.Colors.secondaryText)
+                        }
+                    }
+                    .lineLimit(1)
+                }
+
+                Spacer(minLength: DS.Spacing.xs)
                 StatusIndicator(status: status, daysOverdue: daysOverdue)
             }
 
-            Text(metadataText)
-                .font(DS.Typography.metadata)
-                .foregroundStyle(DS.Colors.secondaryText)
-                .lineLimit(1)
-
-            if !tags.isEmpty {
-                HStack(spacing: DS.Spacing.xs) {
-                    ForEach(tags, id: \.id) { tag in
-                        TagPill(tag: tag)
-                    }
-                }
-            }
+            // Row 2: Icon-labeled metadata
+            metadataRow
         }
         .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
+    }
+
+    private var metadataRow: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Label(timeAgo, systemImage: "clock")
+
+            if let method = lastMethod {
+                Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
+                Label(method.rawValue, systemImage: DS.touchMethodIcon(method))
+            }
+
+            Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
+            Label(groupName, systemImage: "arrow.triangle.2.circlepath")
+        }
+        .font(DS.Typography.metadata)
+        .foregroundStyle(DS.Colors.secondaryText)
+        .lineLimit(1)
     }
 }

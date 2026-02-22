@@ -24,16 +24,9 @@ struct HomeView: View {
                 header
                 filters
                 content
+                searchBar
             }
         }
-        .searchable(
-            text: Binding(
-                get: { viewModel.searchText },
-                set: { viewModel.updateSearchText($0) }
-            ),
-            placement: .navigationBarDrawer(displayMode: .always),
-            prompt: "Search contacts..."
-        )
         .onChange(of: viewModel.selectedGroupId) { _, _ in
             viewModel.applyFilters()
         }
@@ -179,6 +172,37 @@ struct HomeView: View {
         .overlay(Capsule().stroke(DS.Colors.separator, lineWidth: 0.5))
     }
 
+    // MARK: - Search Bar
+
+    private var searchBar: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(DS.Colors.tertiaryText)
+            TextField(
+                "Search contacts...",
+                text: Binding(
+                    get: { viewModel.searchText },
+                    set: { viewModel.updateSearchText($0) }
+                )
+            )
+            .textFieldStyle(.plain)
+            if !viewModel.searchText.isEmpty {
+                Button {
+                    viewModel.updateSearchText("")
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(DS.Colors.tertiaryText)
+                }
+            }
+        }
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.sm)
+        .background(DS.Colors.secondaryBackground)
+        .clipShape(Capsule())
+        .padding(.horizontal)
+        .padding(.bottom, DS.Spacing.sm)
+    }
+
     // MARK: - Content
 
     private var content: some View {
@@ -217,12 +241,8 @@ struct HomeView: View {
                                     tags: tags,
                                     status: calculator.status(for: person, in: viewModel.groups),
                                     daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
-                                    metadataText: metadataText(
-                                        for: person,
-                                        groupName: groupName,
-                                        status: calculator.status(for: person, in: viewModel.groups),
-                                        includeStatus: true
-                                    )
+                                    timeAgo: timeAgoText(for: person),
+                                    lastMethod: person.lastTouchMethod
                                 )
                             }
                             .buttonStyle(.plain)
@@ -248,15 +268,7 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        metadataTextForPerson: {
-                            let groupName = groupsById[$0.groupId]?.name ?? "Group"
-                            return metadataText(
-                                for: $0,
-                                groupName: groupName,
-                                status: calculator.status(for: $0, in: viewModel.groups),
-                                includeStatus: false
-                            )
-                        }
+                        timeAgoForPerson: { timeAgoText(for: $0) }
                     )
 
                     ContactListSection(
@@ -269,15 +281,7 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        metadataTextForPerson: {
-                            let groupName = groupsById[$0.groupId]?.name ?? "Group"
-                            return metadataText(
-                                for: $0,
-                                groupName: groupName,
-                                status: calculator.status(for: $0, in: viewModel.groups),
-                                includeStatus: false
-                            )
-                        }
+                        timeAgoForPerson: { timeAgoText(for: $0) }
                     )
 
                     ContactListSection(
@@ -290,15 +294,7 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        metadataTextForPerson: {
-                            let groupName = groupsById[$0.groupId]?.name ?? "Group"
-                            return metadataText(
-                                for: $0,
-                                groupName: groupName,
-                                status: calculator.status(for: $0, in: viewModel.groups),
-                                includeStatus: false
-                            )
-                        }
+                        timeAgoForPerson: { timeAgoText(for: $0) }
                     )
                 }
             }
@@ -362,31 +358,10 @@ struct HomeView: View {
         "You're already up to date."
     }
 
-    private func metadataText(for person: Person, groupName: String, status: SLAStatus, includeStatus: Bool) -> String {
-        var parts: [String] = [groupName]
-        if includeStatus {
-            parts.append(statusLabel(status))
-        }
-        parts.append(timeAgoText(for: person))
-        if let method = person.lastTouchMethod {
-            parts.append(method.rawValue)
-        }
-        return parts.joined(separator: " \u{2022} ")
-    }
-
     private func timeAgoText(for person: Person) -> String {
         let days = SLACalculator().daysSinceLastTouch(for: person)
-        guard let days else { return "No touch" }
+        guard let days else { return "No contact" }
         if days == 0 { return "Today" }
         return "\(days)d ago"
-    }
-
-    private func statusLabel(_ status: SLAStatus) -> String {
-        switch status {
-        case .inSLA: return "All good"
-        case .dueSoon: return "Check in soon"
-        case .outOfSLA: return "Overdue"
-        case .unknown: return "Unknown"
-        }
     }
 }
