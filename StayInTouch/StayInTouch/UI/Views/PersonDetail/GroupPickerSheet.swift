@@ -23,10 +23,11 @@ struct GroupPickerSheet: View {
                 } label: {
                     HStack {
                         Text(group.name)
+                            .font(DS.Typography.contactName)
                         Spacer()
                         if group.id == selectedId {
                             Image(systemName: "checkmark")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(DS.Colors.accent)
                         }
                     }
                 }

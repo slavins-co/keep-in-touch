@@ -20,24 +20,27 @@ struct ContactListSection: View {
     let metadataTextForPerson: (Person) -> String
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 0) {
             Button(action: onToggle) {
                 HStack {
-                    Circle()
-                        .fill(Color(hex: colorHex))
-                        .frame(width: 10, height: 10)
-                    Text("\(title) (\(people.count))")
-                        .font(.callout)
+                    Text(title)
+                        .font(DS.Typography.sectionHeader)
+                        .foregroundStyle(Color(hex: colorHex))
+                    Text("\(people.count)")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(DS.Colors.secondaryText)
                     Spacer()
-                    Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
-                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .rotationEffect(.degrees(isCollapsed ? 0 : 90))
+                        .foregroundStyle(DS.Colors.secondaryText)
+                        .font(.caption)
                 }
             }
             .buttonStyle(.plain)
 
             if !isCollapsed {
-                VStack(spacing: 8) {
-                    ForEach(people, id: \.id) { person in
+                VStack(spacing: 0) {
+                    ForEach(Array(people.enumerated()), id: \.element.id) { index, person in
                         let groupName = groupsById[person.groupId]?.name ?? "Group"
                         let tags = person.tagIds.compactMap { tagsById[$0] }
                         NavigationLink {
@@ -53,6 +56,11 @@ struct ContactListSection: View {
                             )
                         }
                         .buttonStyle(.plain)
+
+                        if index < people.count - 1 {
+                            SubtleDivider()
+                                .padding(.leading, DS.Spacing.lg)
+                        }
                     }
                 }
                 .transition(.opacity)

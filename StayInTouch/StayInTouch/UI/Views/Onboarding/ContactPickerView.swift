@@ -26,9 +26,9 @@ struct ContactPickerView: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DS.Spacing.md) {
             Text("Who Do You Want to Stay in Touch With?")
-                .font(.title2)
+                .font(DS.Typography.title)
                 .padding(.top)
 
             TextField("Search contacts...", text: $viewModel.searchText)
@@ -45,31 +45,32 @@ struct ContactPickerView: View {
                                         Button(action: { viewModel.toggleSelection(for: contact.identifier) }) {
                                             HStack {
                                                 Text(contact.displayName)
+                                                    .font(DS.Typography.contactName)
                                                 Spacer()
                                                 if viewModel.selectedContactIds.contains(contact.identifier) {
                                                     Image(systemName: "checkmark.circle.fill")
-                                                        .foregroundStyle(.blue)
+                                                        .foregroundStyle(DS.Colors.accent)
                                                 } else {
                                                     Image(systemName: "circle")
-                                                        .foregroundStyle(.secondary)
+                                                        .foregroundStyle(DS.Colors.secondaryText)
                                                 }
                                             }
-                                            .padding(.horizontal)
-                                            .padding(.vertical, 12)
-                                            .background(Color(uiColor: .systemBackground))
+                                            .padding(.horizontal, DS.Spacing.lg)
+                                            .padding(.vertical, DS.Spacing.md)
+                                            .background(DS.Colors.background)
                                         }
                                         .buttonStyle(.plain)
                                         Divider()
-                                            .padding(.leading)
+                                            .padding(.leading, DS.Spacing.lg)
                                     }
                                 } header: {
                                     Text(section.0)
-                                        .font(.headline)
-                                        .foregroundStyle(.secondary)
+                                        .font(DS.Typography.sectionHeader)
+                                        .foregroundStyle(DS.Colors.secondaryText)
                                         .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.horizontal)
-                                        .padding(.vertical, 8)
-                                        .background(Color(uiColor: .systemGroupedBackground))
+                                        .padding(.horizontal, DS.Spacing.lg)
+                                        .padding(.vertical, DS.Spacing.sm)
+                                        .background(DS.Colors.groupedBackground)
                                 }
                                 .id(section.0)
                             }
@@ -81,7 +82,7 @@ struct ContactPickerView: View {
                             proxy.scrollTo(section, anchor: .top)
                         }
                     }
-                    .padding(.trailing, 4)
+                    .padding(.trailing, DS.Spacing.xs)
                 }
             }
 
@@ -89,6 +90,7 @@ struct ContactPickerView: View {
                 viewModel.continueFromContactPicker()
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
             .padding(.bottom)
         }
     }

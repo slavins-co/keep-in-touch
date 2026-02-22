@@ -137,7 +137,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "person.3.fill")
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(DS.Colors.accent)
                     Text("Manage Groups")
                     Spacer()
                     Text("\(viewModel.groupsCount)")
@@ -154,7 +154,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "tag.fill")
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(DS.Colors.accent)
                     Text("Manage Tags")
                     Spacer()
                     Text("\(viewModel.tagsCount)")
@@ -173,7 +173,7 @@ struct SettingsView: View {
                 }
             )) {
                 Label("Daily Reminders", systemImage: "bell.fill")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(DS.Colors.statusDueSoon)
             }
 
             Toggle(isOn: Binding(
@@ -181,7 +181,7 @@ struct SettingsView: View {
                 set: { newValue in viewModel.setDigestEnabled(newValue) }
             )) {
                 Label("Weekly Digest", systemImage: "bell.badge.fill")
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(DS.Colors.accent)
             }
 
             if viewModel.settings.notificationsEnabled {
@@ -264,16 +264,16 @@ struct SettingsView: View {
 
             if let lastSync = viewModel.settings.lastContactsSyncAt {
                 Text("Last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
             }
 
             if isSyncingContacts {
-                HStack(spacing: 12) {
+                HStack(spacing: DS.Spacing.md) {
                     ProgressView()
                     Text("Checking contacts...")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .font(DS.Typography.metadata)
+                        .foregroundStyle(DS.Colors.secondaryText)
                 }
             }
         }
@@ -286,7 +286,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "pause.circle.fill")
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(DS.Colors.secondaryText)
                     Text("Paused Contacts")
                     Spacer()
                     Text("\(viewModel.pausedCount)")
@@ -312,16 +312,16 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section {
-            VStack(spacing: 6) {
+            VStack(spacing: DS.Spacing.sm) {
                 Text("Stay in Touch \(appVersion)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Colors.secondaryText)
                 Text("Privacy-first personal CRM")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Colors.secondaryText)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
+            .padding(.vertical, DS.Spacing.sm)
         }
     }
 
@@ -361,7 +361,7 @@ struct SettingsView: View {
                         Spacer()
                         if viewModel.settings.digestDay == day {
                             Image(systemName: "checkmark")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(DS.Colors.accent)
                         }
                     }
                 }

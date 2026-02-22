@@ -21,37 +21,30 @@ struct ManageTagsView: View {
                 NavigationLink {
                     TagContactsView(tag: tag)
                 } label: {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(tag.name)
-                                .font(.headline)
-                            Spacer()
-                            Button {
-                                editingTag = tag
-                            } label: {
-                                Image(systemName: "pencil")
-                            }
-                            .buttonStyle(.borderless)
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        TagPill(tag: tag)
 
-                            Button(role: .destructive) {
-                                deleteTarget = tag
-                                showDeleteConfirm = true
-                            } label: {
-                                Image(systemName: "trash")
-                            }
-                            .buttonStyle(.borderless)
-                        }
-
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(Color(hex: tag.colorHex))
-                                .frame(width: 8, height: 8)
-                            Text("\(viewModel.countsByTag[tag.id, default: 0]) contacts")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
+                        Text("\(viewModel.countsByTag[tag.id, default: 0]) contacts")
+                            .font(DS.Typography.metadata)
+                            .foregroundStyle(DS.Colors.secondaryText)
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, DS.Spacing.xs)
+                }
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        deleteTarget = tag
+                        showDeleteConfirm = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+                .swipeActions(edge: .trailing) {
+                    Button {
+                        editingTag = tag
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    .tint(DS.Colors.accent)
                 }
             }
         }

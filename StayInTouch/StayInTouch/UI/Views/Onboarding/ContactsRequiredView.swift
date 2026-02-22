@@ -11,21 +11,21 @@ struct ContactsRequiredView: View {
     @ObservedObject var viewModel: OnboardingViewModel
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: DS.Spacing.xxl) {
             Spacer()
 
             Image(systemName: "person.crop.circle.badge.exclamationmark")
                 .font(.system(size: 56))
-                .foregroundStyle(.orange)
+                .foregroundStyle(DS.Colors.accent)
 
-            VStack(spacing: 12) {
+            VStack(spacing: DS.Spacing.md) {
                 Text("Contacts Power the App")
-                    .font(.title2)
+                    .font(DS.Typography.title)
                     .multilineTextAlignment(.center)
 
                 Text("Stay in Touch needs your contacts to track check-ins and reminders. You can enable access later in Settings.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
                     .multilineTextAlignment(.center)
             }
 
@@ -39,7 +39,8 @@ struct ContactsRequiredView: View {
                 Text("Enable Contacts Now")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.plain)
+            .foregroundStyle(DS.Colors.secondaryText)
             .padding(.horizontal)
 
             Button {
@@ -49,6 +50,7 @@ struct ContactsRequiredView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
             .padding(.horizontal)
 
             Spacer()

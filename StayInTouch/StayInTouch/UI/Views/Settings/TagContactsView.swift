@@ -22,18 +22,19 @@ struct TagContactsView: View {
         List {
             if viewModel.people.isEmpty {
                 Text("No contacts yet")
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
             } else {
                 ForEach(viewModel.people, id: \.id) { person in
-                    HStack {
-                        Text(person.displayName)
-                        Spacer()
-                        Button("Remove") {
-                            viewModel.removeTag(from: person)
+                    Text(person.displayName)
+                        .font(DS.Typography.contactName)
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                viewModel.removeTag(from: person)
+                            } label: {
+                                Label("Remove", systemImage: "tag.slash")
+                            }
                         }
-                        .buttonStyle(.bordered)
-                        .tint(.gray)
-                    }
                 }
             }
         }

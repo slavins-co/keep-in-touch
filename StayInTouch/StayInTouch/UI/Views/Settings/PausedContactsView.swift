@@ -24,11 +24,12 @@ struct PausedContactsView: View {
                 } label: {
                     HStack {
                         Text(person.displayName)
+                            .font(DS.Typography.contactName)
                         Spacer()
                         if person.isPaused {
                             Text("Paused")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(DS.Colors.secondaryText)
                         }
                     }
                 }

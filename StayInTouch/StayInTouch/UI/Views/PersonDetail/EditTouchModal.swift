@@ -34,7 +34,7 @@ struct EditTouchModal: View {
 
                 Picker("Method", selection: $selectedMethod) {
                     ForEach(TouchMethod.allCases, id: \.self) { method in
-                        Text(method.rawValue).tag(method)
+                        Label(method.rawValue, systemImage: DS.touchMethodIcon(method)).tag(method)
                     }
                 }
 

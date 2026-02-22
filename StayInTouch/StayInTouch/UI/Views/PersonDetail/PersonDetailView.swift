@@ -36,20 +36,38 @@ struct PersonDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 0) {
                 header
+                    .padding(.bottom, DS.Spacing.md)
+                SubtleDivider()
+
                 if viewModel.person.isPaused {
                     pausedBanner
+                    SubtleDivider()
                 }
+
                 cadenceCard
+                SubtleDivider()
+
                 nextTouchNotesCard
+                SubtleDivider()
+
                 historyCard
+                SubtleDivider()
+
                 reachOutCard
+                SubtleDivider()
+
                 tagsCard
+                SubtleDivider()
+
                 notificationsCard
+                SubtleDivider()
+
                 actionButtons
+                    .padding(.vertical, DS.Spacing.lg)
             }
-            .padding()
+            .padding(.horizontal, DS.Spacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .navigationTitle(viewModel.person.displayName)
@@ -185,78 +203,64 @@ struct PersonDetailView: View {
         }
     }
 
+    // MARK: - Header
+
     private var header: some View {
-        HStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(Color(hex: viewModel.person.avatarColor))
-                    .frame(width: 72, height: 72)
-                Text(viewModel.person.initials)
-                    .font(.title2)
-                    .foregroundStyle(.white)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(viewModel.person.displayName)
-                    .font(.title2)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(statusColor())
-                        .frame(width: 8, height: 8)
-                    Text(statusLabel())
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    if daysOverdue > 0 {
-                        Text("+\(daysOverdue)d")
-                            .font(.footnote)
-                            .foregroundStyle(.red)
-                    }
-                }
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text(viewModel.person.displayName)
+                .font(.title.weight(.bold))
+            HStack(spacing: DS.Spacing.sm) {
+                StatusIndicator(status: currentStatus, daysOverdue: daysOverdue)
+                Text(statusLabel())
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
             }
         }
     }
+
+    // MARK: - Paused Banner
 
     private var pausedBanner: some View {
         HStack {
             Text("Tracking paused")
-                .font(.footnote)
+                .font(DS.Typography.metadata)
             Spacer()
             Button("Resume") { showResumePrompt = true }
                 .buttonStyle(.borderedProminent)
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(DS.Spacing.md)
+        .background(DS.Colors.statusUnknown.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.vertical, DS.Spacing.md)
     }
 
+    // MARK: - Cadence
+
     private var cadenceCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text("Cadence")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.sectionHeader)
+                    .foregroundStyle(DS.Colors.secondaryText)
                 Spacer()
                 Button("Change") { showChangeGroup = true }
             }
             Text(viewModel.group?.name ?? "Group")
                 .font(.title3)
             Text(cadenceSubtext())
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(DS.Typography.metadata)
+                .foregroundStyle(DS.Colors.secondaryText)
 
             if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
                 HStack {
                     Image(systemName: "moon.fill")
                         .foregroundStyle(.purple)
                     Text("Snoozed until \(snoozedUntil.formatted(date: .abbreviated, time: .omitted))")
-                        .font(.footnote)
+                        .font(DS.Typography.metadata)
                         .foregroundStyle(.purple)
                     Spacer()
                     Button("Clear") { viewModel.clearSnooze() }
-                        .font(.footnote)
+                        .font(DS.Typography.metadata)
                 }
             } else {
                 Menu {
@@ -269,20 +273,20 @@ struct PersonDetailView: View {
                     }
                 } label: {
                     Label("Snooze", systemImage: "moon")
-                        .font(.footnote)
+                        .font(DS.Typography.metadata)
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.vertical, DS.Spacing.md)
     }
 
+    // MARK: - Next Touch Notes
+
     private var nextTouchNotesCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text("Next Time")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(DS.Typography.sectionHeader)
+                .foregroundStyle(DS.Colors.secondaryText)
 
             TextField("What to remember next time?", text: $nextTouchNotesText, axis: .vertical)
                 .font(.body)
@@ -294,130 +298,142 @@ struct PersonDetailView: View {
                     }
                 }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.vertical, DS.Spacing.md)
         .onAppear {
             nextTouchNotesText = viewModel.person.nextTouchNotes ?? ""
         }
     }
 
+    // MARK: - Tags
+
     private var tagsCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text("Tags")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.sectionHeader)
+                    .foregroundStyle(DS.Colors.secondaryText)
                 Spacer()
                 Button("Manage") { showManageTags = true }
             }
 
             if viewModel.person.tagIds.isEmpty {
                 Text("No tags yet")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
             } else {
                 WrapLayout {
                     ForEach(viewModel.tags.filter { viewModel.person.tagIds.contains($0.id) }, id: \.id) { tag in
                         Button {
                             viewModel.removeTag(tag)
                         } label: {
-                            Text(tag.name)
-                                .font(.footnote)
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(Color(hex: tag.colorHex))
-                                .clipShape(Capsule())
+                            TagPill(tag: tag)
                         }
                     }
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.vertical, DS.Spacing.md)
     }
 
+    // MARK: - History
+
     private var historyCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text("Contact History")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.sectionHeader)
+                    .foregroundStyle(DS.Colors.secondaryText)
                 Spacer()
                 if viewModel.touchEvents.count > 1 {
                     Button(showFullHistory ? "Hide" : "See All") {
                         showFullHistory.toggle()
                     }
                 }
+                Button {
+                    showLogTouch = true
+                } label: {
+                    Label("Log Touch", systemImage: "plus.circle.fill")
+                        .font(DS.Typography.metadata)
+                }
             }
 
             if viewModel.touchEvents.isEmpty {
                 Text("A house of friendship begins with a single brick.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
             } else {
                 let events = showFullHistory ? viewModel.touchEvents : Array(viewModel.touchEvents.prefix(1))
                 ForEach(events, id: \.id) { event in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("\(event.method.rawValue) · \(event.at.formatted(date: .abbreviated, time: .omitted))\(event.timeOfDay.map { " · \($0.rawValue)" } ?? "")")
-                            .font(.footnote)
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Image(systemName: DS.touchMethodIcon(event.method))
+                                .foregroundStyle(DS.Colors.secondaryText)
+                                .font(.caption)
+                            Text("\(event.method.rawValue) · \(event.at.formatted(date: .abbreviated, time: .omitted))\(event.timeOfDay.map { " · \($0.rawValue)" } ?? "")")
+                                .font(DS.Typography.metadata)
+                        }
                         if let notes = event.notes, !notes.isEmpty {
                             Text(notes)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
+                                .font(DS.Typography.metadata)
+                                .foregroundStyle(DS.Colors.secondaryText)
                         }
-                        HStack(spacing: 12) {
+                        HStack(spacing: DS.Spacing.md) {
                             Button("Edit") { showEditTouch = event }
                             Button("Delete", role: .destructive) { showDeleteConfirm = event }
                         }
-                        .font(.caption)
+                        .font(DS.Typography.caption)
                     }
-                    .padding(.vertical, 6)
+                    .padding(.vertical, DS.Spacing.sm)
                 }
             }
-
-            Button("Log Touch") { showLogTouch = true }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
-                .frame(maxWidth: .infinity)
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.vertical, DS.Spacing.md)
     }
 
-    private var reachOutCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Reach Out")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+    // MARK: - Reach Out
 
-            HStack(spacing: 12) {
-                Button("Message") { open(.message) }
-                Button("Call") { open(.call) }
-                Button("Email") { open(.email) }
+    private var reachOutCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text("Reach Out")
+                .font(DS.Typography.sectionHeader)
+                .foregroundStyle(DS.Colors.secondaryText)
+
+            HStack(spacing: DS.Spacing.xxxl) {
+                reachOutButton(icon: "message.fill", label: "Message", action: { open(.message) })
+                reachOutButton(icon: "phone.fill", label: "Call", action: { open(.call) })
+                reachOutButton(icon: "envelope.fill", label: "Email", action: { open(.email) })
             }
-            .buttonStyle(.bordered)
 
             if let message = viewModel.quickActionMessage {
                 Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .frame(maxWidth: .infinity)
+        .padding(.vertical, DS.Spacing.md)
     }
 
+    private func reachOutButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: DS.Spacing.xs) {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(DS.Colors.accent)
+                Text(label)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Colors.accent)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Notifications
+
     private var notificationsCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text("Notifications")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(DS.Typography.sectionHeader)
+                .foregroundStyle(DS.Colors.secondaryText)
 
             Toggle(isOn: Binding(
                 get: { viewModel.person.notificationsMuted },
@@ -430,7 +446,7 @@ struct PersonDetailView: View {
                 Text("Reminder time")
                 Spacer()
                 Text(reminderTimeLabel())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DS.Colors.secondaryText)
             }
             .contentShape(Rectangle())
             .onTapGesture {
@@ -441,27 +457,29 @@ struct PersonDetailView: View {
                 Button("Restore defaults") {
                     viewModel.restoreNotificationDefaults()
                 }
-                .buttonStyle(.bordered)
-                .tint(.gray)
+                .foregroundStyle(DS.Colors.secondaryText)
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.vertical, DS.Spacing.md)
     }
+
+    // MARK: - Action Buttons
 
     @ViewBuilder
     private var actionButtons: some View {
         if !viewModel.person.isPaused {
             Button("Pause") { viewModel.togglePause() }
-                .buttonStyle(.bordered)
-                .tint(.gray)
-                .frame(maxWidth: .infinity)
+                .foregroundStyle(DS.Colors.secondaryText)
         }
         Button("Remove from App") { showRemoveConfirm = true }
-            .buttonStyle(.bordered)
-            .tint(.red)
-            .frame(maxWidth: .infinity)
+            .foregroundStyle(DS.Colors.destructive)
+    }
+
+    // MARK: - Computed Properties
+
+    private var currentStatus: SLAStatus {
+        guard let group = viewModel.group else { return .inSLA }
+        return SLACalculator().status(for: viewModel.person, in: [group])
     }
 
     private var daysOverdue: Int {
@@ -469,9 +487,10 @@ struct PersonDetailView: View {
         return SLACalculator().daysOverdue(for: viewModel.person, in: [group])
     }
 
+    // MARK: - Helper Functions
+
     private func statusLabel() -> String {
-        guard let group = viewModel.group else { return "All good" }
-        switch SLACalculator().status(for: viewModel.person, in: [group]) {
+        switch currentStatus {
         case .inSLA: return "All good"
         case .dueSoon: return "Check in soon"
         case .outOfSLA: return "Overdue"
@@ -480,13 +499,7 @@ struct PersonDetailView: View {
     }
 
     private func statusColor() -> Color {
-        guard let group = viewModel.group else { return Color(hex: "34C759") }
-        switch SLACalculator().status(for: viewModel.person, in: [group]) {
-        case .inSLA: return Color(hex: "34C759")
-        case .dueSoon: return Color(hex: "FF9500")
-        case .outOfSLA: return Color(hex: "FF3B30")
-        case .unknown: return Color(hex: "8E8E93")
-        }
+        DS.Colors.statusColor(for: currentStatus)
     }
 
     private static let dueDateFormatter: DateFormatter = {

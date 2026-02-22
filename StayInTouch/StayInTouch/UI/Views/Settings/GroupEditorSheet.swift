@@ -51,8 +51,8 @@ struct GroupEditorSheet: View {
                         Text("\(warningDays) days")
                     }
                     Text("Show \"due soon\" before the interval expires")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .font(DS.Typography.metadata)
+                        .foregroundStyle(DS.Colors.secondaryText)
                 }
 
                 Section {

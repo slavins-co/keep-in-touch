@@ -17,21 +17,21 @@ struct SettingsGroupAssignmentView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
+            VStack(spacing: DS.Spacing.md) {
                 Text("Assign Groups")
-                    .font(.title2)
+                    .font(DS.Typography.title)
                     .padding(.top)
 
                 Text("Pick how often you want to stay in touch with each person.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
                 List(contacts) { contact in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(contact.displayName)
-                            .font(.headline)
+                            .font(DS.Typography.contactName)
 
                         Picker("Group", selection: binding(for: contact.identifier)) {
                             ForEach(groups, id: \.id) { group in
@@ -40,7 +40,7 @@ struct SettingsGroupAssignmentView: View {
                         }
                         .pickerStyle(.menu)
                     }
-                    .padding(.vertical, 6)
+                    .padding(.vertical, DS.Spacing.sm)
                 }
                 .listStyle(.plain)
             }

@@ -20,47 +20,44 @@ struct ManageGroupsView: View {
     var body: some View {
         List {
             ForEach(viewModel.groups, id: \.id) { group in
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     HStack {
                         Text(group.name)
-                            .font(.headline)
+                            .font(DS.Typography.contactName)
                         if group.isDefault {
                             Text("Default")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color(.secondarySystemBackground))
+                                .font(DS.Typography.captionBold)
+                                .foregroundStyle(DS.Colors.secondaryText)
+                                .padding(.horizontal, DS.Spacing.sm)
+                                .padding(.vertical, DS.Spacing.xxs)
+                                .background(DS.Colors.secondaryBackground)
                                 .clipShape(Capsule())
                         }
-                        Spacer()
-                        Button {
-                            editingGroup = group
-                        } label: {
-                            Image(systemName: "pencil")
-                        }
-                        .buttonStyle(.borderless)
-
-                        Button(role: .destructive) {
-                            if group.isDefault {
-                                showCannotDeleteAlert = true
-                            } else {
-                                deleteTarget = group
-                                showDeleteConfirm = true
-                            }
-                        } label: {
-                            Image(systemName: "trash")
-                        }
-                        .buttonStyle(.borderless)
-                        .opacity(group.isDefault ? 0.3 : 1)
-                        .disabled(group.isDefault)
                     }
 
-                    Text("Every \(group.slaDays) days • \(viewModel.countsByGroup[group.id, default: 0]) contacts")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    Text("Every \(group.slaDays) days \u{2022} \(viewModel.countsByGroup[group.id, default: 0]) contacts")
+                        .font(DS.Typography.metadata)
+                        .foregroundStyle(DS.Colors.secondaryText)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, DS.Spacing.xs)
+                .swipeActions(edge: .trailing) {
+                    if !group.isDefault {
+                        Button(role: .destructive) {
+                            deleteTarget = group
+                            showDeleteConfirm = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                }
+                .swipeActions(edge: .trailing) {
+                    Button {
+                        editingGroup = group
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    .tint(DS.Colors.accent)
+                }
             }
         }
         .navigationTitle("Manage Groups")

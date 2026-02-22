@@ -7,6 +7,9 @@
 
 import Foundation
 
+// Note: Initials are computed and stored on Person entities but no longer displayed
+// in the UI as of the UX redesign (Issue #24). Retained for data compatibility.
+
 enum InitialsBuilder {
     static func initials(for name: String) -> String {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
