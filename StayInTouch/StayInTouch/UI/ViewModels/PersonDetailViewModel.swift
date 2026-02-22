@@ -44,7 +44,7 @@ final class PersonDetailViewModel: ObservableObject {
         group = groupRepository.fetch(id: person.groupId)
         tags = tagRepository.fetchAll()
         availableTags = tags.filter { !person.tagIds.contains($0.id) }
-        touchEvents = touchRepository.fetchAll(for: person.id)
+        touchEvents = fetchSortedEvents()
     }
 
     func refreshContactInfo() async {
@@ -153,7 +153,7 @@ final class PersonDetailViewModel: ObservableObject {
         }
 
         savePerson(updated)
-        touchEvents = touchRepository.fetchAll(for: person.id)
+        touchEvents = fetchSortedEvents()
     }
 
     func addTag(_ tag: Tag) {
@@ -199,7 +199,7 @@ final class PersonDetailViewModel: ObservableObject {
         updated.modifiedAt = now
         savePerson(updated)
 
-        touchEvents = touchRepository.fetchAll(for: person.id)
+        touchEvents = fetchSortedEvents()
     }
 
     func updateTouch(_ touch: TouchEvent, method: TouchMethod, notes: String?, timeOfDay: TimeOfDay? = nil) {
@@ -214,7 +214,7 @@ final class PersonDetailViewModel: ObservableObject {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.updateTouch")
         }
 
-        touchEvents = touchRepository.fetchAll(for: person.id)
+        touchEvents = fetchSortedEvents()
 
         if touchEvents.first?.id == updatedTouch.id {
             var updated = person
@@ -231,7 +231,7 @@ final class PersonDetailViewModel: ObservableObject {
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.deleteTouch")
         }
-        touchEvents = touchRepository.fetchAll(for: person.id)
+        touchEvents = fetchSortedEvents()
 
         var updated = person
         if let latest = touchEvents.first {
@@ -308,6 +308,13 @@ final class PersonDetailViewModel: ObservableObject {
             NotificationCenter.default.post(name: .personDidChange, object: updated.id)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.savePerson")
+        }
+    }
+
+    private func fetchSortedEvents() -> [TouchEvent] {
+        touchRepository.fetchAll(for: person.id).sorted {
+            if $0.at != $1.at { return $0.at > $1.at }
+            return ($0.timeOfDay?.sortOrder ?? 0) > ($1.timeOfDay?.sortOrder ?? 0)
         }
     }
 

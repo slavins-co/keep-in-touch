@@ -18,15 +18,12 @@ struct SettingsGroupAssignmentView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: DS.Spacing.md) {
-                Text("Assign Frequencies")
-                    .font(DS.Typography.title)
-                    .padding(.top)
-
                 Text("Pick how often you want to stay in touch with each person.")
                     .font(DS.Typography.metadata)
                     .foregroundStyle(DS.Colors.secondaryText)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
+                    .padding(.top, DS.Spacing.sm)
 
                 List(contacts) { contact in
                     VStack(alignment: .leading, spacing: 8) {
