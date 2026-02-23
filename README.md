@@ -4,7 +4,7 @@
 
 [![Platform](https://img.shields.io/badge/platform-iOS%2017.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
-[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Proprietary-lightgrey.svg)](LICENSE)
 
 **Version:** 0.2.0 (Build 4) | **Status:** Pre-release Beta
 
@@ -76,6 +76,6 @@ No external dependencies. Built with SwiftUI, Core Data, Contacts, UserNotificat
 
 ## License
 
-MIT License — see [LICENSE](LICENSE).
+All rights reserved — see [LICENSE](LICENSE).
 
 Built with [Claude Code](https://claude.com/claude-code) by Anthropic.
