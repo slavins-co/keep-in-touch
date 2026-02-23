@@ -573,6 +573,150 @@ When adding optional properties to domain entities:
 4. For TouchEvent (~4 sites), manual updates are fine
 5. Always build after to catch any missed sites
 
+### 2026-02-22 - 🎨 UI/UX - WCAG AA Color Contrast for Section Headers
+
+**What Happened:**
+Section headers in ContactListSection used colored text (e.g., green for "On Track", red for "Overdue") directly on white/dark backgrounds, failing WCAG AA 4.5:1 contrast ratio.
+
+**Root Cause:**
+Using color alone to convey section identity — many status colors (especially greens, yellows) don't have sufficient contrast against white backgrounds.
+
+**Solution:**
+Changed section headers to use `DS.Colors.primaryText` (always high contrast) paired with a small 8pt colored dot indicator: `Circle().fill(Color(hex: colorHex)).frame(width: 8, height: 8)`.
+
+**Prevention Rule:**
+Never use color alone to convey section identity in text. Always pair colored indicators (dots, icons) with high-contrast text. Test all color combinations against WCAG AA (4.5:1 for text under 18pt).
+
+### 2026-02-22 - 🎨 UI/UX - Touch Target Size vs Layout Inflation
+
+**What Happened:**
+Adding `.frame(minWidth: 44, minHeight: 44)` to filter chip X buttons (dismiss icons) made the chips visibly taller when active, breaking visual consistency with inactive chips.
+
+**Root Cause:**
+Filter chips are ~32pt tall. Adding `minHeight: 44` to an inline child element inflates the parent's height to accommodate the 44pt minimum.
+
+**Solution:**
+Removed `minHeight: 44`, kept only `.frame(minWidth: 44)` with `.contentShape(Rectangle())` for horizontal tap area. Accepted ~32pt vertical target for a secondary dismiss action.
+
+**Prevention Rule:**
+When adding touch target sizing to inline elements inside compact containers (chips, pills, tags):
+- `minWidth` is safe — it extends the tap area horizontally without visual impact
+- `minHeight` will inflate the container height — always test visually
+- For secondary actions (dismiss, close), horizontal-only expansion is an acceptable trade-off
+
+### 2026-02-22 - 🎨 UI/UX - Font Weight as Legibility Lever
+
+**What Happened:**
+Section headers using `Font.subheadline.weight(.semibold)` (~15pt) lacked legibility in light mode against white backgrounds, even after fixing color to primaryText.
+
+**Root Cause:**
+`.semibold` at small sizes (15pt and below) doesn't provide enough visual weight to stand out as a section header, especially in light mode where the contrast ceiling is lower.
+
+**Solution:**
+Changed `DS.Typography.sectionHeader` from `.semibold` to `.bold`.
+
+**Prevention Rule:**
+For section-level headers at `subheadline` size or smaller, default to `.bold` minimum. Reserve `.semibold` for body-adjacent text that shouldn't compete with headers.
+
+### 2026-02-22 - 🎨 UI/UX - Semantic Color Tier Selection (tertiaryText vs secondaryText)
+
+**What Happened:**
+Settings section headers (FREQUENCY, GROUPS, NOTIFICATIONS) in PersonDetailView used `DS.Colors.tertiaryText` (~30% opacity), making them barely readable in both light and dark mode.
+
+**Root Cause:**
+`tertiaryText` is designed for hint/placeholder text, not for content that must be read. It was applied to section headers that serve as navigation landmarks.
+
+**Solution:**
+Changed all three settings section headers from `tertiaryText` to `secondaryText` (~60% opacity).
+
+**Prevention Rule:**
+- `primaryText` — main content, always readable
+- `secondaryText` — supporting content that must still be read (labels, section headers, captions)
+- `tertiaryText` — decorative/hint only (placeholders, disabled states, timestamps)
+If in doubt, use `secondaryText`. Only use `tertiaryText` for text the user doesn't need to read.
+
+### 2026-02-22 - 🏗️ Architecture - Terminology Mapping (Backend vs UI)
+
+**What Happened:**
+The app uses `Tag` in the backend model but the UI should display "Groups" (for people). All 8 user-facing "Tag"/"Tags" strings across 5 files needed systematic renaming.
+
+**Root Cause:**
+Backend model names were exposed directly in UI strings without a mapping layer. The terminology evolved during design review but the UI wasn't updated.
+
+**Solution:**
+Audited all Swift UI files with grep for user-facing "Tag"/"Tags" strings, identifying exactly 8 strings across 5 files. Changed all to "Group"/"Groups" while preserving backend model names.
+
+**Prevention Rule:**
+Maintain a terminology mapping:
+- Backend `Tag` → UI "Group" (for organizing people)
+- Backend `Group` → UI "Frequency" (for cadence settings)
+- Backend `TouchEvent` → UI "Connection" (for contact logging)
+Always grep for stale terms after any rename. Never expose backend model names directly in user-facing strings.
+
+### 2026-02-22 - 🔧 Git - Synology Drive Permission Artifacts
+
+**What Happened:**
+Pre-merge check revealed 69 files showing as "changed" in git diff, but all had 0 insertions/0 deletions — only file permissions changed from `100644` to `100755`.
+
+**Root Cause:**
+Synology Drive cloud sync modifies file permissions during synchronization, adding execute bits to regular files.
+
+**Solution:**
+Reset with `git checkout -- StayInTouch/` to restore original permissions without affecting content.
+
+**Prevention Rule:**
+Before committing, always check `git diff --stat`. If files show 0 insertions/0 deletions, they're permission-only artifacts. Reset with `git checkout -- <directory>/` rather than committing. Consider adding `core.fileMode = false` to git config if this recurs frequently.
+
+### 2026-02-22 - 🔧 Git - Pre-Beta Version Numbering Strategy
+
+**What Happened:**
+App was versioned as v1.x.x before reaching TestFlight, giving the impression of a mature release. Needed to revise to 0.x.x to signal active development.
+
+**Root Cause:**
+Version scheme wasn't established before the first release. Changing retroactively required updating 6 MARKETING_VERSION entries in .pbxproj, deleting old GitHub releases, and recreating them with new tags.
+
+**Solution:**
+Changed all versions: v1.1.1 → v0.1.1, then v0.2.0 on merge. Updated CURRENT_PROJECT_VERSION (build number) separately. Deleted and recreated GitHub releases.
+
+**Prevention Rule:**
+Establish version scheme before first release:
+- 0.x.x = pre-beta / active development
+- 1.0.0 = first public release / App Store submission
+- MARKETING_VERSION appears 6 times in .pbxproj (3 Debug + 3 Release configs)
+- CURRENT_PROJECT_VERSION = incrementing build number, independent of marketing version
+
+### 2026-02-22 - 📋 Process - Apple HIG Evolves (Bottom Search Bar)
+
+**What Happened:**
+Design critique flagged the bottom search bar placement as a usability concern, recommending moving it to the top. User corrected: Apple now defaults to bottom search in Messages, Mail, Notes, and Settings.
+
+**Root Cause:**
+Applied outdated HIG knowledge — search bar conventions shifted in recent iOS versions.
+
+**Solution:**
+Disregarded the recommendation. Bottom search bar is now the Apple convention.
+
+**Prevention Rule:**
+Before critiquing UI placement against Apple HIG, verify the current convention in the latest iOS version. Apple's patterns evolve — check the actual system apps (Messages, Mail, Notes, Settings) as reference, not outdated documentation.
+
+### 2026-02-22 - 📋 Process - License Selection for Commercial Apps
+
+**What Happened:**
+Repo was created with MIT license, which allows anyone to freely clone, modify, and ship a competing app — problematic for a potential paid App Store app.
+
+**Root Cause:**
+License was chosen by default without considering distribution intent.
+
+**Solution:**
+Changed to "All Rights Reserved" with a proprietary notice allowing viewing only. Repo stays public for portfolio purposes.
+
+**Prevention Rule:**
+Choose license based on distribution intent before making repo public:
+- **MIT/Apache** — truly open source, anyone can use your code
+- **FSL/BSL** — source-available, visible but restricted (converts to open source after 2-4 years)
+- **All Rights Reserved** — proprietary, view-only, maximum protection for commercial apps
+For potential paid apps, default to All Rights Reserved. Can always relicense later.
+
 ---
 
 ## Historical Lessons

@@ -1,65 +1,116 @@
-# TODO - iOS Personal CRM App (Open Tasks Only)
+# TODO - Stay in Touch iOS App
 
-**Project Status:** V1.1.1 released, bug fixes in progress
-**Last Updated:** February 16, 2026
+**Project Status:** v0.2.0 (Build 5) — Pre-release Beta
+**Last Updated:** February 23, 2026
+
+> **TestFlight Status:** Code blockers resolved. Manual submission steps remain — see `tasks/testflight-guide.md`.
+> When creating PRs, confirm TestFlight readiness is not regressed (deployment target 17.0, PrivacyInfo.xcprivacy present, UIBackgroundModes declared, build number incremented).
 
 ---
 
-## Completed Issues (V1.1.1)
+## Completed — v0.2.0 (UX Redesign)
 
-### Tier 1: Simple, Fully Autonomous ✅
+- [x] **PR #29** Full UX redesign — centralized design system, modern filter patterns, streamlined info hierarchy
+- [x] **#30** Rename all UI "Tags" → "Groups" (8 strings across 5 files)
+- [x] **#31** Fix section header color contrast for WCAG AA (primaryText + colored dot)
+- [x] **#32** Fix filter chip X button touch targets (minWidth: 44)
+- [x] Bug fix: Section header font weight `.semibold` → `.bold` for light mode legibility
+- [x] Bug fix: Filter chip height inflation from `minHeight: 44` — removed
+- [x] Bug fix: Settings section headers (FREQUENCY/GROUPS/NOTIFICATIONS) `tertiaryText` → `secondaryText`
+- [x] Version numbering revised from v1.x.x → v0.x.x (pre-beta)
+- [x] GitHub releases recreated: v0.1.0, v0.1.1, v0.2.0 (all pre-release)
+- [x] README streamlined from 525 → 81 lines
+- [x] License changed from MIT → All Rights Reserved
+- [x] `design-review.md` created with full critique
+
+## Completed — v0.1.1
 
 - [x] **#20** Remove trailing period from notification body text
 - [x] **#18** Display dynamic app version/build in Settings
 - [x] **#21** Replace notification titles with friendlier copy
 - [x] **#19** Show due date in cadence section of detail view
-
-### Tier 2: Medium, Mostly Autonomous ✅
-
 - [x] **#7** Add forward-looking notes field to person detail
 - [x] **#22** Add randomized notification copy variations
 - [x] **#13** Add morning/afternoon/evening time picker to Log Touch
 - [x] **#23** Add snooze/defer due date per contact
 - [x] **#8** Add group assignment step when importing from Settings
-
-### Post-Release Fixes ✅
-
-- [x] **#25** Fix empty group assignment list in Settings import flow (SwiftUI sheet stacking bug)
+- [x] **#25** Fix empty group assignment list (SwiftUI sheet stacking bug)
+- [x] **#24** Redesign visual language (subsumed by PR #29)
 
 ---
 
 ## Open Issues
 
-### Bug Fixes (from device testing feedback)
+### Bug Fixes (Pre-existing) — All Resolved
 
-- [ ] **#26** Add "Done" button to dismiss keyboard on Next Time notes field
-- [ ] **#27** Fix touch log sorting — most recent time-of-day should appear first (Evening → Morning)
-- [ ] **#28** Fix double "Assign Groups" title on contact import screen
+- [x] **#26** Add "Done" button to dismiss keyboard on Next Time notes field *(closed)*
+- [x] **#27** Fix touch log sorting — most recent time-of-day should appear first *(closed)*
+- [x] **#28** Fix double "Assign Groups" title on contact import screen *(closed)*
 
-### Tier 3: Complex, Needs Human Input
+### Design Review — Critical / Important
 
-- [ ] **#24** Redesign visual language — streamlined/modern (HIGH priority, 1-2 days, iterative review needed)
-- [ ] **#9** Custom due dates per contact — largely overlaps with #23, evaluate after
-- [ ] **#10** Self-guided tutorial — issue recommends deferring to V2
+- [ ] **#33** Add DS.Typography.heroTitle token for PersonDetailView
+- [ ] **#34** ⭐ Swipe-to-log on home screen (highest priority UX improvement)
+- [ ] **#35** Surface errors with contextual banners (not silent failures)
+- [ ] **#36** Add undo for destructive actions (delete contact/connection)
+- [ ] **#37** Separate overdue tiers (Recently Due vs Long Overdue)
+- [ ] **#38** Replace HStack filter chips with FlowLayout for overflow
+- [ ] **#39** VoiceOver audit and accessibility labels
+- [ ] **#40** Reorder PersonDetailView CTAs (Log Connection as primary)
+
+### Design Review — Polish
+
+- [ ] **#41** Add micro-animations (section expand, filter apply, card appear)
+- [ ] **#42** Add empty state illustrations per section
+- [ ] **#43** Implement skeleton loading states
+- [ ] **#44** Apply consistent 2pt/4pt sub-grid spacing rhythm
+
+### UX Direction
+
+- [ ] **#45** "Relationship Journal" UX direction for v0.3 — warm, narrative, action-oriented
+
+### Pre-existing Backlog
+
+- [ ] **#9** Custom due dates per contact (overlaps with #23, evaluate)
+- [ ] **#10** Self-guided tutorial (defer to post-beta)
 
 ---
 
-## Remaining MVP Milestones
+## Milestone: TestFlight Readiness
 
-### Milestone 8: Polish & Testing
+### Resolved (Build 5 — 2026-02-23)
+- [x] **#46** Add PrivacyInfo.xcprivacy privacy manifest
+- [x] **#47** Change deployment target from iOS 18.5 → 17.0
+- [x] **#48** Add UIBackgroundModes to Info.plist
+- [x] Build number bumped to 5
+- [x] Clean build verified — zero errors
+- [x] All 33+ unit tests passing
+- [x] App icon exists (1024×1024 PNG, no alpha)
 
-- [ ] Accessibility (VoiceOver, Dynamic Type)
-- [ ] Error handling + loading states
+### Not Needed for TestFlight (Fix Before App Store)
+- [ ] Accessibility (VoiceOver, Dynamic Type) — #39 open
+- [ ] Error handling + loading states — #35, #43 open
+- [ ] **#49** Create and host privacy policy URL
+- [ ] App Store screenshots (use demo mode)
+
+### Recommended Before App Store
 - [ ] Edge-case testing (contact deletion, timezone changes)
 - [ ] Performance testing (100+ contacts, launch time)
-- [ ] UI tests (onboarding/log/delete flows)
-- [ ] App icon + screenshots
-- [ ] TestFlight build
-- [ ] Document demo mode behavior
+
+### Manual Steps Remaining
+See `tasks/testflight-guide.md` for step-by-step instructions:
+- [ ] Clean git state (Synology Drive artifacts — #50)
+- [ ] Commit and push blocker fixes
+- [ ] Verify Apple Developer account enrollment
+- [ ] Register App ID in Developer Portal
+- [ ] Create App Store Connect record
+- [ ] Archive and upload via Xcode
+- [ ] Configure TestFlight and add testers
 
 ---
 
-## Post-V1 (Future)
+## Post-Beta (Future)
+
 - [ ] CloudKit sync
 - [ ] Shortcuts integration
 - [ ] Widgets

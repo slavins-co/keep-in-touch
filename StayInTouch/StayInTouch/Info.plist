@@ -6,6 +6,10 @@
 	<array>
 		<string>com.slavins.stayintouch.refresh</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>We'll send you gentle reminders when it's time to reconnect with someone.</string>
 </dict>
