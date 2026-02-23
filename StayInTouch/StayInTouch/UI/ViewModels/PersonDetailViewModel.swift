@@ -312,8 +312,11 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     private func fetchSortedEvents() -> [TouchEvent] {
-        touchRepository.fetchAll(for: person.id).sorted {
-            if $0.at != $1.at { return $0.at > $1.at }
+        let calendar = Calendar.current
+        return touchRepository.fetchAll(for: person.id).sorted {
+            let day0 = calendar.startOfDay(for: $0.at)
+            let day1 = calendar.startOfDay(for: $1.at)
+            if day0 != day1 { return day0 > day1 }
             return ($0.timeOfDay?.sortOrder ?? 0) > ($1.timeOfDay?.sortOrder ?? 0)
         }
     }

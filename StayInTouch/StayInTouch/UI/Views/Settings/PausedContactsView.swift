@@ -75,7 +75,7 @@ struct PausedContactsView: View {
         }
         .sheet(isPresented: $showDatePicker) {
             NavigationStack {
-                DatePicker("Last touch", selection: $pickedDate, in: ...Date(), displayedComponents: .date)
+                DatePicker("Last connection", selection: $pickedDate, in: ...Date(), displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding()
                     .toolbar {

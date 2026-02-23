@@ -28,7 +28,7 @@ struct EditTouchModal: View {
     var body: some View {
         NavigationStack {
             Form {
-                Text("Date: \(touch.at.formatted(date: .abbreviated, time: .shortened))")
+                Text("Date: \(touch.at.formatted(date: .abbreviated, time: .omitted))")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
@@ -47,7 +47,7 @@ struct EditTouchModal: View {
 
                 TextField("Notes", text: $notes, axis: .vertical)
             }
-            .navigationTitle("Edit Touch")
+            .navigationTitle("Edit Connection")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }

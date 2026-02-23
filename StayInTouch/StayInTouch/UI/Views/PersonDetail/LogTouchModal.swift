@@ -37,7 +37,7 @@ struct LogTouchModal: View {
 
                 TextField("Notes", text: $notes, axis: .vertical)
             }
-            .navigationTitle("Log Touch")
+            .navigationTitle("Log Connection")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }

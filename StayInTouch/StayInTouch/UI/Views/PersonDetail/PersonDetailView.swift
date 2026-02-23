@@ -110,7 +110,7 @@ struct PersonDetailView: View {
         } message: {
             Text("When did you last connect?")
         }
-        .alert("Delete touch?", isPresented: Binding(
+        .alert("Delete connection?", isPresented: Binding(
             get: { showDeleteConfirm != nil },
             set: { if !$0 { showDeleteConfirm = nil } }
         )) {
@@ -135,7 +135,7 @@ struct PersonDetailView: View {
         }
         .sheet(isPresented: $showDatePicker) {
             NavigationStack {
-                DatePicker("Last touch", selection: $pickedResumeDate, displayedComponents: .date)
+                DatePicker("Last connection", selection: $pickedResumeDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding()
                     .toolbar {
