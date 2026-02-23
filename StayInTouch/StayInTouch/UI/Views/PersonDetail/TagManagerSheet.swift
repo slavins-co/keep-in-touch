@@ -35,7 +35,7 @@ struct TagManagerSheet: View {
                     }
                 }
             }
-            .navigationTitle("Manage Tags")
+            .navigationTitle("Manage Groups")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }

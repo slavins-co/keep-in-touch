@@ -476,7 +476,7 @@ struct PersonDetailView: View {
     private var tagsSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text("TAGS")
+                Text("GROUPS")
                     .font(DS.Typography.caption)
                     .foregroundStyle(DS.Colors.tertiaryText)
                     .tracking(0.5)
@@ -486,7 +486,7 @@ struct PersonDetailView: View {
             }
 
             if viewModel.person.tagIds.isEmpty {
-                Text("No tags yet")
+                Text("No groups yet")
                     .font(DS.Typography.metadata)
                     .foregroundStyle(DS.Colors.secondaryText)
             } else {

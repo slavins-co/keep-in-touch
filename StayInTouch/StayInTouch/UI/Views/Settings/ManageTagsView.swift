@@ -48,7 +48,7 @@ struct ManageTagsView: View {
                 }
             }
         }
-        .navigationTitle("Manage Tags")
+        .navigationTitle("Manage Groups")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
@@ -81,7 +81,7 @@ struct ManageTagsView: View {
                 onCancel: { showNewTag = false }
             )
         }
-        .alert("Delete Tag?", isPresented: $showDeleteConfirm) {
+        .alert("Delete Group?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
                 if let target = deleteTarget {
                     viewModel.delete(tag: target)
@@ -91,7 +91,7 @@ struct ManageTagsView: View {
             Button("Cancel", role: .cancel) { deleteTarget = nil }
         } message: {
             if let target = deleteTarget, viewModel.countsByTag[target.id, default: 0] > 0 {
-                Text("\(viewModel.countsByTag[target.id, default: 0]) contacts will lose this tag.")
+                Text("\(viewModel.countsByTag[target.id, default: 0]) contacts will lose this group.")
             } else {
                 Text("This action cannot be undone.")
             }

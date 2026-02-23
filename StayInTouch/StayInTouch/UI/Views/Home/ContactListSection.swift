@@ -23,9 +23,12 @@ struct ContactListSection: View {
         VStack(spacing: 0) {
             Button(action: onToggle) {
                 HStack {
+                    Circle()
+                        .fill(Color(hex: colorHex))
+                        .frame(width: 8, height: 8)
                     Text(title)
                         .font(DS.Typography.sectionHeader)
-                        .foregroundStyle(Color(hex: colorHex))
+                        .foregroundStyle(DS.Colors.primaryText)
                     Text("\(people.count)")
                         .font(DS.Typography.caption)
                         .foregroundStyle(DS.Colors.secondaryText)
