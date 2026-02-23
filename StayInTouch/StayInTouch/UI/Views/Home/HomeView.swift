@@ -191,7 +191,7 @@ struct HomeView: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.caption2)
                         .foregroundStyle(DS.Colors.accent)
-                        .frame(minWidth: 44, minHeight: 44)
+                        .frame(minWidth: 44)
                         .contentShape(Rectangle())
                 }
             }
@@ -236,7 +236,7 @@ struct HomeView: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.caption2)
                         .foregroundStyle(DS.Colors.accent)
-                        .frame(minWidth: 44, minHeight: 44)
+                        .frame(minWidth: 44)
                         .contentShape(Rectangle())
                 }
             }

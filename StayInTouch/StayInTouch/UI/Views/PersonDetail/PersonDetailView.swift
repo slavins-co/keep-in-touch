@@ -432,7 +432,7 @@ struct PersonDetailView: View {
             HStack {
                 Text("FREQUENCY")
                     .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Colors.tertiaryText)
+                    .foregroundStyle(DS.Colors.secondaryText)
                     .tracking(0.5)
                 Spacer()
                 Button("Change") { showChangeGroup = true }
@@ -478,7 +478,7 @@ struct PersonDetailView: View {
             HStack {
                 Text("GROUPS")
                     .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Colors.tertiaryText)
+                    .foregroundStyle(DS.Colors.secondaryText)
                     .tracking(0.5)
                 Spacer()
                 Button("Manage") { showManageTags = true }
@@ -508,7 +508,7 @@ struct PersonDetailView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Text("NOTIFICATIONS")
                 .font(DS.Typography.caption)
-                .foregroundStyle(DS.Colors.tertiaryText)
+                .foregroundStyle(DS.Colors.secondaryText)
                 .tracking(0.5)
 
             Toggle(isOn: Binding(

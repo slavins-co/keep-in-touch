@@ -63,7 +63,7 @@ enum DS {
     enum Typography {
         static let largeTitle = Font.largeTitle.weight(.bold)
         static let title = Font.title2.weight(.semibold)
-        static let sectionHeader = Font.subheadline.weight(.semibold)
+        static let sectionHeader = Font.subheadline.weight(.bold)
         static let contactName = Font.body.weight(.medium)
         static let metadata = Font.subheadline
         static let caption = Font.caption
