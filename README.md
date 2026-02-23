@@ -7,7 +7,7 @@
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-3.0-brightgreen.svg)](https://developer.apple.com/xcode/swiftui/)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE)
 
-**Version:** 0.1.1 (Build 3)
+**Version:** 0.2.0 (Build 4)
 **Status:** 🧪 Pre-release Beta | 🧭 Planning V0.2.0
 
 ---
