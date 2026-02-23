@@ -138,16 +138,20 @@ final class HomeViewModel: ObservableObject {
             $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
         }
 
+        let allGoodByRecency = allGood.sorted {
+            ($0.lastTouchAt ?? .distantPast) > ($1.lastTouchAt ?? .distantPast)
+        }
+
         switch sortOption {
         case .status:
             overduePeople = overdue
             dueSoonPeople = dueSoon
-            allGoodPeople = allGood.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
+            allGoodPeople = allGoodByRecency
             nameSortedPeople = nameSorted
         case .name:
             overduePeople = overdue
             dueSoonPeople = dueSoon
-            allGoodPeople = allGood
+            allGoodPeople = allGoodByRecency
             nameSortedPeople = nameSorted
         }
     }

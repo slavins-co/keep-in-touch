@@ -11,14 +11,15 @@ struct NotificationsSkippedView: View {
     @ObservedObject var viewModel: OnboardingViewModel
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: DS.Spacing.xxl) {
             Image(systemName: "bell.slash.fill")
                 .font(.system(size: 56))
+                .foregroundStyle(DS.Colors.accent)
             Text("Notifications Are Off")
-                .font(.title2)
+                .font(DS.Typography.title)
             Text("No worries — you can enable reminders anytime in Settings.")
-                .font(.body)
-                .foregroundStyle(.secondary)
+                .font(DS.Typography.metadata)
+                .foregroundStyle(DS.Colors.secondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
@@ -26,6 +27,7 @@ struct NotificationsSkippedView: View {
                 viewModel.finishFromNotificationsSkipped()
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
         }
         .padding()
     }

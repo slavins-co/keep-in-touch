@@ -11,14 +11,15 @@ struct NotificationsPermissionView: View {
     @ObservedObject var viewModel: OnboardingViewModel
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: DS.Spacing.xxl) {
             Image(systemName: "bell.badge.fill")
-                .font(.system(size: 64))
+                .font(.system(size: 56))
+                .foregroundStyle(DS.Colors.accent)
             Text("Stay on Track with Reminders")
-                .font(.title2)
+                .font(DS.Typography.title)
             Text("We'll send gentle nudges when it's time to reconnect.")
-                .font(.body)
-                .foregroundStyle(.secondary)
+                .font(DS.Typography.metadata)
+                .foregroundStyle(DS.Colors.secondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
@@ -26,11 +27,13 @@ struct NotificationsPermissionView: View {
                 Task { await viewModel.requestNotificationsPermission() }
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
 
             Button("Not Now") {
                 viewModel.skipNotifications()
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.plain)
+            .foregroundStyle(DS.Colors.secondaryText)
         }
         .padding()
     }

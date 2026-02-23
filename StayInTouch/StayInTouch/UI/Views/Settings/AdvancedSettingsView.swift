@@ -23,7 +23,10 @@ struct AdvancedSettingsView: View {
                 ))
             }
 
-            Section(footer: Text("These settings are intended for testing and development purposes.")) {
+            Section(footer: Text("These settings are intended for testing and development purposes.")
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Colors.secondaryText)
+            ) {
                 EmptyView()
             }
         }

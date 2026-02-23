@@ -11,30 +11,30 @@ struct GroupAssignmentView: View {
     @ObservedObject var viewModel: OnboardingViewModel
 
     var body: some View {
-        VStack(spacing: 12) {
-            Text("Choose a Cadence")
-                .font(.title2)
+        VStack(spacing: DS.Spacing.md) {
+            Text("Choose a Frequency")
+                .font(DS.Typography.title)
                 .padding(.top)
 
             Text("Pick how often you want to stay in touch with each person.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(DS.Typography.metadata)
+                .foregroundStyle(DS.Colors.secondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
             List(selectedContacts) { contact in
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     Text(contact.displayName)
-                        .font(.headline)
+                        .font(DS.Typography.contactName)
 
-                    Picker("Group", selection: binding(for: contact.identifier)) {
+                    Picker("Frequency", selection: binding(for: contact.identifier)) {
                         ForEach(viewModel.groups, id: \.id) { group in
                             Text(group.name).tag(group.id)
                         }
                     }
                     .pickerStyle(.menu)
                 }
-                .padding(.vertical, 6)
+                .padding(.vertical, DS.Spacing.sm)
             }
             .listStyle(.plain)
 
@@ -42,6 +42,7 @@ struct GroupAssignmentView: View {
                 viewModel.continueFromGroupAssignment()
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
             .padding(.bottom)
         }
     }

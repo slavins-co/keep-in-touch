@@ -42,7 +42,7 @@ struct NewContactsPickerView: View {
                 TextField("Search contacts...", text: $searchText)
                     .textFieldStyle(.roundedBorder)
                     .padding(.horizontal)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, DS.Spacing.sm)
 
                 ScrollViewReader { proxy in
                     HStack(spacing: 0) {

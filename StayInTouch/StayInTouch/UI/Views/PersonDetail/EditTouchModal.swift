@@ -28,13 +28,13 @@ struct EditTouchModal: View {
     var body: some View {
         NavigationStack {
             Form {
-                Text("Date: \(touch.at.formatted(date: .abbreviated, time: .shortened))")
+                Text("Date: \(touch.at.formatted(date: .abbreviated, time: .omitted))")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
                 Picker("Method", selection: $selectedMethod) {
                     ForEach(TouchMethod.allCases, id: \.self) { method in
-                        Text(method.rawValue).tag(method)
+                        Label(method.rawValue, systemImage: DS.touchMethodIcon(method)).tag(method)
                     }
                 }
 
@@ -47,7 +47,7 @@ struct EditTouchModal: View {
 
                 TextField("Notes", text: $notes, axis: .vertical)
             }
-            .navigationTitle("Edit Touch")
+            .navigationTitle("Edit Connection")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }

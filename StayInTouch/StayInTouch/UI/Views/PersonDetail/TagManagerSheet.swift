@@ -26,16 +26,16 @@ struct TagManagerSheet: View {
                     }
                 } label: {
                     HStack {
-                        Text(tag.name)
+                        TagPill(tag: tag)
                         Spacer()
                         if selectedIds.contains(tag.id) {
                             Image(systemName: "checkmark")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(DS.Colors.accent)
                         }
                     }
                 }
             }
-            .navigationTitle("Manage Tags")
+            .navigationTitle("Manage Groups")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }

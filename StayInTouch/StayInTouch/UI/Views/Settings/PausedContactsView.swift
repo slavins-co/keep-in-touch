@@ -24,11 +24,12 @@ struct PausedContactsView: View {
                 } label: {
                     HStack {
                         Text(person.displayName)
+                            .font(DS.Typography.contactName)
                         Spacer()
                         if person.isPaused {
                             Text("Paused")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(DS.Colors.secondaryText)
                         }
                     }
                 }
@@ -74,7 +75,7 @@ struct PausedContactsView: View {
         }
         .sheet(isPresented: $showDatePicker) {
             NavigationStack {
-                DatePicker("Last touch", selection: $pickedDate, in: ...Date(), displayedComponents: .date)
+                DatePicker("Last connection", selection: $pickedDate, in: ...Date(), displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding()
                     .toolbar {

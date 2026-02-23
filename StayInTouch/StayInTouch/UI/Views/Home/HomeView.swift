@@ -21,8 +21,12 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                header
-                filters
+                VStack(spacing: 0) {
+                    header
+                    filters
+                }
+                .background(DS.Colors.secondaryBackground)
+
                 content
                 searchBar
             }
@@ -85,103 +89,211 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Header
+
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text("Stay in Touch")
-                    .font(.largeTitle)
+                    .font(DS.Typography.largeTitle)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Spacer()
                 NavigationLink {
                     SettingsView()
                 } label: {
-                    Image(systemName: "gearshape.fill")
+                    Image(systemName: "gearshape")
                         .font(.title3)
                 }
             }
 
-            HStack(spacing: 12) {
-                statusCount(color: "FF3B30", text: "\(viewModel.overduePeople.count) overdue")
-                statusCount(color: "FF9500", text: "\(viewModel.dueSoonPeople.count) due soon")
-                statusCount(color: "34C759", text: "\(viewModel.allGoodPeople.count) all good")
+            HStack(spacing: DS.Spacing.sm) {
+                statusCountText(count: viewModel.overduePeople.count, label: "overdue", color: DS.Colors.statusOverdue)
+                Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
+                statusCountText(count: viewModel.dueSoonPeople.count, label: "due soon", color: DS.Colors.statusDueSoon)
+                Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
+                statusCountText(count: viewModel.allGoodPeople.count, label: "all good", color: DS.Colors.statusAllGood)
             }
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+            .font(DS.Typography.caption)
         }
         .padding(.horizontal)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
+        .padding(.top, DS.Spacing.md)
+        .padding(.bottom, DS.Spacing.sm)
     }
 
-    private func statusCount(color: String, text: String) -> some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(Color(hex: color))
-                .frame(width: 8, height: 8)
-            Text(text)
-        }
+    private func statusCountText(count: Int, label: String, color: Color) -> Text {
+        Text("\(count)").foregroundColor(color) + Text(" \(label)").foregroundColor(DS.Colors.secondaryText)
     }
+
+    // MARK: - Filters
 
     private var filters: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: DS.Spacing.sm) {
+            // Sort control (icon only)
             Menu {
-                Button("All") { viewModel.selectedGroupId = nil }
+                ForEach(HomeViewModel.SortOption.allCases, id: \.self) { option in
+                    Button {
+                        viewModel.sortOption = option
+                    } label: {
+                        if viewModel.sortOption == option {
+                            Label("Sort by \(option.rawValue)", systemImage: "checkmark")
+                        } else {
+                            Text("Sort by \(option.rawValue)")
+                        }
+                    }
+                }
+            } label: {
+                Image(systemName: viewModel.sortOption == .name
+                      ? "line.3.horizontal.decrease.circle.fill"
+                      : "line.3.horizontal.decrease.circle")
+                    .font(.title3)
+                    .foregroundStyle(viewModel.sortOption == .name ? DS.Colors.accent : DS.Colors.secondaryText)
+            }
+
+            // Frequency filter chip
+            frequencyFilterChip
+
+            // Tag filter chip
+            tagFilterChip
+
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.bottom, DS.Spacing.md)
+    }
+
+    private var frequencyFilterChip: some View {
+        let isActive = viewModel.selectedGroupId != nil
+        let displayText = viewModel.selectedGroupId.flatMap { id in
+            viewModel.groups.first(where: { $0.id == id })?.name
+        } ?? "Frequency"
+
+        return HStack(spacing: DS.Spacing.xs) {
+            Menu {
+                Button("All Frequencies") { viewModel.selectedGroupId = nil }
                 ForEach(viewModel.groups, id: \.id) { group in
                     Button(group.name) { viewModel.selectedGroupId = group.id }
                 }
             } label: {
-                filterLabel(text: viewModel.selectedGroupId.flatMap { id in
-                    viewModel.groups.first(where: { $0.id == id })?.name
-                } ?? "All")
-            }
-
-            Menu {
-                ForEach(HomeViewModel.SortOption.allCases, id: \.self) { option in
-                    Button(option.rawValue) { viewModel.sortOption = option }
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(displayText)
+                        .font(.subheadline)
+                        .lineLimit(1)
+                    if !isActive {
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
+                    }
                 }
-            } label: {
-                filterLabel(text: viewModel.sortOption.rawValue)
             }
 
+            if isActive {
+                Button { viewModel.selectedGroupId = nil } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(DS.Colors.accent)
+                        .frame(minWidth: 44)
+                        .contentShape(Rectangle())
+                }
+            }
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, 6)
+        .background(isActive ? DS.Colors.accent.opacity(0.12) : Color.clear)
+        .foregroundStyle(isActive ? DS.Colors.accent : DS.Colors.secondaryText)
+        .overlay(
+            Capsule()
+                .stroke(isActive ? Color.clear : DS.Colors.separator, lineWidth: 0.5)
+        )
+        .clipShape(Capsule())
+    }
+
+    private var tagFilterChip: some View {
+        let isActive = viewModel.selectedTagId != nil
+        let displayText = viewModel.selectedTagId.flatMap { id in
+            viewModel.tags.first(where: { $0.id == id })?.name
+        } ?? "Groups"
+
+        return HStack(spacing: DS.Spacing.xs) {
             Menu {
-                Button("All Tags") { viewModel.selectedTagId = nil }
+                Button("All Groups") { viewModel.selectedTagId = nil }
                 ForEach(viewModel.tags, id: \.id) { tag in
                     Button(tag.name) { viewModel.selectedTagId = tag.id }
                 }
             } label: {
-                filterLabel(text: viewModel.selectedTagId.flatMap { id in
-                    viewModel.tags.first(where: { $0.id == id })?.name
-                } ?? "All Tags")
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(displayText)
+                        .font(.subheadline)
+                        .lineLimit(1)
+                    if !isActive {
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
+                    }
+                }
+            }
+
+            if isActive {
+                Button { viewModel.selectedTagId = nil } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(DS.Colors.accent)
+                        .frame(minWidth: 44)
+                        .contentShape(Rectangle())
+                }
             }
         }
-        .padding(.horizontal)
-        .padding(.bottom, 8)
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, 6)
+        .background(isActive ? DS.Colors.accent.opacity(0.12) : Color.clear)
+        .foregroundStyle(isActive ? DS.Colors.accent : DS.Colors.secondaryText)
+        .overlay(
+            Capsule()
+                .stroke(isActive ? Color.clear : DS.Colors.separator, lineWidth: 0.5)
+        )
+        .clipShape(Capsule())
     }
 
-    private func filterLabel(text: String) -> some View {
-        HStack {
-            Text(text)
-                .font(.callout)
-            Spacer()
-            Image(systemName: "chevron.down")
-                .font(.footnote)
+    // MARK: - Search Bar
+
+    private var searchBar: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(DS.Colors.tertiaryText)
+            TextField(
+                "Search contacts...",
+                text: Binding(
+                    get: { viewModel.searchText },
+                    set: { viewModel.updateSearchText($0) }
+                )
+            )
+            .textFieldStyle(.plain)
+            if !viewModel.searchText.isEmpty {
+                Button {
+                    viewModel.updateSearchText("")
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(DS.Colors.tertiaryText)
+                }
+            }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.sm)
+        .background(DS.Colors.secondaryBackground)
+        .clipShape(Capsule())
+        .padding(.horizontal)
+        .padding(.bottom, DS.Spacing.sm)
     }
+
+    // MARK: - Content
 
     private var content: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: DS.Spacing.xl) {
                 if viewModel.overduePeople.isEmpty && viewModel.dueSoonPeople.isEmpty && viewModel.allGoodPeople.isEmpty {
                     if viewModel.searchText.isEmpty {
                         EmptyStateView(
                             title: "No friends yet",
                             message: "It's okay. We'll help you fix that.",
-                            emoji: "🥲",
+                            systemImage: "person.2.slash",
                             actionTitle: "Add Contacts",
                             action: { addContactsFromEmptyState() }
                         )
@@ -189,36 +301,37 @@ struct HomeView: View {
                         EmptyStateView(
                             title: "No contacts found",
                             message: "Try a different search.",
-                            emoji: "🔍"
+                            systemImage: "magnifyingglass"
                         )
                     }
                 } else if viewModel.sortOption == .name {
                     let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
                     let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
                     let calculator = SLACalculator()
-                    VStack(spacing: 8) {
-                        ForEach(viewModel.nameSortedPeople, id: \.id) { person in
-                            let groupName = groupsById[person.groupId]?.name ?? "Group"
+                    VStack(spacing: 0) {
+                        ForEach(Array(viewModel.nameSortedPeople.enumerated()), id: \.element.id) { index, person in
+                            let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
                             let tags = person.tagIds.compactMap { tagsById[$0] }
                             NavigationLink {
                                 PersonDetailView(person: person)
                             } label: {
-                            ContactCard(
-                                person: person,
-                                groupName: groupName,
-                                tags: tags,
-                                status: calculator.status(for: person, in: viewModel.groups),
-                                daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
-                                metadataText: metadataText(
-                                    for: person,
-                                    groupName: groupName,
+                                ContactCard(
+                                    person: person,
+                                    frequencyName: frequencyName,
+                                    tags: tags,
                                     status: calculator.status(for: person, in: viewModel.groups),
-                                    includeStatus: true
+                                    daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
+                                    timeAgo: timeAgoText(for: person),
+                                    lastMethod: person.lastTouchMethod
                                 )
-                            )
+                            }
+                            .buttonStyle(.plain)
+
+                            if index < viewModel.nameSortedPeople.count - 1 {
+                                SubtleDivider()
+                                    .padding(.leading, DS.Spacing.lg)
+                            }
                         }
-                        .buttonStyle(.plain)
-                    }
                     }
                 } else {
                     let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
@@ -235,15 +348,7 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        metadataTextForPerson: {
-                            let groupName = groupsById[$0.groupId]?.name ?? "Group"
-                            return metadataText(
-                                for: $0,
-                                groupName: groupName,
-                                status: calculator.status(for: $0, in: viewModel.groups),
-                                includeStatus: false
-                            )
-                        }
+                        timeAgoForPerson: { timeAgoText(for: $0) }
                     )
 
                     ContactListSection(
@@ -256,15 +361,7 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        metadataTextForPerson: {
-                            let groupName = groupsById[$0.groupId]?.name ?? "Group"
-                            return metadataText(
-                                for: $0,
-                                groupName: groupName,
-                                status: calculator.status(for: $0, in: viewModel.groups),
-                                includeStatus: false
-                            )
-                        }
+                        timeAgoForPerson: { timeAgoText(for: $0) }
                     )
 
                     ContactListSection(
@@ -277,50 +374,20 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        metadataTextForPerson: {
-                            let groupName = groupsById[$0.groupId]?.name ?? "Group"
-                            return metadataText(
-                                for: $0,
-                                groupName: groupName,
-                                status: calculator.status(for: $0, in: viewModel.groups),
-                                includeStatus: false
-                            )
-                        }
+                        timeAgoForPerson: { timeAgoText(for: $0) }
                     )
                 }
             }
             .padding(.horizontal)
-            .padding(.bottom, 24)
+            .padding(.top, DS.Spacing.md)
+            .padding(.bottom, DS.Spacing.xxl)
         }
         .refreshable {
             await viewModel.refreshFromContacts()
         }
     }
 
-    private var searchBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-            TextField(
-                "Search contacts...",
-                text: Binding(
-                    get: { viewModel.searchText },
-                    set: { viewModel.updateSearchText($0) }
-                )
-            )
-                .textFieldStyle(.plain)
-            if !viewModel.searchText.isEmpty {
-                Button("Clear") { viewModel.updateSearchText("") }
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 10)
-        .background(Color(.secondarySystemBackground))
-        .padding(.horizontal)
-        .padding(.bottom, 12)
-    }
+    // MARK: - Helpers
 
     private func toggleSection(_ key: String) {
         withAnimation(.easeInOut(duration: 0.3)) {
@@ -372,31 +439,10 @@ struct HomeView: View {
         "You're already up to date."
     }
 
-    private func metadataText(for person: Person, groupName: String, status: SLAStatus, includeStatus: Bool) -> String {
-        var parts: [String] = [groupName]
-        if includeStatus {
-            parts.append(statusLabel(status))
-        }
-        parts.append(timeAgoText(for: person))
-        if let method = person.lastTouchMethod {
-            parts.append(method.rawValue)
-        }
-        return parts.joined(separator: " • ")
-    }
-
     private func timeAgoText(for person: Person) -> String {
         let days = SLACalculator().daysSinceLastTouch(for: person)
-        guard let days else { return "No touch" }
+        guard let days else { return "No contact" }
         if days == 0 { return "Today" }
         return "\(days)d ago"
-    }
-
-    private func statusLabel(_ status: SLAStatus) -> String {
-        switch status {
-        case .inSLA: return "All good"
-        case .dueSoon: return "Check in soon"
-        case .outOfSLA: return "Overdue"
-        case .unknown: return "Unknown"
-        }
     }
 }

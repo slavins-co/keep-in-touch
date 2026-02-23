@@ -11,14 +11,15 @@ struct ContactsPermissionView: View {
     @ObservedObject var viewModel: OnboardingViewModel
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: DS.Spacing.xxl) {
             Image(systemName: "person.crop.circle.badge.questionmark")
-                .font(.system(size: 64))
+                .font(.system(size: 56))
+                .foregroundStyle(DS.Colors.accent)
             Text("Connect Your Contacts")
-                .font(.title)
+                .font(DS.Typography.title)
             Text("We'll help you pick who you want to stay close with. Your contacts never leave your device.")
-                .font(.body)
-                .foregroundStyle(.secondary)
+                .font(DS.Typography.metadata)
+                .foregroundStyle(DS.Colors.secondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
@@ -26,11 +27,13 @@ struct ContactsPermissionView: View {
                 Task { await viewModel.requestContactsPermission() }
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
 
             Button("Skip for Now") {
                 viewModel.skipContactsPermission()
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.plain)
+            .foregroundStyle(DS.Colors.secondaryText)
         }
         .padding()
     }

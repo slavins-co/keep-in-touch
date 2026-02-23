@@ -36,7 +36,7 @@ struct GroupEditorSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Group Name") {
+                Section("Frequency Name") {
                     TextField("Close Friends", text: $name)
                 }
 
@@ -51,15 +51,15 @@ struct GroupEditorSheet: View {
                         Text("\(warningDays) days")
                     }
                     Text("Show \"due soon\" before the interval expires")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .font(DS.Typography.metadata)
+                        .foregroundStyle(DS.Colors.secondaryText)
                 }
 
                 Section {
                     Toggle("Set as default", isOn: $isDefault)
                 }
             }
-            .navigationTitle(group == nil ? "New Group" : "Edit Group")
+            .navigationTitle(group == nil ? "New Frequency" : "Edit Frequency")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {

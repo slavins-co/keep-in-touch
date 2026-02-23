@@ -7,6 +7,9 @@
 
 import Foundation
 
+// Note: Avatar colors are stored on Person entities but no longer displayed
+// in the UI as of the UX redesign (Issue #24). Retained for data compatibility.
+
 enum AvatarColors {
     static let palette: [String] = [
         "#FF6B6B",

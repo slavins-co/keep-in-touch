@@ -9,77 +9,61 @@ import SwiftUI
 
 struct ContactCard: View {
     let person: Person
-    let groupName: String
+    let frequencyName: String
     let tags: [Tag]
     let status: SLAStatus
     let daysOverdue: Int
-    let metadataText: String
+    let timeAgo: String
+    let lastMethod: TouchMethod?
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Color(hex: person.avatarColor))
-                    .frame(width: 44, height: 44)
-                Text(person.initials)
-                    .font(.callout)
-                    .foregroundStyle(.white)
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // Row 1: Name + inline tags + status
+            HStack(spacing: DS.Spacing.sm) {
                 Text(person.displayName)
-                    .font(.headline)
+                    .font(DS.Typography.contactName)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-
-                Text(metadataText)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .layoutPriority(1)
 
                 if !tags.isEmpty {
-                    HStack(spacing: 6) {
-                        ForEach(tags, id: \.id) { tag in
-                            Text(tag.name)
-                                .font(.caption)
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(Color(hex: tag.colorHex))
-                                .clipShape(Capsule())
+                    HStack(spacing: DS.Spacing.xs) {
+                        ForEach(tags.prefix(2), id: \.id) { tag in
+                            TagPill(tag: tag)
+                        }
+                        if tags.count > 2 {
+                            Text("+\(tags.count - 2)")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(DS.Colors.secondaryText)
                         }
                     }
-                }
-            }
-
-            Spacer()
-
-            VStack(spacing: 6) {
-                if daysOverdue > 0 {
-                    Text("+\(daysOverdue)d")
-                        .font(.footnote)
-                        .foregroundStyle(.red)
+                    .lineLimit(1)
                 }
 
-                Circle()
-                    .fill(statusColor())
-                    .frame(width: 10, height: 10)
-
-                Image(systemName: "chevron.right")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                Spacer(minLength: DS.Spacing.xs)
+                StatusIndicator(status: status, daysOverdue: daysOverdue)
             }
+
+            // Row 2: Icon-labeled metadata
+            metadataRow
         }
-        .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.vertical, DS.Spacing.md)
+        .contentShape(Rectangle())
     }
 
-    private func statusColor() -> Color {
-        switch status {
-        case .inSLA: return Color(hex: "34C759")
-        case .dueSoon: return Color(hex: "FF9500")
-        case .outOfSLA: return Color(hex: "FF3B30")
-        case .unknown: return Color(hex: "8E8E93")
+    private var metadataRow: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Label(timeAgo, systemImage: "clock")
+
+            if let method = lastMethod {
+                Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
+                Label(method.rawValue, systemImage: DS.touchMethodIcon(method))
+            }
+
+            Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
+            Label(frequencyName, systemImage: "arrow.triangle.2.circlepath")
         }
+        .font(DS.Typography.metadata)
+        .foregroundStyle(DS.Colors.secondaryText)
+        .lineLimit(1)
     }
 }
