@@ -286,7 +286,11 @@ struct HomeView: View {
     // MARK: - Content
 
     private var content: some View {
-        ScrollView {
+        let calculator = FrequencyCalculator()
+        let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
+        let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
+
+        return ScrollView {
             VStack(spacing: DS.Spacing.xl) {
                 if viewModel.overduePeople.isEmpty && viewModel.dueSoonPeople.isEmpty && viewModel.allGoodPeople.isEmpty {
                     if viewModel.searchText.isEmpty {
@@ -305,9 +309,6 @@ struct HomeView: View {
                         )
                     }
                 } else if viewModel.sortOption == .name {
-                    let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
-                    let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
-                    let calculator = FrequencyCalculator()
                     VStack(spacing: 0) {
                         ForEach(Array(viewModel.nameSortedPeople.enumerated()), id: \.element.id) { index, person in
                             let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
@@ -321,7 +322,7 @@ struct HomeView: View {
                                     tags: tags,
                                     status: calculator.status(for: person, in: viewModel.groups),
                                     daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
-                                    timeAgo: timeAgoText(for: person),
+                                    timeAgo: timeAgoText(for: person, calculator: calculator),
                                     lastMethod: person.lastTouchMethod
                                 )
                             }
@@ -334,10 +335,6 @@ struct HomeView: View {
                         }
                     }
                 } else {
-                    let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
-                    let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
-                    let calculator = FrequencyCalculator()
-
                     ContactListSection(
                         title: "Overdue",
                         colorHex: "FF3B30",
@@ -348,7 +345,7 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        timeAgoForPerson: { timeAgoText(for: $0) }
+                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) }
                     )
 
                     ContactListSection(
@@ -361,7 +358,7 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        timeAgoForPerson: { timeAgoText(for: $0) }
+                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) }
                     )
 
                     ContactListSection(
@@ -374,7 +371,7 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        timeAgoForPerson: { timeAgoText(for: $0) }
+                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) }
                     )
                 }
             }
@@ -439,8 +436,8 @@ struct HomeView: View {
         "You're already up to date."
     }
 
-    private func timeAgoText(for person: Person) -> String {
-        let days = FrequencyCalculator().daysSinceLastTouch(for: person)
+    private func timeAgoText(for person: Person, calculator: FrequencyCalculator) -> String {
+        let days = calculator.daysSinceLastTouch(for: person)
         guard let days else { return "No contact" }
         if days == 0 { return "Today" }
         return "\(days)d ago"
