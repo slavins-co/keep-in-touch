@@ -133,7 +133,7 @@ final class NotificationScheduler {
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = notificationUserInfo(for: people, type: type.userInfoType)
 
-        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: false)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         let request = UNNotificationRequest(identifier: type.identifier, content: content, trigger: trigger)
         do {
             try await UNUserNotificationCenter.current().add(request)
@@ -153,7 +153,7 @@ final class NotificationScheduler {
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = ["type": "home", "category": "daily"]
 
-        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: false)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         let request = UNNotificationRequest(identifier: NotificationIdentifier.dailyCombined, content: content, trigger: trigger)
         do {
             try await UNUserNotificationCenter.current().add(request)
@@ -174,7 +174,7 @@ final class NotificationScheduler {
             content.badge = NSNumber(value: badgeCount)
             content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
 
-            let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: false)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
             let request = UNNotificationRequest(identifier: "\(type.identifier)_\(person.id.uuidString)", content: content, trigger: trigger)
             do {
                 try await UNUserNotificationCenter.current().add(request)
@@ -197,7 +197,7 @@ final class NotificationScheduler {
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = notificationUserInfo(for: all, type: "digest")
 
-        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: false)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         let request = UNNotificationRequest(identifier: NotificationIdentifier.weeklyDigest, content: content, trigger: trigger)
         do {
             try await UNUserNotificationCenter.current().add(request)
@@ -229,30 +229,22 @@ final class NotificationScheduler {
     }
 
     private func nextDailyDate(for time: LocalTime) -> DateComponents {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        // Return only hour/minute so UNCalendarNotificationTrigger with
+        // repeats:true fires daily at this time.
+        var components = DateComponents()
         components.hour = time.hour
         components.minute = time.minute
-        let candidate = calendar.date(from: components) ?? Date()
-        let next = candidate > Date() ? candidate : calendar.date(byAdding: .day, value: 1, to: candidate) ?? candidate
-        return calendar.dateComponents([.year, .month, .day, .hour, .minute], from: next)
+        return components
     }
 
     private func nextWeeklyDate(day: DayOfWeek, time: LocalTime) -> DateComponents {
-        let calendar = Calendar.current
-        let now = Date()
-        var components = calendar.dateComponents([.year, .month, .day], from: now)
+        // Return only weekday/hour/minute so UNCalendarNotificationTrigger
+        // with repeats:true fires weekly on this day and time.
+        var components = DateComponents()
+        components.weekday = day.calendarWeekday
         components.hour = time.hour
         components.minute = time.minute
-
-        let currentWeekday = calendar.component(.weekday, from: now)
-        var daysAhead = day.calendarWeekday - currentWeekday
-        if daysAhead < 0 { daysAhead += 7 }
-
-        let candidate = calendar.date(byAdding: .day, value: daysAhead, to: calendar.startOfDay(for: now)) ?? now
-        let candidateWithTime = calendar.date(bySettingHour: time.hour, minute: time.minute, second: 0, of: candidate) ?? candidate
-        let next = candidateWithTime > now ? candidateWithTime : calendar.date(byAdding: .day, value: 7, to: candidateWithTime) ?? candidateWithTime
-        return calendar.dateComponents([.year, .month, .day, .hour, .minute], from: next)
+        return components
     }
 
     private func clearAll() async {
@@ -270,7 +262,7 @@ private extension NotificationScheduler {
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
 
-        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: false)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         let request = UNNotificationRequest(identifier: "\(type.identifier)_custom_\(person.id.uuidString)", content: content, trigger: trigger)
         do {
             try await UNUserNotificationCenter.current().add(request)

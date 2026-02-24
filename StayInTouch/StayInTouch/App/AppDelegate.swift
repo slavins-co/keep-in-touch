@@ -22,6 +22,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         return true
     }
 
+    func applicationWillEnterForeground(_ application: UIApplication) {
+        Task { await NotificationScheduler.shared.scheduleAll() }
+    }
+
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
