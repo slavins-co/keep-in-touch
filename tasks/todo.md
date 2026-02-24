@@ -1,12 +1,20 @@
 # TODO - Stay in Touch iOS App
 
-**Project Status:** v0.2.1 (Build 6) — Pre-release Beta
+**Project Status:** v0.2.2 (Build 7) — Pre-release Beta
 **Last Updated:** February 24, 2026
 
 > **TestFlight Status:** Code blockers resolved. Manual submission steps remain — see `tasks/testflight-guide.md`.
 > When creating PRs, confirm TestFlight readiness is not regressed (deployment target 17.0, PrivacyInfo.xcprivacy present, UIBackgroundModes declared, build number incremented).
 
 ---
+
+## Completed — v0.2.2 (Critical + Performance)
+
+- [x] **#62** Optimize FrequencyCalculator — single instance per render (was creating hundreds of instances in ForEach)
+- [x] **#54** Auto-log touch after quick action with undo on return (Call/Message/Email now auto-log, undo banner on app return)
+- [x] **#53** Handle limited contact access dead end (shows "grant full access" alert instead of "up to date")
+- [x] **#61** Improve notification reliability with repeating triggers (daily/weekly notifications now fire reliably + foreground rescheduling)
+- [x] Build number bumped to 7, version 0.2.2
 
 ## Completed — v0.2.1 (Critical Issues)
 
