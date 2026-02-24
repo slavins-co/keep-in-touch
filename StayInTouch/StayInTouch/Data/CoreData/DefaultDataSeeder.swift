@@ -55,7 +55,7 @@ final class DefaultDataSeeder {
             let entity = GroupEntity(context: context)
             entity.id = UUID()
             entity.name = item.name
-            entity.slaDays = Int64(item.frequencyDays)
+            entity.frequencyDays = Int64(item.frequencyDays)
             entity.warningDays = Int64(item.warningDays)
             entity.colorHex = item.colorHex
             entity.isDefault = true
