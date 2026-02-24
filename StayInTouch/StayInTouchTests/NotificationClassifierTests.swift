@@ -68,6 +68,7 @@ final class NotificationClassifierTests: XCTestCase {
             notificationsMuted: muted,
             customBreachTime: nil,
             snoozedUntil: nil,
+            contactUnavailable: false,
             groupAddedAt: lastTouch,
             createdAt: reference,
             modifiedAt: reference,

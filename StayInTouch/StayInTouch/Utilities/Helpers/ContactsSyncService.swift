@@ -27,10 +27,25 @@ enum ContactsSyncService {
             let now = Date()
 
             for person in people {
-                guard let cnId = person.cnIdentifier, let summary = byId[cnId] else { continue }
+                guard let cnId = person.cnIdentifier else { continue }
                 var updated = person
-                updated.displayName = summary.displayName
-                updated.initials = summary.initials
+
+                if let summary = byId[cnId] {
+                    // Contact still exists — sync name and clear unavailable flag
+                    updated.displayName = summary.displayName
+                    updated.initials = summary.initials
+                    if updated.contactUnavailable {
+                        updated.contactUnavailable = false
+                    }
+                } else {
+                    // Contact no longer found — mark unavailable
+                    if !updated.contactUnavailable {
+                        updated.contactUnavailable = true
+                    } else {
+                        continue // already marked, skip save
+                    }
+                }
+
                 updated.modifiedAt = now
                 do {
                     try repo.save(updated)

@@ -54,17 +54,39 @@ final class PersonDetailViewModel: ObservableObject {
             return
         }
 
-        let result = await Task.detached(priority: .userInitiated) { () -> ContactsFetcher.ContactInfo? in
+        let fetchResult = await Task.detached(priority: .userInitiated) { () -> Result<ContactsFetcher.ContactInfo, Error> in
             do {
-                return try ContactsFetcher.fetchContactInfo(identifier: cnId)
+                let info = try ContactsFetcher.fetchContactInfo(identifier: cnId)
+                return .success(info)
             } catch {
-                AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.refreshContactInfo")
-                return nil
+                return .failure(error)
             }
         }.value
 
-        phone = result?.phone
-        email = result?.email
+        switch fetchResult {
+        case .success(let info):
+            phone = info.phone
+            email = info.email
+            if person.contactUnavailable {
+                var updated = person
+                updated.contactUnavailable = false
+                updated.modifiedAt = Date()
+                savePerson(updated)
+            }
+        case .failure(let error):
+            phone = nil
+            email = nil
+            if case ContactsFetcherError.contactNotFound = error {
+                if !person.contactUnavailable {
+                    var updated = person
+                    updated.contactUnavailable = true
+                    updated.modifiedAt = Date()
+                    savePerson(updated)
+                }
+            } else {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.refreshContactInfo")
+            }
+        }
     }
 
     func reloadPerson() {

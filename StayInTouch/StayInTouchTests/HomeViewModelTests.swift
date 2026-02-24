@@ -91,6 +91,7 @@ final class HomeViewModelTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            contactUnavailable: false,
             groupAddedAt: Date(),
             createdAt: Date(),
             modifiedAt: Date(),

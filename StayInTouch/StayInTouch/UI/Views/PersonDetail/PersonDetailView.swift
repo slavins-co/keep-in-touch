@@ -42,11 +42,17 @@ struct PersonDetailView: View {
                 header
                     .padding(.bottom, DS.Spacing.lg)
 
+                if viewModel.person.contactUnavailable {
+                    unavailableContactBanner
+                }
+
                 if viewModel.person.isPaused {
                     pausedBanner
                 }
 
                 reachOutButtons
+                    .opacity(viewModel.person.contactUnavailable ? 0.4 : 1.0)
+                    .disabled(viewModel.person.contactUnavailable)
 
                 logTouchButton
 
@@ -235,6 +241,33 @@ struct PersonDetailView: View {
                     .foregroundStyle(DS.Colors.secondaryText)
             }
         }
+    }
+
+    private var unavailableContactBanner: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.white)
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text("Contact unavailable")
+                    .font(DS.Typography.metadata.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text("This contact may have been deleted or merged.")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+            Spacer()
+            Button("Remove") { showRemoveConfirm = true }
+                .font(DS.Typography.caption.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, DS.Spacing.xs)
+                .background(.white.opacity(0.2))
+                .clipShape(Capsule())
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Colors.statusDueSoon)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.bottom, DS.Spacing.md)
     }
 
     private var pausedBanner: some View {

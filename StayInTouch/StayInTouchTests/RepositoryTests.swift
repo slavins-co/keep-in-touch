@@ -79,6 +79,7 @@ final class RepositoryTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            contactUnavailable: false,
             groupAddedAt: nil,
             createdAt: Date(),
             modifiedAt: Date(),
