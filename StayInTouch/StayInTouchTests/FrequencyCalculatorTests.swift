@@ -1,5 +1,5 @@
 //
-//  SLACalculatorTests.swift
+//  FrequencyCalculatorTests.swift
 //  StayInTouchTests
 //
 //  Created by Codex on 2/2/26.
@@ -8,7 +8,7 @@
 import XCTest
 @testable import StayInTouch
 
-final class SLACalculatorTests: XCTestCase {
+final class FrequencyCalculatorTests: XCTestCase {
     func testNoTouchNoGroupAddedIsUnknown() {
         let groupId = UUID()
         let person = Person(
@@ -33,8 +33,8 @@ final class SLACalculatorTests: XCTestCase {
             modifiedAt: Date(),
             sortOrder: 0
         )
-        let group = Group(id: groupId, name: "Weekly", slaDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
-        let status = SLACalculator(referenceDate: Date()).status(for: person, in: [group])
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let status = FrequencyCalculator(referenceDate: Date()).status(for: person, in: [group])
         XCTAssertEqual(status, .unknown)
     }
 
@@ -64,9 +64,9 @@ final class SLACalculatorTests: XCTestCase {
             modifiedAt: start,
             sortOrder: 0
         )
-        let group = Group(id: groupId, name: "Weekly", slaDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: start, modifiedAt: start)
-        let status = SLACalculator(referenceDate: reference).status(for: person, in: [group])
-        XCTAssertEqual(status, .outOfSLA)
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: start, modifiedAt: start)
+        let status = FrequencyCalculator(referenceDate: reference).status(for: person, in: [group])
+        XCTAssertEqual(status, .overdue)
     }
 
     func testPausedIsAlwaysInSLA() {
@@ -93,9 +93,9 @@ final class SLACalculatorTests: XCTestCase {
             modifiedAt: Date(),
             sortOrder: 0
         )
-        let group = Group(id: groupId, name: "Weekly", slaDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
-        let status = SLACalculator(referenceDate: Date()).status(for: person, in: [group])
-        XCTAssertEqual(status, .inSLA)
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let status = FrequencyCalculator(referenceDate: Date()).status(for: person, in: [group])
+        XCTAssertEqual(status, .onTrack)
     }
 
     func testDaysOverdueUsesGroupAddedDateWhenNoTouches() {
@@ -124,8 +124,8 @@ final class SLACalculatorTests: XCTestCase {
             modifiedAt: start,
             sortOrder: 0
         )
-        let group = Group(id: groupId, name: "Weekly", slaDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: start, modifiedAt: start)
-        let overdue = SLACalculator(referenceDate: reference).daysOverdue(for: person, in: [group])
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: start, modifiedAt: start)
+        let overdue = FrequencyCalculator(referenceDate: reference).daysOverdue(for: person, in: [group])
         XCTAssertEqual(overdue, 3)
     }
 }

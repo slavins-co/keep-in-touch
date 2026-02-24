@@ -35,7 +35,7 @@ struct ManageGroupsView: View {
                         }
                     }
 
-                    Text("Every \(group.slaDays) days \u{2022} \(viewModel.countsByGroup[group.id, default: 0]) contacts")
+                    Text("Every \(group.frequencyDays) days \u{2022} \(viewModel.countsByGroup[group.id, default: 0]) contacts")
                         .font(DS.Typography.metadata)
                         .foregroundStyle(DS.Colors.secondaryText)
                 }

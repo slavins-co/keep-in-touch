@@ -11,7 +11,7 @@ import XCTest
 final class NotificationClassifierTests: XCTestCase {
     func testMutedPeopleAreExcluded() {
         let groupId = UUID()
-        let group = Group(id: groupId, name: "Weekly", slaDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
         let reference = Date()
 
         let muted = makePerson(groupId: groupId, daysAgo: 10, muted: true)
@@ -24,7 +24,7 @@ final class NotificationClassifierTests: XCTestCase {
 
     func testCustomTimeRemovedFromGroupedLists() {
         let groupId = UUID()
-        let group = Group(id: groupId, name: "Weekly", slaDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
         let reference = Date()
 
         var custom = makePerson(groupId: groupId, daysAgo: 10)
@@ -39,7 +39,7 @@ final class NotificationClassifierTests: XCTestCase {
 
     func testUnknownLastTouchIsExcluded() {
         let groupId = UUID()
-        let group = Group(id: groupId, name: "Weekly", slaDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
         var person = makePerson(groupId: groupId, daysAgo: nil)
         person.lastTouchAt = nil
         person.groupAddedAt = nil

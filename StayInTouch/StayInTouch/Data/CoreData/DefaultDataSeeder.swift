@@ -44,7 +44,7 @@ final class DefaultDataSeeder {
 
     private func seedDefaultGroups() {
         let now = Date()
-        let defaults: [(name: String, slaDays: Int, warningDays: Int, colorHex: String?)] = [
+        let defaults: [(name: String, frequencyDays: Int, warningDays: Int, colorHex: String?)] = [
             ("Weekly", 7, 2, nil),
             ("Bi-Weekly", 14, 3, nil),
             ("Monthly", 30, 5, nil),
@@ -55,7 +55,7 @@ final class DefaultDataSeeder {
             let entity = GroupEntity(context: context)
             entity.id = UUID()
             entity.name = item.name
-            entity.slaDays = Int64(item.slaDays)
+            entity.slaDays = Int64(item.frequencyDays)
             entity.warningDays = Int64(item.warningDays)
             entity.colorHex = item.colorHex
             entity.isDefault = true

@@ -40,7 +40,7 @@ final class PersonStatusServiceTests: XCTestCase {
         let group = Group(
             id: groupId,
             name: "Monthly",
-            slaDays: 30,
+            frequencyDays: 30,
             warningDays: 5,
             colorHex: nil,
             isDefault: true,
@@ -124,7 +124,7 @@ final class PersonStatusServiceTests: XCTestCase {
         let group = Group(
             id: groupId,
             name: "Weekly",
-            slaDays: 7,
+            frequencyDays: 7,
             warningDays: 2,
             colorHex: nil,
             isDefault: true,

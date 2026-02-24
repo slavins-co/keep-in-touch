@@ -12,7 +12,7 @@ extension GroupEntity {
         Group(
             id: id ?? UUID(),
             name: name ?? "",
-            slaDays: Int(slaDays),
+            frequencyDays: Int(slaDays),
             warningDays: Int(warningDays),
             colorHex: colorHex,
             isDefault: isDefault,
@@ -25,7 +25,7 @@ extension GroupEntity {
     func apply(_ group: Group) {
         id = group.id
         name = group.name
-        slaDays = Int64(group.slaDays)
+        slaDays = Int64(group.frequencyDays)
         warningDays = Int64(group.warningDays)
         colorHex = group.colorHex
         isDefault = group.isDefault

@@ -102,7 +102,7 @@ final class HomeViewModelTests: XCTestCase {
         Group(
             id: id,
             name: "Weekly",
-            slaDays: 7,
+            frequencyDays: 7,
             warningDays: 2,
             colorHex: nil,
             isDefault: true,

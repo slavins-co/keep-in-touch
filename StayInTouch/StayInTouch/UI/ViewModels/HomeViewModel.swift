@@ -131,8 +131,8 @@ final class HomeViewModel: ObservableObject {
         let overdue = service.overduePeople(filtered, groups: groups)
         let dueSoon = service.dueSoonPeople(filtered, groups: groups, settings: currentSettings)
         let allGood = filtered.filter { person in
-            let status = SLACalculator().status(for: person, in: groups)
-            return status == .inSLA
+            let status = FrequencyCalculator().status(for: person, in: groups)
+            return status == .onTrack
         }
         let nameSorted = filtered.sorted {
             $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending

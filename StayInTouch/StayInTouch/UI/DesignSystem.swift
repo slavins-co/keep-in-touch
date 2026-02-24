@@ -39,20 +39,20 @@ enum DS {
         // Dividers
         static let separator = Color(.separator)
 
-        static func statusColor(for status: SLAStatus) -> Color {
+        static func statusColor(for status: ContactStatus) -> Color {
             switch status {
-            case .outOfSLA: return statusOverdue
+            case .overdue: return statusOverdue
             case .dueSoon: return statusDueSoon
-            case .inSLA: return statusAllGood
+            case .onTrack: return statusAllGood
             case .unknown: return statusUnknown
             }
         }
 
-        static func statusHex(for status: SLAStatus) -> String {
+        static func statusHex(for status: ContactStatus) -> String {
             switch status {
-            case .outOfSLA: return "FF3B30"
+            case .overdue: return "FF3B30"
             case .dueSoon: return "FF9500"
-            case .inSLA: return "34C759"
+            case .onTrack: return "34C759"
             case .unknown: return "8E8E93"
             }
         }
@@ -115,7 +115,7 @@ struct SubtleDivider: View {
 }
 
 struct StatusIndicator: View {
-    let status: SLAStatus
+    let status: ContactStatus
     var daysOverdue: Int = 0
 
     var body: some View {
