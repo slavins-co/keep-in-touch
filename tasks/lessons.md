@@ -717,6 +717,176 @@ Choose license based on distribution intent before making repo public:
 - **All Rights Reserved** — proprietary, view-only, maximum protection for commercial apps
 For potential paid apps, default to All Rights Reserved. Can always relicense later.
 
+### 2026-02-24 - 🔧 Git - Discarding Uncommitted Work Requires Two Steps
+
+**What Happened:**
+Attempting to discard ~156 uncommitted files from a failed previous implementation with `git checkout -- .` left staged renames and additions persisting.
+
+**Root Cause:**
+`git checkout -- .` only reverts unstaged changes. Files previously staged with `git add` remain in the index.
+
+**Solution:**
+Always `git reset HEAD -- .` first (unstage all), then `git checkout HEAD -- .` (revert working tree to HEAD).
+
+**Prevention Rule:**
+When discarding all uncommitted work to start fresh:
+```bash
+git reset HEAD -- .       # unstage everything
+git checkout HEAD -- .    # revert working tree
+git clean -fd             # remove untracked files (if needed)
+```
+
+### 2026-02-24 - 📊 Data - CoreData renamingIdentifier for Lightweight Migration
+
+**What Happened:**
+Renaming CoreData attribute `slaDays` → `frequencyDays` required a versioned model (v1 → v2) with lightweight migration support.
+
+**Root Cause:**
+CoreData treats a renamed attribute as "delete old + add new" without explicit guidance, losing data.
+
+**Solution:**
+Added `renamingIdentifier="slaDays"` to the `frequencyDays` attribute in the v2 model. This tells CoreData the attribute was renamed, preserving existing data during migration.
+
+**Prevention Rule:**
+When renaming a CoreData attribute:
+1. Create a new versioned model (never modify the current version in production)
+2. Add `renamingIdentifier="oldAttributeName"` to the renamed attribute
+3. Set the new model as `.xccurrentversion`
+4. Ensure `shouldMigrateStoreAutomatically` and `shouldInferMappingModelAutomatically` are both true
+5. Test migration with in-memory store to verify data survives
+
+### 2026-02-24 - 📊 Data - CoreDataStack Should Never Auto-Delete on Failure
+
+**What Happened:**
+The original CoreDataStack silently deleted the SQLite store and recreated it when persistent store loading failed, destroying all user data without warning.
+
+**Root Cause:**
+The initial implementation used `fatalError()` or auto-delete as the store load failure handler — acceptable for development but catastrophic in production.
+
+**Solution:**
+Replaced auto-delete with:
+1. `@Published migrationFailed` flag on CoreDataStack
+2. `.coreDataMigrationFailed` notification
+3. User-facing alert in StayInTouchApp with explicit "Reset App Data" / "Cancel" buttons
+4. `resetStore()` method that only runs after explicit user confirmation
+
+**Prevention Rule:**
+Never auto-delete a persistent store on load failure. Always:
+1. Surface the failure to the user with clear messaging
+2. Require explicit user confirmation before destructive recovery
+3. Log the error for debugging
+4. Provide a "Cancel" option so the user can seek support
+
+### 2026-02-24 - 🏗️ Architecture - Error Toast vs Logger Distinction
+
+**What Happened:**
+The app had ~20 `try?` patterns silently swallowing errors. User-initiated saves, deletes, and touch logs could fail without any feedback.
+
+**Root Cause:**
+No error presentation mechanism existed, so developers defaulted to `try?` everywhere.
+
+**Solution:**
+Created `ErrorToastManager` singleton + `ErrorToastModifier` overlay. Applied a clear rule:
+- User-initiated operations → `ErrorToastManager.shared.show(.saveFailed("context"))`
+- Background/batch operations → `AppLogger.logError()` only
+
+**Prevention Rule:**
+```
+User taps a button → show error toast on failure
+App does something in background → log error silently
+```
+Never use `try?` in user-initiated flows. Always catch and either show a toast or log.
+
+### 2026-02-24 - 🏗️ Architecture - Person Struct Property Addition Blast Radius
+
+**What Happened:**
+Adding `contactUnavailable: Bool` to Person required updating 15 constructor call sites across 10 files (3 source, 7 test). Same pattern as the earlier `snoozedUntil` addition.
+
+**Root Cause:**
+Swift structs with memberwise initializers require every call site to include every property.
+
+**Solution:**
+Used a subagent to parallelize the bulk updates. The subagent read each file, found the `Person(` constructor, and inserted `contactUnavailable: false,` before `groupAddedAt:`.
+
+**Prevention Rule:**
+When adding a new property to `Person`:
+1. Add the property to the struct definition
+2. Update `PersonEntity+Mapping.swift` (toDomain + apply)
+3. Use `grep "Person("` to find ALL call sites (~15 for Person)
+4. Delegate to a subagent with explicit file list and insertion point
+5. Build to catch any missed sites
+6. If the property is in the CoreData model, update the v2+ model too
+
+### 2026-02-24 - 📊 Data - ContactsSyncService Deleted Contact Detection
+
+**What Happened:**
+Needed to detect when a tracked person's underlying iOS contact was deleted or merged.
+
+**Root Cause:**
+The sync service only updated names for contacts it found — it silently skipped missing contacts.
+
+**Solution:**
+Changed the loop logic:
+- If `cnIdentifier` exists in the system contacts → sync name + clear `contactUnavailable`
+- If `cnIdentifier` is NOT found → set `contactUnavailable = true`
+- If already marked unavailable → skip save (no redundant writes)
+
+Also updated `PersonDetailViewModel.refreshContactInfo()` to catch `ContactsFetcherError.contactNotFound` and set the flag on individual contact views.
+
+**Prevention Rule:**
+When syncing external data, always handle the "missing" case explicitly. Don't just skip records that aren't found — they may represent deleted data that needs flagging.
+
+### 2026-02-24 - 🔧 Git - Version Bumps Touch 6 Locations in pbxproj
+
+**What Happened:**
+Needed to bump `CURRENT_PROJECT_VERSION` (5→6) and `MARKETING_VERSION` (0.2.0→0.2.1) across the project.
+
+**Root Cause:**
+Xcode stores build settings in 6 separate configuration blocks (Debug/Release × App/Tests/UITests).
+
+**Solution:**
+Used `replace_all: true` with the Edit tool to update all 6 occurrences at once.
+
+**Prevention Rule:**
+Both `CURRENT_PROJECT_VERSION` and `MARKETING_VERSION` appear exactly 6 times in `project.pbxproj`. Always use a global replace. After editing, verify with grep that all 6 are updated.
+
+### 2026-02-24 - ⚡ Workflow - Subagents for Bulk File Edits
+
+**What Happened:**
+The #57 rename touched 21 files and #56 touched 15 constructor sites. Managing these in the main context caused "File has not been read yet" errors from context compression.
+
+**Root Cause:**
+Long editing sessions compress earlier Read calls out of context, making the Edit tool unable to verify file contents.
+
+**Solution:**
+Delegated bulk file edits to subagents with `bypassPermissions` mode. Each subagent has a fresh context window and can read+edit without compression issues.
+
+**Prevention Rule:**
+When an edit touches 5+ files:
+1. Do core/architectural changes yourself (2-3 files)
+2. Delegate mechanical updates (constructor sites, renames) to a subagent
+3. Provide the subagent with an explicit file list and exact edit instructions
+4. Build+test after the subagent completes to verify
+
+### 2026-02-24 - 🔧 Git - One Issue Per Commit for Clean Bisection
+
+**What Happened:**
+Implemented 4 issues (#57, #55, #35, #56) each as an isolated commit with build+test verification after each.
+
+**Root Cause:**
+N/A — this was the planned approach.
+
+**Solution:**
+Each commit addresses exactly one issue: rename, migration, error toasts, deleted contacts. The version bump is a 5th commit. All commits on a feature branch, merged via PR.
+
+**Prevention Rule:**
+For multi-issue branches:
+1. One commit per issue, in dependency order
+2. Build + run ALL tests after each commit
+3. Commit message starts with issue number: `#57: Short description`
+4. Version bump as final separate commit
+5. This makes `git bisect` trivial if a regression appears later
+
 ---
 
 ## Historical Lessons

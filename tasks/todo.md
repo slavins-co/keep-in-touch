@@ -86,14 +86,17 @@
 
 ## Milestone: TestFlight Readiness
 
-### Resolved (Build 5 — 2026-02-23)
+### Resolved (Build 6 — 2026-02-24)
 - [x] **#46** Add PrivacyInfo.xcprivacy privacy manifest
 - [x] **#47** Change deployment target from iOS 18.5 → 17.0
 - [x] **#48** Add UIBackgroundModes to Info.plist
-- [x] Build number bumped to 5
+- [x] Build number bumped to 6
 - [x] Clean build verified — zero errors
-- [x] All 33+ unit tests passing
+- [x] All 38+ unit tests passing (5 new migration tests in v0.2.1)
 - [x] App icon exists (1024×1024 PNG, no alpha)
+- [x] Error handling surfaced to users (#35)
+- [x] CoreData migration is safe and versioned (#55)
+- [x] Deleted contacts handled gracefully (#56)
 
 ### Not Needed for TestFlight (Fix Before App Store)
 - [ ] Accessibility (VoiceOver, Dynamic Type) — #39 open
@@ -107,8 +110,8 @@
 
 ### Manual Steps Remaining
 See `tasks/testflight-guide.md` for step-by-step instructions:
-- [ ] Clean git state (Synology Drive artifacts — #50)
-- [ ] Commit and push blocker fixes
+- [x] Clean git state (Synology Drive artifacts — #50, solved with `core.fileMode false`)
+- [x] Commit and push blocker fixes (v0.2.1 merged to main)
 - [ ] Verify Apple Developer account enrollment
 - [ ] Register App ID in Developer Portal
 - [ ] Create App Store Connect record
