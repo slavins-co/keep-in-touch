@@ -10,6 +10,7 @@ import SwiftUI
 struct PersonDetailView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
 
     @StateObject private var viewModel: PersonDetailViewModel
 
@@ -29,6 +30,8 @@ struct PersonDetailView: View {
     @State private var pickedSnoozeDate = Date()
     @State private var nextTouchNotesText: String = ""
     @State private var settingsExpanded = false
+    @State private var pendingQuickActionMethod: TouchMethod?
+    @State private var showQuickActionUndo = false
     @FocusState private var isNextTouchNotesFocused: Bool
 
     init(person: Person) {
@@ -196,12 +199,28 @@ struct PersonDetailView: View {
                     }
             }
         }
+        .overlay(alignment: .top) {
+            if showQuickActionUndo, let method = pendingQuickActionMethod {
+                quickActionUndoBanner(method: method)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: showQuickActionUndo)
         .task {
             await viewModel.refreshContactInfo()
             viewModel.load()
         }
         .onDisappear {
             NotificationCenter.default.post(name: .personDidChange, object: viewModel.person.id)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active, pendingQuickActionMethod != nil {
+                showQuickActionUndo = true
+                Task {
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    dismissQuickActionUndo()
+                }
+            }
         }
     }
 
@@ -655,10 +674,47 @@ struct PersonDetailView: View {
     private func open(_ action: QuickActionType) {
         guard let url = viewModel.openAction(type: action) else { return }
         openURL(url) { accepted in
-            if !accepted {
+            if accepted {
+                let method = action.touchMethod
+                viewModel.logTouch(method: method, notes: nil, date: Date())
+                pendingQuickActionMethod = method
+            } else {
                 viewModel.quickActionMessage = "Whoops — couldn't open that on this device."
             }
         }
+    }
+
+    private func quickActionUndoBanner(method: TouchMethod) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.white)
+            Text("Logged \(method.rawValue.lowercased()). Didn't connect?")
+                .font(DS.Typography.metadata)
+                .foregroundStyle(.white)
+            Spacer()
+            Button("Undo") {
+                if let touch = viewModel.touchEvents.first {
+                    viewModel.deleteTouch(touch)
+                }
+                dismissQuickActionUndo()
+            }
+            .font(DS.Typography.metadata.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(.white.opacity(0.2))
+            .clipShape(Capsule())
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Colors.statusAllGood)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
+    }
+
+    private func dismissQuickActionUndo() {
+        showQuickActionUndo = false
+        pendingQuickActionMethod = nil
     }
 
     private func reminderTimeLabel() -> String {

@@ -367,4 +367,12 @@ enum QuickActionType {
     case message
     case call
     case email
+
+    var touchMethod: TouchMethod {
+        switch self {
+        case .message: return .text
+        case .call: return .call
+        case .email: return .email
+        }
+    }
 }
