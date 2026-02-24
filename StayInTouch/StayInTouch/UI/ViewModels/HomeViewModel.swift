@@ -71,7 +71,12 @@ final class HomeViewModel: ObservableObject {
 
     func refreshFromContacts() async {
         let summaries = await Task.detached {
-            (try? ContactsFetcher.fetchAll()) ?? []
+            do {
+                return try ContactsFetcher.fetchAll()
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "HomeViewModel.refreshFromContacts")
+                return []
+            }
         }.value
         let byId = Dictionary(uniqueKeysWithValues: summaries.map { ($0.identifier, $0) })
 

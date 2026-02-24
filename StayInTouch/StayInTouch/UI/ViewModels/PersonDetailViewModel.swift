@@ -55,7 +55,12 @@ final class PersonDetailViewModel: ObservableObject {
         }
 
         let result = await Task.detached(priority: .userInitiated) { () -> ContactsFetcher.ContactInfo? in
-            return try? ContactsFetcher.fetchContactInfo(identifier: cnId)
+            do {
+                return try ContactsFetcher.fetchContactInfo(identifier: cnId)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.refreshContactInfo")
+                return nil
+            }
         }.value
 
         phone = result?.phone
@@ -145,6 +150,7 @@ final class PersonDetailViewModel: ObservableObject {
                 try touchRepository.save(touch)
             } catch {
                 AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.resumeAndUpdateLastTouch")
+                ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
             }
 
             updated.lastTouchAt = date
@@ -189,6 +195,7 @@ final class PersonDetailViewModel: ObservableObject {
             try touchRepository.save(touch)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.logTouch")
+            ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
         }
 
         var updated = person
@@ -212,6 +219,7 @@ final class PersonDetailViewModel: ObservableObject {
             try touchRepository.save(updatedTouch)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.updateTouch")
+            ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
         }
 
         touchEvents = fetchSortedEvents()
@@ -230,6 +238,7 @@ final class PersonDetailViewModel: ObservableObject {
             try touchRepository.delete(id: touch.id)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.deleteTouch")
+            ErrorToastManager.shared.show(.deleteFailed("PersonDetail"))
         }
         touchEvents = fetchSortedEvents()
 
@@ -253,6 +262,7 @@ final class PersonDetailViewModel: ObservableObject {
             NotificationCenter.default.post(name: .personDidChange, object: person.id)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.deletePerson")
+            ErrorToastManager.shared.show(.deleteFailed("PersonDetail"))
         }
     }
 
@@ -308,6 +318,7 @@ final class PersonDetailViewModel: ObservableObject {
             NotificationCenter.default.post(name: .personDidChange, object: updated.id)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.savePerson")
+            ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
         }
     }
 

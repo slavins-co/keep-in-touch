@@ -10,7 +10,12 @@ import Foundation
 enum ContactsSyncService {
     static func syncExistingContacts() async {
         let summaries = await Task.detached {
-            (try? ContactsFetcher.fetchAll()) ?? []
+            do {
+                return try ContactsFetcher.fetchAll()
+            } catch {
+                AppLogger.logError(error, category: AppLogger.coreData, context: "ContactsSyncService.syncExistingContacts")
+                return []
+            }
         }.value
 
         let byId = Dictionary(uniqueKeysWithValues: summaries.map { ($0.identifier, $0) })
@@ -27,7 +32,11 @@ enum ContactsSyncService {
                 updated.displayName = summary.displayName
                 updated.initials = summary.initials
                 updated.modifiedAt = now
-                try? repo.save(updated)
+                do {
+                    try repo.save(updated)
+                } catch {
+                    AppLogger.logError(error, category: AppLogger.coreData, context: "ContactsSyncService.syncExistingContacts")
+                }
             }
         }
 
