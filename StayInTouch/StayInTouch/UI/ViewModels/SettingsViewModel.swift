@@ -19,6 +19,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var showNotificationsSettingsAlert = false
     @Published var pendingNewContacts: [ContactSummary] = []
     @Published var contactAccessDenied = false
+    @Published var contactAccessLimited = false
 
     private let settingsRepository: AppSettingsRepository
     private let groupRepository: GroupRepository
@@ -156,6 +157,7 @@ final class SettingsViewModel: ObservableObject {
 
     func findNewContacts() async -> Int {
         contactAccessDenied = false
+        contactAccessLimited = false
         let summaries = await Task.detached {
             do {
                 return try ContactsFetcher.fetchAll()
@@ -167,13 +169,25 @@ final class SettingsViewModel: ObservableObject {
         guard !summaries.isEmpty else {
             let status = CNContactStore.authorizationStatus(for: .contacts)
             contactAccessDenied = (status == .denied || status == .restricted)
+            contactAccessLimited = Self.isLimitedAccess(status)
             return 0
         }
 
         let existing = Set(personRepository.fetchTracked(includePaused: true).compactMap { $0.cnIdentifier })
         let newContacts = summaries.filter { !existing.contains($0.identifier) }
+        if newContacts.isEmpty {
+            let status = CNContactStore.authorizationStatus(for: .contacts)
+            contactAccessLimited = Self.isLimitedAccess(status)
+        }
         pendingNewContacts = newContacts
         return newContacts.count
+    }
+
+    private static func isLimitedAccess(_ status: CNAuthorizationStatus) -> Bool {
+        if #available(iOS 18.0, *) {
+            return status == .limited
+        }
+        return false
     }
 
     func importSelectedContacts(_ summaries: [ContactSummary]) async {

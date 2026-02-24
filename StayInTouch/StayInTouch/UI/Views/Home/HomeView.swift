@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var deepLinkPerson: Person?
     @State private var showNewContactsPicker = false
     @State private var showNoNewContactsAlert = false
+    @State private var showLimitedAccessAlert = false
     @State private var isSyncingContacts = false
     @State private var showContactsSettingsAlert = false
 
@@ -72,7 +73,17 @@ struct HomeView: View {
         .alert("No New Contacts", isPresented: $showNoNewContactsAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(noContactsAlertMessage())
+            Text("You're already up to date.")
+        }
+        .alert("Limited Contact Access", isPresented: $showLimitedAccessAlert) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    openURL(url)
+                }
+            }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("You've imported all the contacts you gave access to. To add more, open Settings \u{2192} Stay in Touch \u{2192} Contacts and select additional contacts or grant full access.")
         }
         .alert("Contacts Access Required", isPresented: $showContactsSettingsAlert) {
             Button("Open Settings") {
@@ -422,18 +433,14 @@ struct HomeView: View {
             isSyncingContacts = false
             if count > 0 {
                 showNewContactsPicker = true
+            } else if settingsViewModel.contactAccessDenied {
+                showContactsSettingsAlert = true
+            } else if settingsViewModel.contactAccessLimited {
+                showLimitedAccessAlert = true
             } else {
-                if settingsViewModel.contactAccessDenied {
-                    showContactsSettingsAlert = true
-                } else {
-                    showNoNewContactsAlert = true
-                }
+                showNoNewContactsAlert = true
             }
         }
-    }
-
-    private func noContactsAlertMessage() -> String {
-        "You're already up to date."
     }
 
     private func timeAgoText(for person: Person, calculator: FrequencyCalculator) -> String {
