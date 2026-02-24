@@ -29,6 +29,7 @@ struct ContentView: View {
             loadTheme()
         }
         .preferredColorScheme(preferredScheme)
+        .errorToast()
     }
 
     private func loadTheme() {

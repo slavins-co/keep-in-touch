@@ -17,7 +17,7 @@ struct GroupEditorSheet: View {
     let defaultSortOrder: Int
 
     @State private var name: String
-    @State private var slaDays: Int
+    @State private var frequencyDays: Int
     @State private var warningDays: Int
     @State private var isDefault: Bool
 
@@ -28,7 +28,7 @@ struct GroupEditorSheet: View {
         self.onSave = onSave
         self.onCancel = onCancel
         _name = State(initialValue: group?.name ?? "")
-        _slaDays = State(initialValue: group?.slaDays ?? 30)
+        _frequencyDays = State(initialValue: group?.frequencyDays ?? 30)
         _warningDays = State(initialValue: group?.warningDays ?? 3)
         _isDefault = State(initialValue: group?.isDefault ?? false)
     }
@@ -41,13 +41,13 @@ struct GroupEditorSheet: View {
                 }
 
                 Section("Check-in Interval (Days)") {
-                    Stepper(value: $slaDays, in: 1...365) {
-                        Text("\(slaDays) days")
+                    Stepper(value: $frequencyDays, in: 1...365) {
+                        Text("\(frequencyDays) days")
                     }
                 }
 
                 Section("Warning Days Before Due") {
-                    Stepper(value: $warningDays, in: 0...max(0, slaDays - 1)) {
+                    Stepper(value: $warningDays, in: 0...max(0, frequencyDays - 1)) {
                         Text("\(warningDays) days")
                     }
                     Text("Show \"due soon\" before the interval expires")
@@ -87,7 +87,7 @@ struct GroupEditorSheet: View {
         } else if existingNames.contains(where: { $0.caseInsensitiveCompare(trimmed) == .orderedSame }) {
             return false
         }
-        return slaDays >= 1 && slaDays <= 365 && warningDays < slaDays
+        return frequencyDays >= 1 && frequencyDays <= 365 && warningDays < frequencyDays
     }
 
     private func handleSave() {
@@ -96,7 +96,7 @@ struct GroupEditorSheet: View {
         let saved = Group(
             id: group?.id ?? UUID(),
             name: trimmed,
-            slaDays: slaDays,
+            frequencyDays: frequencyDays,
             warningDays: warningDays,
             colorHex: group?.colorHex,
             isDefault: group?.isDefault ?? false,

@@ -1,12 +1,20 @@
 # TODO - Stay in Touch iOS App
 
-**Project Status:** v0.2.0 (Build 5) — Pre-release Beta
-**Last Updated:** February 23, 2026
+**Project Status:** v0.2.1 (Build 6) — Pre-release Beta
+**Last Updated:** February 24, 2026
 
 > **TestFlight Status:** Code blockers resolved. Manual submission steps remain — see `tasks/testflight-guide.md`.
 > When creating PRs, confirm TestFlight readiness is not regressed (deployment target 17.0, PrivacyInfo.xcprivacy present, UIBackgroundModes declared, build number incremented).
 
 ---
+
+## Completed — v0.2.1 (Critical Issues)
+
+- [x] **#57** Reframe SLA terminology to consumer-friendly language (ContactStatus, FrequencyCalculator)
+- [x] **#55** CoreData versioned migration strategy (v2 model, safe migration, no auto-delete)
+- [x] **#35** Surface errors with contextual banners (ErrorToast system, ViewModel try? audit)
+- [x] **#56** Handle deleted/merged contacts (contactUnavailable flag, sync detection, UI banner)
+- [x] Build number bumped to 6, version 0.2.1
 
 ## Completed — v0.2.0 (UX Redesign)
 
@@ -51,7 +59,7 @@
 
 - [ ] **#33** Add DS.Typography.heroTitle token for PersonDetailView
 - [ ] **#34** ⭐ Swipe-to-log on home screen (highest priority UX improvement)
-- [ ] **#35** Surface errors with contextual banners (not silent failures)
+- [x] **#35** Surface errors with contextual banners (not silent failures) *(v0.2.1)*
 - [ ] **#36** Add undo for destructive actions (delete contact/connection)
 - [ ] **#37** Separate overdue tiers (Recently Due vs Long Overdue)
 - [ ] **#38** Replace HStack filter chips with FlowLayout for overflow
@@ -89,12 +97,12 @@
 
 ### Not Needed for TestFlight (Fix Before App Store)
 - [ ] Accessibility (VoiceOver, Dynamic Type) — #39 open
-- [ ] Error handling + loading states — #35, #43 open
+- [ ] Loading states — #43 open (error handling done in #35)
 - [ ] **#49** Create and host privacy policy URL
 - [ ] App Store screenshots (use demo mode)
 
 ### Recommended Before App Store
-- [ ] Edge-case testing (contact deletion, timezone changes)
+- [ ] Edge-case testing (timezone changes, large contact lists)
 - [ ] Performance testing (100+ contacts, launch time)
 
 ### Manual Steps Remaining

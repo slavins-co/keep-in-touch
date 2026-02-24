@@ -307,7 +307,7 @@ struct HomeView: View {
                 } else if viewModel.sortOption == .name {
                     let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
                     let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
-                    let calculator = SLACalculator()
+                    let calculator = FrequencyCalculator()
                     VStack(spacing: 0) {
                         ForEach(Array(viewModel.nameSortedPeople.enumerated()), id: \.element.id) { index, person in
                             let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
@@ -336,7 +336,7 @@ struct HomeView: View {
                 } else {
                     let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
                     let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
-                    let calculator = SLACalculator()
+                    let calculator = FrequencyCalculator()
 
                     ContactListSection(
                         title: "Overdue",
@@ -440,7 +440,7 @@ struct HomeView: View {
     }
 
     private func timeAgoText(for person: Person) -> String {
-        let days = SLACalculator().daysSinceLastTouch(for: person)
+        let days = FrequencyCalculator().daysSinceLastTouch(for: person)
         guard let days else { return "No contact" }
         if days == 0 { return "Today" }
         return "\(days)d ago"

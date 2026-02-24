@@ -71,7 +71,12 @@ final class HomeViewModel: ObservableObject {
 
     func refreshFromContacts() async {
         let summaries = await Task.detached {
-            (try? ContactsFetcher.fetchAll()) ?? []
+            do {
+                return try ContactsFetcher.fetchAll()
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "HomeViewModel.refreshFromContacts")
+                return []
+            }
         }.value
         let byId = Dictionary(uniqueKeysWithValues: summaries.map { ($0.identifier, $0) })
 
@@ -131,8 +136,8 @@ final class HomeViewModel: ObservableObject {
         let overdue = service.overduePeople(filtered, groups: groups)
         let dueSoon = service.dueSoonPeople(filtered, groups: groups, settings: currentSettings)
         let allGood = filtered.filter { person in
-            let status = SLACalculator().status(for: person, in: groups)
-            return status == .inSLA
+            let status = FrequencyCalculator().status(for: person, in: groups)
+            return status == .onTrack
         }
         let nameSorted = filtered.sorted {
             $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending

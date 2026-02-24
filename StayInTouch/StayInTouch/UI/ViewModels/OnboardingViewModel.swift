@@ -192,6 +192,7 @@ final class OnboardingViewModel: ObservableObject {
                     notificationsMuted: false,
                     customBreachTime: nil,
                     snoozedUntil: nil,
+                    contactUnavailable: false,
                     groupAddedAt: nil,
                     createdAt: now,
                     modifiedAt: now,

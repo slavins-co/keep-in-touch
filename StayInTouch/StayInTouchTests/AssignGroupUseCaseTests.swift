@@ -63,6 +63,7 @@ final class AssignGroupUseCaseTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            contactUnavailable: false,
             groupAddedAt: groupAddedAt,
             createdAt: Date(),
             modifiedAt: Date(),

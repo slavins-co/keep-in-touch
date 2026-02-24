@@ -54,12 +54,39 @@ final class PersonDetailViewModel: ObservableObject {
             return
         }
 
-        let result = await Task.detached(priority: .userInitiated) { () -> ContactsFetcher.ContactInfo? in
-            return try? ContactsFetcher.fetchContactInfo(identifier: cnId)
+        let fetchResult = await Task.detached(priority: .userInitiated) { () -> Result<ContactsFetcher.ContactInfo, Error> in
+            do {
+                let info = try ContactsFetcher.fetchContactInfo(identifier: cnId)
+                return .success(info)
+            } catch {
+                return .failure(error)
+            }
         }.value
 
-        phone = result?.phone
-        email = result?.email
+        switch fetchResult {
+        case .success(let info):
+            phone = info.phone
+            email = info.email
+            if person.contactUnavailable {
+                var updated = person
+                updated.contactUnavailable = false
+                updated.modifiedAt = Date()
+                savePerson(updated)
+            }
+        case .failure(let error):
+            phone = nil
+            email = nil
+            if case ContactsFetcherError.contactNotFound = error {
+                if !person.contactUnavailable {
+                    var updated = person
+                    updated.contactUnavailable = true
+                    updated.modifiedAt = Date()
+                    savePerson(updated)
+                }
+            } else {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.refreshContactInfo")
+            }
+        }
     }
 
     func reloadPerson() {
@@ -145,6 +172,7 @@ final class PersonDetailViewModel: ObservableObject {
                 try touchRepository.save(touch)
             } catch {
                 AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.resumeAndUpdateLastTouch")
+                ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
             }
 
             updated.lastTouchAt = date
@@ -189,6 +217,7 @@ final class PersonDetailViewModel: ObservableObject {
             try touchRepository.save(touch)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.logTouch")
+            ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
         }
 
         var updated = person
@@ -212,6 +241,7 @@ final class PersonDetailViewModel: ObservableObject {
             try touchRepository.save(updatedTouch)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.updateTouch")
+            ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
         }
 
         touchEvents = fetchSortedEvents()
@@ -230,6 +260,7 @@ final class PersonDetailViewModel: ObservableObject {
             try touchRepository.delete(id: touch.id)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.deleteTouch")
+            ErrorToastManager.shared.show(.deleteFailed("PersonDetail"))
         }
         touchEvents = fetchSortedEvents()
 
@@ -253,6 +284,7 @@ final class PersonDetailViewModel: ObservableObject {
             NotificationCenter.default.post(name: .personDidChange, object: person.id)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.deletePerson")
+            ErrorToastManager.shared.show(.deleteFailed("PersonDetail"))
         }
     }
 
@@ -308,6 +340,7 @@ final class PersonDetailViewModel: ObservableObject {
             NotificationCenter.default.post(name: .personDidChange, object: updated.id)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.savePerson")
+            ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
         }
     }
 

@@ -91,6 +91,7 @@ final class HomeViewModelTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            contactUnavailable: false,
             groupAddedAt: Date(),
             createdAt: Date(),
             modifiedAt: Date(),
@@ -102,7 +103,7 @@ final class HomeViewModelTests: XCTestCase {
         Group(
             id: id,
             name: "Weekly",
-            slaDays: 7,
+            frequencyDays: 7,
             warningDays: 2,
             colorHex: nil,
             isDefault: true,

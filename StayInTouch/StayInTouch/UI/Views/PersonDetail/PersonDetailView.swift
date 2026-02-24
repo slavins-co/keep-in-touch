@@ -42,11 +42,17 @@ struct PersonDetailView: View {
                 header
                     .padding(.bottom, DS.Spacing.lg)
 
+                if viewModel.person.contactUnavailable {
+                    unavailableContactBanner
+                }
+
                 if viewModel.person.isPaused {
                     pausedBanner
                 }
 
                 reachOutButtons
+                    .opacity(viewModel.person.contactUnavailable ? 0.4 : 1.0)
+                    .disabled(viewModel.person.contactUnavailable)
 
                 logTouchButton
 
@@ -237,6 +243,33 @@ struct PersonDetailView: View {
         }
     }
 
+    private var unavailableContactBanner: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.white)
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text("Contact unavailable")
+                    .font(DS.Typography.metadata.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text("This contact may have been deleted or merged.")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+            Spacer()
+            Button("Remove") { showRemoveConfirm = true }
+                .font(DS.Typography.caption.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, DS.Spacing.xs)
+                .background(.white.opacity(0.2))
+                .clipShape(Capsule())
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Colors.statusDueSoon)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.bottom, DS.Spacing.md)
+    }
+
     private var pausedBanner: some View {
         HStack {
             Text("Tracking paused")
@@ -410,7 +443,7 @@ struct PersonDetailView: View {
     private var detailsAndSettings: some View {
         DisclosureGroup(isExpanded: $settingsExpanded) {
             VStack(alignment: .leading, spacing: 0) {
-                cadenceSection
+                frequencySection
                 SubtleDivider()
                 tagsSection
                 SubtleDivider()
@@ -427,7 +460,7 @@ struct PersonDetailView: View {
         .padding(.vertical, DS.Spacing.md)
     }
 
-    private var cadenceSection: some View {
+    private var frequencySection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text("FREQUENCY")
@@ -440,7 +473,7 @@ struct PersonDetailView: View {
             }
             Text(viewModel.group?.name ?? "Frequency")
                 .font(.body)
-            Text(cadenceSubtext())
+            Text(frequencySubtext())
                 .font(DS.Typography.metadata)
                 .foregroundStyle(DS.Colors.secondaryText)
 
@@ -555,34 +588,34 @@ struct PersonDetailView: View {
 
     // MARK: - Computed Properties
 
-    private var currentStatus: SLAStatus {
-        guard let group = viewModel.group else { return .inSLA }
-        return SLACalculator().status(for: viewModel.person, in: [group])
+    private var currentStatus: ContactStatus {
+        guard let group = viewModel.group else { return .onTrack }
+        return FrequencyCalculator().status(for: viewModel.person, in: [group])
     }
 
     private var daysOverdue: Int {
         guard let group = viewModel.group else { return 0 }
-        return SLACalculator().daysOverdue(for: viewModel.person, in: [group])
+        return FrequencyCalculator().daysOverdue(for: viewModel.person, in: [group])
     }
 
     private var daysUntilDue: Int {
         guard let group = viewModel.group else { return 0 }
-        let calculator = SLACalculator()
+        let calculator = FrequencyCalculator()
         let daysSince = calculator.daysSinceLastTouch(for: viewModel.person) ?? 0
-        return max(0, group.slaDays - daysSince)
+        return max(0, group.frequencyDays - daysSince)
     }
 
     // MARK: - Helper Functions
 
     private func statusLabel() -> String {
         switch currentStatus {
-        case .inSLA:
+        case .onTrack:
             let days = daysUntilDue
             return days > 0 ? "All good · Due in \(days)d" : "All good"
         case .dueSoon:
             let days = daysUntilDue
             return days > 0 ? "Check in soon · Due in \(days)d" : "Check in soon"
-        case .outOfSLA: return "Overdue"
+        case .overdue: return "Overdue"
         case .unknown: return "Unknown"
         }
     }
@@ -597,21 +630,21 @@ struct PersonDetailView: View {
         return f
     }()
 
-    private func cadenceSubtext() -> String {
+    private func frequencySubtext() -> String {
         guard let group = viewModel.group else { return "" }
-        let calculator = SLACalculator()
+        let calculator = FrequencyCalculator()
         let daysSince = calculator.daysSinceLastTouch(for: viewModel.person) ?? 0
-        let remaining = group.slaDays - daysSince
+        let remaining = group.frequencyDays - daysSince
 
         if let effectiveDate = calculator.effectiveLastTouchDate(for: viewModel.person) {
-            let dueDate = Calendar.current.date(byAdding: .day, value: Int(group.slaDays), to: effectiveDate)
+            let dueDate = Calendar.current.date(byAdding: .day, value: Int(group.frequencyDays), to: effectiveDate)
             let formatted = dueDate.map { Self.dueDateFormatter.string(from: $0) } ?? "?"
             if remaining > 0 {
-                return "Connect every \(group.slaDays) days \u{00B7} Due \(formatted) \u{00B7} \(remaining)d remaining"
+                return "Connect every \(group.frequencyDays) days \u{00B7} Due \(formatted) \u{00B7} \(remaining)d remaining"
             }
-            return "Connect every \(group.slaDays) days \u{00B7} Was due \(formatted)"
+            return "Connect every \(group.frequencyDays) days \u{00B7} Was due \(formatted)"
         }
-        return "Connect every \(group.slaDays) days"
+        return "Connect every \(group.frequencyDays) days"
     }
 
     private func snooze(days: Int) {

@@ -8,15 +8,15 @@
 import Foundation
 
 struct PersonStatusService {
-    private let calculator: SLACalculator
+    private let calculator: FrequencyCalculator
 
     init(referenceDate: Date = Date()) {
-        self.calculator = SLACalculator(referenceDate: referenceDate)
+        self.calculator = FrequencyCalculator(referenceDate: referenceDate)
     }
 
     func overduePeople(_ people: [Person], groups: [Group]) -> [Person] {
         let filtered = people.filter { !($0.isPaused) }
-        let overdue = filtered.filter { calculator.status(for: $0, in: groups) == .outOfSLA }
+        let overdue = filtered.filter { calculator.status(for: $0, in: groups) == .overdue }
         return overdue.sorted { lhs, rhs in
             let lhsOverdue = calculator.daysOverdue(for: lhs, in: groups)
             let rhsOverdue = calculator.daysOverdue(for: rhs, in: groups)
@@ -38,7 +38,7 @@ struct PersonStatusService {
             guard calculator.status(for: person, in: groups) == .dueSoon else { return false }
             guard let daysSince = calculator.daysSinceLastTouch(for: person) else { return false }
             guard let group = groups.first(where: { $0.id == person.groupId }) else { return false }
-            let daysUntilDue = group.slaDays - daysSince
+            let daysUntilDue = group.frequencyDays - daysSince
             return daysUntilDue > 0 && daysUntilDue <= settings.dueSoonWindowDays
         }
 
@@ -60,6 +60,6 @@ struct PersonStatusService {
     private func daysUntilDue(for person: Person, groups: [Group]) -> Int {
         guard let daysSince = calculator.daysSinceLastTouch(for: person) else { return Int.max }
         guard let group = groups.first(where: { $0.id == person.groupId }) else { return Int.max }
-        return group.slaDays - daysSince
+        return group.frequencyDays - daysSince
     }
 }

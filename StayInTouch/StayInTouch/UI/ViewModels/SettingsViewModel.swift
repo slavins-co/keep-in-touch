@@ -110,7 +110,11 @@ final class SettingsViewModel: ObservableObject {
                 let repo = CoreDataPersonRepository(context: backgroundContext)
                 let demoPeople = repo.fetchAll().filter { $0.cnIdentifier == nil }
                 for person in demoPeople {
-                    try? repo.delete(id: person.id)
+                    do {
+                        try repo.delete(id: person.id)
+                    } catch {
+                        AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.updateDemoData")
+                    }
                 }
             }
         }
@@ -128,7 +132,11 @@ final class SettingsViewModel: ObservableObject {
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false)
         let request = UNNotificationRequest(identifier: "test_notification", content: content, trigger: trigger)
-        try? await UNUserNotificationCenter.current().add(request)
+        do {
+            try await UNUserNotificationCenter.current().add(request)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.sendTestNotification")
+        }
     }
 
     func exportContacts() -> URL? {
@@ -149,7 +157,12 @@ final class SettingsViewModel: ObservableObject {
     func findNewContacts() async -> Int {
         contactAccessDenied = false
         let summaries = await Task.detached {
-            (try? ContactsFetcher.fetchAll()) ?? []
+            do {
+                return try ContactsFetcher.fetchAll()
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.findNewContacts")
+                return []
+            }
         }.value
         guard !summaries.isEmpty else {
             let status = CNContactStore.authorizationStatus(for: .contacts)
@@ -202,6 +215,7 @@ final class SettingsViewModel: ObservableObject {
                     notificationsMuted: false,
                     customBreachTime: nil,
                     snoozedUntil: nil,
+                    contactUnavailable: false,
                     groupAddedAt: nil,
                     createdAt: now,
                     modifiedAt: now,
@@ -209,7 +223,11 @@ final class SettingsViewModel: ObservableObject {
                 )
 
                 let assigned = AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId)
-                try? peopleRepo.save(assigned)
+                do {
+                    try peopleRepo.save(assigned)
+                } catch {
+                    AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.importSelectedContacts")
+                }
                 sortOrder += 1
             }
         }
@@ -225,7 +243,12 @@ final class SettingsViewModel: ObservableObject {
     }
 
     private func save() {
-        try? settingsRepository.save(settings)
+        do {
+            try settingsRepository.save(settings)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.save")
+            ErrorToastManager.shared.show(.saveFailed("Settings"))
+        }
         NotificationCenter.default.post(name: .settingsDidChange, object: nil)
     }
 

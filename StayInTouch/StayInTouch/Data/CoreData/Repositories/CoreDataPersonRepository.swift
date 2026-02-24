@@ -81,7 +81,7 @@ final class CoreDataPersonRepository: PersonRepository {
     }
 
     func fetchOverdue(referenceDate: Date) -> [Person] {
-        let calculator = SLACalculator(referenceDate: referenceDate)
+        let calculator = FrequencyCalculator(referenceDate: referenceDate)
         let people = fetchTracked(includePaused: false)
 
         // Batch fetch all groups to avoid N+1 query
@@ -91,7 +91,7 @@ final class CoreDataPersonRepository: PersonRepository {
 
         return people.filter { person in
             guard let group = groupById[person.groupId] else { return false }
-            return calculator.status(for: person, in: [group]) == .outOfSLA
+            return calculator.status(for: person, in: [group]) == .overdue
         }
     }
 

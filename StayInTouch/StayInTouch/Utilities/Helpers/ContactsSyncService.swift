@@ -10,7 +10,12 @@ import Foundation
 enum ContactsSyncService {
     static func syncExistingContacts() async {
         let summaries = await Task.detached {
-            (try? ContactsFetcher.fetchAll()) ?? []
+            do {
+                return try ContactsFetcher.fetchAll()
+            } catch {
+                AppLogger.logError(error, category: AppLogger.coreData, context: "ContactsSyncService.syncExistingContacts")
+                return []
+            }
         }.value
 
         let byId = Dictionary(uniqueKeysWithValues: summaries.map { ($0.identifier, $0) })
@@ -22,12 +27,31 @@ enum ContactsSyncService {
             let now = Date()
 
             for person in people {
-                guard let cnId = person.cnIdentifier, let summary = byId[cnId] else { continue }
+                guard let cnId = person.cnIdentifier else { continue }
                 var updated = person
-                updated.displayName = summary.displayName
-                updated.initials = summary.initials
+
+                if let summary = byId[cnId] {
+                    // Contact still exists — sync name and clear unavailable flag
+                    updated.displayName = summary.displayName
+                    updated.initials = summary.initials
+                    if updated.contactUnavailable {
+                        updated.contactUnavailable = false
+                    }
+                } else {
+                    // Contact no longer found — mark unavailable
+                    if !updated.contactUnavailable {
+                        updated.contactUnavailable = true
+                    } else {
+                        continue // already marked, skip save
+                    }
+                }
+
                 updated.modifiedAt = now
-                try? repo.save(updated)
+                do {
+                    try repo.save(updated)
+                } catch {
+                    AppLogger.logError(error, category: AppLogger.coreData, context: "ContactsSyncService.syncExistingContacts")
+                }
             }
         }
 

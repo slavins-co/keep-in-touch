@@ -1,5 +1,5 @@
 //
-//  SLACalculator.swift
+//  FrequencyCalculator.swift
 //  StayInTouch
 //
 //  Created by Codex on 2/2/26.
@@ -7,18 +7,18 @@
 
 import Foundation
 
-struct SLACalculator {
+struct FrequencyCalculator {
     let referenceDate: Date
 
     init(referenceDate: Date = Date()) {
         self.referenceDate = referenceDate
     }
 
-    func status(for person: Person, in groups: [Group]) -> SLAStatus {
-        if person.isPaused { return .inSLA }
-        if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return .inSLA }
+    func status(for person: Person, in groups: [Group]) -> ContactStatus {
+        if person.isPaused { return .onTrack }
+        if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return .onTrack }
         guard let group = groups.first(where: { $0.id == person.groupId }) else {
-            return .inSLA
+            return .onTrack
         }
 
         guard let lastTouch = effectiveLastTouchDate(for: person) else {
@@ -26,13 +26,13 @@ struct SLACalculator {
         }
 
         let daysSince = Calendar.current.dateComponents([.day], from: lastTouch, to: referenceDate).day ?? 0
-        if daysSince >= group.slaDays {
-            return .outOfSLA
+        if daysSince >= group.frequencyDays {
+            return .overdue
         }
-        if daysSince >= max(0, group.slaDays - group.warningDays) {
+        if daysSince >= max(0, group.frequencyDays - group.warningDays) {
             return .dueSoon
         }
-        return .inSLA
+        return .onTrack
     }
 
     func daysOverdue(for person: Person, in groups: [Group]) -> Int {
@@ -47,12 +47,11 @@ struct SLACalculator {
         }
 
         let daysSince = Calendar.current.dateComponents([.day], from: lastTouch, to: referenceDate).day ?? 0
-        return max(0, daysSince - group.slaDays)
+        return max(0, daysSince - group.frequencyDays)
     }
 
     func effectiveLastTouchDate(for person: Person) -> Date? {
         if let lastTouch = person.lastTouchAt { return lastTouch }
-        // TODO: Revisit onboarding/new-contact flow if we want a different fallback.
         return person.groupAddedAt
     }
 

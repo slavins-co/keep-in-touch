@@ -23,7 +23,7 @@ final class RepositoryTests: XCTestCase {
         let group = Group(
             id: UUID(),
             name: "Weekly",
-            slaDays: 7,
+            frequencyDays: 7,
             warningDays: 2,
             colorHex: nil,
             isDefault: true,
@@ -79,6 +79,7 @@ final class RepositoryTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            contactUnavailable: false,
             groupAddedAt: nil,
             createdAt: Date(),
             modifiedAt: Date(),

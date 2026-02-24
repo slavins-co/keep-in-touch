@@ -15,7 +15,7 @@ struct ContactListSection: View {
     let onToggle: () -> Void
     let groupsById: [UUID: Group]
     let tagsById: [UUID: Tag]
-    let statusForPerson: (Person) -> SLAStatus
+    let statusForPerson: (Person) -> ContactStatus
     let daysOverdueForPerson: (Person) -> Int
     let timeAgoForPerson: (Person) -> String
 

@@ -29,6 +29,8 @@ struct Person: Identifiable, Equatable {
     var customBreachTime: LocalTime?
     var snoozedUntil: Date?
 
+    var contactUnavailable: Bool
+
     var groupAddedAt: Date?
 
     var createdAt: Date

@@ -7,13 +7,14 @@
 
 import CoreData
 
-final class CoreDataStack {
+final class CoreDataStack: ObservableObject {
     static let shared = CoreDataStack()
 
     let container: NSPersistentContainer
     private let shouldSeedDefaults: Bool
     private(set) var loadError: Error?
     private(set) var isLoaded = false
+    @Published private(set) var migrationFailed = false
 
     var viewContext: NSManagedObjectContext {
         container.viewContext
@@ -39,29 +40,11 @@ final class CoreDataStack {
             guard let self else { return }
 
             if let error = error as NSError? {
-                // Log the error instead of crashing
                 AppLogger.logError(error, category: AppLogger.coreData, context: "CoreDataStack.loadPersistentStores")
                 self.loadError = error
                 self.isLoaded = false
-
-                // Attempt recovery: delete and recreate store
-                if let storeURL = self.container.persistentStoreDescriptions.first?.url {
-                    AppLogger.logWarning("Attempting to delete corrupted store and recreate", category: AppLogger.coreData)
-                    try? FileManager.default.removeItem(at: storeURL)
-
-                    // Retry loading after deletion
-                    self.container.loadPersistentStores { _, retryError in
-                        if let retryError = retryError {
-                            AppLogger.logError(retryError, category: AppLogger.coreData, context: "CoreDataStack.retryLoad")
-                            self.loadError = retryError
-                            self.isLoaded = false
-                        } else {
-                            AppLogger.logInfo("Successfully recreated store after deletion", category: AppLogger.coreData)
-                            self.isLoaded = true
-                            self.seedDefaultsIfNeeded()
-                        }
-                    }
-                }
+                self.migrationFailed = true
+                NotificationCenter.default.post(name: .coreDataMigrationFailed, object: error)
                 return
             }
 
@@ -70,6 +53,33 @@ final class CoreDataStack {
         }
 
         container.viewContext.automaticallyMergesChangesFromParent = true
+    }
+
+    /// Deletes the persistent store and recreates it. Only call after explicit user confirmation.
+    func resetStore() {
+        guard let storeURL = container.persistentStoreDescriptions.first?.url else { return }
+
+        AppLogger.logWarning("User confirmed store reset — deleting persistent store", category: AppLogger.coreData)
+
+        for store in container.persistentStoreCoordinator.persistentStores {
+            try? container.persistentStoreCoordinator.remove(store)
+        }
+        try? FileManager.default.removeItem(at: storeURL)
+
+        container.loadPersistentStores { [weak self] _, retryError in
+            guard let self else { return }
+            if let retryError = retryError {
+                AppLogger.logError(retryError, category: AppLogger.coreData, context: "CoreDataStack.resetStore.retry")
+                self.loadError = retryError
+                self.isLoaded = false
+            } else {
+                AppLogger.logInfo("Successfully recreated store after user-confirmed reset", category: AppLogger.coreData)
+                self.isLoaded = true
+                self.migrationFailed = false
+                self.loadError = nil
+                self.seedDefaultsIfNeeded()
+            }
+        }
     }
 
     static var preview: CoreDataStack {
@@ -96,7 +106,6 @@ final class CoreDataStack {
             try seeder.seedIfNeeded()
             AppLogger.logInfo("Successfully seeded default data", category: AppLogger.coreData)
         } catch {
-            // Log error but don't crash - app can function without default data
             AppLogger.logError(error, category: AppLogger.coreData, context: "CoreDataStack.seedDefaults")
             AppLogger.logWarning("App will continue without default groups/tags. User can create them manually.", category: AppLogger.coreData)
         }

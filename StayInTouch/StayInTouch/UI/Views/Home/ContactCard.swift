@@ -11,7 +11,7 @@ struct ContactCard: View {
     let person: Person
     let frequencyName: String
     let tags: [Tag]
-    let status: SLAStatus
+    let status: ContactStatus
     let daysOverdue: Int
     let timeAgo: String
     let lastMethod: TouchMethod?

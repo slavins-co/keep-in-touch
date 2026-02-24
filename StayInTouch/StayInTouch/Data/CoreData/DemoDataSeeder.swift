@@ -58,6 +58,7 @@ final class DemoDataSeeder {
                     notificationsMuted: false,
                     customBreachTime: nil,
                     snoozedUntil: nil,
+                    contactUnavailable: false,
                     groupAddedAt: now,
                     createdAt: now,
                     modifiedAt: now,
