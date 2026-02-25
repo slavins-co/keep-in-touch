@@ -234,7 +234,7 @@ struct PersonDetailView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             HStack(spacing: DS.Spacing.sm) {
                 Text(viewModel.person.displayName)
-                    .font(.title.weight(.bold))
+                    .font(DS.Typography.heroTitle)
                     .lineLimit(1)
                     .layoutPriority(1)
 
