@@ -139,7 +139,7 @@ struct HomeView: View {
     // MARK: - Filters
 
     private var filters: some View {
-        HStack(spacing: DS.Spacing.sm) {
+        FlowLayout(spacing: DS.Spacing.sm) {
             // Sort control (icon only)
             Menu {
                 ForEach(HomeViewModel.SortOption.allCases, id: \.self) { option in
@@ -166,8 +166,6 @@ struct HomeView: View {
 
             // Tag filter chip
             tagFilterChip
-
-            Spacer()
         }
         .padding(.horizontal)
         .padding(.bottom, DS.Spacing.md)

@@ -552,7 +552,7 @@ struct PersonDetailView: View {
                     .font(DS.Typography.metadata)
                     .foregroundStyle(DS.Colors.secondaryText)
             } else {
-                WrapLayout {
+                FlowLayout(spacing: DS.Spacing.sm) {
                     ForEach(viewModel.tags.filter { viewModel.person.tagIds.contains($0.id) }, id: \.id) { tag in
                         Button {
                             viewModel.removeTag(tag)
@@ -789,15 +789,3 @@ struct PersonDetailView: View {
     }
 }
 
-private struct WrapLayout<Content: View>: View {
-    let content: Content
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            content
-        }
-    }
-}
