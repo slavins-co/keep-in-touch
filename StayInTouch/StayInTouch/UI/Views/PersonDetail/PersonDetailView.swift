@@ -32,6 +32,8 @@ struct PersonDetailView: View {
     @State private var settingsExpanded = false
     @State private var pendingQuickActionMethod: TouchMethod?
     @State private var showQuickActionUndo = false
+    @State private var showRemoveUndo = false
+    @State private var pendingRemoveTask: Task<Void, Never>?
     @FocusState private var isNextTouchNotesFocused: Bool
 
     init(person: Person) {
@@ -135,8 +137,7 @@ struct PersonDetailView: View {
         }
         .alert("Remove contact?", isPresented: $showRemoveConfirm) {
             Button("Remove", role: .destructive) {
-                viewModel.deletePerson()
-                dismiss()
+                startPendingRemove()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -204,13 +205,22 @@ struct PersonDetailView: View {
                 quickActionUndoBanner(method: method)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
+            if showRemoveUndo {
+                removeUndoBanner
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
         .animation(.easeInOut(duration: 0.3), value: showQuickActionUndo)
+        .animation(.easeInOut(duration: 0.3), value: showRemoveUndo)
         .task {
             await viewModel.refreshContactInfo()
             viewModel.load()
         }
         .onDisappear {
+            if showRemoveUndo {
+                pendingRemoveTask?.cancel()
+                viewModel.deletePerson()
+            }
             NotificationCenter.default.post(name: .personDidChange, object: viewModel.person.id)
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -715,6 +725,47 @@ struct PersonDetailView: View {
     private func dismissQuickActionUndo() {
         showQuickActionUndo = false
         pendingQuickActionMethod = nil
+    }
+
+    private var removeUndoBanner: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "trash.fill")
+                .foregroundStyle(.white)
+            Text("Contact removed")
+                .font(DS.Typography.metadata)
+                .foregroundStyle(.white)
+            Spacer()
+            Button("Undo") {
+                cancelPendingRemove()
+            }
+            .font(DS.Typography.metadata.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(.white.opacity(0.2))
+            .clipShape(Capsule())
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Colors.destructive)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
+    }
+
+    private func startPendingRemove() {
+        showRemoveUndo = true
+        pendingRemoveTask = Task {
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            guard !Task.isCancelled else { return }
+            viewModel.deletePerson()
+            dismiss()
+        }
+    }
+
+    private func cancelPendingRemove() {
+        pendingRemoveTask?.cancel()
+        pendingRemoveTask = nil
+        showRemoveUndo = false
     }
 
     private func reminderTimeLabel() -> String {
