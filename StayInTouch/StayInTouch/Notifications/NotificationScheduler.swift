@@ -44,9 +44,25 @@ final class NotificationScheduler {
         self.groupRepository = groupRepository
     }
 
+    func registerCategories() {
+        let logAction = UNNotificationAction(
+            identifier: NotificationIdentifier.actionLogConnection,
+            title: "Log Connection",
+            options: []
+        )
+        let personCategory = UNNotificationCategory(
+            identifier: NotificationIdentifier.categoryPerson,
+            actions: [logAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        UNUserNotificationCenter.current().setNotificationCategories([personCategory])
+    }
+
     func startObserving() {
         // Remove existing observers first to prevent duplicates
         stopObserving()
+        registerCategories()
 
         settingsObserver = NotificationCenter.default.addObserver(
             forName: .settingsDidChange,
@@ -132,6 +148,9 @@ final class NotificationScheduler {
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = notificationUserInfo(for: people, type: type.userInfoType)
+        if people.count == 1 {
+            content.categoryIdentifier = NotificationIdentifier.categoryPerson
+        }
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         let request = UNNotificationRequest(identifier: type.identifier, content: content, trigger: trigger)
@@ -173,6 +192,7 @@ final class NotificationScheduler {
             content.sound = .default
             content.badge = NSNumber(value: badgeCount)
             content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
+            content.categoryIdentifier = NotificationIdentifier.categoryPerson
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
             let request = UNNotificationRequest(identifier: "\(type.identifier)_\(person.id.uuidString)", content: content, trigger: trigger)
@@ -261,6 +281,7 @@ private extension NotificationScheduler {
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
+        content.categoryIdentifier = NotificationIdentifier.categoryPerson
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         let request = UNNotificationRequest(identifier: "\(type.identifier)_custom_\(person.id.uuidString)", content: content, trigger: trigger)
@@ -308,6 +329,9 @@ enum NotificationIdentifier {
     static let dailyDueSoon = "daily_due_soon"
     static let dailyCombined = "daily_combined"
     static let weeklyDigest = "weekly_digest"
+
+    static let categoryPerson = "PERSON_REMINDER"
+    static let actionLogConnection = "LOG_CONNECTION"
 }
 
 private extension DayOfWeek {
