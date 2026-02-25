@@ -41,12 +41,17 @@ final class OnboardingViewModel: ObservableObject {
 
     private var settings: AppSettings?
 
-    init(coreDataStack: CoreDataStack = .shared) {
+    init(
+        coreDataStack: CoreDataStack = .shared,
+        personRepository: PersonRepository? = nil,
+        groupRepository: GroupRepository? = nil,
+        settingsRepository: AppSettingsRepository? = nil
+    ) {
         self.coreDataStack = coreDataStack
         let context = coreDataStack.viewContext
-        self.personRepository = CoreDataPersonRepository(context: context)
-        self.groupRepository = CoreDataGroupRepository(context: context)
-        self.settingsRepository = CoreDataAppSettingsRepository(context: context)
+        self.personRepository = personRepository ?? CoreDataPersonRepository(context: context)
+        self.groupRepository = groupRepository ?? CoreDataGroupRepository(context: context)
+        self.settingsRepository = settingsRepository ?? CoreDataAppSettingsRepository(context: context)
 
         loadSettingsAndGroups()
     }
@@ -173,6 +178,8 @@ final class OnboardingViewModel: ObservableObject {
             let existingCount = repo.fetchAll().count
             var sortOrder = existingCount
 
+            var personsToSave: [Person] = []
+
             for contact in selected {
                 let groupId = self.contactGroupSelections[contact.identifier] ?? defaultGroupId
                 let person = Person(
@@ -199,10 +206,11 @@ final class OnboardingViewModel: ObservableObject {
                     sortOrder: sortOrder
                 )
 
-                let assigned = AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId)
-                try? repo.save(assigned)
+                personsToSave.append(AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId))
                 sortOrder += 1
             }
+
+            try? repo.batchSave(personsToSave)
         }
     }
 

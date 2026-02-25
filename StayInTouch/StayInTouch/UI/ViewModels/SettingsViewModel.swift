@@ -210,6 +210,8 @@ final class SettingsViewModel: ObservableObject {
             var sortOrder = existing.count
             let now = Date()
 
+            var personsToSave: [Person] = []
+
             for summary in summaries {
                 let groupId = groupAssignments[summary.identifier] ?? defaultGroupId
                 let person = Person(
@@ -236,13 +238,14 @@ final class SettingsViewModel: ObservableObject {
                     sortOrder: sortOrder
                 )
 
-                let assigned = AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId)
-                do {
-                    try peopleRepo.save(assigned)
-                } catch {
-                    AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.importSelectedContacts")
-                }
+                personsToSave.append(AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId))
                 sortOrder += 1
+            }
+
+            do {
+                try peopleRepo.batchSave(personsToSave)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.importSelectedContacts")
             }
         }
 
