@@ -868,6 +868,24 @@ When an edit touches 5+ files:
 3. Provide the subagent with an explicit file list and exact edit instructions
 4. Build+test after the subagent completes to verify
 
+### 2026-02-24 - 📊 Data - Never Sideload Broken Builds to Personal Devices
+
+**What Happened:**
+After v0.2.1 shipped with a clean v1→v2 CoreData migration, the user's personal device showed the "Data Update Required" migration failure alert. Migration worked fine on fresh installs and in tests.
+
+**Root Cause:**
+The user had previously sideloaded a development build from the failed first implementation attempt. That broken build modified the CoreData model in-flight (without proper versioning), writing a store whose model hash matched neither the clean v1 nor the new v2 model. CoreData couldn't find a source model to migrate from.
+
+**Solution:**
+Delete and reinstall the app. The user lost their first week of real data.
+
+**Prevention Rule:**
+1. NEVER sideload experimental/broken builds to a device with real data
+2. Use the Simulator for development testing — it's disposable
+3. Only sideload to a personal device from a known-good commit on `main`
+4. If a broken build was sideloaded, warn the user that their device store may be corrupted before shipping a migration
+5. Future: consider adding a store hash check that detects "unknown model" vs "known v1 needing migration" and provides a more helpful error message
+
 ### 2026-02-24 - 🔧 Git - One Issue Per Commit for Clean Bisection
 
 **What Happened:**
