@@ -31,6 +31,7 @@ struct PersonDetailView: View {
     @State private var nextTouchNotesText: String = ""
     @State private var settingsExpanded = false
     @State private var pendingQuickActionMethod: TouchMethod?
+    @State private var pendingQuickActionTouch: TouchEvent?
     @State private var showQuickActionUndo = false
     @State private var showRemoveUndo = false
     @State private var pendingRemoveTask: Task<Void, Never>?
@@ -687,6 +688,7 @@ struct PersonDetailView: View {
             if accepted {
                 let method = action.touchMethod
                 viewModel.logTouch(method: method, notes: nil, date: Date())
+                pendingQuickActionTouch = viewModel.touchEvents.first
                 pendingQuickActionMethod = method
             } else {
                 viewModel.quickActionMessage = "Whoops — couldn't open that on this device."
@@ -703,7 +705,7 @@ struct PersonDetailView: View {
                 .foregroundStyle(.white)
             Spacer()
             Button("Undo") {
-                if let touch = viewModel.touchEvents.first {
+                if let touch = pendingQuickActionTouch {
                     viewModel.deleteTouch(touch)
                 }
                 dismissQuickActionUndo()
@@ -725,6 +727,7 @@ struct PersonDetailView: View {
     private func dismissQuickActionUndo() {
         showQuickActionUndo = false
         pendingQuickActionMethod = nil
+        pendingQuickActionTouch = nil
     }
 
     private var removeUndoBanner: some View {
@@ -757,6 +760,7 @@ struct PersonDetailView: View {
         pendingRemoveTask = Task {
             try? await Task.sleep(nanoseconds: 5_000_000_000)
             guard !Task.isCancelled else { return }
+            showRemoveUndo = false
             viewModel.deletePerson()
             dismiss()
         }
