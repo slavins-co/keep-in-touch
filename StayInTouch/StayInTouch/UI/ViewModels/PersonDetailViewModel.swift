@@ -300,7 +300,7 @@ final class PersonDetailViewModel: ObservableObject {
             let sanitizedPhone = sanitize(phone)
             guard let encoded = sanitizedPhone.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
                   let url = URL(string: "sms:\(encoded)") else {
-                AppLogger.logWarning("Failed to create SMS URL for phone: \(phone)", category: AppLogger.viewModel)
+                AppLogger.logWarning("Failed to create SMS URL for contact \(person.id)", category: AppLogger.viewModel)
                 return nil
             }
             return url
@@ -313,7 +313,7 @@ final class PersonDetailViewModel: ObservableObject {
             let sanitizedPhone = sanitize(phone)
             guard let encoded = sanitizedPhone.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
                   let url = URL(string: "tel:\(encoded)") else {
-                AppLogger.logWarning("Failed to create tel URL for phone: \(phone)", category: AppLogger.viewModel)
+                AppLogger.logWarning("Failed to create tel URL for contact \(person.id)", category: AppLogger.viewModel)
                 return nil
             }
             return url
@@ -325,7 +325,7 @@ final class PersonDetailViewModel: ObservableObject {
             // Use proper URL encoding for mailto
             guard let encoded = email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
                   let url = URL(string: "mailto:\(encoded)") else {
-                AppLogger.logWarning("Failed to create mailto URL for email: \(email)", category: AppLogger.viewModel)
+                AppLogger.logWarning("Failed to create mailto URL for contact \(person.id)", category: AppLogger.viewModel)
                 return nil
             }
             return url

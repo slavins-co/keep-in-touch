@@ -199,7 +199,7 @@ final class NotificationScheduler {
             do {
                 try await UNUserNotificationCenter.current().add(request)
             } catch {
-                AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.schedulePerPerson(\(type.identifier), \(person.displayName))")
+                AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.schedulePerPerson(\(type.identifier), \(person.id))")
             }
         }
     }
@@ -288,7 +288,7 @@ private extension NotificationScheduler {
         do {
             try await UNUserNotificationCenter.current().add(request)
         } catch {
-            AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.scheduleCustomTime(\(type.identifier), \(person.displayName))")
+            AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.scheduleCustomTime(\(type.identifier), \(person.id))")
         }
     }
 }
