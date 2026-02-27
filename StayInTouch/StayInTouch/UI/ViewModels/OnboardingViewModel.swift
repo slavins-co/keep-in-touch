@@ -200,6 +200,7 @@ final class OnboardingViewModel: ObservableObject {
                     customBreachTime: nil,
                     snoozedUntil: nil,
                     contactUnavailable: false,
+                    isDemoData: false,
                     groupAddedAt: nil,
                     createdAt: now,
                     modifiedAt: now,
