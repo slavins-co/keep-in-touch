@@ -319,7 +319,7 @@ struct SettingsView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This resets all contacts\u{2019} last-touch dates to today, clearing the overdue backlog. Your touch history is preserved.")
+                Text("This resets all active (non-paused) contacts\u{2019} last-touch dates to today, clearing the overdue backlog. Your touch history is preserved.")
             }
         }
     }
