@@ -307,19 +307,19 @@ struct SettingsView: View {
             Button(role: .destructive) {
                 showResetFrequenciesConfirmation = true
             } label: {
-                Label("Reset All Frequencies", systemImage: "arrow.counterclockwise")
+                Label("Fresh Start", systemImage: "arrow.counterclockwise")
             }
             .confirmationDialog(
-                "Reset All Frequencies?",
+                "Start Fresh?",
                 isPresented: $showResetFrequenciesConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Reset All", role: .destructive) {
+                Button("Reset the Clock", role: .destructive) {
                     Task { await viewModel.resetAllFrequencies() }
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This resets all active (non-paused) contacts\u{2019} last-touch dates to today, clearing the overdue backlog. Your touch history is preserved.")
+                Text("Been away for a while? No worries \u{2014} this resets the clock on all your contacts so everything starts clean from today. Your touch history, groups, and frequencies are all preserved.")
             }
         }
     }

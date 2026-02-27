@@ -145,7 +145,7 @@ final class SettingsViewModel: ObservableObject {
         let backgroundContext = CoreDataStack.shared.newBackgroundContext()
         await backgroundContext.perform {
             let repo = CoreDataPersonRepository(context: backgroundContext)
-            let people = repo.fetchTracked(includePaused: false)
+            let people = repo.fetchTracked(includePaused: true)
             var updated: [Person] = []
             for var person in people {
                 person.lastTouchAt = now
