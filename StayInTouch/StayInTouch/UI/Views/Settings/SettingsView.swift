@@ -34,6 +34,7 @@ struct SettingsView: View {
     @State private var showImportSuccessAlert = false
     @State private var showImportErrorAlert = false
     @State private var importResultMessage = ""
+    @State private var showResetFrequenciesConfirmation = false
 
     var body: some View {
         List {
@@ -360,6 +361,24 @@ struct SettingsView: View {
                         .font(DS.Typography.metadata)
                         .foregroundStyle(DS.Colors.secondaryText)
                 }
+            }
+
+            Button(role: .destructive) {
+                showResetFrequenciesConfirmation = true
+            } label: {
+                Label("Fresh Start", systemImage: "arrow.counterclockwise")
+            }
+            .confirmationDialog(
+                "Start Fresh?",
+                isPresented: $showResetFrequenciesConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Reset the Clock", role: .destructive) {
+                    Task { await viewModel.resetAllFrequencies() }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Been away for a while? No worries \u{2014} this resets the clock on all your contacts so everything starts clean from today. Your touch history, groups, and frequencies are all preserved.")
             }
         }
     }

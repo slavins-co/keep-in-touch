@@ -168,6 +168,7 @@ enum TestFactory {
             customBreachTime: nil,
             snoozedUntil: snoozedUntil,
             contactUnavailable: false,
+            isDemoData: false,
             groupAddedAt: Date(),
             createdAt: Date(),
             modifiedAt: Date(),
