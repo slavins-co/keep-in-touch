@@ -109,7 +109,7 @@ final class SettingsViewModel: ObservableObject {
                 seeder.seedIfNeeded()
             } else {
                 let repo = CoreDataPersonRepository(context: backgroundContext)
-                let demoPeople = repo.fetchAll().filter { $0.cnIdentifier == nil }
+                let demoPeople = repo.fetchAll().filter { $0.isDemoData }
                 for person in demoPeople {
                     do {
                         try repo.delete(id: person.id)
@@ -232,6 +232,7 @@ final class SettingsViewModel: ObservableObject {
                     customBreachTime: nil,
                     snoozedUntil: nil,
                     contactUnavailable: false,
+                    isDemoData: false,
                     groupAddedAt: nil,
                     createdAt: now,
                     modifiedAt: now,

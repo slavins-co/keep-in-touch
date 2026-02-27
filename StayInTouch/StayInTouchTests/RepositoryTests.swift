@@ -80,6 +80,7 @@ final class RepositoryTests: XCTestCase {
             customBreachTime: nil,
             snoozedUntil: nil,
             contactUnavailable: false,
+            isDemoData: false,
             groupAddedAt: nil,
             createdAt: Date(),
             modifiedAt: Date(),
