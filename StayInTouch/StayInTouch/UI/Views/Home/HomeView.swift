@@ -12,7 +12,7 @@ struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @StateObject private var settingsViewModel = SettingsViewModel()
     @State private var collapsedSections: Set<String> = ["all-good"]
-    @State private var deepLinkPerson: Person?
+    @State private var navigationPath = NavigationPath()
     @State private var showNewContactsPicker = false
     @State private var showNoNewContactsAlert = false
     @State private var showLimitedAccessAlert = false
@@ -20,7 +20,7 @@ struct HomeView: View {
     @State private var showContactsSettingsAlert = false
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             VStack(spacing: 0) {
                 VStack(spacing: 0) {
                     header
@@ -30,6 +30,9 @@ struct HomeView: View {
 
                 content
                 searchBar
+            }
+            .navigationDestination(for: Person.self) { person in
+                PersonDetailView(person: person)
             }
         }
         .onChange(of: viewModel.selectedGroupId) { _, _ in
@@ -49,9 +52,6 @@ struct HomeView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .notificationDeepLink)) { notification in
             handleDeepLink(notification.userInfo)
-        }
-        .sheet(item: $deepLinkPerson) { person in
-            PersonDetailView(person: person)
         }
         .sheet(isPresented: $showNewContactsPicker) {
             NewContactsPickerView(
@@ -410,7 +410,8 @@ struct HomeView: View {
         let type = userInfo["type"] as? String
         if type == "person", let idString = userInfo["personId"] as? String, let id = UUID(uuidString: idString) {
             if let person = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext).fetch(id: id) {
-                deepLinkPerson = person
+                navigationPath = NavigationPath()
+                navigationPath.append(person)
             }
         } else if type == "home" {
             selectedDefaults()

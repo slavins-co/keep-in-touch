@@ -7,7 +7,11 @@
 
 import Foundation
 
-struct Person: Identifiable, Equatable {
+struct Person: Identifiable, Equatable, Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
     let id: UUID
     var cnIdentifier: String?
     var displayName: String
