@@ -26,6 +26,7 @@ struct SettingsView: View {
     @State private var selectedForImport: [ContactSummary] = []
     @State private var pendingImportCount = 0
     @State private var isSyncingContacts = false
+    @State private var showResetFrequenciesConfirmation = false
 
     var body: some View {
         List {
@@ -301,6 +302,24 @@ struct SettingsView: View {
                         .font(DS.Typography.metadata)
                         .foregroundStyle(DS.Colors.secondaryText)
                 }
+            }
+
+            Button(role: .destructive) {
+                showResetFrequenciesConfirmation = true
+            } label: {
+                Label("Reset All Frequencies", systemImage: "arrow.counterclockwise")
+            }
+            .confirmationDialog(
+                "Reset All Frequencies?",
+                isPresented: $showResetFrequenciesConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Reset All", role: .destructive) {
+                    Task { await viewModel.resetAllFrequencies() }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This resets all contacts\u{2019} last-touch dates to today, clearing the overdue backlog. Your touch history is preserved.")
             }
         }
     }

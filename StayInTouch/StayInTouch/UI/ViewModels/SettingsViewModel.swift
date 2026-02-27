@@ -140,6 +140,30 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
+    func resetAllFrequencies() async {
+        let now = Date()
+        let backgroundContext = CoreDataStack.shared.newBackgroundContext()
+        await backgroundContext.perform {
+            let repo = CoreDataPersonRepository(context: backgroundContext)
+            let people = repo.fetchTracked(includePaused: false)
+            var updated: [Person] = []
+            for var person in people {
+                person.lastTouchAt = now
+                person.modifiedAt = now
+                updated.append(person)
+            }
+            do {
+                try repo.batchSave(updated)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.resetAllFrequencies")
+            }
+        }
+        await MainActor.run {
+            load()
+            NotificationCenter.default.post(name: .personDidChange, object: nil)
+        }
+    }
+
     func exportContacts() -> URL? {
         let people = personRepository.fetchAll()
         let payload = people.map { ExportPerson.from($0) }
