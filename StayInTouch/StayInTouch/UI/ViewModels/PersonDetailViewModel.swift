@@ -358,9 +358,6 @@ final class PersonDetailViewModel: ObservableObject {
         phone.filter { $0.isNumber || $0 == "+" }
     }
 
-    private func digitsOnly(_ phone: String) -> String {
-        phone.filter { $0.isNumber }
-    }
 }
 
 enum QuickActionType {

@@ -314,49 +314,6 @@ struct ExportPerson: Codable {
         )
     }
 
-    // MARK: - Contact Grouping & Filtering
-
-    func filteredAndGroupedContacts(searchText: String, allContacts: [CNContact]) -> [(String, [CNContact])] {
-        // Filter by search text
-        let filtered = searchText.isEmpty ? allContacts : allContacts.filter { contact in
-            let name = CNContactFormatter.string(from: contact, style: .fullName) ?? ""
-            return name.localizedCaseInsensitiveContains(searchText)
-        }
-
-        // Group alphabetically
-        let grouped = groupContactsAlphabetically(filtered)
-
-        // Sort sections A-Z (with # at end)
-        let sorted = grouped.sorted { lhs, rhs in
-            if lhs.key == "#" { return false }
-            if rhs.key == "#" { return true }
-            return lhs.key < rhs.key
-        }
-
-        // Sort contacts within each section
-        return sorted.map { (key, contacts) in
-            (key, contacts.sorted {
-                let name1 = CNContactFormatter.string(from: $0, style: .fullName) ?? ""
-                let name2 = CNContactFormatter.string(from: $1, style: .fullName) ?? ""
-                return name1 < name2
-            })
-        }
-    }
-
-    private func groupContactsAlphabetically(_ contacts: [CNContact]) -> [String: [CNContact]] {
-        let grouped = Dictionary(grouping: contacts) { contact -> String in
-            let name = CNContactFormatter.string(from: contact, style: .fullName) ?? ""
-            let firstChar = name.prefix(1).uppercased()
-
-            // Handle non-alphabetic characters
-            if firstChar.rangeOfCharacter(from: CharacterSet.letters) != nil {
-                return firstChar
-            } else {
-                return "#"
-            }
-        }
-        return grouped
-    }
 }
 
 struct AppSettingsDefaults {
