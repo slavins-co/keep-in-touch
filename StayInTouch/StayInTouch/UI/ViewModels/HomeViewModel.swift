@@ -147,18 +147,12 @@ final class HomeViewModel: ObservableObject {
             ($0.lastTouchAt ?? .distantPast) > ($1.lastTouchAt ?? .distantPast)
         }
 
-        switch sortOption {
-        case .status:
-            overduePeople = overdue
-            dueSoonPeople = dueSoon
-            allGoodPeople = allGoodByRecency
-            nameSortedPeople = nameSorted
-        case .name:
-            overduePeople = overdue
-            dueSoonPeople = dueSoon
-            allGoodPeople = allGoodByRecency
-            nameSortedPeople = nameSorted
-        }
+        // All arrays populated regardless of sortOption —
+        // header status counts always read the section arrays.
+        overduePeople = overdue
+        dueSoonPeople = dueSoon
+        allGoodPeople = allGoodByRecency
+        nameSortedPeople = nameSorted
     }
 
     static func filterPeople(
