@@ -177,4 +177,110 @@ final class OnboardingViewModelTests: XCTestCase {
     func testGroupsPopulatedAfterInit() {
         XCTAssertEqual(sut.groups.count, 2)
     }
+
+    // MARK: - Back Navigation
+
+    func testCanGoBackIsFalseAtStart() {
+        XCTAssertFalse(sut.canGoBack)
+    }
+
+    func testCanGoBackIsTrueAfterFirstTransition() {
+        sut.goToContactsPermission()
+        XCTAssertTrue(sut.canGoBack)
+    }
+
+    func testGoBackReturnsToWelcomeFromContactsPermission() {
+        sut.goToContactsPermission()
+        sut.goBack()
+        XCTAssertEqual(sut.step, .welcome)
+        XCTAssertFalse(sut.canGoBack)
+    }
+
+    func testGoBackTraversesFullHistory() {
+        sut.goToContactsPermission()
+        sut.skipContactsPermission()
+        sut.continueFromContactsRequired()
+
+        XCTAssertEqual(sut.step, .notificationsPermission)
+
+        sut.goBack()
+        XCTAssertEqual(sut.step, .contactsRequired)
+
+        sut.goBack()
+        XCTAssertEqual(sut.step, .contactsPermission)
+
+        sut.goBack()
+        XCTAssertEqual(sut.step, .welcome)
+        XCTAssertFalse(sut.canGoBack)
+    }
+
+    func testGoBackDoesNothingWhenAtStart() {
+        sut.goBack()
+        XCTAssertEqual(sut.step, .welcome)
+    }
+
+    func testGoBackPreservesSelectedContactIds() {
+        sut.goToContactsPermission()
+        sut.selectedContactIds = ["abc", "def"]
+
+        sut.goBack()
+        XCTAssertEqual(sut.step, .welcome)
+        XCTAssertEqual(sut.selectedContactIds, ["abc", "def"])
+    }
+
+    func testStartResetsHistory() {
+        sut.goToContactsPermission()
+        sut.skipContactsPermission()
+        XCTAssertTrue(sut.canGoBack)
+
+        sut.start()
+        XCTAssertFalse(sut.canGoBack)
+        XCTAssertEqual(sut.step, .welcome)
+    }
+
+    func testGoBackFromGroupAssignmentPreservesSelections() {
+        // Test the group assignment → contact picker back path
+        // We verify via the contactsRequired → notifications path instead,
+        // since requestContactsPermission requires real CNContactStore.
+        let contact = ContactSummary(identifier: "abc123", displayName: "Alice", initials: "AL")
+        sut.contacts = [contact]
+        sut.selectedContactIds = ["abc123"]
+
+        sut.goToContactsPermission()
+        sut.skipContactsPermission()
+        sut.continueFromContactsRequired()
+
+        // Selections should still be preserved after navigating
+        XCTAssertTrue(sut.selectedContactIds.contains("abc123"))
+
+        sut.goBack()
+        XCTAssertEqual(sut.step, .contactsRequired)
+        XCTAssertTrue(sut.selectedContactIds.contains("abc123"))
+    }
+
+    // MARK: - Progress
+
+    func testProgressFractionIsZeroAtWelcome() {
+        XCTAssertEqual(sut.progressFraction, 0.0, accuracy: 0.01)
+    }
+
+    func testProgressFractionAtContactsPermission() {
+        sut.goToContactsPermission()
+        XCTAssertEqual(sut.progressFraction, 0.25, accuracy: 0.01)
+    }
+
+    func testProgressFractionAtNotifications() {
+        sut.goToContactsPermission()
+        sut.skipContactsPermission()
+        sut.continueFromContactsRequired()
+        XCTAssertEqual(sut.progressFraction, 1.0, accuracy: 0.01)
+    }
+
+    func testProgressFractionContactsRequiredSameAsContactsPermission() {
+        sut.goToContactsPermission()
+        let permissionProgress = sut.progressFraction
+        sut.skipContactsPermission()
+        let requiredProgress = sut.progressFraction
+        XCTAssertEqual(requiredProgress, permissionProgress, accuracy: 0.01)
+    }
 }
