@@ -128,6 +128,7 @@ struct PersonDetailView: View {
         )) {
             Button("Delete", role: .destructive) {
                 if let touch = showDeleteConfirm {
+                    Haptics.medium()
                     viewModel.deleteTouch(touch)
                 }
                 showDeleteConfirm = nil
@@ -686,6 +687,7 @@ struct PersonDetailView: View {
         guard let url = viewModel.openAction(type: action) else { return }
         openURL(url) { accepted in
             if accepted {
+                Haptics.light()
                 let method = action.touchMethod
                 viewModel.logTouch(method: method, notes: nil, date: Date())
                 pendingQuickActionTouch = viewModel.touchEvents.first
@@ -705,6 +707,7 @@ struct PersonDetailView: View {
                 .foregroundStyle(.white)
             Spacer()
             Button("Undo") {
+                Haptics.light()
                 if let touch = pendingQuickActionTouch {
                     viewModel.deleteTouch(touch)
                 }
@@ -739,6 +742,7 @@ struct PersonDetailView: View {
                 .foregroundStyle(.white)
             Spacer()
             Button("Undo") {
+                Haptics.light()
                 cancelPendingRemove()
             }
             .font(DS.Typography.metadata.weight(.semibold))
@@ -756,6 +760,7 @@ struct PersonDetailView: View {
     }
 
     private func startPendingRemove() {
+        Haptics.medium()
         showRemoveUndo = true
         pendingRemoveTask = Task {
             try? await Task.sleep(nanoseconds: 5_000_000_000)
