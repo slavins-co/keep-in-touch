@@ -142,7 +142,8 @@ final class SettingsViewModel: ObservableObject {
 
     func exportContacts() -> URL? {
         let people = personRepository.fetchAll()
-        let payload = people.map { ExportPerson.from($0) }
+        let touchRepo = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext)
+        let payload = people.map { ExportPerson.from($0, touchRepo: touchRepo) }
         guard let data = try? JSONEncoder().encode(payload) else { return nil }
 
         let filename = "contacts-export-\(ISO8601DateFormatter().string(from: Date())).json"
@@ -457,8 +458,17 @@ struct ExportPerson: Codable {
     let modifiedAt: Date
     let touchEvents: [ExportTouchEvent]?
 
-    static func from(_ person: Person) -> ExportPerson {
-        ExportPerson(
+    static func from(_ person: Person, touchRepo: TouchEventRepository) -> ExportPerson {
+        let events = touchRepo.fetchAll(for: person.id)
+        let exportEvents: [ExportTouchEvent]? = events.isEmpty ? nil : events.map { event in
+            ExportTouchEvent(
+                id: event.id,
+                at: event.at,
+                method: event.method.rawValue,
+                notes: event.notes
+            )
+        }
+        return ExportPerson(
             id: person.id,
             displayName: person.displayName,
             cnIdentifier: person.cnIdentifier,
@@ -468,7 +478,7 @@ struct ExportPerson: Codable {
             isPaused: person.isPaused,
             createdAt: person.createdAt,
             modifiedAt: person.modifiedAt,
-            touchEvents: nil
+            touchEvents: exportEvents
         )
     }
 }
