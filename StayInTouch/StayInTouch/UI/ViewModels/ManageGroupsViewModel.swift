@@ -60,6 +60,11 @@ final class ManageGroupsViewModel: ObservableObject {
     }
 
     func delete(group: Group) {
+        // Enforce: reassign any remaining people to default group before deleting
+        if let fallback = groups.first(where: { $0.isDefault && $0.id != group.id })
+            ?? groups.first(where: { $0.id != group.id }) {
+            movePeople(from: group, to: fallback)
+        }
         try? groupRepository.delete(id: group.id)
         load()
     }
