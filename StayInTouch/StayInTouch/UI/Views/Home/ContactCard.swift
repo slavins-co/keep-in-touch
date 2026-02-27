@@ -17,9 +17,16 @@ struct ContactCard: View {
     let lastMethod: TouchMethod?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            // Row 1: Name + inline tags + status
-            HStack(spacing: DS.Spacing.sm) {
+        HStack(alignment: .center, spacing: DS.Spacing.md) {
+            ContactPhotoView(
+                cnIdentifier: person.cnIdentifier,
+                displayName: person.displayName,
+                size: 36
+            )
+
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                // Row 1: Name + inline tags + status
+                HStack(spacing: DS.Spacing.sm) {
                 Text(person.displayName)
                     .font(DS.Typography.contactName)
                     .lineLimit(1)
@@ -43,8 +50,9 @@ struct ContactCard: View {
                 StatusIndicator(status: status, daysOverdue: daysOverdue)
             }
 
-            // Row 2: Icon-labeled metadata
-            metadataRow
+                // Row 2: Icon-labeled metadata
+                metadataRow
+            }
         }
         .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())

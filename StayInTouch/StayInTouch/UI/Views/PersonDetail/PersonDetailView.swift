@@ -243,33 +243,41 @@ struct PersonDetailView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            HStack(spacing: DS.Spacing.sm) {
-                Text(viewModel.person.displayName)
-                    .font(DS.Typography.heroTitle)
-                    .lineLimit(1)
-                    .layoutPriority(1)
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            ContactPhotoView(
+                cnIdentifier: viewModel.person.cnIdentifier,
+                displayName: viewModel.person.displayName,
+                size: 56
+            )
 
-                if !personTags.isEmpty {
-                    HStack(spacing: DS.Spacing.xs) {
-                        ForEach(personTags.prefix(3), id: \.id) { tag in
-                            TagPill(tag: tag)
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                HStack(spacing: DS.Spacing.sm) {
+                    Text(viewModel.person.displayName)
+                        .font(DS.Typography.heroTitle)
+                        .lineLimit(1)
+                        .layoutPriority(1)
+
+                    if !personTags.isEmpty {
+                        HStack(spacing: DS.Spacing.xs) {
+                            ForEach(personTags.prefix(3), id: \.id) { tag in
+                                TagPill(tag: tag)
+                            }
+                            if personTags.count > 3 {
+                                Text("+\(personTags.count - 3)")
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(DS.Colors.secondaryText)
+                            }
                         }
-                        if personTags.count > 3 {
-                            Text("+\(personTags.count - 3)")
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(DS.Colors.secondaryText)
-                        }
+                        .lineLimit(1)
                     }
-                    .lineLimit(1)
                 }
-            }
 
-            HStack(spacing: DS.Spacing.sm) {
-                StatusIndicator(status: currentStatus, daysOverdue: daysOverdue)
-                Text(statusLabel())
-                    .font(DS.Typography.metadata)
-                    .foregroundStyle(DS.Colors.secondaryText)
+                HStack(spacing: DS.Spacing.sm) {
+                    StatusIndicator(status: currentStatus, daysOverdue: daysOverdue)
+                    Text(statusLabel())
+                        .font(DS.Typography.metadata)
+                        .foregroundStyle(DS.Colors.secondaryText)
+                }
             }
         }
     }
