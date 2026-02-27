@@ -271,6 +271,12 @@ struct PersonDetailView: View {
                     .font(DS.Typography.metadata)
                     .foregroundStyle(DS.Colors.secondaryText)
             }
+
+            if let lastTouch = viewModel.person.lastTouchAt {
+                Text("Last connected \(lastTouchTimeAgo(lastTouch))")
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
+            }
         }
     }
 
@@ -649,6 +655,12 @@ struct PersonDetailView: View {
         case .overdue: return "Overdue"
         case .unknown: return "Unknown"
         }
+    }
+
+    private func lastTouchTimeAgo(_ date: Date) -> String {
+        let days = Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
+        if days == 0 { return "today" }
+        return "\(days)d ago"
     }
 
     private func statusColor() -> Color {
