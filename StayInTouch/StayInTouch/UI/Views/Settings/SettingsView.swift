@@ -304,6 +304,15 @@ struct SettingsView: View {
                     Text(option.displayName).tag(option)
                 }
             }
+
+            Picker("Badge Count", selection: Binding(
+                get: { viewModel.settings.badgeCountOption },
+                set: { viewModel.setBadgeCountOption($0) }
+            )) {
+                ForEach(BadgeCountOption.allCases, id: \.self) { option in
+                    Text(option.displayName).tag(option)
+                }
+            }
         }
     }
 

@@ -98,6 +98,11 @@ final class SettingsViewModel: ObservableObject {
         save()
     }
 
+    func setBadgeCountOption(_ option: BadgeCountOption) {
+        settings.badgeCountOption = option
+        save()
+    }
+
     func setDemoModeEnabled(_ enabled: Bool) {
         settings.demoModeEnabled = enabled
         save()
@@ -562,6 +567,7 @@ struct AppSettingsDefaults {
             digestDay: .friday,
             digestTime: LocalTime(hour: 18, minute: 0),
             notificationGrouping: .perType,
+            badgeCountOption: .overdueOnly,
             dueSoonWindowDays: 3,
             demoModeEnabled: false,
             lastContactsSyncAt: nil,

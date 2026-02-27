@@ -23,6 +23,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
+        UNUserNotificationCenter.current().setBadgeCount(0)
         Task { await NotificationScheduler.shared.scheduleAll() }
     }
 

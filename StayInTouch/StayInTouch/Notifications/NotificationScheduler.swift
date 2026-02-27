@@ -109,7 +109,13 @@ final class NotificationScheduler {
         let people = personRepository.fetchTracked(includePaused: false)
         let classified = NotificationClassifier.classify(people: people, groups: groups, referenceDate: now)
 
-        let badgeCount = classified.allOverdue.count
+        let badgeCount: Int
+        switch settings.badgeCountOption {
+        case .overdueOnly:
+            badgeCount = classified.allOverdue.count
+        case .overdueAndDueSoon:
+            badgeCount = classified.allOverdue.count + classified.dueSoon.count
+        }
 
         for custom in classified.customOverrides {
             await scheduleCustomTime(person: custom.person, type: custom.type, time: custom.time, badgeCount: badgeCount)

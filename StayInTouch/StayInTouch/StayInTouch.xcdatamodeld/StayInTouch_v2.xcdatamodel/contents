@@ -61,6 +61,7 @@
         <attribute name="digestDay" optional="NO" attributeType="String"/>
         <attribute name="digestTime" optional="NO" attributeType="String"/>
         <attribute name="notificationGrouping" optional="YES" attributeType="String"/>
+        <attribute name="badgeCountOption" optional="YES" attributeType="String"/>
         <attribute name="dueSoonWindowDays" optional="NO" attributeType="Integer 64" usesScalarValueType="YES"/>
         <attribute name="demoModeEnabled" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="lastContactsSyncAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>

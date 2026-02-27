@@ -18,6 +18,7 @@ extension AppSettingsEntity {
             digestDay: DayOfWeek(rawValue: digestDay ?? DayOfWeek.friday.rawValue) ?? .friday,
             digestTime: digestTime.flatMap(LocalTime.from(jsonString:)) ?? LocalTime(hour: 18, minute: 0),
             notificationGrouping: NotificationGrouping(rawValue: notificationGrouping ?? NotificationGrouping.perType.rawValue) ?? .perType,
+            badgeCountOption: BadgeCountOption(rawValue: badgeCountOption ?? "") ?? .overdueOnly,
             dueSoonWindowDays: Int(dueSoonWindowDays),
             demoModeEnabled: demoModeEnabled,
             lastContactsSyncAt: lastContactsSyncAt,
@@ -35,6 +36,7 @@ extension AppSettingsEntity {
         digestDay = settings.digestDay.rawValue
         digestTime = settings.digestTime.toJsonString()
         notificationGrouping = settings.notificationGrouping.rawValue
+        badgeCountOption = settings.badgeCountOption.rawValue
         dueSoonWindowDays = Int64(settings.dueSoonWindowDays)
         demoModeEnabled = settings.demoModeEnabled
         lastContactsSyncAt = settings.lastContactsSyncAt

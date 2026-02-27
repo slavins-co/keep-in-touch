@@ -20,6 +20,7 @@ struct AppSettings: Identifiable, Equatable {
     var digestDay: DayOfWeek
     var digestTime: LocalTime
     var notificationGrouping: NotificationGrouping
+    var badgeCountOption: BadgeCountOption
     var dueSoonWindowDays: Int
 
     var demoModeEnabled: Bool
