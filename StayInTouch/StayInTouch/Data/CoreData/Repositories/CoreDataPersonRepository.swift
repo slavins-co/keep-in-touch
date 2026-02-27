@@ -30,6 +30,7 @@ final class CoreDataPersonRepository: PersonRepository {
         context.performAndWait {
             let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
+            request.fetchBatchSize = 50
             results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
         return results
@@ -41,6 +42,7 @@ final class CoreDataPersonRepository: PersonRepository {
             let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
             request.predicate = basePredicate(includePaused: includePaused)
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
+            request.fetchBatchSize = 50
             results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
         return results
@@ -55,6 +57,7 @@ final class CoreDataPersonRepository: PersonRepository {
                 NSPredicate(format: "groupId == %@", id as CVarArg)
             ])
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
+            request.fetchBatchSize = 50
             results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
         return results
@@ -75,24 +78,52 @@ final class CoreDataPersonRepository: PersonRepository {
                 namePredicate
             ])
             request.sortDescriptors = [NSSortDescriptor(key: "displayName", ascending: true)]
+            request.fetchBatchSize = 50
             results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
         return results
     }
 
     func fetchOverdue(referenceDate: Date) -> [Person] {
-        let calculator = FrequencyCalculator(referenceDate: referenceDate)
-        let people = fetchTracked(includePaused: false)
+        var results: [Person] = []
+        context.performAndWait {
+            // Fetch all groups to build per-group cutoff predicates
+            let groupRequest: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
+            let groups = (try? context.fetch(groupRequest))?.map { $0.toDomain() } ?? []
+            guard !groups.isEmpty else { return }
 
-        // Batch fetch all groups to avoid N+1 query
-        let groupIds = Set(people.map { $0.groupId })
-        let groups = fetchGroupsByIds(Array(groupIds))
-        let groupById = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0) })
+            // Build a predicate per group: person's effective last-touch is before the cutoff
+            let calendar = Calendar.current
+            var perGroupPredicates: [NSPredicate] = []
+            for group in groups {
+                guard let cutoff = calendar.date(byAdding: .day, value: -group.frequencyDays, to: referenceDate) else { continue }
 
-        return people.filter { person in
-            guard let group = groupById[person.groupId] else { return false }
-            return calculator.status(for: person, in: [group]) == .overdue
+                // effectiveLastTouchDate = lastTouchAt ?? groupAddedAt
+                // Overdue when effective date < cutoff
+                let touchBeforeCutoff = NSPredicate(format: "groupId == %@ AND lastTouchAt != nil AND lastTouchAt < %@",
+                                                     group.id as CVarArg, cutoff as NSDate)
+                let fallbackBeforeCutoff = NSPredicate(format: "groupId == %@ AND lastTouchAt == nil AND groupAddedAt != nil AND groupAddedAt < %@",
+                                                        group.id as CVarArg, cutoff as NSDate)
+                perGroupPredicates.append(NSCompoundPredicate(orPredicateWithSubpredicates: [touchBeforeCutoff, fallbackBeforeCutoff]))
+            }
+
+            let overduePredicate = NSCompoundPredicate(orPredicateWithSubpredicates: perGroupPredicates)
+            let notSnoozed = NSCompoundPredicate(orPredicateWithSubpredicates: [
+                NSPredicate(format: "snoozedUntil == nil"),
+                NSPredicate(format: "snoozedUntil <= %@", referenceDate as NSDate)
+            ])
+
+            let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+                basePredicate(includePaused: false),
+                notSnoozed,
+                overduePredicate
+            ])
+            request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
+            request.fetchBatchSize = 50
+            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
+        return results
     }
 
     func save(_ person: Person) throws {
@@ -126,24 +157,6 @@ final class CoreDataPersonRepository: PersonRepository {
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         request.fetchLimit = 1
         return try? context.fetch(request).first
-    }
-
-    private func fetchGroup(id: UUID) -> Group? {
-        let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-        request.fetchLimit = 1
-        return try? context.fetch(request).first?.toDomain()
-    }
-
-    private func fetchGroupsByIds(_ ids: [UUID]) -> [Group] {
-        guard !ids.isEmpty else { return [] }
-        var results: [Group] = []
-        context.performAndWait {
-            let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "id IN %@", ids)
-            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
-        }
-        return results
     }
 
     private func basePredicate(includePaused: Bool) -> NSPredicate {
