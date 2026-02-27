@@ -20,7 +20,6 @@
         <attribute name="groupAddedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="modifiedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="isDemoData" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="sortOrder" optional="NO" attributeType="Integer 64" usesScalarValueType="YES"/>
     </entity>
     <entity name="Group" representedClassName="GroupEntity" syncable="YES" codeGenerationType="class">
