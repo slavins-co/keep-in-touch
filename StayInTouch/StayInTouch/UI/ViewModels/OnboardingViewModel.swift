@@ -37,7 +37,7 @@ final class OnboardingViewModel: ObservableObject {
         case .groupAssignment: position = 3
         case .notificationsPermission, .notificationsSkipped: position = 4
         }
-        return position / 4.0
+        return position / 5.0
     }
 
     @Published var contacts: [ContactSummary] = []

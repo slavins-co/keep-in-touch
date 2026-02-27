@@ -266,14 +266,14 @@ final class OnboardingViewModelTests: XCTestCase {
 
     func testProgressFractionAtContactsPermission() {
         sut.goToContactsPermission()
-        XCTAssertEqual(sut.progressFraction, 0.25, accuracy: 0.01)
+        XCTAssertEqual(sut.progressFraction, 0.2, accuracy: 0.01)
     }
 
     func testProgressFractionAtNotifications() {
         sut.goToContactsPermission()
         sut.skipContactsPermission()
         sut.continueFromContactsRequired()
-        XCTAssertEqual(sut.progressFraction, 1.0, accuracy: 0.01)
+        XCTAssertEqual(sut.progressFraction, 0.8, accuracy: 0.01)
     }
 
     func testProgressFractionContactsRequiredSameAsContactsPermission() {
