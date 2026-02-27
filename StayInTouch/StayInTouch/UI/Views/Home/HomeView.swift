@@ -32,10 +32,16 @@ struct HomeView: View {
                 searchBar
             }
         }
-        .onChange(of: viewModel.selectedGroupId) { _, _ in
+        .onChange(of: viewModel.selectedGroupId) { _, newValue in
+            if newValue != nil {
+                AnalyticsService.track("filter.applied", parameters: ["type": "frequency"])
+            }
             viewModel.applyFilters()
         }
-        .onChange(of: viewModel.selectedTagId) { _, _ in
+        .onChange(of: viewModel.selectedTagId) { _, newValue in
+            if newValue != nil {
+                AnalyticsService.track("filter.applied", parameters: ["type": "group"])
+            }
             viewModel.applyFilters()
         }
         .onChange(of: viewModel.sortOption) { _, _ in

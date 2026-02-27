@@ -61,6 +61,7 @@ final class PersonStatusServiceTests: XCTestCase {
             notificationGrouping: .perType,
             dueSoonWindowDays: 3,
             demoModeEnabled: false,
+            analyticsEnabled: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: "1.0"

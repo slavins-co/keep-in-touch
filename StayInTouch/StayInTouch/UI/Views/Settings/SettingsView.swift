@@ -34,6 +34,7 @@ struct SettingsView: View {
             tagsSection
             notificationsSection
             dataSection
+            privacySection
             pausedSection
             advancedSection
             aboutSection
@@ -302,6 +303,21 @@ struct SettingsView: View {
                         .foregroundStyle(DS.Colors.secondaryText)
                 }
             }
+        }
+    }
+
+    private var privacySection: some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { viewModel.settings.analyticsEnabled },
+                set: { viewModel.setAnalyticsEnabled($0) }
+            )) {
+                Label("Anonymous Usage Analytics", systemImage: "shield.checkered")
+            }
+        } header: {
+            Text("Privacy")
+        } footer: {
+            Text("Your relationship data never leaves your phone. Anonymous usage statistics help us improve the app.")
         }
     }
 

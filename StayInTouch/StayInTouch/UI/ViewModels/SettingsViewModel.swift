@@ -49,11 +49,13 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func setTheme(_ theme: Theme) {
+        AnalyticsService.track("settings.theme.changed", parameters: ["theme": theme.rawValue])
         settings.theme = theme
         save()
     }
 
     func setNotificationsEnabled(_ enabled: Bool) async {
+        AnalyticsService.track("settings.notifications.toggled", parameters: ["enabled": String(enabled)])
         if enabled {
             let granted = await requestNotificationsPermission()
             if granted {
@@ -92,6 +94,12 @@ final class SettingsViewModel: ObservableObject {
 
     func setNotificationGrouping(_ grouping: NotificationGrouping) {
         settings.notificationGrouping = grouping
+        save()
+    }
+
+    func setAnalyticsEnabled(_ enabled: Bool) {
+        AnalyticsService.track("settings.analytics.toggled", parameters: ["enabled": String(enabled)])
+        settings.analyticsEnabled = enabled
         save()
     }
 
@@ -329,6 +337,7 @@ struct AppSettingsDefaults {
             notificationGrouping: .perType,
             dueSoonWindowDays: 3,
             demoModeEnabled: false,
+            analyticsEnabled: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""

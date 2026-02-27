@@ -63,6 +63,9 @@ final class HomeViewModel: ObservableObject {
         searchTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 300_000_000)
             guard let self, !Task.isCancelled else { return }
+            if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                AnalyticsService.track("search.used")
+            }
             await MainActor.run {
                 self.applyFilters()
             }
@@ -128,6 +131,7 @@ final class HomeViewModel: ObservableObject {
             notificationGrouping: .perType,
             dueSoonWindowDays: 3,
             demoModeEnabled: false,
+            analyticsEnabled: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: ""

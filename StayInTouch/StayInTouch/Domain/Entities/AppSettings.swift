@@ -23,6 +23,7 @@ struct AppSettings: Identifiable, Equatable {
     var dueSoonWindowDays: Int
 
     var demoModeEnabled: Bool
+    var analyticsEnabled: Bool
 
     var lastContactsSyncAt: Date?
     var onboardingCompleted: Bool

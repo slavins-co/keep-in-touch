@@ -244,6 +244,7 @@ enum TestFactory {
             notificationGrouping: .perType,
             dueSoonWindowDays: 3,
             demoModeEnabled: demoModeEnabled,
+            analyticsEnabled: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: onboardingCompleted,
             appVersion: ""

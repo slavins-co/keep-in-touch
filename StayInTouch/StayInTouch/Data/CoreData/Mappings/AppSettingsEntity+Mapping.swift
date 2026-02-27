@@ -20,6 +20,7 @@ extension AppSettingsEntity {
             notificationGrouping: NotificationGrouping(rawValue: notificationGrouping ?? NotificationGrouping.perType.rawValue) ?? .perType,
             dueSoonWindowDays: Int(dueSoonWindowDays),
             demoModeEnabled: demoModeEnabled,
+            analyticsEnabled: analyticsEnabled,
             lastContactsSyncAt: lastContactsSyncAt,
             onboardingCompleted: onboardingCompleted,
             appVersion: appVersion ?? ""
@@ -37,6 +38,7 @@ extension AppSettingsEntity {
         notificationGrouping = settings.notificationGrouping.rawValue
         dueSoonWindowDays = Int64(settings.dueSoonWindowDays)
         demoModeEnabled = settings.demoModeEnabled
+        analyticsEnabled = settings.analyticsEnabled
         lastContactsSyncAt = settings.lastContactsSyncAt
         onboardingCompleted = settings.onboardingCompleted
         appVersion = settings.appVersion
