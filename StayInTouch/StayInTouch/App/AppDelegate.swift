@@ -22,14 +22,60 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         return true
     }
 
+    func applicationWillEnterForeground(_ application: UIApplication) {
+        Task { await NotificationScheduler.shared.scheduleAll() }
+    }
+
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
+
+        if response.actionIdentifier == NotificationIdentifier.actionLogConnection,
+           let personIdString = userInfo["personId"] as? String,
+           let personId = UUID(uuidString: personIdString) {
+            logConnectionFromNotification(personId: personId)
+            completionHandler()
+            return
+        }
+
         NotificationCenter.default.post(name: .notificationDeepLink, object: nil, userInfo: userInfo)
         completionHandler()
+    }
+
+    private func logConnectionFromNotification(personId: UUID) {
+        let context = CoreDataStack.shared.viewContext
+        let personRepo = CoreDataPersonRepository(context: context)
+        let touchRepo = CoreDataTouchEventRepository(context: context)
+
+        guard var person = personRepo.fetch(id: personId) else { return }
+
+        let now = Date()
+        let touch = TouchEvent(
+            id: UUID(),
+            personId: personId,
+            at: now,
+            method: .other,
+            notes: "Logged from notification",
+            timeOfDay: nil,
+            createdAt: now,
+            modifiedAt: now
+        )
+
+        do {
+            try touchRepo.save(touch)
+            person.lastTouchAt = now
+            person.lastTouchMethod = .other
+            person.lastTouchNotes = "Logged from notification"
+            person.snoozedUntil = nil
+            person.modifiedAt = now
+            try personRepo.save(person)
+            NotificationCenter.default.post(name: .personDidChange, object: personId)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.notifications, context: "AppDelegate.logConnectionFromNotification")
+        }
     }
 
     private func registerBackgroundTasks() {

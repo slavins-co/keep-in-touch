@@ -1,0 +1,180 @@
+//
+//  OnboardingViewModelTests.swift
+//  StayInTouchTests
+//
+//  Created by Codex on 2/24/26.
+//
+
+import XCTest
+@testable import StayInTouch
+
+@MainActor
+final class OnboardingViewModelTests: XCTestCase {
+    private var personRepo: MockPersonRepository!
+    private var groupRepo: MockGroupRepository!
+    private var settingsRepo: MockSettingsRepository!
+    private var monthlyGroupId: UUID!
+    private var sut: OnboardingViewModel!
+
+    override func setUp() {
+        super.setUp()
+        monthlyGroupId = UUID()
+        personRepo = MockPersonRepository()
+        groupRepo = MockGroupRepository()
+        groupRepo.groups = [
+            TestFactory.makeGroup(id: monthlyGroupId, name: "Monthly", frequencyDays: 30),
+            TestFactory.makeGroup(name: "Weekly", frequencyDays: 7)
+        ]
+        settingsRepo = MockSettingsRepository()
+        settingsRepo.settings = TestFactory.makeSettings()
+
+        sut = OnboardingViewModel(
+            personRepository: personRepo,
+            groupRepository: groupRepo,
+            settingsRepository: settingsRepo
+        )
+    }
+
+    // MARK: - Step Transitions
+
+    func testInitialStepIsWelcome() {
+        XCTAssertEqual(sut.step, .welcome)
+    }
+
+    func testGoToContactsPermission() {
+        sut.goToContactsPermission()
+        XCTAssertEqual(sut.step, .contactsPermission)
+    }
+
+    func testSkipContactsPermissionGoesToRequired() {
+        sut.skipContactsPermission()
+        XCTAssertEqual(sut.step, .contactsRequired)
+    }
+
+    func testContinueFromContactPickerEmptySkipsToNotifications() {
+        sut.selectedContactIds = []
+        sut.continueFromContactPicker()
+        XCTAssertEqual(sut.step, .notificationsPermission)
+    }
+
+    func testContinueFromContactPickerWithSelectionGoesToGroupAssignment() {
+        let contact = ContactSummary(identifier: "abc123", displayName: "Alice", initials: "AL")
+        sut.contacts = [contact]
+        sut.selectedContactIds = ["abc123"]
+
+        sut.continueFromContactPicker()
+
+        XCTAssertEqual(sut.step, .groupAssignment)
+    }
+
+    func testContinueFromContactsRequiredGoesToNotifications() {
+        sut.continueFromContactsRequired()
+        XCTAssertEqual(sut.step, .notificationsPermission)
+    }
+
+    func testSkipNotificationsGoesToSkipped() {
+        sut.skipNotifications()
+        XCTAssertEqual(sut.step, .notificationsSkipped)
+    }
+
+    func testFinishFromSkippedCompletesOnboarding() {
+        sut.finishFromNotificationsSkipped()
+        XCTAssertTrue(sut.isOnboardingCompleted)
+    }
+
+    // MARK: - Contact Selection
+
+    func testToggleSelectionAddsContact() {
+        sut.toggleSelection(for: "abc123")
+        XCTAssertTrue(sut.selectedContactIds.contains("abc123"))
+    }
+
+    func testToggleSelectionRemovesContact() {
+        sut.selectedContactIds = ["abc123"]
+        sut.toggleSelection(for: "abc123")
+        XCTAssertFalse(sut.selectedContactIds.contains("abc123"))
+    }
+
+    func testFilteredContactsReturnsAllWhenSearchEmpty() {
+        sut.contacts = [
+            ContactSummary(identifier: "1", displayName: "Alice", initials: "AL"),
+            ContactSummary(identifier: "2", displayName: "Bob", initials: "BO"),
+            ContactSummary(identifier: "3", displayName: "Charlie", initials: "CH")
+        ]
+        sut.searchText = ""
+
+        XCTAssertEqual(sut.filteredContacts.count, 3)
+    }
+
+    func testFilteredContactsFiltersBySearchText() {
+        sut.contacts = [
+            ContactSummary(identifier: "1", displayName: "Alice", initials: "AL"),
+            ContactSummary(identifier: "2", displayName: "Bob", initials: "BO")
+        ]
+        sut.searchText = "Ali"
+
+        XCTAssertEqual(sut.filteredContacts.count, 1)
+        XCTAssertEqual(sut.filteredContacts.first?.displayName, "Alice")
+    }
+
+    // MARK: - Group Selection
+
+    func testSelectedGroupIdDefaultsToMonthly() {
+        XCTAssertEqual(sut.selectedGroupId, monthlyGroupId)
+    }
+
+    func testSelectedGroupIdFallsToFirstGroupWhenNoMonthly() {
+        let firstId = UUID()
+        groupRepo.groups = [
+            TestFactory.makeGroup(id: firstId, name: "Biweekly"),
+            TestFactory.makeGroup(name: "Quarterly")
+        ]
+        settingsRepo.settings = TestFactory.makeSettings()
+
+        let vm = OnboardingViewModel(
+            personRepository: personRepo,
+            groupRepository: groupRepo,
+            settingsRepository: settingsRepo
+        )
+
+        XCTAssertEqual(vm.selectedGroupId, firstId)
+    }
+
+    func testSeedGroupSelectionsUsesDefaultGroup() {
+        let contact1 = ContactSummary(identifier: "c1", displayName: "Alice", initials: "AL")
+        let contact2 = ContactSummary(identifier: "c2", displayName: "Bob", initials: "BO")
+        sut.contacts = [contact1, contact2]
+        sut.selectedContactIds = ["c1", "c2"]
+
+        sut.continueFromContactPicker()
+
+        XCTAssertEqual(sut.contactGroupSelections["c1"], monthlyGroupId)
+        XCTAssertEqual(sut.contactGroupSelections["c2"], monthlyGroupId)
+    }
+
+    // MARK: - Onboarding Completion
+
+    func testCompleteOnboardingSavesSettings() {
+        sut.finishFromNotificationsSkipped()
+
+        XCTAssertTrue(settingsRepo.settings?.onboardingCompleted == true)
+        XCTAssertTrue(sut.isOnboardingCompleted)
+    }
+
+    func testDemoDataPathEnablesDemoMode() {
+        sut.useDemoData = true
+        sut.continueFromContactsRequired()
+
+        XCTAssertTrue(settingsRepo.settings?.demoModeEnabled == true)
+    }
+
+    // MARK: - Loading State
+
+    func testLoadingSetsToFalseAfterInit() {
+        XCTAssertFalse(sut.isLoading)
+    }
+
+    func testGroupsPopulatedAfterInit() {
+        XCTAssertEqual(sut.groups.count, 2)
+    }
+}

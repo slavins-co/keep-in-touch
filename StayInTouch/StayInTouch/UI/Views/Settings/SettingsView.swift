@@ -18,6 +18,8 @@ struct SettingsView: View {
     @State private var shareItem: ShareItem?
     @State private var workingTime = Date()
     @State private var showNoNewContactsAlert = false
+    @State private var showLimitedAccessAlert = false
+    @State private var showContactsSettingsAlert = false
     @State private var showNewContactsPicker = false
     @State private var showGroupAssignment = false
     @State private var shouldShowGroupAssignment = false
@@ -72,6 +74,26 @@ struct SettingsView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("You're already up to date.")
+        }
+        .alert("Limited Contact Access", isPresented: $showLimitedAccessAlert) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    openURL(url)
+                }
+            }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("You've imported all the contacts you gave access to. To add more, open Settings \u{2192} Stay in Touch \u{2192} Contacts and select additional contacts or grant full access.")
+        }
+        .alert("Contacts Access Required", isPresented: $showContactsSettingsAlert) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    openURL(url)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Enable Contacts access in Settings to import contacts.")
         }
         .sheet(isPresented: $showNewContactsPicker) {
             NewContactsPickerView(
@@ -254,6 +276,10 @@ struct SettingsView: View {
                     isSyncingContacts = false
                     if count > 0 {
                         showNewContactsPicker = true
+                    } else if viewModel.contactAccessDenied {
+                        showContactsSettingsAlert = true
+                    } else if viewModel.contactAccessLimited {
+                        showLimitedAccessAlert = true
                     } else {
                         showNoNewContactsAlert = true
                     }

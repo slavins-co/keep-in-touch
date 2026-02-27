@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var deepLinkPerson: Person?
     @State private var showNewContactsPicker = false
     @State private var showNoNewContactsAlert = false
+    @State private var showLimitedAccessAlert = false
     @State private var isSyncingContacts = false
     @State private var showContactsSettingsAlert = false
 
@@ -72,7 +73,17 @@ struct HomeView: View {
         .alert("No New Contacts", isPresented: $showNoNewContactsAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(noContactsAlertMessage())
+            Text("You're already up to date.")
+        }
+        .alert("Limited Contact Access", isPresented: $showLimitedAccessAlert) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    openURL(url)
+                }
+            }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("You've imported all the contacts you gave access to. To add more, open Settings \u{2192} Stay in Touch \u{2192} Contacts and select additional contacts or grant full access.")
         }
         .alert("Contacts Access Required", isPresented: $showContactsSettingsAlert) {
             Button("Open Settings") {
@@ -128,7 +139,7 @@ struct HomeView: View {
     // MARK: - Filters
 
     private var filters: some View {
-        HStack(spacing: DS.Spacing.sm) {
+        FlowLayout(spacing: DS.Spacing.sm) {
             // Sort control (icon only)
             Menu {
                 ForEach(HomeViewModel.SortOption.allCases, id: \.self) { option in
@@ -155,8 +166,6 @@ struct HomeView: View {
 
             // Tag filter chip
             tagFilterChip
-
-            Spacer()
         }
         .padding(.horizontal)
         .padding(.bottom, DS.Spacing.md)
@@ -286,7 +295,11 @@ struct HomeView: View {
     // MARK: - Content
 
     private var content: some View {
-        ScrollView {
+        let calculator = FrequencyCalculator()
+        let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
+        let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
+
+        return ScrollView {
             VStack(spacing: DS.Spacing.xl) {
                 if viewModel.overduePeople.isEmpty && viewModel.dueSoonPeople.isEmpty && viewModel.allGoodPeople.isEmpty {
                     if viewModel.searchText.isEmpty {
@@ -305,9 +318,6 @@ struct HomeView: View {
                         )
                     }
                 } else if viewModel.sortOption == .name {
-                    let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
-                    let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
-                    let calculator = FrequencyCalculator()
                     VStack(spacing: 0) {
                         ForEach(Array(viewModel.nameSortedPeople.enumerated()), id: \.element.id) { index, person in
                             let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
@@ -321,7 +331,7 @@ struct HomeView: View {
                                     tags: tags,
                                     status: calculator.status(for: person, in: viewModel.groups),
                                     daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
-                                    timeAgo: timeAgoText(for: person),
+                                    timeAgo: timeAgoText(for: person, calculator: calculator),
                                     lastMethod: person.lastTouchMethod
                                 )
                             }
@@ -334,10 +344,6 @@ struct HomeView: View {
                         }
                     }
                 } else {
-                    let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
-                    let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
-                    let calculator = FrequencyCalculator()
-
                     ContactListSection(
                         title: "Overdue",
                         colorHex: "FF3B30",
@@ -348,7 +354,7 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        timeAgoForPerson: { timeAgoText(for: $0) }
+                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) }
                     )
 
                     ContactListSection(
@@ -361,7 +367,7 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        timeAgoForPerson: { timeAgoText(for: $0) }
+                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) }
                     )
 
                     ContactListSection(
@@ -374,7 +380,7 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        timeAgoForPerson: { timeAgoText(for: $0) }
+                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) }
                     )
                 }
             }
@@ -425,22 +431,18 @@ struct HomeView: View {
             isSyncingContacts = false
             if count > 0 {
                 showNewContactsPicker = true
+            } else if settingsViewModel.contactAccessDenied {
+                showContactsSettingsAlert = true
+            } else if settingsViewModel.contactAccessLimited {
+                showLimitedAccessAlert = true
             } else {
-                if settingsViewModel.contactAccessDenied {
-                    showContactsSettingsAlert = true
-                } else {
-                    showNoNewContactsAlert = true
-                }
+                showNoNewContactsAlert = true
             }
         }
     }
 
-    private func noContactsAlertMessage() -> String {
-        "You're already up to date."
-    }
-
-    private func timeAgoText(for person: Person) -> String {
-        let days = FrequencyCalculator().daysSinceLastTouch(for: person)
+    private func timeAgoText(for person: Person, calculator: FrequencyCalculator) -> String {
+        let days = calculator.daysSinceLastTouch(for: person)
         guard let days else { return "No contact" }
         if days == 0 { return "Today" }
         return "\(days)d ago"

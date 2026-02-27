@@ -16,5 +16,6 @@ protocol PersonRepository {
     func searchByName(_ query: String, includePaused: Bool) -> [Person]
     func fetchOverdue(referenceDate: Date) -> [Person]
     func save(_ person: Person) throws
+    func batchSave(_ persons: [Person]) throws
     func delete(id: UUID) throws
 }

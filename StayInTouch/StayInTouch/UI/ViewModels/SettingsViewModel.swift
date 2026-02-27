@@ -19,6 +19,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var showNotificationsSettingsAlert = false
     @Published var pendingNewContacts: [ContactSummary] = []
     @Published var contactAccessDenied = false
+    @Published var contactAccessLimited = false
 
     private let settingsRepository: AppSettingsRepository
     private let groupRepository: GroupRepository
@@ -156,6 +157,7 @@ final class SettingsViewModel: ObservableObject {
 
     func findNewContacts() async -> Int {
         contactAccessDenied = false
+        contactAccessLimited = false
         let summaries = await Task.detached {
             do {
                 return try ContactsFetcher.fetchAll()
@@ -167,13 +169,25 @@ final class SettingsViewModel: ObservableObject {
         guard !summaries.isEmpty else {
             let status = CNContactStore.authorizationStatus(for: .contacts)
             contactAccessDenied = (status == .denied || status == .restricted)
+            contactAccessLimited = Self.isLimitedAccess(status)
             return 0
         }
 
         let existing = Set(personRepository.fetchTracked(includePaused: true).compactMap { $0.cnIdentifier })
         let newContacts = summaries.filter { !existing.contains($0.identifier) }
+        if newContacts.isEmpty {
+            let status = CNContactStore.authorizationStatus(for: .contacts)
+            contactAccessLimited = Self.isLimitedAccess(status)
+        }
         pendingNewContacts = newContacts
         return newContacts.count
+    }
+
+    private static func isLimitedAccess(_ status: CNAuthorizationStatus) -> Bool {
+        if #available(iOS 18.0, *) {
+            return status == .limited
+        }
+        return false
     }
 
     func importSelectedContacts(_ summaries: [ContactSummary]) async {
@@ -195,6 +209,8 @@ final class SettingsViewModel: ObservableObject {
             let existing = peopleRepo.fetchTracked(includePaused: true)
             var sortOrder = existing.count
             let now = Date()
+
+            var personsToSave: [Person] = []
 
             for summary in summaries {
                 let groupId = groupAssignments[summary.identifier] ?? defaultGroupId
@@ -222,13 +238,14 @@ final class SettingsViewModel: ObservableObject {
                     sortOrder: sortOrder
                 )
 
-                let assigned = AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId)
-                do {
-                    try peopleRepo.save(assigned)
-                } catch {
-                    AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.importSelectedContacts")
-                }
+                personsToSave.append(AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId))
                 sortOrder += 1
+            }
+
+            do {
+                try peopleRepo.batchSave(personsToSave)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.importSelectedContacts")
             }
         }
 
@@ -297,49 +314,6 @@ struct ExportPerson: Codable {
         )
     }
 
-    // MARK: - Contact Grouping & Filtering
-
-    func filteredAndGroupedContacts(searchText: String, allContacts: [CNContact]) -> [(String, [CNContact])] {
-        // Filter by search text
-        let filtered = searchText.isEmpty ? allContacts : allContacts.filter { contact in
-            let name = CNContactFormatter.string(from: contact, style: .fullName) ?? ""
-            return name.localizedCaseInsensitiveContains(searchText)
-        }
-
-        // Group alphabetically
-        let grouped = groupContactsAlphabetically(filtered)
-
-        // Sort sections A-Z (with # at end)
-        let sorted = grouped.sorted { lhs, rhs in
-            if lhs.key == "#" { return false }
-            if rhs.key == "#" { return true }
-            return lhs.key < rhs.key
-        }
-
-        // Sort contacts within each section
-        return sorted.map { (key, contacts) in
-            (key, contacts.sorted {
-                let name1 = CNContactFormatter.string(from: $0, style: .fullName) ?? ""
-                let name2 = CNContactFormatter.string(from: $1, style: .fullName) ?? ""
-                return name1 < name2
-            })
-        }
-    }
-
-    private func groupContactsAlphabetically(_ contacts: [CNContact]) -> [String: [CNContact]] {
-        let grouped = Dictionary(grouping: contacts) { contact -> String in
-            let name = CNContactFormatter.string(from: contact, style: .fullName) ?? ""
-            let firstChar = name.prefix(1).uppercased()
-
-            // Handle non-alphabetic characters
-            if firstChar.rangeOfCharacter(from: CharacterSet.letters) != nil {
-                return firstChar
-            } else {
-                return "#"
-            }
-        }
-        return grouped
-    }
 }
 
 struct AppSettingsDefaults {

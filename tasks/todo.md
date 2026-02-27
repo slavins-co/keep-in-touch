@@ -1,12 +1,25 @@
 # TODO - Stay in Touch iOS App
 
-**Project Status:** v0.2.1 (Build 6) — Pre-release Beta
+**Project Status:** v0.2.2 (Build 8) — Pre-release Beta
 **Last Updated:** February 24, 2026
 
 > **TestFlight Status:** Code blockers resolved. Manual submission steps remain — see `tasks/testflight-guide.md`.
 > When creating PRs, confirm TestFlight readiness is not regressed (deployment target 17.0, PrivacyInfo.xcprivacy present, UIBackgroundModes declared, build number incremented).
 
 ---
+
+## Completed — v0.2.2 (Critical + Performance + UX)
+
+- [x] **#62** Optimize FrequencyCalculator — single instance per render (was creating hundreds of instances in ForEach)
+- [x] **#54** Auto-log touch after quick action with undo on return (Call/Message/Email now auto-log, undo banner on app return)
+- [x] **#53** Handle limited contact access dead end (shows "grant full access" alert instead of "up to date")
+- [x] **#61** Improve notification reliability with repeating triggers (daily/weekly notifications now fire reliably + foreground rescheduling)
+- [x] **#33** Add DS.Typography.heroTitle token — PersonDetailView name uses design system font
+- [x] **#63** Batch CoreData saves during contact import (single save instead of per-contact)
+- [x] **#36** Add undo for person deletion with 5-second timed banner
+- [x] **#75** Quick-log touch from notification action ("Log Connection" button on person reminders)
+- [x] **#38** Replace WrapLayout stub and HStack filter chips with proper FlowLayout (Layout protocol)
+- [x] Build number bumped to 8, version 0.2.2
 
 ## Completed — v0.2.1 (Critical Issues)
 
@@ -57,12 +70,12 @@
 
 ### Design Review — Critical / Important
 
-- [ ] **#33** Add DS.Typography.heroTitle token for PersonDetailView
+- [x] **#33** Add DS.Typography.heroTitle token for PersonDetailView *(v0.2.2)*
 - [ ] **#34** ⭐ Swipe-to-log on home screen (highest priority UX improvement)
 - [x] **#35** Surface errors with contextual banners (not silent failures) *(v0.2.1)*
-- [ ] **#36** Add undo for destructive actions (delete contact/connection)
+- [x] **#36** Add undo for destructive actions (delete contact/connection) *(v0.2.2)*
 - [ ] **#37** Separate overdue tiers (Recently Due vs Long Overdue)
-- [ ] **#38** Replace HStack filter chips with FlowLayout for overflow
+- [x] **#38** Replace HStack filter chips with FlowLayout for overflow *(v0.2.2)*
 - [ ] **#39** VoiceOver audit and accessibility labels
 - [ ] **#40** Reorder PersonDetailView CTAs (Log Connection as primary)
 

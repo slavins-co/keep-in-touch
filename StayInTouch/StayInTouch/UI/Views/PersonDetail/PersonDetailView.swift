@@ -10,6 +10,7 @@ import SwiftUI
 struct PersonDetailView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
 
     @StateObject private var viewModel: PersonDetailViewModel
 
@@ -29,6 +30,11 @@ struct PersonDetailView: View {
     @State private var pickedSnoozeDate = Date()
     @State private var nextTouchNotesText: String = ""
     @State private var settingsExpanded = false
+    @State private var pendingQuickActionMethod: TouchMethod?
+    @State private var pendingQuickActionTouch: TouchEvent?
+    @State private var showQuickActionUndo = false
+    @State private var showRemoveUndo = false
+    @State private var pendingRemoveTask: Task<Void, Never>?
     @FocusState private var isNextTouchNotesFocused: Bool
 
     init(person: Person) {
@@ -122,6 +128,7 @@ struct PersonDetailView: View {
         )) {
             Button("Delete", role: .destructive) {
                 if let touch = showDeleteConfirm {
+                    Haptics.medium()
                     viewModel.deleteTouch(touch)
                 }
                 showDeleteConfirm = nil
@@ -132,8 +139,7 @@ struct PersonDetailView: View {
         }
         .alert("Remove contact?", isPresented: $showRemoveConfirm) {
             Button("Remove", role: .destructive) {
-                viewModel.deletePerson()
-                dismiss()
+                startPendingRemove()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -196,12 +202,37 @@ struct PersonDetailView: View {
                     }
             }
         }
+        .overlay(alignment: .top) {
+            if showQuickActionUndo, let method = pendingQuickActionMethod {
+                quickActionUndoBanner(method: method)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+            if showRemoveUndo {
+                removeUndoBanner
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: showQuickActionUndo)
+        .animation(.easeInOut(duration: 0.3), value: showRemoveUndo)
         .task {
             await viewModel.refreshContactInfo()
             viewModel.load()
         }
         .onDisappear {
+            if showRemoveUndo {
+                pendingRemoveTask?.cancel()
+                viewModel.deletePerson()
+            }
             NotificationCenter.default.post(name: .personDidChange, object: viewModel.person.id)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active, pendingQuickActionMethod != nil {
+                showQuickActionUndo = true
+                Task {
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    dismissQuickActionUndo()
+                }
+            }
         }
     }
 
@@ -215,7 +246,7 @@ struct PersonDetailView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             HStack(spacing: DS.Spacing.sm) {
                 Text(viewModel.person.displayName)
-                    .font(.title.weight(.bold))
+                    .font(DS.Typography.heroTitle)
                     .lineLimit(1)
                     .layoutPriority(1)
 
@@ -523,7 +554,7 @@ struct PersonDetailView: View {
                     .font(DS.Typography.metadata)
                     .foregroundStyle(DS.Colors.secondaryText)
             } else {
-                WrapLayout {
+                FlowLayout(spacing: DS.Spacing.sm) {
                     ForEach(viewModel.tags.filter { viewModel.person.tagIds.contains($0.id) }, id: \.id) { tag in
                         Button {
                             viewModel.removeTag(tag)
@@ -655,10 +686,95 @@ struct PersonDetailView: View {
     private func open(_ action: QuickActionType) {
         guard let url = viewModel.openAction(type: action) else { return }
         openURL(url) { accepted in
-            if !accepted {
+            if accepted {
+                Haptics.light()
+                let method = action.touchMethod
+                viewModel.logTouch(method: method, notes: nil, date: Date())
+                pendingQuickActionTouch = viewModel.touchEvents.first
+                pendingQuickActionMethod = method
+            } else {
                 viewModel.quickActionMessage = "Whoops — couldn't open that on this device."
             }
         }
+    }
+
+    private func quickActionUndoBanner(method: TouchMethod) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.white)
+            Text("Logged \(method.rawValue.lowercased()). Didn't connect?")
+                .font(DS.Typography.metadata)
+                .foregroundStyle(.white)
+            Spacer()
+            Button("Undo") {
+                Haptics.light()
+                if let touch = pendingQuickActionTouch {
+                    viewModel.deleteTouch(touch)
+                }
+                dismissQuickActionUndo()
+            }
+            .font(DS.Typography.metadata.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(.white.opacity(0.2))
+            .clipShape(Capsule())
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Colors.statusAllGood)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
+    }
+
+    private func dismissQuickActionUndo() {
+        showQuickActionUndo = false
+        pendingQuickActionMethod = nil
+        pendingQuickActionTouch = nil
+    }
+
+    private var removeUndoBanner: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "trash.fill")
+                .foregroundStyle(.white)
+            Text("Contact removed")
+                .font(DS.Typography.metadata)
+                .foregroundStyle(.white)
+            Spacer()
+            Button("Undo") {
+                Haptics.light()
+                cancelPendingRemove()
+            }
+            .font(DS.Typography.metadata.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(.white.opacity(0.2))
+            .clipShape(Capsule())
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Colors.destructive)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
+    }
+
+    private func startPendingRemove() {
+        Haptics.medium()
+        showRemoveUndo = true
+        pendingRemoveTask = Task {
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            guard !Task.isCancelled else { return }
+            showRemoveUndo = false
+            viewModel.deletePerson()
+            dismiss()
+        }
+    }
+
+    private func cancelPendingRemove() {
+        pendingRemoveTask?.cancel()
+        pendingRemoveTask = nil
+        showRemoveUndo = false
     }
 
     private func reminderTimeLabel() -> String {
@@ -682,15 +798,3 @@ struct PersonDetailView: View {
     }
 }
 
-private struct WrapLayout<Content: View>: View {
-    let content: Content
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            content
-        }
-    }
-}

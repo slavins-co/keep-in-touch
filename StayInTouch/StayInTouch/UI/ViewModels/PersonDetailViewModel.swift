@@ -358,13 +358,18 @@ final class PersonDetailViewModel: ObservableObject {
         phone.filter { $0.isNumber || $0 == "+" }
     }
 
-    private func digitsOnly(_ phone: String) -> String {
-        phone.filter { $0.isNumber }
-    }
 }
 
 enum QuickActionType {
     case message
     case call
     case email
+
+    var touchMethod: TouchMethod {
+        switch self {
+        case .message: return .text
+        case .call: return .call
+        case .email: return .email
+        }
+    }
 }

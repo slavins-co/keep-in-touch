@@ -868,6 +868,61 @@ When an edit touches 5+ files:
 3. Provide the subagent with an explicit file list and exact edit instructions
 4. Build+test after the subagent completes to verify
 
+### 2026-02-24 - 🐛 Bug - CNAuthorizationStatus.limited Requires iOS 18 Availability Check
+
+**What Happened:**
+Using `CNAuthorizationStatus == .limited` directly caused a build error: `'limited' is only available in iOS 18.0 or newer`. The app targets iOS 17.0.
+
+**Root Cause:**
+`.limited` was added to `CNAuthorizationStatus` in iOS 18. Using it without an availability check fails compilation against the iOS 17 deployment target.
+
+**Solution:**
+Created a `private static func isLimitedAccess(_ status: CNAuthorizationStatus) -> Bool` that wraps the check in `if #available(iOS 18.0, *)`.
+
+**Prevention Rule:**
+When using newer API enum cases (especially `.limited` for contacts, photos, etc.):
+1. Check the API's availability annotation before using
+2. Wrap in `#available` when the deployment target is lower
+3. Provide a sensible fallback for older OS versions (typically `false` for opt-in features)
+
+### 2026-02-24 - 🏗️ Architecture - UNCalendarNotificationTrigger Repeating with Minimal DateComponents
+
+**What Happened:**
+All notifications used `repeats: false` with full date components (year/month/day/hour/minute). They fired exactly once and were never rescheduled if the background refresh task didn't run.
+
+**Root Cause:**
+Using complete DateComponents with `repeats: true` would fire once a year (same date), not daily. Using `repeats: false` meant the notification system relied entirely on BGAppRefreshTask (unreliable 6-hour interval) for rescheduling.
+
+**Solution:**
+Changed to minimal DateComponents:
+- Daily: only `hour` + `minute` → fires every day at that time with `repeats: true`
+- Weekly: only `weekday` + `hour` + `minute` → fires every week on that day
+- Added `applicationWillEnterForeground` rescheduling as a reliability layer
+- `clearAll()` + re-schedule is safe since iOS deduplicates by identifier
+
+**Prevention Rule:**
+For `UNCalendarNotificationTrigger` with `repeats: true`:
+- Daily: use only `hour` and `minute` components
+- Weekly: use only `weekday`, `hour`, and `minute` components
+- Never include `year`, `month`, or `day` for repeating triggers — it will fire at that exact calendar date only
+- Always add a foreground rescheduling path as a fallback
+
+### 2026-02-24 - 🏗️ Architecture - scenePhase for Detecting App Return After openURL
+
+**What Happened:**
+Needed to show an undo banner when the user returns to the app after tapping a quick action (Call/Message/Email) that opens an external app.
+
+**Solution:**
+Used `@Environment(\.scenePhase)` with `.onChange(of: scenePhase)` to detect when the app returns to `.active`. Stored the pending action in `@State` before openURL, then showed the undo banner on return.
+
+**Prevention Rule:**
+When implementing "do X when user returns to app" patterns:
+1. Use `@Environment(\.scenePhase)` — cleaner than NotificationCenter for SwiftUI views
+2. Store pending state before leaving (e.g., `pendingQuickActionMethod`)
+3. In `.onChange(of: scenePhase)`, check for `.active` + pending state
+4. Auto-dismiss transient UI with `Task.sleep` (5 seconds is standard for undo)
+5. Handle edge cases: view deinit = implicit confirm, new action = replace old pending
+
 ### 2026-02-24 - 📊 Data - Never Sideload Broken Builds to Personal Devices
 
 **What Happened:**

@@ -84,6 +84,7 @@ struct ManageTagsView: View {
         .alert("Delete Group?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
                 if let target = deleteTarget {
+                    Haptics.medium()
                     viewModel.delete(tag: target)
                 }
                 deleteTarget = nil

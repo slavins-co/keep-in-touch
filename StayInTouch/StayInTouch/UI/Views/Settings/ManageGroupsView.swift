@@ -101,6 +101,7 @@ struct ManageGroupsView: View {
         .alert("Delete Frequency?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
                 guard let target = deleteTarget else { return }
+                Haptics.medium()
                 let defaultGroup = viewModel.defaultGroup()
                 if let defaultGroup, viewModel.countsByGroup[target.id, default: 0] > 0 {
                     viewModel.movePeople(from: target, to: defaultGroup)

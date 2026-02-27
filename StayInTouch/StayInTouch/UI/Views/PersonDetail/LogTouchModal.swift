@@ -44,6 +44,7 @@ struct LogTouchModal: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
+                        Haptics.success()
                         onSave(selectedMethod, notes.isEmpty ? nil : notes, touchDate, selectedTimeOfDay)
                         dismiss()
                     }

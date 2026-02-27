@@ -103,6 +103,16 @@ final class CoreDataPersonRepository: PersonRepository {
         }
     }
 
+    func batchSave(_ persons: [Person]) throws {
+        try context.performAndWait {
+            for person in persons {
+                let entity = fetchEntity(id: person.id) ?? PersonEntity(context: context)
+                entity.apply(person)
+            }
+            try context.save()
+        }
+    }
+
     func delete(id: UUID) throws {
         try context.performAndWait {
             guard let entity = fetchEntity(id: id) else { return }
