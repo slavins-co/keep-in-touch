@@ -27,6 +27,7 @@ extension PersonEntity {
             customBreachTime: customBreachTime.flatMap(LocalTime.from(jsonString:)),
             snoozedUntil: snoozedUntil,
             contactUnavailable: contactUnavailable,
+            isDemoData: isDemoData,
             groupAddedAt: groupAddedAt,
             createdAt: createdAt ?? Date(),
             modifiedAt: modifiedAt ?? Date(),
@@ -52,6 +53,7 @@ extension PersonEntity {
         customBreachTime = person.customBreachTime?.toJsonString()
         snoozedUntil = person.snoozedUntil
         contactUnavailable = person.contactUnavailable
+        isDemoData = person.isDemoData
         groupAddedAt = person.groupAddedAt
         createdAt = person.createdAt
         modifiedAt = person.modifiedAt

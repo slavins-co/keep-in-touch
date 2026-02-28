@@ -17,7 +17,12 @@ final class PersonDetailViewModel: ObservableObject {
     @Published private(set) var touchEvents: [TouchEvent] = []
     @Published private(set) var phone: String?
     @Published private(set) var email: String?
+    @Published private(set) var phoneNumbers: [ContactsFetcher.LabeledValue] = []
+    @Published private(set) var emailAddresses: [ContactsFetcher.LabeledValue] = []
     @Published var quickActionMessage: String?
+    @Published var showPhonePicker = false
+    @Published var showEmailPicker = false
+    var pendingPhoneAction: QuickActionType?
 
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository
@@ -51,6 +56,8 @@ final class PersonDetailViewModel: ObservableObject {
         guard let cnId = person.cnIdentifier else {
             phone = nil
             email = nil
+            phoneNumbers = []
+            emailAddresses = []
             return
         }
 
@@ -67,6 +74,8 @@ final class PersonDetailViewModel: ObservableObject {
         case .success(let info):
             phone = info.phone
             email = info.email
+            phoneNumbers = info.phoneNumbers
+            emailAddresses = info.emailAddresses
             if person.contactUnavailable {
                 var updated = person
                 updated.contactUnavailable = false
@@ -76,6 +85,8 @@ final class PersonDetailViewModel: ObservableObject {
         case .failure(let error):
             phone = nil
             email = nil
+            phoneNumbers = []
+            emailAddresses = []
             if case ContactsFetcherError.contactNotFound = error {
                 if !person.contactUnavailable {
                     var updated = person
@@ -296,45 +307,58 @@ final class PersonDetailViewModel: ObservableObject {
     func openAction(type: QuickActionType) -> URL? {
         quickActionMessage = nil
         switch type {
-        case .message:
+        case .message, .call:
+            if phoneNumbers.count > 1 {
+                pendingPhoneAction = type
+                showPhonePicker = true
+                return nil
+            }
             guard let phone else {
                 quickActionMessage = "Whoops — no phone number found."
                 return nil
             }
-            // Use proper URL encoding for SMS
-            let sanitizedPhone = sanitize(phone)
-            guard let encoded = sanitizedPhone.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-                  let url = URL(string: "sms:\(encoded)") else {
-                AppLogger.logWarning("Failed to create SMS URL for phone: \(phone)", category: AppLogger.viewModel)
-                return nil
-            }
-            return url
-        case .call:
-            guard let phone else {
-                quickActionMessage = "Whoops — no phone number found."
-                return nil
-            }
-            // Use proper URL encoding for tel
-            let sanitizedPhone = sanitize(phone)
-            guard let encoded = sanitizedPhone.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-                  let url = URL(string: "tel:\(encoded)") else {
-                AppLogger.logWarning("Failed to create tel URL for phone: \(phone)", category: AppLogger.viewModel)
-                return nil
-            }
-            return url
+            return buildPhoneURL(type: type, phone: phone)
         case .email:
+            if emailAddresses.count > 1 {
+                showEmailPicker = true
+                return nil
+            }
             guard let email else {
                 quickActionMessage = "Whoops — no email address found."
                 return nil
             }
-            // Use proper URL encoding for mailto
-            guard let encoded = email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-                  let url = URL(string: "mailto:\(encoded)") else {
-                AppLogger.logWarning("Failed to create mailto URL for email: \(email)", category: AppLogger.viewModel)
-                return nil
-            }
-            return url
+            return buildEmailURL(email: email)
         }
+    }
+
+    func openActionWithValue(type: QuickActionType, value: String) -> URL? {
+        quickActionMessage = nil
+        switch type {
+        case .message, .call:
+            return buildPhoneURL(type: type, phone: value)
+        case .email:
+            return buildEmailURL(email: value)
+        }
+    }
+
+    private func buildPhoneURL(type: QuickActionType, phone: String) -> URL? {
+        let sanitizedPhone = sanitize(phone)
+        let scheme = type == .message ? "sms" : "tel"
+        guard let encoded = sanitizedPhone.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let url = URL(string: "\(scheme):\(encoded)") else {
+            AppLogger.logWarning("Failed to create \(scheme) URL for contact \(person.id)", category: AppLogger.viewModel)
+            return nil
+        }
+        return url
+    }
+
+    private func buildEmailURL(email: String) -> URL? {
+        guard let encoded = email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "mailto:\(encoded)") else {
+            AppLogger.logWarning("Failed to create mailto URL for contact \(person.id)", category: AppLogger.viewModel)
+            return nil
+        }
+        return url
     }
 
     private func savePerson(_ updated: Person) {

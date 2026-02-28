@@ -19,7 +19,7 @@ final class DemoDataSeeder {
         context.performAndWait {
             let repo = CoreDataPersonRepository(context: context)
             let existing = repo.fetchAll()
-            if existing.contains(where: { $0.cnIdentifier == nil }) {
+            if existing.contains(where: { $0.isDemoData }) {
                 return
             }
 
@@ -59,6 +59,7 @@ final class DemoDataSeeder {
                     customBreachTime: nil,
                     snoozedUntil: nil,
                     contactUnavailable: false,
+                    isDemoData: true,
                     groupAddedAt: now,
                     createdAt: now,
                     modifiedAt: now,
