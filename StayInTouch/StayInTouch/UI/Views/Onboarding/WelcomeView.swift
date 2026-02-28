@@ -12,6 +12,7 @@ struct WelcomeView: View {
 
     var body: some View {
         VStack(spacing: DS.Spacing.xxl) {
+            Spacer()
             Image(systemName: "person.2.circle.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(DS.Colors.accent)
@@ -37,6 +38,7 @@ struct WelcomeView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            Spacer()
         }
         .padding()
     }
