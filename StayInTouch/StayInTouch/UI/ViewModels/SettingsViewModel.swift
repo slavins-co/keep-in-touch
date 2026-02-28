@@ -108,9 +108,6 @@ final class SettingsViewModel: ObservableObject {
     func setAnalyticsEnabled(_ enabled: Bool) {
         settings.analyticsEnabled = enabled
         save()
-        if enabled {
-            AnalyticsService.initialize()
-        }
         AnalyticsService.track("settings.analytics.toggled", parameters: ["enabled": String(enabled)])
     }
 
