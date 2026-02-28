@@ -8,6 +8,10 @@
 
 ---
 
+## Completed — Session 2026-02-27d (Onboarding UX Polish)
+
+- [x] **PR 94 fixes** Fix onboarding progress bar and layout issues — custom capsule progress bar, unique fractions per step, vertical centering Spacers, hide bar on welcome, 8 new/updated progress tests
+
 ## Completed — Session 2026-02-27c (Contact Photos + Multi-value Picker + Onboarding Nav)
 
 - [x] **#72** Display contact photos from iOS Contacts — on-demand thumbnail fetch with NSCache, initials fallback (PR #92)

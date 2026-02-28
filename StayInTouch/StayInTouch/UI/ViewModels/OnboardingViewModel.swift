@@ -23,21 +23,25 @@ final class OnboardingViewModel: ObservableObject {
 
     @Published var isLoading = true
     @Published var isOnboardingCompleted = false
+    @Published var isCompleting = false
     @Published var step: Step = .welcome
     private(set) var stepHistory: [Step] = []
 
     var canGoBack: Bool { !stepHistory.isEmpty }
 
+    var showsProgress: Bool { step != .welcome }
+
     var progressFraction: Double {
-        let position: Double
+        if isCompleting { return 1.0 }
         switch step {
-        case .welcome: position = 0
-        case .contactsPermission, .contactsRequired: position = 1
-        case .contactPicker: position = 2
-        case .groupAssignment: position = 3
-        case .notificationsPermission, .notificationsSkipped: position = 4
+        case .welcome:                 return 0
+        case .contactsPermission:      return 0.2
+        case .contactsRequired:        return 0.4
+        case .contactPicker:           return 0.4
+        case .groupAssignment:         return 0.6
+        case .notificationsPermission: return 0.85
+        case .notificationsSkipped:    return 0.95
         }
-        return position / 5.0
     }
 
     @Published var contacts: [ContactSummary] = []
@@ -275,6 +279,14 @@ final class OnboardingViewModel: ObservableObject {
         settings.onboardingCompleted = true
         try? settingsRepository.save(settings)
         self.settings = settings
-        isOnboardingCompleted = true
+
+        // Phase 1: Fill progress bar to 100%
+        isCompleting = true
+
+        // Phase 2: Transition to home after animation completes
+        Task {
+            try? await Task.sleep(for: .milliseconds(600))
+            isOnboardingCompleted = true
+        }
     }
 }

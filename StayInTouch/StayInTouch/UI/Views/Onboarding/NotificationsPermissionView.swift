@@ -12,6 +12,7 @@ struct NotificationsPermissionView: View {
 
     var body: some View {
         VStack(spacing: DS.Spacing.xxl) {
+            Spacer()
             Image(systemName: "bell.badge.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(DS.Colors.accent)
@@ -34,6 +35,7 @@ struct NotificationsPermissionView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(DS.Colors.secondaryText)
+            Spacer()
         }
         .padding()
     }

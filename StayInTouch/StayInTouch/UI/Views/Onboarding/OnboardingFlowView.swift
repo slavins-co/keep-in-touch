@@ -12,8 +12,8 @@ struct OnboardingFlowView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: DS.Spacing.md) {
-                if viewModel.canGoBack {
+            if viewModel.showsProgress {
+                HStack(spacing: DS.Spacing.md) {
                     Button {
                         viewModel.goBack()
                     } label: {
@@ -22,16 +22,16 @@ struct OnboardingFlowView: View {
                             .foregroundStyle(DS.Colors.accent)
                     }
                     .accessibilityLabel("Go back")
-                } else {
-                    Color.clear.frame(width: 24, height: 24)
-                }
+                    .opacity(viewModel.canGoBack && !viewModel.isCompleting ? 1 : 0)
+                    .disabled(!viewModel.canGoBack || viewModel.isCompleting)
 
-                ProgressView(value: viewModel.progressFraction)
-                    .tint(DS.Colors.accent)
+                    OnboardingProgressBar(fraction: viewModel.progressFraction)
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.md)
+                .padding(.bottom, DS.Spacing.sm)
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.top, DS.Spacing.md)
-            .padding(.bottom, DS.Spacing.sm)
 
             SwiftUI.Group {
                 switch viewModel.step {
@@ -53,6 +53,31 @@ struct OnboardingFlowView: View {
             }
             .animation(.easeInOut(duration: 0.25), value: viewModel.step)
         }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.showsProgress)
+    }
+}
+
+// MARK: - Custom Progress Bar
+
+private struct OnboardingProgressBar: View {
+    let fraction: Double
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(DS.Colors.muted)
+                    .frame(height: 6)
+
+                Capsule()
+                    .fill(DS.Colors.accent)
+                    .frame(width: geometry.size.width * CGFloat(fraction), height: 6)
+                    .animation(.easeInOut(duration: 0.3), value: fraction)
+            }
+        }
+        .frame(height: 6)
+        .accessibilityLabel("Onboarding progress")
+        .accessibilityValue("\(Int(fraction * 100)) percent")
     }
 }
 

@@ -77,8 +77,11 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertEqual(sut.step, .notificationsSkipped)
     }
 
-    func testFinishFromSkippedCompletesOnboarding() {
+    func testFinishFromSkippedCompletesOnboarding() async throws {
         sut.finishFromNotificationsSkipped()
+        // isCompleting is set immediately; isOnboardingCompleted after delay
+        XCTAssertTrue(sut.isCompleting)
+        try await Task.sleep(for: .milliseconds(700))
         XCTAssertTrue(sut.isOnboardingCompleted)
     }
 
@@ -154,10 +157,13 @@ final class OnboardingViewModelTests: XCTestCase {
 
     // MARK: - Onboarding Completion
 
-    func testCompleteOnboardingSavesSettings() {
+    func testCompleteOnboardingSavesSettings() async throws {
         sut.finishFromNotificationsSkipped()
 
+        // Settings saved immediately (before animation delay)
         XCTAssertTrue(settingsRepo.settings?.onboardingCompleted == true)
+        // isOnboardingCompleted set after delay
+        try await Task.sleep(for: .milliseconds(700))
         XCTAssertTrue(sut.isOnboardingCompleted)
     }
 
@@ -260,6 +266,15 @@ final class OnboardingViewModelTests: XCTestCase {
 
     // MARK: - Progress
 
+    func testShowsProgressIsFalseAtWelcome() {
+        XCTAssertFalse(sut.showsProgress)
+    }
+
+    func testShowsProgressIsTrueAfterWelcome() {
+        sut.goToContactsPermission()
+        XCTAssertTrue(sut.showsProgress)
+    }
+
     func testProgressFractionIsZeroAtWelcome() {
         XCTAssertEqual(sut.progressFraction, 0.0, accuracy: 0.01)
     }
@@ -269,18 +284,68 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertEqual(sut.progressFraction, 0.2, accuracy: 0.01)
     }
 
-    func testProgressFractionAtNotifications() {
+    func testProgressAdvancesFromContactsPermissionToContactsRequired() {
+        sut.goToContactsPermission()
+        let permissionProgress = sut.progressFraction
+
+        sut.skipContactsPermission()
+        let requiredProgress = sut.progressFraction
+
+        XCTAssertGreaterThan(requiredProgress, permissionProgress)
+        XCTAssertEqual(requiredProgress, 0.4, accuracy: 0.01)
+    }
+
+    func testProgressAdvancesFromNotificationsPermissionToSkipped() {
         sut.goToContactsPermission()
         sut.skipContactsPermission()
         sut.continueFromContactsRequired()
-        XCTAssertEqual(sut.progressFraction, 0.8, accuracy: 0.01)
+        let permissionProgress = sut.progressFraction
+
+        sut.skipNotifications()
+        let skippedProgress = sut.progressFraction
+
+        XCTAssertGreaterThan(skippedProgress, permissionProgress)
+        XCTAssertEqual(skippedProgress, 0.95, accuracy: 0.01)
     }
 
-    func testProgressFractionContactsRequiredSameAsContactsPermission() {
+    func testProgressAtNotificationsViaSkipPath() {
         sut.goToContactsPermission()
-        let permissionProgress = sut.progressFraction
         sut.skipContactsPermission()
-        let requiredProgress = sut.progressFraction
-        XCTAssertEqual(requiredProgress, permissionProgress, accuracy: 0.01)
+        sut.continueFromContactsRequired()
+        XCTAssertEqual(sut.progressFraction, 0.85, accuracy: 0.01)
+    }
+
+    func testProgressAlwaysAdvancesOnForwardNavigation() {
+        var previousFraction = sut.progressFraction
+
+        sut.goToContactsPermission()
+        XCTAssertGreaterThan(sut.progressFraction, previousFraction)
+        previousFraction = sut.progressFraction
+
+        sut.skipContactsPermission()
+        XCTAssertGreaterThan(sut.progressFraction, previousFraction)
+        previousFraction = sut.progressFraction
+
+        sut.continueFromContactsRequired()
+        XCTAssertGreaterThan(sut.progressFraction, previousFraction)
+        previousFraction = sut.progressFraction
+
+        sut.skipNotifications()
+        XCTAssertGreaterThan(sut.progressFraction, previousFraction)
+    }
+
+    // MARK: - Completion Animation
+
+    func testIsCompletingStartsFalse() {
+        XCTAssertFalse(sut.isCompleting)
+    }
+
+    func testCompletionSetsIsCompletingBeforeOnboardingCompleted() {
+        sut.finishFromNotificationsSkipped()
+
+        // isCompleting should be true immediately
+        XCTAssertTrue(sut.isCompleting)
+        // Progress should be 1.0 during completion
+        XCTAssertEqual(sut.progressFraction, 1.0, accuracy: 0.01)
     }
 }

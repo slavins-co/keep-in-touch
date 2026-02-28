@@ -17,10 +17,13 @@ struct ContentView: View {
                 ProgressView()
             } else if viewModel.isOnboardingCompleted {
                 HomeView()
+                    .transition(.opacity)
             } else {
                 OnboardingFlowView(viewModel: viewModel)
+                    .transition(.opacity)
             }
         }
+        .animation(.easeInOut(duration: 0.4), value: viewModel.isOnboardingCompleted)
         .onAppear {
             viewModel.start()
             loadTheme()
