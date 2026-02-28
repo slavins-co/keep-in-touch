@@ -80,6 +80,7 @@ final class RepositoryTests: XCTestCase {
             customBreachTime: nil,
             snoozedUntil: nil,
             contactUnavailable: false,
+            isDemoData: false,
             groupAddedAt: nil,
             createdAt: Date(),
             modifiedAt: Date(),
@@ -127,8 +128,10 @@ final class RepositoryTests: XCTestCase {
             digestDay: .friday,
             digestTime: LocalTime(hour: 18, minute: 0),
             notificationGrouping: .perType,
+            badgeCountShowDueSoon: false,
             dueSoonWindowDays: 3,
             demoModeEnabled: false,
+            analyticsEnabled: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: "1.0"

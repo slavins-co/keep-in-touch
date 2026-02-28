@@ -36,10 +36,16 @@ struct HomeView: View {
                 PersonDetailView(person: person)
             }
         }
-        .onChange(of: viewModel.selectedGroupId) { _, _ in
+        .onChange(of: viewModel.selectedGroupId) { _, newValue in
+            if newValue != nil {
+                AnalyticsService.track("filter.applied", parameters: ["type": "frequency"])
+            }
             viewModel.applyFilters()
         }
-        .onChange(of: viewModel.selectedTagId) { _, _ in
+        .onChange(of: viewModel.selectedTagId) { _, newValue in
+            if newValue != nil {
+                AnalyticsService.track("filter.applied", parameters: ["type": "group"])
+            }
             viewModel.applyFilters()
         }
         .onChange(of: viewModel.sortOption) { _, _ in
@@ -134,8 +140,16 @@ struct HomeView: View {
         .padding(.bottom, DS.Spacing.sm)
     }
 
-    private func statusCountText(count: Int, label: String, color: Color) -> Text {
-        Text("\(count)").foregroundColor(color) + Text(" \(label)").foregroundColor(DS.Colors.secondaryText)
+    @ViewBuilder
+    private func statusCountText(count: Int, label: String, color: Color) -> some View {
+        HStack(spacing: 0) {
+            Text("\(count)")
+                .foregroundColor(color)
+                .contentTransition(.numericText())
+            Text(" \(label)")
+                .foregroundColor(DS.Colors.secondaryText)
+        }
+        .animation(.easeInOut(duration: 0.3), value: count)
     }
 
     // MARK: - Filters

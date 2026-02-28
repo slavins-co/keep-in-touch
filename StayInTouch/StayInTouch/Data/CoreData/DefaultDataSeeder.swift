@@ -97,6 +97,7 @@ final class DefaultDataSeeder {
         entity.notificationGrouping = NotificationGrouping.perType.rawValue
         entity.dueSoonWindowDays = 3
         entity.demoModeEnabled = false
+        entity.analyticsEnabled = true
         entity.lastContactsSyncAt = nil
         entity.onboardingCompleted = false
         entity.appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""

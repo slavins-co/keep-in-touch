@@ -168,6 +168,7 @@ enum TestFactory {
             customBreachTime: nil,
             snoozedUntil: snoozedUntil,
             contactUnavailable: false,
+            isDemoData: false,
             groupAddedAt: Date(),
             createdAt: Date(),
             modifiedAt: Date(),
@@ -242,8 +243,10 @@ enum TestFactory {
             digestDay: .friday,
             digestTime: LocalTime(hour: 18, minute: 0),
             notificationGrouping: .perType,
+            badgeCountShowDueSoon: false,
             dueSoonWindowDays: 3,
             demoModeEnabled: demoModeEnabled,
+            analyticsEnabled: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: onboardingCompleted,
             appVersion: ""

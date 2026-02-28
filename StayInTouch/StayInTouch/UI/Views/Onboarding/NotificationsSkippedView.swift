@@ -12,6 +12,7 @@ struct NotificationsSkippedView: View {
 
     var body: some View {
         VStack(spacing: DS.Spacing.xxl) {
+            Spacer()
             Image(systemName: "bell.slash.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(DS.Colors.accent)
@@ -28,6 +29,7 @@ struct NotificationsSkippedView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            Spacer()
         }
         .padding()
     }

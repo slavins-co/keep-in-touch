@@ -202,6 +202,46 @@ struct PersonDetailView: View {
                     }
             }
         }
+        .confirmationDialog("Choose a number", isPresented: $viewModel.showPhonePicker) {
+            ForEach(viewModel.phoneNumbers) { phone in
+                Button("\(phone.label): \(phone.value)") {
+                    guard let action = viewModel.pendingPhoneAction,
+                          let url = viewModel.openActionWithValue(type: action, value: phone.value) else {
+                        viewModel.pendingPhoneAction = nil
+                        return
+                    }
+                    openURL(url) { accepted in
+                        if accepted {
+                            Haptics.light()
+                            let method = action.touchMethod
+                            viewModel.logTouch(method: method, notes: nil, date: Date())
+                            pendingQuickActionTouch = viewModel.touchEvents.first
+                            pendingQuickActionMethod = method
+                        }
+                    }
+                    viewModel.pendingPhoneAction = nil
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                viewModel.pendingPhoneAction = nil
+            }
+        }
+        .confirmationDialog("Choose an email", isPresented: $viewModel.showEmailPicker) {
+            ForEach(viewModel.emailAddresses) { email in
+                Button("\(email.label): \(email.value)") {
+                    guard let url = viewModel.openActionWithValue(type: .email, value: email.value) else { return }
+                    openURL(url) { accepted in
+                        if accepted {
+                            Haptics.light()
+                            viewModel.logTouch(method: .email, notes: nil, date: Date())
+                            pendingQuickActionTouch = viewModel.touchEvents.first
+                            pendingQuickActionMethod = .email
+                        }
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
         .overlay(alignment: .top) {
             if showQuickActionUndo, let method = pendingQuickActionMethod {
                 quickActionUndoBanner(method: method)
@@ -268,6 +308,12 @@ struct PersonDetailView: View {
             HStack(spacing: DS.Spacing.sm) {
                 StatusIndicator(status: currentStatus, daysOverdue: daysOverdue)
                 Text(statusLabel())
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
+            }
+
+            if let lastTouch = viewModel.person.lastTouchAt {
+                Text("Last connected \(lastTouchTimeAgo(lastTouch))")
                     .font(DS.Typography.metadata)
                     .foregroundStyle(DS.Colors.secondaryText)
             }
@@ -649,6 +695,12 @@ struct PersonDetailView: View {
         case .overdue: return "Overdue"
         case .unknown: return "Unknown"
         }
+    }
+
+    private func lastTouchTimeAgo(_ date: Date) -> String {
+        let days = Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
+        if days == 0 { return "today" }
+        return "\(days)d ago"
     }
 
     private func statusColor() -> Color {

@@ -34,6 +34,7 @@ struct Person: Identifiable, Equatable, Hashable {
     var snoozedUntil: Date?
 
     var contactUnavailable: Bool
+    var isDemoData: Bool
 
     var groupAddedAt: Date?
 

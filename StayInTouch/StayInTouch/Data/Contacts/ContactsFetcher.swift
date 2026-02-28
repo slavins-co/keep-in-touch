@@ -43,9 +43,22 @@ struct ContactSummary: Identifiable, Equatable {
 }
 
 enum ContactsFetcher {
+    struct LabeledValue: Identifiable, Equatable {
+        let id = UUID()
+        let label: String
+        let value: String
+
+        static func == (lhs: LabeledValue, rhs: LabeledValue) -> Bool {
+            lhs.label == rhs.label && lhs.value == rhs.value
+        }
+    }
+
     struct ContactInfo: Equatable {
-        let phone: String?
-        let email: String?
+        let phoneNumbers: [LabeledValue]
+        let emailAddresses: [LabeledValue]
+
+        var phone: String? { phoneNumbers.first?.value }
+        var email: String? { emailAddresses.first?.value }
     }
 
     static func requestAccess() async -> Bool {
@@ -124,9 +137,15 @@ enum ContactsFetcher {
 
         do {
             let contact = try store.unifiedContact(withIdentifier: identifier, keysToFetch: keys)
-            let phone = contact.phoneNumbers.first?.value.stringValue
-            let email = contact.emailAddresses.first?.value as String?
-            return ContactInfo(phone: phone, email: email)
+            let phones = contact.phoneNumbers.map { labeled in
+                let label = CNLabeledValue<CNPhoneNumber>.localizedString(forLabel: labeled.label ?? "")
+                return LabeledValue(label: label, value: labeled.value.stringValue)
+            }
+            let emails = contact.emailAddresses.map { labeled in
+                let label = CNLabeledValue<NSString>.localizedString(forLabel: labeled.label ?? "")
+                return LabeledValue(label: label, value: labeled.value as String)
+            }
+            return ContactInfo(phoneNumbers: phones, emailAddresses: emails)
         } catch let error as NSError {
             if error.domain == CNErrorDomain && error.code == CNError.recordDoesNotExist.rawValue {
                 AppLogger.logWarning("Contact not found: \(identifier)", category: AppLogger.contacts)

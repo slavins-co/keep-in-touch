@@ -12,6 +12,7 @@ struct ContactsPermissionView: View {
 
     var body: some View {
         VStack(spacing: DS.Spacing.xxl) {
+            Spacer()
             Image(systemName: "person.crop.circle.badge.questionmark")
                 .font(.system(size: 56))
                 .foregroundStyle(DS.Colors.accent)
@@ -34,6 +35,7 @@ struct ContactsPermissionView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(DS.Colors.secondaryText)
+            Spacer()
         }
         .padding()
     }
