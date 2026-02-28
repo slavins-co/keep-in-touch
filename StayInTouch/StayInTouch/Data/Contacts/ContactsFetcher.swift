@@ -155,4 +155,24 @@ enum ContactsFetcher {
             throw ContactsFetcherError.fetchFailed(error)
         }
     }
+
+    static func fetchThumbnailImageData(identifier: String) -> Data? {
+        let status = CNContactStore.authorizationStatus(for: .contacts)
+        switch status {
+        case .denied, .restricted, .notDetermined:
+            return nil
+        case .authorized, .limited:
+            break
+        @unknown default:
+            break
+        }
+
+        let store = CNContactStore()
+        let keys: [CNKeyDescriptor] = [CNContactThumbnailImageDataKey as CNKeyDescriptor]
+
+        guard let contact = try? store.unifiedContact(withIdentifier: identifier, keysToFetch: keys) else {
+            return nil
+        }
+        return contact.thumbnailImageData
+    }
 }
