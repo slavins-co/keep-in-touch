@@ -249,6 +249,7 @@ final class OnboardingViewModel: ObservableObject {
                 try repo.batchSave(personsToSave)
             } catch {
                 AppLogger.logError(error, category: AppLogger.viewModel, context: "OnboardingViewModel.importContacts")
+                ErrorToastManager.shared.show(.saveFailed("Onboarding"))
             }
         }
     }
