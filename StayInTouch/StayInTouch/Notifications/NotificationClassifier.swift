@@ -14,6 +14,7 @@ struct NotificationClassification {
     let allForDigest: [Person]
     let allNonCustom: [Person]
     let allOverdue: [Person]
+    let allDueSoon: [Person]
     let customOverrides: [CustomNotification]
 }
 
@@ -31,6 +32,7 @@ enum NotificationClassifier {
         var allForDigest: [Person] = []
         var allNonCustom: [Person] = []
         var allOverdue: [Person] = []
+        var allDueSoon: [Person] = []
         var customOverrides: [CustomNotification] = []
 
         for person in people where !person.isPaused && !person.notificationsMuted && !(person.snoozedUntil.map { $0 > referenceDate } ?? false) {
@@ -51,8 +53,11 @@ enum NotificationClassifier {
 
             guard let type else { continue }
             allForDigest.append(person)
-            if type == .overdue {
+            switch type {
+            case .overdue, .dueToday:
                 allOverdue.append(person)
+            case .dueSoon:
+                allDueSoon.append(person)
             }
 
             if let custom = person.customBreachTime {
@@ -74,6 +79,7 @@ enum NotificationClassifier {
             allForDigest: allForDigest,
             allNonCustom: allNonCustom,
             allOverdue: allOverdue,
+            allDueSoon: allDueSoon,
             customOverrides: customOverrides
         )
     }

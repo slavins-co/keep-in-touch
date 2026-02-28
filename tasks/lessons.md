@@ -1135,6 +1135,27 @@ Rewrote test to navigate forward through public methods (`goToContactsPermission
 **Prevention Rule:**
 Always write tests that exercise the public API, not internal state. If you can't set up the state through public methods, the test scenario may not be reachable in practice.
 
+### 2026-02-27 - 🔔 Notifications - App Icon Badge Requires Direct setBadgeCount() Call
+
+**What Happened:**
+Badge count setting (overdue only vs overdue + due soon) appeared to have no effect. Simulator always showed badge 1; personal device showed no badge at all.
+
+**Root Cause:**
+`NotificationScheduler.scheduleAll()` only set badge via `content.badge` on notification objects — this value only takes effect when iOS delivers the notification. No code called `UNUserNotificationCenter.current().setBadgeCount()` directly. Additionally, `AppDelegate.applicationWillEnterForeground` cleared badge to 0 unconditionally, and the subsequent `scheduleAll()` only embedded badge in future notifications.
+
+Secondary issues: `NotificationClassifier` had asymmetric badge counting — `allOverdue` included custom breach time people but `dueSoon` excluded them. Also `.dueToday` (exactly at SLA boundary) wasn't counted in `allOverdue` despite the home screen showing them as overdue.
+
+**Solution:**
+1. Added `setBadgeCount(badgeCount)` directly in `scheduleAll()` after calculating the count
+2. Removed unconditional `setBadgeCount(0)` from `applicationWillEnterForeground` — `scheduleAll()` now sets the correct count
+3. Added `allDueSoon` array to `NotificationClassifier` (parallel to `allOverdue`) for symmetric badge counting
+4. Included `.dueToday` in `allOverdue` to match `FrequencyCalculator`'s definition
+
+**Prevention Rule:**
+- `content.badge` on notifications only applies when the notification fires — always call `setBadgeCount()` directly for immediate badge updates
+- Badge count arrays must be symmetric: if `allOverdue` includes custom breach time people, `allDueSoon` must too
+- When the classifier and calculator disagree on boundary conditions (e.g., `>` vs `>=`), badge counts will diverge from the home screen — keep them aligned
+
 ---
 
 ## Historical Lessons
