@@ -341,7 +341,7 @@ final class PersonDetailViewModel: ObservableObject {
         let scheme = type == .message ? "sms" : "tel"
         guard let encoded = sanitizedPhone.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
               let url = URL(string: "\(scheme):\(encoded)") else {
-            AppLogger.logWarning("Failed to create \(scheme) URL for phone: \(phone)", category: AppLogger.viewModel)
+            AppLogger.logWarning("Failed to create \(scheme) URL for contact \(person.id)", category: AppLogger.viewModel)
             return nil
         }
         return url
@@ -350,7 +350,7 @@ final class PersonDetailViewModel: ObservableObject {
     private func buildEmailURL(email: String) -> URL? {
         guard let encoded = email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let url = URL(string: "mailto:\(encoded)") else {
-            AppLogger.logWarning("Failed to create mailto URL for email: \(email)", category: AppLogger.viewModel)
+            AppLogger.logWarning("Failed to create mailto URL for contact \(person.id)", category: AppLogger.viewModel)
             return nil
         }
         return url
