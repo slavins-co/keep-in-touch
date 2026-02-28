@@ -1,12 +1,34 @@
 # TODO - Stay in Touch iOS App
 
 **Project Status:** v0.2.2 (Build 8) — Pre-release Beta
-**Last Updated:** February 24, 2026
+**Last Updated:** February 27, 2026
 
 > **TestFlight Status:** Code blockers resolved. Manual submission steps remain — see `tasks/testflight-guide.md`.
 > When creating PRs, confirm TestFlight readiness is not regressed (deployment target 17.0, PrivacyInfo.xcprivacy present, UIBackgroundModes declared, build number incremented).
 
 ---
+
+## Completed — Session 2026-02-27d (Onboarding UX Polish)
+
+- [x] **PR 94 fixes** Fix onboarding progress bar and layout issues — custom capsule progress bar, unique fractions per step, vertical centering Spacers, hide bar on welcome, 8 new/updated progress tests
+
+## Completed — Session 2026-02-27c (Contact Photos + Multi-value Picker + Onboarding Nav)
+
+- [x] **#72** Display contact photos from iOS Contacts — on-demand thumbnail fetch with NSCache, initials fallback (PR #92)
+- [x] **#51** Show picker when contact has multiple phone numbers or emails — LabeledValue struct, confirmationDialog pickers (PR #93)
+- [x] **#58** Add back navigation and progress indicator to onboarding — history stack, progress bar, back button, 13 new tests (PR #94)
+
+## Completed — Session 2026-02-27b (Notifications + Import)
+
+- [x] **#71** Notification-tapped contact opens as navigation push instead of modal sheet (PR #90)
+- [x] **#73** JSON import to complement existing export — file picker, preview screen, conflict resolution (PR #91)
+
+## Completed — Session 2026-02-27 (Performance + Export + UX)
+
+- [x] **#81** Optimize contact fetching — add `fetchBatchSize=50` to all fetch requests, rewrite `fetchOverdue()` with predicate-based filtering (PR #86)
+- [x] **#74** Enrich data export — add `groupName`, `tagNames`, and `touchEvents` array to exported JSON (PR #87)
+- [x] **#59** Add "Reset All Frequencies" emergency button in Settings with confirmation dialog (PR #88)
+- [x] **#43** Add "Last connected Xd ago" timestamp to PersonDetailView hero zone (PR #89)
 
 ## Completed — v0.2.2 (Critical + Performance + UX)
 
@@ -83,7 +105,7 @@
 
 - [ ] **#41** Add micro-animations (section expand, filter apply, card appear)
 - [ ] **#42** Add empty state illustrations per section
-- [ ] **#43** Implement skeleton loading states
+- [x] **#43** Add "Last connected" timestamp to PersonDetailView hero *(2026-02-27)*
 - [ ] **#44** Apply consistent 2pt/4pt sub-grid spacing rhythm
 
 ### UX Direction

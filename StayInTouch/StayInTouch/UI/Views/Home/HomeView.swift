@@ -138,8 +138,16 @@ struct HomeView: View {
         .padding(.bottom, DS.Spacing.sm)
     }
 
-    private func statusCountText(count: Int, label: String, color: Color) -> Text {
-        Text("\(count)").foregroundColor(color) + Text(" \(label)").foregroundColor(DS.Colors.secondaryText)
+    @ViewBuilder
+    private func statusCountText(count: Int, label: String, color: Color) -> some View {
+        HStack(spacing: 0) {
+            Text("\(count)")
+                .foregroundColor(color)
+                .contentTransition(.numericText())
+            Text(" \(label)")
+                .foregroundColor(DS.Colors.secondaryText)
+        }
+        .animation(.easeInOut(duration: 0.3), value: count)
     }
 
     // MARK: - Filters

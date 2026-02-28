@@ -10,6 +10,8 @@
 	<array>
 		<string>fetch</string>
 	</array>
+	<key>NSContactsUsageDescription</key>
+	<string>We need access to your contacts to help you stay in touch with the people who matter.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>We'll send you gentle reminders when it's time to reconnect with someone.</string>
 </dict>

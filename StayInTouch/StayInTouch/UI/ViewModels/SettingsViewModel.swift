@@ -25,17 +25,20 @@ final class SettingsViewModel: ObservableObject {
     private let groupRepository: GroupRepository
     private let tagRepository: TagRepository
     private let personRepository: PersonRepository
+    private let touchEventRepository: TouchEventRepository
 
     init(
         settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
         groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
         tagRepository: TagRepository = CoreDataTagRepository(context: CoreDataStack.shared.viewContext),
-        personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext)
+        personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
+        touchEventRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext)
     ) {
         self.settingsRepository = settingsRepository
         self.groupRepository = groupRepository
         self.tagRepository = tagRepository
         self.personRepository = personRepository
+        self.touchEventRepository = touchEventRepository
         self.settings = settingsRepository.fetch() ?? AppSettingsDefaults.defaultSettings()
         load()
     }
@@ -97,6 +100,11 @@ final class SettingsViewModel: ObservableObject {
         save()
     }
 
+    func setBadgeCountShowDueSoon(_ enabled: Bool) {
+        settings.badgeCountShowDueSoon = enabled
+        save()
+    }
+
     func setAnalyticsEnabled(_ enabled: Bool) {
         settings.analyticsEnabled = enabled
         save()
@@ -120,9 +128,15 @@ final class SettingsViewModel: ObservableObject {
                 seeder.seedIfNeeded()
             } else {
                 let repo = CoreDataPersonRepository(context: backgroundContext)
-                let demoPeople = repo.fetchAll().filter { $0.cnIdentifier == nil }
+                let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
+                let demoPeople = repo.fetchAll().filter { $0.isDemoData }
                 for person in demoPeople {
                     do {
+                        // Cascade: delete TouchEvents before Person
+                        let events = touchRepo.fetchAll(for: person.id)
+                        for event in events {
+                            try touchRepo.delete(id: event.id)
+                        }
                         try repo.delete(id: person.id)
                     } catch {
                         AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.updateDemoData")
@@ -151,10 +165,51 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
+    func resetAllFrequencies() async {
+        let now = Date()
+        let backgroundContext = CoreDataStack.shared.newBackgroundContext()
+        await backgroundContext.perform {
+            let repo = CoreDataPersonRepository(context: backgroundContext)
+            let people = repo.fetchTracked(includePaused: true)
+            var updated: [Person] = []
+            for var person in people {
+                person.lastTouchAt = now
+                person.modifiedAt = now
+                updated.append(person)
+            }
+            do {
+                try repo.batchSave(updated)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.resetAllFrequencies")
+            }
+        }
+        await MainActor.run {
+            load()
+            NotificationCenter.default.post(name: .personDidChange, object: nil)
+        }
+    }
+
     func exportContacts() -> URL? {
         let people = personRepository.fetchAll()
-        let payload = people.map { ExportPerson.from($0) }
-        guard let data = try? JSONEncoder().encode(payload) else { return nil }
+        let groups = groupRepository.fetchAll()
+        let tags = tagRepository.fetchAll()
+
+        let groupNameById = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0.name) })
+        let tagNameById = Dictionary(uniqueKeysWithValues: tags.map { ($0.id, $0.name) })
+
+        let payload = people.map { person in
+            ExportPerson.from(
+                person,
+                groupName: groupNameById[person.groupId],
+                tagNames: person.tagIds.compactMap { tagNameById[$0] },
+                touchEvents: touchEventRepository.fetchAll(for: person.id)
+            )
+        }
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        guard let data = try? encoder.encode(payload) else { return nil }
 
         let filename = "contacts-export-\(ISO8601DateFormatter().string(from: Date())).json"
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
@@ -164,6 +219,164 @@ final class SettingsViewModel: ObservableObject {
         } catch {
             return nil
         }
+    }
+
+    func parseImportFile(url: URL) -> ImportPreview? {
+        guard url.startAccessingSecurityScopedResource() else { return nil }
+        defer { url.stopAccessingSecurityScopedResource() }
+
+        guard let data = try? Data(contentsOf: url) else { return nil }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        guard let imported = try? decoder.decode([ExportPerson].self, from: data) else { return nil }
+
+        let existingById = Dictionary(uniqueKeysWithValues: personRepository.fetchAll().map { ($0.id, $0) })
+        let existingByCN = Dictionary(
+            personRepository.fetchAll().compactMap { p -> (String, Person)? in
+                guard let cn = p.cnIdentifier else { return nil }
+                return (cn, p)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        var newPeople: [ExportPerson] = []
+        var updatedPeople: [ExportPerson] = []
+        var skipped = 0
+        var touchEventCount = 0
+
+        for person in imported {
+            guard !person.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                skipped += 1
+                continue
+            }
+
+            let matchById = existingById[person.id] != nil
+            let matchByCN = person.cnIdentifier.flatMap { existingByCN[$0] } != nil
+
+            if matchById || matchByCN {
+                updatedPeople.append(person)
+            } else {
+                newPeople.append(person)
+            }
+            touchEventCount += person.touchEvents?.count ?? 0
+        }
+
+        return ImportPreview(
+            newPeople: newPeople,
+            updatedPeople: updatedPeople,
+            skippedCount: skipped,
+            touchEventCount: touchEventCount
+        )
+    }
+
+    func executeImport(_ preview: ImportPreview) async {
+        let backgroundContext = CoreDataStack.shared.newBackgroundContext()
+        await backgroundContext.perform {
+            let peopleRepo = CoreDataPersonRepository(context: backgroundContext)
+            let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
+            let groupRepo = CoreDataGroupRepository(context: backgroundContext)
+
+            let groups = groupRepo.fetchAll()
+            let defaultGroupId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id ?? UUID()
+            let validGroupIds = Set(groups.map { $0.id })
+
+            let existingById = Dictionary(uniqueKeysWithValues: peopleRepo.fetchAll().map { ($0.id, $0) })
+            let existingByCN = Dictionary(
+                peopleRepo.fetchAll().compactMap { p -> (String, Person)? in
+                    guard let cn = p.cnIdentifier else { return nil }
+                    return (cn, p)
+                },
+                uniquingKeysWith: { first, _ in first }
+            )
+            let existingCount = peopleRepo.fetchTracked(includePaused: true).count
+            var sortOrder = existingCount
+            let now = Date()
+            let assignGroup = AssignGroupUseCase(referenceDate: now)
+
+            var personsToSave: [Person] = []
+
+            for exportPerson in preview.newPeople {
+                let groupId = exportPerson.groupId.flatMap { validGroupIds.contains($0) ? $0 : nil } ?? defaultGroupId
+                var person = Person(
+                    id: exportPerson.id,
+                    cnIdentifier: exportPerson.cnIdentifier,
+                    displayName: exportPerson.displayName,
+                    initials: InitialsBuilder.initials(for: exportPerson.displayName),
+                    avatarColor: AvatarColors.randomHex(),
+                    groupId: groupId,
+                    tagIds: exportPerson.tagIds,
+                    lastTouchAt: exportPerson.lastTouchAt,
+                    lastTouchMethod: nil,
+                    lastTouchNotes: nil,
+                    nextTouchNotes: nil,
+                    isPaused: exportPerson.isPaused,
+                    isTracked: true,
+                    notificationsMuted: false,
+                    customBreachTime: nil,
+                    snoozedUntil: nil,
+                    contactUnavailable: false,
+                    isDemoData: false,
+                    groupAddedAt: nil,
+                    createdAt: exportPerson.createdAt,
+                    modifiedAt: now,
+                    sortOrder: sortOrder
+                )
+                person = assignGroup.assign(person: person, to: groupId)
+                personsToSave.append(person)
+                sortOrder += 1
+            }
+
+            for exportPerson in preview.updatedPeople {
+                let existing = existingById[exportPerson.id]
+                    ?? exportPerson.cnIdentifier.flatMap { existingByCN[$0] }
+                guard var person = existing else { continue }
+
+                person.displayName = exportPerson.displayName
+                person.initials = InitialsBuilder.initials(for: exportPerson.displayName)
+                person.tagIds = exportPerson.tagIds
+                person.lastTouchAt = exportPerson.lastTouchAt
+                person.isPaused = exportPerson.isPaused
+                person.modifiedAt = now
+
+                if let newGroupId = exportPerson.groupId, validGroupIds.contains(newGroupId), newGroupId != person.groupId {
+                    person = assignGroup.assign(person: person, to: newGroupId)
+                }
+                personsToSave.append(person)
+            }
+
+            do {
+                try peopleRepo.batchSave(personsToSave)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.executeImport.people")
+            }
+
+            let allExported = preview.newPeople + preview.updatedPeople
+            for exportPerson in allExported {
+                guard let events = exportPerson.touchEvents else { continue }
+                for event in events {
+                    let method = TouchMethod(rawValue: event.method) ?? .other
+                    let touchEvent = TouchEvent(
+                        id: event.id,
+                        personId: exportPerson.id,
+                        at: event.at,
+                        method: method,
+                        notes: event.notes,
+                        timeOfDay: nil,
+                        createdAt: now,
+                        modifiedAt: now
+                    )
+                    do {
+                        try touchRepo.save(touchEvent)
+                    } catch {
+                        AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.executeImport.touchEvents")
+                    }
+                }
+            }
+        }
+
+        load()
+        NotificationCenter.default.post(name: .personDidChange, object: nil)
     }
 
     func findNewContacts() async -> Int {
@@ -243,6 +456,7 @@ final class SettingsViewModel: ObservableObject {
                     customBreachTime: nil,
                     snoozedUntil: nil,
                     contactUnavailable: false,
+                    isDemoData: false,
                     groupAddedAt: nil,
                     createdAt: now,
                     modifiedAt: now,
@@ -300,31 +514,63 @@ final class SettingsViewModel: ObservableObject {
     }
 }
 
+struct ExportTouchEvent: Codable {
+    let id: UUID
+    let at: Date
+    let method: String
+    let notes: String?
+
+    static func from(_ event: TouchEvent) -> ExportTouchEvent {
+        ExportTouchEvent(
+            id: event.id,
+            at: event.at,
+            method: event.method.rawValue,
+            notes: event.notes
+        )
+    }
+}
+
 struct ExportPerson: Codable {
     let id: UUID
     let displayName: String
     let cnIdentifier: String?
     let groupId: UUID?
+    let groupName: String?
     let tagIds: [UUID]
+    let tagNames: [String]
     let lastTouchAt: Date?
     let isPaused: Bool
     let createdAt: Date
     let modifiedAt: Date
+    let touchEvents: [ExportTouchEvent]?
 
-    static func from(_ person: Person) -> ExportPerson {
-        ExportPerson(
+    static func from(_ person: Person, groupName: String?, tagNames: [String], touchEvents: [TouchEvent]) -> ExportPerson {
+        let exportEvents: [ExportTouchEvent]? = touchEvents.isEmpty ? nil : touchEvents.map { ExportTouchEvent.from($0) }
+        return ExportPerson(
             id: person.id,
             displayName: person.displayName,
             cnIdentifier: person.cnIdentifier,
             groupId: person.groupId,
+            groupName: groupName,
             tagIds: person.tagIds,
+            tagNames: tagNames,
             lastTouchAt: person.lastTouchAt,
             isPaused: person.isPaused,
             createdAt: person.createdAt,
-            modifiedAt: person.modifiedAt
+            modifiedAt: person.modifiedAt,
+            touchEvents: exportEvents
         )
     }
+}
 
+struct ImportPreview {
+    let newPeople: [ExportPerson]
+    let updatedPeople: [ExportPerson]
+    let skippedCount: Int
+    let touchEventCount: Int
+
+    var totalPeople: Int { newPeople.count + updatedPeople.count }
+    var isEmpty: Bool { newPeople.isEmpty && updatedPeople.isEmpty }
 }
 
 struct AppSettingsDefaults {
@@ -338,6 +584,7 @@ struct AppSettingsDefaults {
             digestDay: .friday,
             digestTime: LocalTime(hour: 18, minute: 0),
             notificationGrouping: .perType,
+            badgeCountShowDueSoon: false,
             dueSoonWindowDays: 3,
             demoModeEnabled: false,
             analyticsEnabled: true,

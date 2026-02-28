@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(\.openURL) private var openURL
@@ -26,6 +27,14 @@ struct SettingsView: View {
     @State private var selectedForImport: [ContactSummary] = []
     @State private var pendingImportCount = 0
     @State private var isSyncingContacts = false
+    @State private var showFilePicker = false
+    @State private var importPreview: ImportPreview?
+    @State private var showImportPreview = false
+    @State private var isImporting = false
+    @State private var showImportSuccessAlert = false
+    @State private var showImportErrorAlert = false
+    @State private var importResultMessage = ""
+    @State private var showResetFrequenciesConfirmation = false
 
     var body: some View {
         List {
@@ -132,6 +141,51 @@ struct SettingsView: View {
                 shouldShowGroupAssignment = false
                 showGroupAssignment = true
             }
+        }
+        .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [UTType.json]) { result in
+            switch result {
+            case .success(let url):
+                if let preview = viewModel.parseImportFile(url: url) {
+                    importPreview = preview
+                    showImportPreview = true
+                } else {
+                    importResultMessage = "Could not read the file. Make sure it is a valid Stay in Touch export."
+                    showImportErrorAlert = true
+                }
+            case .failure:
+                importResultMessage = "Could not open the file."
+                showImportErrorAlert = true
+            }
+        }
+        .sheet(isPresented: $showImportPreview) {
+            if let preview = importPreview {
+                ImportPreviewView(
+                    preview: preview,
+                    onImport: {
+                        showImportPreview = false
+                        Task {
+                            isImporting = true
+                            await viewModel.executeImport(preview)
+                            isImporting = false
+                            importResultMessage = "Imported \(preview.totalPeople) contact\(preview.totalPeople == 1 ? "" : "s") successfully."
+                            showImportSuccessAlert = true
+                        }
+                    },
+                    onCancel: {
+                        showImportPreview = false
+                    }
+                )
+            }
+        }
+        .alert("Import Complete", isPresented: $showImportSuccessAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(importResultMessage)
+        }
+        .alert("Import Failed", isPresented: $showImportErrorAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(importResultMessage)
         }
         .onAppear { viewModel.load() }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
@@ -251,6 +305,13 @@ struct SettingsView: View {
                     Text(option.displayName).tag(option)
                 }
             }
+
+            Toggle(isOn: Binding(
+                get: { viewModel.settings.badgeCountShowDueSoon },
+                set: { viewModel.setBadgeCountShowDueSoon($0) }
+            )) {
+                Text("Include Due Soon in Badge")
+            }
         }
     }
 
@@ -262,6 +323,12 @@ struct SettingsView: View {
                 }
             } label: {
                 Label("Export Contacts", systemImage: "square.and.arrow.up")
+            }
+
+            Button {
+                showFilePicker = true
+            } label: {
+                Label("Import Contacts", systemImage: "square.and.arrow.down")
             }
 
             Button {
@@ -302,6 +369,24 @@ struct SettingsView: View {
                         .font(DS.Typography.metadata)
                         .foregroundStyle(DS.Colors.secondaryText)
                 }
+            }
+
+            Button(role: .destructive) {
+                showResetFrequenciesConfirmation = true
+            } label: {
+                Label("Fresh Start", systemImage: "arrow.counterclockwise")
+            }
+            .confirmationDialog(
+                "Start Fresh?",
+                isPresented: $showResetFrequenciesConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Reset the Clock", role: .destructive) {
+                    Task { await viewModel.resetAllFrequencies() }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Been away for a while? No worries \u{2014} this resets the clock on all your contacts so everything starts clean from today. Your touch history, groups, and frequencies are all preserved.")
             }
         }
     }

@@ -23,7 +23,26 @@ final class OnboardingViewModel: ObservableObject {
 
     @Published var isLoading = true
     @Published var isOnboardingCompleted = false
+    @Published var isCompleting = false
     @Published var step: Step = .welcome
+    private(set) var stepHistory: [Step] = []
+
+    var canGoBack: Bool { !stepHistory.isEmpty }
+
+    var showsProgress: Bool { step != .welcome }
+
+    var progressFraction: Double {
+        if isCompleting { return 1.0 }
+        switch step {
+        case .welcome:                 return 0
+        case .contactsPermission:      return 0.2
+        case .contactsRequired:        return 0.4
+        case .contactPicker:           return 0.4
+        case .groupAssignment:         return 0.6
+        case .notificationsPermission: return 0.85
+        case .notificationsSkipped:    return 0.95
+        }
+    }
 
     @Published var contacts: [ContactSummary] = []
     @Published var selectedContactIds: Set<String> = []
@@ -62,16 +81,22 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     func start() {
+        stepHistory = []
         step = .welcome
+    }
+
+    func goBack() {
+        guard let previousStep = stepHistory.popLast() else { return }
+        step = previousStep
     }
 
     func goToContactsPermission() {
         AnalyticsService.track("onboarding.started")
-        step = .contactsPermission
+        pushAndNavigate(to: .contactsPermission)
     }
 
     func skipContactsPermission() {
-        step = .contactsRequired
+        pushAndNavigate(to: .contactsRequired)
     }
 
     func requestContactsPermission() async {
@@ -79,10 +104,10 @@ final class OnboardingViewModel: ObservableObject {
         if granted {
             AnalyticsService.track("onboarding.contacts.granted")
             await loadContacts()
-            step = .contactPicker
+            pushAndNavigate(to: .contactPicker)
         } else {
             AnalyticsService.track("onboarding.contacts.denied")
-            step = .contactsRequired
+            pushAndNavigate(to: .contactsRequired)
         }
     }
 
@@ -90,7 +115,7 @@ final class OnboardingViewModel: ObservableObject {
         let granted = await ContactsFetcher.requestAccess()
         if granted {
             await loadContacts()
-            step = .contactPicker
+            pushAndNavigate(to: .contactPicker)
         }
     }
 
@@ -98,7 +123,7 @@ final class OnboardingViewModel: ObservableObject {
         if useDemoData {
             seedDemoData()
         }
-        step = .notificationsPermission
+        pushAndNavigate(to: .notificationsPermission)
     }
 
     func toggleSelection(for contactId: String) {
@@ -112,18 +137,18 @@ final class OnboardingViewModel: ObservableObject {
     func continueFromContactPicker() {
         AnalyticsService.track("onboarding.contacts.selected", parameters: ["count": String(selectedContactIds.count)])
         if selectedContactIds.isEmpty {
-            step = .notificationsPermission
+            pushAndNavigate(to: .notificationsPermission)
             return
         }
 
         seedGroupSelectionsIfNeeded()
-        step = .groupAssignment
+        pushAndNavigate(to: .groupAssignment)
     }
 
     func continueFromGroupAssignment() {
         Task {
             await importSelectedContacts()
-            step = .notificationsPermission
+            pushAndNavigate(to: .notificationsPermission)
         }
     }
 
@@ -140,16 +165,21 @@ final class OnboardingViewModel: ObservableObject {
         if granted {
             completeOnboarding()
         } else {
-            step = .notificationsSkipped
+            pushAndNavigate(to: .notificationsSkipped)
         }
     }
 
     func skipNotifications() {
-        step = .notificationsSkipped
+        pushAndNavigate(to: .notificationsSkipped)
     }
 
     func finishFromNotificationsSkipped() {
         completeOnboarding()
+    }
+
+    private func pushAndNavigate(to newStep: Step) {
+        stepHistory.append(step)
+        step = newStep
     }
 
     private func loadSettingsAndGroups() {
@@ -204,6 +234,7 @@ final class OnboardingViewModel: ObservableObject {
                     customBreachTime: nil,
                     snoozedUntil: nil,
                     contactUnavailable: false,
+                    isDemoData: false,
                     groupAddedAt: nil,
                     createdAt: now,
                     modifiedAt: now,
@@ -253,6 +284,14 @@ final class OnboardingViewModel: ObservableObject {
         settings.onboardingCompleted = true
         try? settingsRepository.save(settings)
         self.settings = settings
-        isOnboardingCompleted = true
+
+        // Phase 1: Fill progress bar to 100%
+        isCompleting = true
+
+        // Phase 2: Transition to home after animation completes
+        Task {
+            try? await Task.sleep(for: .milliseconds(600))
+            isOnboardingCompleted = true
+        }
     }
 }

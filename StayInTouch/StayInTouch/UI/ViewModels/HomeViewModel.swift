@@ -129,6 +129,7 @@ final class HomeViewModel: ObservableObject {
             digestDay: .friday,
             digestTime: LocalTime(hour: 18, minute: 0),
             notificationGrouping: .perType,
+            badgeCountShowDueSoon: false,
             dueSoonWindowDays: 3,
             demoModeEnabled: false,
             analyticsEnabled: true,

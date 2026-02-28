@@ -77,8 +77,11 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertEqual(sut.step, .notificationsSkipped)
     }
 
-    func testFinishFromSkippedCompletesOnboarding() {
+    func testFinishFromSkippedCompletesOnboarding() async throws {
         sut.finishFromNotificationsSkipped()
+        // isCompleting is set immediately; isOnboardingCompleted after delay
+        XCTAssertTrue(sut.isCompleting)
+        try await Task.sleep(for: .milliseconds(700))
         XCTAssertTrue(sut.isOnboardingCompleted)
     }
 
@@ -154,10 +157,13 @@ final class OnboardingViewModelTests: XCTestCase {
 
     // MARK: - Onboarding Completion
 
-    func testCompleteOnboardingSavesSettings() {
+    func testCompleteOnboardingSavesSettings() async throws {
         sut.finishFromNotificationsSkipped()
 
+        // Settings saved immediately (before animation delay)
         XCTAssertTrue(settingsRepo.settings?.onboardingCompleted == true)
+        // isOnboardingCompleted set after delay
+        try await Task.sleep(for: .milliseconds(700))
         XCTAssertTrue(sut.isOnboardingCompleted)
     }
 
@@ -176,5 +182,170 @@ final class OnboardingViewModelTests: XCTestCase {
 
     func testGroupsPopulatedAfterInit() {
         XCTAssertEqual(sut.groups.count, 2)
+    }
+
+    // MARK: - Back Navigation
+
+    func testCanGoBackIsFalseAtStart() {
+        XCTAssertFalse(sut.canGoBack)
+    }
+
+    func testCanGoBackIsTrueAfterFirstTransition() {
+        sut.goToContactsPermission()
+        XCTAssertTrue(sut.canGoBack)
+    }
+
+    func testGoBackReturnsToWelcomeFromContactsPermission() {
+        sut.goToContactsPermission()
+        sut.goBack()
+        XCTAssertEqual(sut.step, .welcome)
+        XCTAssertFalse(sut.canGoBack)
+    }
+
+    func testGoBackTraversesFullHistory() {
+        sut.goToContactsPermission()
+        sut.skipContactsPermission()
+        sut.continueFromContactsRequired()
+
+        XCTAssertEqual(sut.step, .notificationsPermission)
+
+        sut.goBack()
+        XCTAssertEqual(sut.step, .contactsRequired)
+
+        sut.goBack()
+        XCTAssertEqual(sut.step, .contactsPermission)
+
+        sut.goBack()
+        XCTAssertEqual(sut.step, .welcome)
+        XCTAssertFalse(sut.canGoBack)
+    }
+
+    func testGoBackDoesNothingWhenAtStart() {
+        sut.goBack()
+        XCTAssertEqual(sut.step, .welcome)
+    }
+
+    func testGoBackPreservesSelectedContactIds() {
+        sut.goToContactsPermission()
+        sut.selectedContactIds = ["abc", "def"]
+
+        sut.goBack()
+        XCTAssertEqual(sut.step, .welcome)
+        XCTAssertEqual(sut.selectedContactIds, ["abc", "def"])
+    }
+
+    func testStartResetsHistory() {
+        sut.goToContactsPermission()
+        sut.skipContactsPermission()
+        XCTAssertTrue(sut.canGoBack)
+
+        sut.start()
+        XCTAssertFalse(sut.canGoBack)
+        XCTAssertEqual(sut.step, .welcome)
+    }
+
+    func testGoBackFromGroupAssignmentPreservesSelections() {
+        // Test the group assignment → contact picker back path
+        // We verify via the contactsRequired → notifications path instead,
+        // since requestContactsPermission requires real CNContactStore.
+        let contact = ContactSummary(identifier: "abc123", displayName: "Alice", initials: "AL")
+        sut.contacts = [contact]
+        sut.selectedContactIds = ["abc123"]
+
+        sut.goToContactsPermission()
+        sut.skipContactsPermission()
+        sut.continueFromContactsRequired()
+
+        // Selections should still be preserved after navigating
+        XCTAssertTrue(sut.selectedContactIds.contains("abc123"))
+
+        sut.goBack()
+        XCTAssertEqual(sut.step, .contactsRequired)
+        XCTAssertTrue(sut.selectedContactIds.contains("abc123"))
+    }
+
+    // MARK: - Progress
+
+    func testShowsProgressIsFalseAtWelcome() {
+        XCTAssertFalse(sut.showsProgress)
+    }
+
+    func testShowsProgressIsTrueAfterWelcome() {
+        sut.goToContactsPermission()
+        XCTAssertTrue(sut.showsProgress)
+    }
+
+    func testProgressFractionIsZeroAtWelcome() {
+        XCTAssertEqual(sut.progressFraction, 0.0, accuracy: 0.01)
+    }
+
+    func testProgressFractionAtContactsPermission() {
+        sut.goToContactsPermission()
+        XCTAssertEqual(sut.progressFraction, 0.2, accuracy: 0.01)
+    }
+
+    func testProgressAdvancesFromContactsPermissionToContactsRequired() {
+        sut.goToContactsPermission()
+        let permissionProgress = sut.progressFraction
+
+        sut.skipContactsPermission()
+        let requiredProgress = sut.progressFraction
+
+        XCTAssertGreaterThan(requiredProgress, permissionProgress)
+        XCTAssertEqual(requiredProgress, 0.4, accuracy: 0.01)
+    }
+
+    func testProgressAdvancesFromNotificationsPermissionToSkipped() {
+        sut.goToContactsPermission()
+        sut.skipContactsPermission()
+        sut.continueFromContactsRequired()
+        let permissionProgress = sut.progressFraction
+
+        sut.skipNotifications()
+        let skippedProgress = sut.progressFraction
+
+        XCTAssertGreaterThan(skippedProgress, permissionProgress)
+        XCTAssertEqual(skippedProgress, 0.95, accuracy: 0.01)
+    }
+
+    func testProgressAtNotificationsViaSkipPath() {
+        sut.goToContactsPermission()
+        sut.skipContactsPermission()
+        sut.continueFromContactsRequired()
+        XCTAssertEqual(sut.progressFraction, 0.85, accuracy: 0.01)
+    }
+
+    func testProgressAlwaysAdvancesOnForwardNavigation() {
+        var previousFraction = sut.progressFraction
+
+        sut.goToContactsPermission()
+        XCTAssertGreaterThan(sut.progressFraction, previousFraction)
+        previousFraction = sut.progressFraction
+
+        sut.skipContactsPermission()
+        XCTAssertGreaterThan(sut.progressFraction, previousFraction)
+        previousFraction = sut.progressFraction
+
+        sut.continueFromContactsRequired()
+        XCTAssertGreaterThan(sut.progressFraction, previousFraction)
+        previousFraction = sut.progressFraction
+
+        sut.skipNotifications()
+        XCTAssertGreaterThan(sut.progressFraction, previousFraction)
+    }
+
+    // MARK: - Completion Animation
+
+    func testIsCompletingStartsFalse() {
+        XCTAssertFalse(sut.isCompleting)
+    }
+
+    func testCompletionSetsIsCompletingBeforeOnboardingCompleted() {
+        sut.finishFromNotificationsSkipped()
+
+        // isCompleting should be true immediately
+        XCTAssertTrue(sut.isCompleting)
+        // Progress should be 1.0 during completion
+        XCTAssertEqual(sut.progressFraction, 1.0, accuracy: 0.01)
     }
 }
