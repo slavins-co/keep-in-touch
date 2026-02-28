@@ -304,6 +304,13 @@ struct SettingsView: View {
                     Text(option.displayName).tag(option)
                 }
             }
+
+            Toggle(isOn: Binding(
+                get: { viewModel.settings.badgeCountShowDueSoon },
+                set: { viewModel.setBadgeCountShowDueSoon($0) }
+            )) {
+                Text("Include Due Soon in Badge")
+            }
         }
     }
 

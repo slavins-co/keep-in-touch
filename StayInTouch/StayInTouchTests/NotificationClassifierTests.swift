@@ -35,6 +35,39 @@ final class NotificationClassifierTests: XCTestCase {
         XCTAssertTrue(result.overdue.isEmpty)
         XCTAssertTrue(result.allNonCustom.isEmpty)
         XCTAssertEqual(result.allOverdue.count, 1)
+        XCTAssertTrue(result.allDueSoon.isEmpty, "Overdue custom person should not be in allDueSoon")
+    }
+
+    func testDueTodayCountedInAllOverdue() {
+        let groupId = UUID()
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let reference = Date()
+
+        // Exactly at frequency boundary — dueToday, should be in allOverdue
+        // Use consistent reference to avoid sub-second date drift between Date() calls
+        let lastTouch = Calendar.current.date(byAdding: .day, value: -7, to: reference)!
+        var person = makePerson(groupId: groupId, daysAgo: nil)
+        person.lastTouchAt = lastTouch
+        person.groupAddedAt = lastTouch
+
+        let result = NotificationClassifier.classify(people: [person], groups: [group], referenceDate: reference)
+        XCTAssertEqual(result.dueToday.count, 1)
+        XCTAssertEqual(result.allOverdue.count, 1, "dueToday people should be counted in allOverdue for badge")
+    }
+
+    func testCustomBreachTimeDueSoonInAllDueSoon() {
+        let groupId = UUID()
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let reference = Date()
+
+        // 6 days ago = within warning window (7-2=5, so 6 >= 5) → dueSoon
+        var person = makePerson(groupId: groupId, daysAgo: 6)
+        person.customBreachTime = LocalTime(hour: 9, minute: 0)
+
+        let result = NotificationClassifier.classify(people: [person], groups: [group], referenceDate: reference)
+        XCTAssertEqual(result.customOverrides.count, 1)
+        XCTAssertTrue(result.dueSoon.isEmpty, "Custom breach time people excluded from grouped dueSoon")
+        XCTAssertEqual(result.allDueSoon.count, 1, "Custom breach time people should still be in allDueSoon for badge")
     }
 
     func testUnknownLastTouchIsExcluded() {

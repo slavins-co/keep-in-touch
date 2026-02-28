@@ -99,6 +99,7 @@ final class NotificationScheduler {
         guard let settings = settingsRepository.fetch() else { return }
         if !settings.notificationsEnabled {
             await clearAll()
+            try? await UNUserNotificationCenter.current().setBadgeCount(0)
             return
         }
 
@@ -109,7 +110,14 @@ final class NotificationScheduler {
         let people = personRepository.fetchTracked(includePaused: false)
         let classified = NotificationClassifier.classify(people: people, groups: groups, referenceDate: now)
 
-        let badgeCount = classified.allOverdue.count
+        let badgeCount: Int
+        if settings.badgeCountShowDueSoon {
+            badgeCount = classified.allOverdue.count + classified.allDueSoon.count
+        } else {
+            badgeCount = classified.allOverdue.count
+        }
+
+        try? await UNUserNotificationCenter.current().setBadgeCount(badgeCount)
 
         for custom in classified.customOverrides {
             await scheduleCustomTime(person: custom.person, type: custom.type, time: custom.time, badgeCount: badgeCount)
