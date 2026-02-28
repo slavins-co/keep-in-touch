@@ -48,7 +48,7 @@ struct ContactCard: View {
         }
         .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
     }
 
@@ -72,11 +72,11 @@ struct ContactCard: View {
     // MARK: - Accessibility
 
     private var accessibilityDescription: String {
-        var parts: [String] = [person.displayName]
+        var parts: [String] = ["Contact \(person.displayName)"]
 
         switch status {
         case .overdue:
-            parts.append("\(daysOverdue) days overdue")
+            parts.append(daysOverdue > 0 ? "overdue by \(daysOverdue) days" : "overdue")
         case .dueSoon:
             parts.append("due soon")
         case .onTrack:
@@ -85,13 +85,16 @@ struct ContactCard: View {
             parts.append("no contact yet")
         }
 
-        parts.append("last contacted \(timeAgo)")
+        if status != .unknown {
+            parts.append("last contacted \(timeAgo)")
+        }
 
         if let method = lastMethod {
             parts.append("via \(method.rawValue)")
         }
 
         parts.append("\(frequencyName) frequency")
+        parts.append("tap to view details")
 
         return parts.joined(separator: ", ")
     }
