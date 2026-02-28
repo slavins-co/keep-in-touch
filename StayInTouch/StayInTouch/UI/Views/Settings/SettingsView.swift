@@ -305,13 +305,11 @@ struct SettingsView: View {
                 }
             }
 
-            Picker("Badge Count", selection: Binding(
-                get: { viewModel.settings.badgeCountOption },
-                set: { viewModel.setBadgeCountOption($0) }
+            Toggle(isOn: Binding(
+                get: { viewModel.settings.badgeCountShowDueSoon },
+                set: { viewModel.setBadgeCountShowDueSoon($0) }
             )) {
-                ForEach(BadgeCountOption.allCases, id: \.self) { option in
-                    Text(option.displayName).tag(option)
-                }
+                Text("Include Due Soon in Badge")
             }
         }
     }

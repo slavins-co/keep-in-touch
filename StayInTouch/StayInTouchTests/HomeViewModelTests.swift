@@ -164,7 +164,7 @@ final class HomeViewModelTests: XCTestCase {
                 digestDay: .friday,
                 digestTime: LocalTime(hour: 18, minute: 0),
                 notificationGrouping: .perType,
-                badgeCountOption: .overdueOnly,
+                badgeCountShowDueSoon: false,
                 dueSoonWindowDays: 3,
                 demoModeEnabled: false,
                 lastContactsSyncAt: nil,

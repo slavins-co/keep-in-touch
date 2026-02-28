@@ -111,11 +111,10 @@ final class NotificationScheduler {
         let classified = NotificationClassifier.classify(people: people, groups: groups, referenceDate: now)
 
         let badgeCount: Int
-        switch settings.badgeCountOption {
-        case .overdueOnly:
-            badgeCount = classified.allOverdue.count
-        case .overdueAndDueSoon:
+        if settings.badgeCountShowDueSoon {
             badgeCount = classified.allOverdue.count + classified.allDueSoon.count
+        } else {
+            badgeCount = classified.allOverdue.count
         }
 
         try? await UNUserNotificationCenter.current().setBadgeCount(badgeCount)
