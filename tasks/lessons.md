@@ -960,6 +960,202 @@ For multi-issue branches:
 4. Version bump as final separate commit
 5. This makes `git bisect` trivial if a regression appears later
 
+### 2026-02-27 - ⚡ Performance - fetchBatchSize for All Core Data Requests
+
+**What Happened:**
+`CoreDataPersonRepository` had no `fetchBatchSize` on any fetch request, meaning Core Data faulted all matching objects into memory at once.
+
+**Root Cause:**
+Default `fetchBatchSize` of 0 means "fetch everything into memory." For lists with 100+ contacts, this wastes memory faulting objects the user hasn't scrolled to yet.
+
+**Solution:**
+Added `request.fetchBatchSize = 50` to every `NSFetchRequest<PersonEntity>` in the repository. This tells Core Data to fault objects in batches of 50, keeping memory proportional to what's on-screen.
+
+**Prevention Rule:**
+Every `NSFetchRequest` that returns a list (not a single item via `fetchLimit = 1`) should set `fetchBatchSize = 50`. This is a zero-risk optimization — behavior is identical, only memory footprint changes.
+
+### 2026-02-27 - ⚡ Performance - Push Filtering into Core Data Predicates
+
+**What Happened:**
+`fetchOverdue()` loaded ALL tracked people into memory, then filtered in Swift code using `FrequencyCalculator`. This worked for small datasets but wouldn't scale.
+
+**Root Cause:**
+The overdue check requires joining person → group (to get `frequencyDays`), which seems hard to express in a single predicate. The initial implementation took the easy path of filtering in memory.
+
+**Solution:**
+Fetch all groups first (small dataset, ~5 groups), compute per-group cutoff dates, then build a compound OR predicate:
+```swift
+// For each group, compute cutoff = referenceDate - frequencyDays
+// Predicate: (groupId == g1 AND lastTouchAt < cutoff1) OR (groupId == g2 AND lastTouchAt < cutoff2) ...
+```
+This handles the `effectiveLastTouchDate` fallback (groupAddedAt) and snooze filtering entirely at the SQL level.
+
+**Prevention Rule:**
+Before filtering Core Data results in Swift, ask: "Can this be expressed as a compound predicate?" Even complex multi-table logic can often be pushed to SQL by pre-fetching the small lookup table (groups) and building per-key predicates.
+
+### 2026-02-27 - 📊 Data - Export Should Include Human-Readable Names
+
+**What Happened:**
+The data export only included UUIDs for groupId and tagIds, making the JSON unreadable without the app.
+
+**Root Cause:**
+Export was implemented as a direct mapping from the `Person` struct, which stores foreign keys (UUIDs) rather than denormalized names.
+
+**Solution:**
+Added `groupName: String?` and `tagNames: [String]` alongside existing UUID fields. Also added full `touchEvents` array per contact. Backward compatible — existing fields unchanged, new fields added.
+
+**Prevention Rule:**
+Any user-facing data export should be self-contained and human-readable. Include denormalized names alongside foreign keys. Add ISO 8601 date encoding and pretty-printed JSON for readability.
+
+### 2026-02-27 - 🔧 Git - One Branch Per Issue for Multi-Issue Sessions
+
+**What Happened:**
+Implemented 4 issues (#81, #74, #59, #43) in a single session, each on its own branch from main with its own PR.
+
+**Solution:**
+For each issue: checkout main → create branch → implement → build → test → commit → push → PR → back to main. This keeps PRs atomic and reviewable.
+
+**Prevention Rule:**
+When implementing multiple issues in one session:
+1. Start each from fresh `main` (not from a previous feature branch)
+2. One branch per issue: `issue-N/short-description`
+3. Build + test before committing
+4. Create PR, then `git checkout main` before starting next issue
+5. This avoids cross-contamination between unrelated changes
+
+---
+
+### 2026-02-27 - 🏗️ Architecture - NavigationPath for Deep Links
+
+**What Happened:**
+Notification deep links presented PersonDetailView as a `.sheet`, disconnecting from the app's normal NavigationStack flow. Needed to switch to programmatic navigation push.
+
+**Root Cause:**
+Original implementation used `@State private var deepLinkPerson: Person?` with `.sheet(item:)` instead of integrating with the NavigationStack.
+
+**Solution:**
+1. Add `Hashable` conformance to `Person` (based on `id` only — cheap, safe)
+2. Replace `NavigationStack` with `NavigationStack(path: $navigationPath)`
+3. Add `.navigationDestination(for: Person.self)` inside the stack
+4. Deep link handler appends to `navigationPath` instead of setting sheet state
+
+**Prevention Rule:**
+When adding any deep link or programmatic navigation, always use `NavigationPath` + `navigationDestination(for:)` rather than sheets. Sheets are for modal workflows (create/edit), not for navigating to existing content.
+
+---
+
+### 2026-02-27 - 🏗️ Architecture - Backward-Compatible Codable Extensions
+
+**What Happened:**
+Added `touchEvents: [ExportTouchEvent]?` to `ExportPerson` struct for import feature. Needed to ensure existing exported JSON files (without this field) still decode correctly.
+
+**Root Cause:**
+Codable structs fail to decode if a non-optional field is missing from the JSON.
+
+**Solution:**
+Made the new field optional (`let touchEvents: [ExportTouchEvent]?`). Swift's `Codable` automatically treats missing optional keys as `nil` during decoding. Existing export tests continued passing without changes.
+
+**Prevention Rule:**
+When extending `Codable` types that have existing serialized data (files, APIs), always make new fields optional. This ensures backward compatibility with data written by older versions.
+
+---
+
+### 2026-02-27 - 📊 Data - Security-Scoped URLs from File Picker
+
+**What Happened:**
+`fileImporter` returns security-scoped URLs that require explicit access grants before reading.
+
+**Solution:**
+```swift
+guard url.startAccessingSecurityScopedResource() else { return nil }
+defer { url.stopAccessingSecurityScopedResource() }
+let data = try Data(contentsOf: url)
+```
+
+**Prevention Rule:**
+Always wrap `fileImporter` URL access with `startAccessingSecurityScopedResource()` / `stopAccessingSecurityScopedResource()`. Without this, file reads silently fail on device (may work in simulator).
+
+---
+
+### 2026-02-27 - 📊 Data - Contact Photos: On-Demand with NSCache
+
+**What Happened:**
+Needed to display contact photos without storing image data in Core Data (same principle as phone/email).
+
+**Solution:**
+- `ContactsFetcher.fetchThumbnailImageData(identifier:)` returns `Data?` — nil on any permission issue or missing photo (no throw for optional enhancement)
+- `NSCache<NSString, UIImage>` singleton in `ContactPhotoCache` for scroll performance
+- SwiftUI `.task(id: cnIdentifier)` for async load with automatic cancellation
+- Use `CNContactThumbnailImageDataKey` (pre-resized ~60x60pt by system, much smaller than full image)
+
+**Prevention Rule:**
+For any CNContact data displayed in UI: fetch on-demand, cache in memory (NSCache), never persist in Core Data. This prevents sync drift and keeps database lean.
+
+---
+
+### 2026-02-27 - 📊 Data - CNLabeledValue Label Extraction
+
+**What Happened:**
+Contact phone numbers and emails come as `CNLabeledValue` arrays. Labels are system constants (e.g., `_$!<Mobile>!$_`) that need human-readable conversion.
+
+**Solution:**
+```swift
+let label = CNLabeledValue<NSString>.localizedString(forLabel: labeled.label ?? "")
+```
+
+**Prevention Rule:**
+Always use `CNLabeledValue.localizedString(forLabel:)` to convert CNContact labels to display strings. Never display raw label constants to users.
+
+---
+
+### 2026-02-27 - 🏗️ Architecture - History Stack for Branching Navigation
+
+**What Happened:**
+Onboarding flow branches (contactsPermission → contactsRequired OR contactPicker), so "previous step" can't be computed from current step alone.
+
+**Solution:**
+- `private(set) var stepHistory: [Step] = []` — records actual path
+- `pushAndNavigate(to:)` appends current step to history before transitioning
+- `goBack()` pops from history
+- All forward navigation methods refactored to use `pushAndNavigate(to:)` — single point of control
+
+**Prevention Rule:**
+For any multi-step flow with branching paths, use a history stack pattern (not step arithmetic). The history records what actually happened, not what could have happened.
+
+---
+
+### 2026-02-27 - ✅ Testing - Test Through Public API Only
+
+**What Happened:**
+Tried to write a test that set `sut.stepHistory` directly, but it was `private(set)`. Had to rewrite to drive through public methods instead.
+
+**Solution:**
+Rewrote test to navigate forward through public methods (`goToContactsPermission()`, `skipContactsPermission()`, etc.), then test `goBack()` behavior. Tests that exercise the actual navigation path are more meaningful than those that manipulate internal state.
+
+**Prevention Rule:**
+Always write tests that exercise the public API, not internal state. If you can't set up the state through public methods, the test scenario may not be reachable in practice.
+
+### 2026-02-27 - 🔔 Notifications - App Icon Badge Requires Direct setBadgeCount() Call
+
+**What Happened:**
+Badge count setting (overdue only vs overdue + due soon) appeared to have no effect. Simulator always showed badge 1; personal device showed no badge at all.
+
+**Root Cause:**
+`NotificationScheduler.scheduleAll()` only set badge via `content.badge` on notification objects — this value only takes effect when iOS delivers the notification. No code called `UNUserNotificationCenter.current().setBadgeCount()` directly. Additionally, `AppDelegate.applicationWillEnterForeground` cleared badge to 0 unconditionally, and the subsequent `scheduleAll()` only embedded badge in future notifications.
+
+Secondary issues: `NotificationClassifier` had asymmetric badge counting — `allOverdue` included custom breach time people but `dueSoon` excluded them. Also `.dueToday` (exactly at SLA boundary) wasn't counted in `allOverdue` despite the home screen showing them as overdue.
+
+**Solution:**
+1. Added `setBadgeCount(badgeCount)` directly in `scheduleAll()` after calculating the count
+2. Removed unconditional `setBadgeCount(0)` from `applicationWillEnterForeground` — `scheduleAll()` now sets the correct count
+3. Added `allDueSoon` array to `NotificationClassifier` (parallel to `allOverdue`) for symmetric badge counting
+4. Included `.dueToday` in `allOverdue` to match `FrequencyCalculator`'s definition
+
+**Prevention Rule:**
+- `content.badge` on notifications only applies when the notification fires — always call `setBadgeCount()` directly for immediate badge updates
+- Badge count arrays must be symmetric: if `allOverdue` includes custom breach time people, `allDueSoon` must too
+- When the classifier and calculator disagree on boundary conditions (e.g., `>` vs `>=`), badge counts will diverge from the home screen — keep them aligned
+
 ---
 
 ## Historical Lessons

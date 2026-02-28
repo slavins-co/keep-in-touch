@@ -101,6 +101,7 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
             customBreachTime: nil,
             snoozedUntil: nil,
             contactUnavailable: false,
+            isDemoData: false,
             groupAddedAt: Date(),
             createdAt: Date(),
             modifiedAt: Date(),
