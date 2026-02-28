@@ -34,6 +34,7 @@ final class HomeViewModel: ObservableObject {
     private let tagRepository: TagRepository
     private let settingsRepository: AppSettingsRepository
     private var searchTask: Task<Void, Never>?
+    private var isSyncing = false
 
     init(
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
@@ -73,6 +74,10 @@ final class HomeViewModel: ObservableObject {
     }
 
     func refreshFromContacts() async {
+        guard !isSyncing else { return }
+        isSyncing = true
+        defer { isSyncing = false }
+
         let summaries = await Task.detached {
             do {
                 return try ContactsFetcher.fetchAll()
@@ -88,25 +93,27 @@ final class HomeViewModel: ObservableObject {
 
         await backgroundContext.perform {
             let people = repo.fetchTracked(includePaused: true)
+            var updated: [Person] = []
             for person in people {
                 guard let cnId = person.cnIdentifier, let summary = byId[cnId] else { continue }
-                var updated = person
-                updated.displayName = summary.displayName
-                updated.initials = summary.initials
-                updated.modifiedAt = Date()
+                var p = person
+                p.displayName = summary.displayName
+                p.initials = summary.initials
+                p.modifiedAt = Date()
+                updated.append(p)
+            }
+            if !updated.isEmpty {
                 do {
-                    try repo.save(updated)
+                    try repo.batchSave(updated)
                 } catch {
                     AppLogger.logError(error, category: AppLogger.viewModel, context: "HomeViewModel.refreshFromContacts")
                 }
             }
         }
 
-        // Ensure UI updates happen on main thread
-        await MainActor.run {
-            allPeople = personRepository.fetchTracked(includePaused: false)
-            applyFilters()
-        }
+        // Force viewContext to pick up background changes before reloading
+        CoreDataStack.shared.viewContext.refreshAllObjects()
+        load()
     }
 
     func applyFilters() {
