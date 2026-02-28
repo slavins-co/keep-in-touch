@@ -51,7 +51,9 @@ struct SettingsView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Settings")
         .sheet(item: $shareItem) { item in
-            ShareSheet(items: [item.url])
+            ShareSheet(items: [item.url]) {
+                try? FileManager.default.removeItem(at: item.url)
+            }
         }
         .sheet(isPresented: $showBreachTimePicker) {
             timePickerSheet(
