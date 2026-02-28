@@ -48,6 +48,8 @@ struct ContactCard: View {
         }
         .padding(.vertical, DS.Spacing.md)
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityDescription)
     }
 
     private var metadataRow: some View {
@@ -65,5 +67,32 @@ struct ContactCard: View {
         .font(DS.Typography.metadata)
         .foregroundStyle(DS.Colors.secondaryText)
         .lineLimit(1)
+    }
+
+    // MARK: - Accessibility
+
+    private var accessibilityDescription: String {
+        var parts: [String] = [person.displayName]
+
+        switch status {
+        case .overdue:
+            parts.append("\(daysOverdue) days overdue")
+        case .dueSoon:
+            parts.append("due soon")
+        case .onTrack:
+            parts.append("on track")
+        case .unknown:
+            parts.append("no contact yet")
+        }
+
+        parts.append("last contacted \(timeAgo)")
+
+        if let method = lastMethod {
+            parts.append("via \(method.rawValue)")
+        }
+
+        parts.append("\(frequencyName) frequency")
+
+        return parts.joined(separator: ", ")
     }
 }
