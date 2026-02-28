@@ -371,6 +371,10 @@ struct SettingsView: View {
                 }
             }
 
+            if viewModel.contactAccessLimited {
+                LimitedContactsAccessBanner()
+            }
+
             Button(role: .destructive) {
                 showResetFrequenciesConfirmation = true
             } label: {

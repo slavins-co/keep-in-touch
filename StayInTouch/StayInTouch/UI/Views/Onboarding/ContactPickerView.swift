@@ -35,6 +35,11 @@ struct ContactPickerView: View {
                 .textFieldStyle(.roundedBorder)
                 .padding(.horizontal)
 
+            if viewModel.contactsAccessLimited {
+                LimitedContactsAccessBanner()
+                    .padding(.horizontal)
+            }
+
             ScrollViewReader { proxy in
                 HStack(spacing: 0) {
                     ScrollView {

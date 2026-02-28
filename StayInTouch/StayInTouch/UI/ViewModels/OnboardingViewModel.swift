@@ -48,6 +48,7 @@ final class OnboardingViewModel: ObservableObject {
     @Published var selectedContactIds: Set<String> = []
     @Published var searchText = ""
     @Published var useDemoData = false
+    @Published var contactsAccessLimited = false
 
     @Published var groups: [Group] = []
     @Published var selectedGroupId: UUID?
@@ -196,6 +197,7 @@ final class OnboardingViewModel: ObservableObject {
         }.value
 
         contacts = result
+        contactsAccessLimited = ContactsFetcher.isAccessLimited
     }
 
     private func importSelectedContacts() async {

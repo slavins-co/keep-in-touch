@@ -49,6 +49,7 @@ final class SettingsViewModel: ObservableObject {
         groupsCount = allGroups.count
         tagsCount = tagRepository.fetchAll().count
         pausedCount = personRepository.fetchTracked(includePaused: true).filter { $0.isPaused }.count
+        contactAccessLimited = ContactsFetcher.isAccessLimited
     }
 
     func setTheme(_ theme: Theme) {

@@ -61,6 +61,13 @@ enum ContactsFetcher {
         var email: String? { emailAddresses.first?.value }
     }
 
+    static var isAccessLimited: Bool {
+        if #available(iOS 18.0, *) {
+            return CNContactStore.authorizationStatus(for: .contacts) == .limited
+        }
+        return false
+    }
+
     static func requestAccess() async -> Bool {
         let store = CNContactStore()
         return await withCheckedContinuation { continuation in
