@@ -245,7 +245,12 @@ final class OnboardingViewModel: ObservableObject {
                 sortOrder += 1
             }
 
-            try? repo.batchSave(personsToSave)
+            do {
+                try repo.batchSave(personsToSave)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "OnboardingViewModel.importContacts")
+                ErrorToastManager.shared.show(.saveFailed("Onboarding"))
+            }
         }
     }
 
@@ -261,14 +266,24 @@ final class OnboardingViewModel: ObservableObject {
     private func updateNotificationsEnabled(_ enabled: Bool) {
         guard var settings else { return }
         settings.notificationsEnabled = enabled
-        try? settingsRepository.save(settings)
+        do {
+            try settingsRepository.save(settings)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "OnboardingViewModel.updateNotificationsEnabled")
+            ErrorToastManager.shared.show(.saveFailed("Onboarding"))
+        }
         self.settings = settings
     }
 
     private func seedDemoData() {
         guard var settings else { return }
         settings.demoModeEnabled = true
-        try? settingsRepository.save(settings)
+        do {
+            try settingsRepository.save(settings)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "OnboardingViewModel.seedDemoData")
+            ErrorToastManager.shared.show(.saveFailed("Onboarding"))
+        }
         self.settings = settings
 
         let backgroundContext = coreDataStack.newBackgroundContext()
@@ -282,7 +297,12 @@ final class OnboardingViewModel: ObservableObject {
         AnalyticsService.track("onboarding.completed")
         guard var settings else { return }
         settings.onboardingCompleted = true
-        try? settingsRepository.save(settings)
+        do {
+            try settingsRepository.save(settings)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "OnboardingViewModel.completeOnboarding")
+            ErrorToastManager.shared.show(.saveFailed("Onboarding"))
+        }
         self.settings = settings
 
         // Phase 1: Fill progress bar to 100%

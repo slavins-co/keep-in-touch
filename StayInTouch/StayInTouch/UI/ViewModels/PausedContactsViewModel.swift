@@ -31,7 +31,12 @@ final class PausedContactsViewModel: ObservableObject {
             updated.lastTouchAt = lastTouchAt
         }
         updated.modifiedAt = Date()
-        try? personRepository.save(updated)
+        do {
+            try personRepository.save(updated)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "PausedContactsViewModel.resume")
+            ErrorToastManager.shared.show(.saveFailed("PausedContacts"))
+        }
         NotificationCenter.default.post(name: .personDidChange, object: updated.id)
     }
 

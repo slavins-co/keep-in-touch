@@ -43,7 +43,12 @@ final class ManageTagsViewModel: ObservableObject {
     func save(_ tag: Tag) {
         var updated = tag
         updated.modifiedAt = Date()
-        try? tagRepository.save(updated)
+        do {
+            try tagRepository.save(updated)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageTagsViewModel.save")
+            ErrorToastManager.shared.show(.saveFailed("ManageTags"))
+        }
         load()
     }
 
@@ -51,7 +56,12 @@ final class ManageTagsViewModel: ObservableObject {
         // Remove tag references from persons first, then delete entity
         // This order prevents orphaned tagId references on crash
         removeTagFromPeople(tagId: tag.id)
-        try? tagRepository.delete(id: tag.id)
+        do {
+            try tagRepository.delete(id: tag.id)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageTagsViewModel.delete")
+            ErrorToastManager.shared.show(.deleteFailed("ManageTags"))
+        }
         load()
     }
 
@@ -61,7 +71,12 @@ final class ManageTagsViewModel: ObservableObject {
             var updated = person
             updated.tagIds = updated.tagIds.filter { $0 != tagId }
             updated.modifiedAt = Date()
-            try? personRepository.save(updated)
+            do {
+                try personRepository.save(updated)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageTagsViewModel.removeTagFromPeople")
+                ErrorToastManager.shared.show(.saveFailed("ManageTags"))
+            }
         }
     }
 }
