@@ -117,9 +117,15 @@ final class SettingsViewModel: ObservableObject {
                 seeder.seedIfNeeded()
             } else {
                 let repo = CoreDataPersonRepository(context: backgroundContext)
+                let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
                 let demoPeople = repo.fetchAll().filter { $0.isDemoData }
                 for person in demoPeople {
                     do {
+                        // Cascade: delete TouchEvents before Person
+                        let events = touchRepo.fetchAll(for: person.id)
+                        for event in events {
+                            try touchRepo.delete(id: event.id)
+                        }
                         try repo.delete(id: person.id)
                     } catch {
                         AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.updateDemoData")

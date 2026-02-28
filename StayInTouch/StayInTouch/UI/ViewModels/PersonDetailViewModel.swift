@@ -291,6 +291,11 @@ final class PersonDetailViewModel: ObservableObject {
 
     func deletePerson() {
         do {
+            // Cascade: delete all TouchEvents for this person first
+            let events = touchRepository.fetchAll(for: person.id)
+            for event in events {
+                try touchRepository.delete(id: event.id)
+            }
             try personRepository.delete(id: person.id)
             NotificationCenter.default.post(name: .personDidChange, object: person.id)
         } catch {

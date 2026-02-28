@@ -242,6 +242,30 @@ final class PersonDetailViewModelTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
+    func testDeletePersonCascadesDeletesTouchEvents() {
+        let event1 = TestFactory.makeTouchEvent(personId: person.id, method: .call)
+        let event2 = TestFactory.makeTouchEvent(personId: person.id, method: .text)
+        let event3 = TestFactory.makeTouchEvent(personId: person.id, method: .email)
+        touchRepo.events = [event1, event2, event3]
+
+        sut.deletePerson()
+
+        XCTAssertTrue(touchRepo.deletedIds.contains(event1.id))
+        XCTAssertTrue(touchRepo.deletedIds.contains(event2.id))
+        XCTAssertTrue(touchRepo.deletedIds.contains(event3.id))
+        XCTAssertEqual(touchRepo.deletedIds.count, 3, "All 3 touch events should be cascade deleted")
+        XCTAssertTrue(personRepo.deletedIds.contains(person.id), "Person should also be deleted")
+    }
+
+    func testDeletePersonWithNoTouchEventsStillDeletesPerson() {
+        touchRepo.events = []
+
+        sut.deletePerson()
+
+        XCTAssertTrue(touchRepo.deletedIds.isEmpty, "No touch events to delete")
+        XCTAssertTrue(personRepo.deletedIds.contains(person.id), "Person should still be deleted")
+    }
+
     // MARK: - Tags
 
     func testAddTagAppendsToTagIds() {

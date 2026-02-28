@@ -48,8 +48,10 @@ final class ManageTagsViewModel: ObservableObject {
     }
 
     func delete(tag: Tag) {
-        try? tagRepository.delete(id: tag.id)
+        // Remove tag references from persons first, then delete entity
+        // This order prevents orphaned tagId references on crash
         removeTagFromPeople(tagId: tag.id)
+        try? tagRepository.delete(id: tag.id)
         load()
     }
 
