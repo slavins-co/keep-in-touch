@@ -45,7 +45,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             return
         }
 
-        DeepLinkRouter.shared.handleNotification(userInfo: userInfo)
+        // Only forward known fields to prevent untrusted data propagation
+        let sanitized: [AnyHashable: Any] = [
+            "type": userInfo["type"] as? String ?? "",
+            "personId": userInfo["personId"] as? String ?? "",
+            "category": userInfo["category"] as? String ?? ""
+        ]
+        DeepLinkRouter.shared.handleNotification(userInfo: sanitized)
         completionHandler()
     }
 
