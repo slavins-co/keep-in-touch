@@ -24,6 +24,21 @@ final class OnboardingViewModel: ObservableObject {
     @Published var isLoading = true
     @Published var isOnboardingCompleted = false
     @Published var step: Step = .welcome
+    private(set) var stepHistory: [Step] = []
+
+    var canGoBack: Bool { !stepHistory.isEmpty }
+
+    var progressFraction: Double {
+        let position: Double
+        switch step {
+        case .welcome: position = 0
+        case .contactsPermission, .contactsRequired: position = 1
+        case .contactPicker: position = 2
+        case .groupAssignment: position = 3
+        case .notificationsPermission, .notificationsSkipped: position = 4
+        }
+        return position / 5.0
+    }
 
     @Published var contacts: [ContactSummary] = []
     @Published var selectedContactIds: Set<String> = []
@@ -62,24 +77,30 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     func start() {
+        stepHistory = []
         step = .welcome
     }
 
+    func goBack() {
+        guard let previousStep = stepHistory.popLast() else { return }
+        step = previousStep
+    }
+
     func goToContactsPermission() {
-        step = .contactsPermission
+        pushAndNavigate(to: .contactsPermission)
     }
 
     func skipContactsPermission() {
-        step = .contactsRequired
+        pushAndNavigate(to: .contactsRequired)
     }
 
     func requestContactsPermission() async {
         let granted = await ContactsFetcher.requestAccess()
         if granted {
             await loadContacts()
-            step = .contactPicker
+            pushAndNavigate(to: .contactPicker)
         } else {
-            step = .contactsRequired
+            pushAndNavigate(to: .contactsRequired)
         }
     }
 
@@ -87,7 +108,7 @@ final class OnboardingViewModel: ObservableObject {
         let granted = await ContactsFetcher.requestAccess()
         if granted {
             await loadContacts()
-            step = .contactPicker
+            pushAndNavigate(to: .contactPicker)
         }
     }
 
@@ -95,7 +116,7 @@ final class OnboardingViewModel: ObservableObject {
         if useDemoData {
             seedDemoData()
         }
-        step = .notificationsPermission
+        pushAndNavigate(to: .notificationsPermission)
     }
 
     func toggleSelection(for contactId: String) {
@@ -108,18 +129,18 @@ final class OnboardingViewModel: ObservableObject {
 
     func continueFromContactPicker() {
         if selectedContactIds.isEmpty {
-            step = .notificationsPermission
+            pushAndNavigate(to: .notificationsPermission)
             return
         }
 
         seedGroupSelectionsIfNeeded()
-        step = .groupAssignment
+        pushAndNavigate(to: .groupAssignment)
     }
 
     func continueFromGroupAssignment() {
         Task {
             await importSelectedContacts()
-            step = .notificationsPermission
+            pushAndNavigate(to: .notificationsPermission)
         }
     }
 
@@ -136,16 +157,21 @@ final class OnboardingViewModel: ObservableObject {
         if granted {
             completeOnboarding()
         } else {
-            step = .notificationsSkipped
+            pushAndNavigate(to: .notificationsSkipped)
         }
     }
 
     func skipNotifications() {
-        step = .notificationsSkipped
+        pushAndNavigate(to: .notificationsSkipped)
     }
 
     func finishFromNotificationsSkipped() {
         completeOnboarding()
+    }
+
+    private func pushAndNavigate(to newStep: Step) {
+        stepHistory.append(step)
+        step = newStep
     }
 
     private func loadSettingsAndGroups() {
