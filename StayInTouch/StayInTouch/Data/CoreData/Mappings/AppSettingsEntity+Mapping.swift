@@ -21,6 +21,7 @@ extension AppSettingsEntity {
             badgeCountShowDueSoon: badgeCountShowDueSoon,
             dueSoonWindowDays: Int(dueSoonWindowDays),
             demoModeEnabled: demoModeEnabled,
+            analyticsEnabled: analyticsEnabled,
             lastContactsSyncAt: lastContactsSyncAt,
             onboardingCompleted: onboardingCompleted,
             appVersion: appVersion ?? ""
@@ -39,6 +40,7 @@ extension AppSettingsEntity {
         badgeCountShowDueSoon = settings.badgeCountShowDueSoon
         dueSoonWindowDays = Int64(settings.dueSoonWindowDays)
         demoModeEnabled = settings.demoModeEnabled
+        analyticsEnabled = settings.analyticsEnabled
         lastContactsSyncAt = settings.lastContactsSyncAt
         onboardingCompleted = settings.onboardingCompleted
         appVersion = settings.appVersion

@@ -43,6 +43,7 @@ struct SettingsView: View {
             tagsSection
             notificationsSection
             dataSection
+            privacySection
             pausedSection
             advancedSection
             aboutSection
@@ -387,6 +388,21 @@ struct SettingsView: View {
             } message: {
                 Text("Been away for a while? No worries \u{2014} this resets the clock on all your contacts so everything starts clean from today. Your touch history, groups, and frequencies are all preserved.")
             }
+        }
+    }
+
+    private var privacySection: some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { viewModel.settings.analyticsEnabled },
+                set: { viewModel.setAnalyticsEnabled($0) }
+            )) {
+                Label("Anonymous Usage Analytics", systemImage: "shield.checkered")
+            }
+        } header: {
+            Text("Privacy")
+        } footer: {
+            Text("Your relationship data never leaves your phone. Anonymous usage statistics help us improve the app.")
         }
     }
 

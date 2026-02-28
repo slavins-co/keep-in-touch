@@ -14,6 +14,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        AnalyticsService.initialize()
+        AnalyticsService.track("app.launched")
         ContactsChangeObserver.shared.start()
         NotificationScheduler.shared.startObserving()
         UNUserNotificationCenter.current().delegate = self
@@ -23,6 +25,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
+        AnalyticsService.track("app.foregrounded")
         Task { await NotificationScheduler.shared.scheduleAll() }
     }
 
@@ -31,6 +34,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        AnalyticsService.track("notification.tapped")
         let userInfo = response.notification.request.content.userInfo
 
         if response.actionIdentifier == NotificationIdentifier.actionLogConnection,

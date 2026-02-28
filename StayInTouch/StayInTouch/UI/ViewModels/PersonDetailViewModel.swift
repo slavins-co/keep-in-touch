@@ -42,6 +42,7 @@ final class PersonDetailViewModel: ObservableObject {
         self.tagRepository = tagRepository
         self.touchRepository = touchRepository
         load()
+        AnalyticsService.track("person.viewed")
     }
 
     func load() {
@@ -117,6 +118,7 @@ final class PersonDetailViewModel: ObservableObject {
         var updated = person
         updated.isPaused.toggle()
         updated.modifiedAt = Date()
+        AnalyticsService.track(updated.isPaused ? "person.paused" : "person.resumed")
         savePerson(updated)
     }
 
@@ -142,6 +144,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func snooze(until date: Date) {
+        AnalyticsService.track("person.snoozed")
         var updated = person
         updated.snoozedUntil = date
         updated.modifiedAt = Date()
@@ -213,6 +216,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func logTouch(method: TouchMethod, notes: String?, date: Date, timeOfDay: TimeOfDay? = nil) {
+        AnalyticsService.track("connection.logged", parameters: ["method": method.rawValue])
         let now = date
         let touch = TouchEvent(
             id: UUID(),
@@ -267,6 +271,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func deleteTouch(_ touch: TouchEvent) {
+        AnalyticsService.track("connection.deleted")
         do {
             try touchRepository.delete(id: touch.id)
         } catch {
@@ -290,6 +295,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func deletePerson() {
+        AnalyticsService.track("person.deleted")
         do {
             // Cascade: delete all TouchEvents for this person first
             let events = touchRepository.fetchAll(for: person.id)

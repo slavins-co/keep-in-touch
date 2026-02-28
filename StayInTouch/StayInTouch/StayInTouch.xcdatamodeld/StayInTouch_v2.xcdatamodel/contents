@@ -64,6 +64,7 @@
         <attribute name="badgeCountShowDueSoon" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="dueSoonWindowDays" optional="NO" attributeType="Integer 64" usesScalarValueType="YES"/>
         <attribute name="demoModeEnabled" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="analyticsEnabled" optional="YES" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
         <attribute name="lastContactsSyncAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="onboardingCompleted" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="appVersion" optional="NO" attributeType="String"/>

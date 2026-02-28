@@ -91,6 +91,7 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     func goToContactsPermission() {
+        AnalyticsService.track("onboarding.started")
         pushAndNavigate(to: .contactsPermission)
     }
 
@@ -101,9 +102,11 @@ final class OnboardingViewModel: ObservableObject {
     func requestContactsPermission() async {
         let granted = await ContactsFetcher.requestAccess()
         if granted {
+            AnalyticsService.track("onboarding.contacts.granted")
             await loadContacts()
             pushAndNavigate(to: .contactPicker)
         } else {
+            AnalyticsService.track("onboarding.contacts.denied")
             pushAndNavigate(to: .contactsRequired)
         }
     }
@@ -132,6 +135,7 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     func continueFromContactPicker() {
+        AnalyticsService.track("onboarding.contacts.selected", parameters: ["count": String(selectedContactIds.count)])
         if selectedContactIds.isEmpty {
             pushAndNavigate(to: .notificationsPermission)
             return
@@ -275,6 +279,7 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     private func completeOnboarding() {
+        AnalyticsService.track("onboarding.completed")
         guard var settings else { return }
         settings.onboardingCompleted = true
         try? settingsRepository.save(settings)

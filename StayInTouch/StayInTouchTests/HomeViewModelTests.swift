@@ -167,6 +167,7 @@ final class HomeViewModelTests: XCTestCase {
                 badgeCountShowDueSoon: false,
                 dueSoonWindowDays: 3,
                 demoModeEnabled: false,
+                analyticsEnabled: true,
                 lastContactsSyncAt: nil,
                 onboardingCompleted: false,
                 appVersion: ""

@@ -52,11 +52,13 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func setTheme(_ theme: Theme) {
+        AnalyticsService.track("settings.theme.changed", parameters: ["theme": theme.rawValue])
         settings.theme = theme
         save()
     }
 
     func setNotificationsEnabled(_ enabled: Bool) async {
+        AnalyticsService.track("settings.notifications.toggled", parameters: ["enabled": String(enabled)])
         if enabled {
             let granted = await requestNotificationsPermission()
             if granted {
@@ -101,6 +103,12 @@ final class SettingsViewModel: ObservableObject {
     func setBadgeCountShowDueSoon(_ enabled: Bool) {
         settings.badgeCountShowDueSoon = enabled
         save()
+    }
+
+    func setAnalyticsEnabled(_ enabled: Bool) {
+        settings.analyticsEnabled = enabled
+        save()
+        AnalyticsService.track("settings.analytics.toggled", parameters: ["enabled": String(enabled)])
     }
 
     func setDemoModeEnabled(_ enabled: Bool) {
@@ -576,6 +584,7 @@ struct AppSettingsDefaults {
             badgeCountShowDueSoon: false,
             dueSoonWindowDays: 3,
             demoModeEnabled: false,
+            analyticsEnabled: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""

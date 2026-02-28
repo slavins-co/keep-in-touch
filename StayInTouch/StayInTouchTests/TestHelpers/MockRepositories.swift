@@ -246,6 +246,7 @@ enum TestFactory {
             badgeCountShowDueSoon: false,
             dueSoonWindowDays: 3,
             demoModeEnabled: demoModeEnabled,
+            analyticsEnabled: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: onboardingCompleted,
             appVersion: ""
