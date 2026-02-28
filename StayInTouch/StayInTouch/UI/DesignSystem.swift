@@ -130,6 +130,21 @@ struct StatusIndicator: View {
                 .fill(DS.Colors.statusColor(for: status))
                 .frame(width: 7, height: 7)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(statusAccessibilityLabel)
+    }
+
+    private var statusAccessibilityLabel: String {
+        switch status {
+        case .overdue:
+            return daysOverdue > 0 ? "\(daysOverdue) days overdue" : "overdue"
+        case .dueSoon:
+            return "due soon"
+        case .onTrack:
+            return "on track"
+        case .unknown:
+            return "no contact yet"
+        }
     }
 }
 

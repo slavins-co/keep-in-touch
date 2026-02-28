@@ -40,6 +40,8 @@ struct ContactListSection: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("\(title), \(people.count) contacts")
+            .accessibilityHint(isCollapsed ? "Expands section" : "Collapses section")
 
             if !isCollapsed {
                 VStack(spacing: 0) {
@@ -60,6 +62,7 @@ struct ContactListSection: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityHint("Opens contact details")
 
                         if index < people.count - 1 {
                             SubtleDivider()
