@@ -50,12 +50,22 @@ final class ManageGroupsViewModel: ObservableObject {
                 var cleared = existing
                 cleared.isDefault = false
                 cleared.modifiedAt = Date()
-                try? groupRepository.save(cleared)
+                do {
+                    try groupRepository.save(cleared)
+                } catch {
+                    AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save.clearDefault")
+                    ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
+                }
             }
             updated.isDefault = true
         }
 
-        try? groupRepository.save(updated)
+        do {
+            try groupRepository.save(updated)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save")
+            ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
+        }
         load()
     }
 
@@ -65,7 +75,12 @@ final class ManageGroupsViewModel: ObservableObject {
             ?? groups.first(where: { $0.id != group.id }) {
             movePeople(from: group, to: fallback)
         }
-        try? groupRepository.delete(id: group.id)
+        do {
+            try groupRepository.delete(id: group.id)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.delete")
+            ErrorToastManager.shared.show(.deleteFailed("ManageGroups"))
+        }
         load()
     }
 
@@ -76,7 +91,12 @@ final class ManageGroupsViewModel: ObservableObject {
             updated.groupId = defaultGroup.id
             updated.groupAddedAt = Date()
             updated.modifiedAt = Date()
-            try? personRepository.save(updated)
+            do {
+                try personRepository.save(updated)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.movePeople")
+                ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
+            }
         }
     }
 

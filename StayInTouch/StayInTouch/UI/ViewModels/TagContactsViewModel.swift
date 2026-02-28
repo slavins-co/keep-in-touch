@@ -33,7 +33,12 @@ final class TagContactsViewModel: ObservableObject {
         var updated = person
         updated.tagIds = updated.tagIds.filter { $0 != tag.id }
         updated.modifiedAt = Date()
-        try? personRepository.save(updated)
+        do {
+            try personRepository.save(updated)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "TagContactsViewModel.removeTag")
+            ErrorToastManager.shared.show(.saveFailed("TagContacts"))
+        }
         NotificationCenter.default.post(name: .personDidChange, object: updated.id)
         load()
     }
@@ -45,7 +50,12 @@ final class TagContactsViewModel: ObservableObject {
                 updated.tagIds.append(tag.id)
             }
             updated.modifiedAt = Date()
-            try? personRepository.save(updated)
+            do {
+                try personRepository.save(updated)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "TagContactsViewModel.addTag")
+                ErrorToastManager.shared.show(.saveFailed("TagContacts"))
+            }
             NotificationCenter.default.post(name: .personDidChange, object: updated.id)
         }
         load()
