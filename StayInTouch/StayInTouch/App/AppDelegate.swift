@@ -45,7 +45,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             return
         }
 
-        NotificationCenter.default.post(name: .notificationDeepLink, object: nil, userInfo: userInfo)
+        DeepLinkRouter.shared.handleNotification(userInfo: userInfo)
         completionHandler()
     }
 

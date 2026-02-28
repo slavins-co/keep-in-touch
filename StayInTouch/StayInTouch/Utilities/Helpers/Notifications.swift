@@ -11,6 +11,5 @@ extension Notification.Name {
     static let personDidChange = Notification.Name("personDidChange")
     static let settingsDidChange = Notification.Name("settingsDidChange")
     static let contactsDidSync = Notification.Name("contactsDidSync")
-    static let notificationDeepLink = Notification.Name("notificationDeepLink")
     static let coreDataMigrationFailed = Notification.Name("coreDataMigrationFailed")
 }
