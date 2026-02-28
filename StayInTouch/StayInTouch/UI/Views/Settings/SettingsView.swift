@@ -371,7 +371,7 @@ struct SettingsView: View {
                 }
             }
 
-            if viewModel.contactAccessLimited {
+            if viewModel.showLimitedAccessBanner {
                 LimitedContactsAccessBanner()
             }
 

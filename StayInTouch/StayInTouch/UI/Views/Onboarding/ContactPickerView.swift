@@ -35,7 +35,7 @@ struct ContactPickerView: View {
                 .textFieldStyle(.roundedBorder)
                 .padding(.horizontal)
 
-            if viewModel.contactsAccessLimited {
+            if viewModel.contactAccessLimited {
                 LimitedContactsAccessBanner()
                     .padding(.horizontal)
             }

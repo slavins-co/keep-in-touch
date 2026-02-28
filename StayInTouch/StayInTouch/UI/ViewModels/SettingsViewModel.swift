@@ -20,6 +20,7 @@ final class SettingsViewModel: ObservableObject {
     @Published var pendingNewContacts: [ContactSummary] = []
     @Published var contactAccessDenied = false
     @Published var contactAccessLimited = false
+    @Published var showLimitedAccessBanner = false
 
     private let settingsRepository: AppSettingsRepository
     private let groupRepository: GroupRepository
@@ -49,7 +50,7 @@ final class SettingsViewModel: ObservableObject {
         groupsCount = allGroups.count
         tagsCount = tagRepository.fetchAll().count
         pausedCount = personRepository.fetchTracked(includePaused: true).filter { $0.isPaused }.count
-        contactAccessLimited = ContactsFetcher.isAccessLimited
+        showLimitedAccessBanner = ContactsFetcher.isAccessLimited
     }
 
     func setTheme(_ theme: Theme) {
@@ -391,25 +392,17 @@ final class SettingsViewModel: ObservableObject {
         guard !summaries.isEmpty else {
             let status = CNContactStore.authorizationStatus(for: .contacts)
             contactAccessDenied = (status == .denied || status == .restricted)
-            contactAccessLimited = Self.isLimitedAccess(status)
+            contactAccessLimited = ContactsFetcher.isAccessLimited
             return 0
         }
 
         let existing = Set(personRepository.fetchTracked(includePaused: true).compactMap { $0.cnIdentifier })
         let newContacts = summaries.filter { !existing.contains($0.identifier) }
         if newContacts.isEmpty {
-            let status = CNContactStore.authorizationStatus(for: .contacts)
-            contactAccessLimited = Self.isLimitedAccess(status)
+            contactAccessLimited = ContactsFetcher.isAccessLimited
         }
         pendingNewContacts = newContacts
         return newContacts.count
-    }
-
-    private static func isLimitedAccess(_ status: CNAuthorizationStatus) -> Bool {
-        if #available(iOS 18.0, *) {
-            return status == .limited
-        }
-        return false
     }
 
     func importSelectedContacts(_ summaries: [ContactSummary]) async {

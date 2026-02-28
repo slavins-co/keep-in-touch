@@ -35,5 +35,6 @@ struct LimitedContactsAccessBanner: View {
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Limited contact access. Some contacts may not appear. Tap to open Settings.")
     }
 }
