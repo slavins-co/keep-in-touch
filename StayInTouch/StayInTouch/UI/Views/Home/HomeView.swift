@@ -18,6 +18,7 @@ struct HomeView: View {
     @State private var showLimitedAccessAlert = false
     @State private var isSyncingContacts = false
     @State private var showContactsSettingsAlert = false
+    @ObservedObject private var deepLinkRouter = DeepLinkRouter.shared
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -50,8 +51,8 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: .contactsDidSync)) { _ in
             viewModel.load()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .notificationDeepLink)) { notification in
-            handleDeepLink(notification.userInfo)
+        .onChange(of: deepLinkRouter.pending) { _, newValue in
+            if newValue != nil { processPendingDeepLink() }
         }
         .sheet(isPresented: $showNewContactsPicker) {
             NewContactsPickerView(
@@ -97,6 +98,7 @@ struct HomeView: View {
         }
         .onAppear {
             viewModel.load()
+            processPendingDeepLink()
         }
     }
 
@@ -405,15 +407,17 @@ struct HomeView: View {
         }
     }
 
-    private func handleDeepLink(_ userInfo: [AnyHashable: Any]?) {
-        guard let userInfo else { return }
-        let type = userInfo["type"] as? String
-        if type == "person", let idString = userInfo["personId"] as? String, let id = UUID(uuidString: idString) {
+    private func processPendingDeepLink() {
+        guard let destination = deepLinkRouter.pending else { return }
+        deepLinkRouter.pending = nil
+
+        switch destination {
+        case .person(let id):
             if let person = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext).fetch(id: id) {
                 navigationPath = NavigationPath()
                 navigationPath.append(person)
             }
-        } else if type == "home" {
+        case .home:
             selectedDefaults()
         }
     }
