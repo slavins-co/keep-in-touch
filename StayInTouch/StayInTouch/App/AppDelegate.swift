@@ -50,7 +50,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     private func logConnectionFromNotification(personId: UUID) {
-        let context = CoreDataStack.shared.viewContext
+        // Use background context — notification handlers may run off main thread
+        let context = CoreDataStack.shared.newBackgroundContext()
         let personRepo = CoreDataPersonRepository(context: context)
         let touchRepo = CoreDataTouchEventRepository(context: context)
 
@@ -76,7 +77,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             person.snoozedUntil = nil
             person.modifiedAt = now
             try personRepo.save(person)
-            NotificationCenter.default.post(name: .personDidChange, object: personId)
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .personDidChange, object: personId)
+            }
         } catch {
             AppLogger.logError(error, category: AppLogger.notifications, context: "AppDelegate.logConnectionFromNotification")
         }
