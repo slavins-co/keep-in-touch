@@ -228,14 +228,8 @@ final class SettingsViewModel: ObservableObject {
         decoder.dateDecodingStrategy = .iso8601
         guard let imported = try? decoder.decode([ExportPerson].self, from: data) else { return nil }
 
+        // Only match by internal UUID — never trust cnIdentifier from external files
         let existingById = Dictionary(uniqueKeysWithValues: personRepository.fetchAll().map { ($0.id, $0) })
-        let existingByCN = Dictionary(
-            personRepository.fetchAll().compactMap { p -> (String, Person)? in
-                guard let cn = p.cnIdentifier else { return nil }
-                return (cn, p)
-            },
-            uniquingKeysWith: { first, _ in first }
-        )
 
         var newPeople: [ExportPerson] = []
         var updatedPeople: [ExportPerson] = []
@@ -248,10 +242,7 @@ final class SettingsViewModel: ObservableObject {
                 continue
             }
 
-            let matchById = existingById[person.id] != nil
-            let matchByCN = person.cnIdentifier.flatMap { existingByCN[$0] } != nil
-
-            if matchById || matchByCN {
+            if existingById[person.id] != nil {
                 updatedPeople.append(person)
             } else {
                 newPeople.append(person)
@@ -278,26 +269,25 @@ final class SettingsViewModel: ObservableObject {
             let defaultGroupId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id ?? UUID()
             let validGroupIds = Set(groups.map { $0.id })
 
+            // Only match by internal UUID — never trust cnIdentifier from external files
             let existingById = Dictionary(uniqueKeysWithValues: peopleRepo.fetchAll().map { ($0.id, $0) })
-            let existingByCN = Dictionary(
-                peopleRepo.fetchAll().compactMap { p -> (String, Person)? in
-                    guard let cn = p.cnIdentifier else { return nil }
-                    return (cn, p)
-                },
-                uniquingKeysWith: { first, _ in first }
-            )
             let existingCount = peopleRepo.fetchTracked(includePaused: true).count
             var sortOrder = existingCount
             let now = Date()
             let assignGroup = AssignGroupUseCase(referenceDate: now)
 
             var personsToSave: [Person] = []
+            // Map exported person IDs to actual saved IDs (new people get fresh UUIDs)
+            var importedIdMap: [UUID: UUID] = [:]
 
             for exportPerson in preview.newPeople {
+                let newId = UUID()
+                importedIdMap[exportPerson.id] = newId
+
                 let groupId = exportPerson.groupId.flatMap { validGroupIds.contains($0) ? $0 : nil } ?? defaultGroupId
                 var person = Person(
-                    id: exportPerson.id,
-                    cnIdentifier: exportPerson.cnIdentifier,
+                    id: newId,
+                    cnIdentifier: nil,
                     displayName: exportPerson.displayName,
                     initials: InitialsBuilder.initials(for: exportPerson.displayName),
                     avatarColor: AvatarColors.randomHex(),
@@ -325,9 +315,8 @@ final class SettingsViewModel: ObservableObject {
             }
 
             for exportPerson in preview.updatedPeople {
-                let existing = existingById[exportPerson.id]
-                    ?? exportPerson.cnIdentifier.flatMap { existingByCN[$0] }
-                guard var person = existing else { continue }
+                guard var person = existingById[exportPerson.id] else { continue }
+                importedIdMap[exportPerson.id] = person.id
 
                 person.displayName = exportPerson.displayName
                 person.initials = InitialsBuilder.initials(for: exportPerson.displayName)
@@ -348,14 +337,16 @@ final class SettingsViewModel: ObservableObject {
                 AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.executeImport.people")
             }
 
+            // Generate fresh UUIDs for all touch events and map personId to actual saved IDs
             let allExported = preview.newPeople + preview.updatedPeople
             for exportPerson in allExported {
-                guard let events = exportPerson.touchEvents else { continue }
+                guard let events = exportPerson.touchEvents,
+                      let actualPersonId = importedIdMap[exportPerson.id] else { continue }
                 for event in events {
                     let method = TouchMethod(rawValue: event.method) ?? .other
                     let touchEvent = TouchEvent(
-                        id: event.id,
-                        personId: exportPerson.id,
+                        id: UUID(),
+                        personId: actualPersonId,
                         at: event.at,
                         method: method,
                         notes: event.notes,
