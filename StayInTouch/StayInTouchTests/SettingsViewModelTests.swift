@@ -14,6 +14,7 @@ final class SettingsViewModelTests: XCTestCase {
     private var groupRepo: MockGroupRepository!
     private var tagRepo: MockTagRepository!
     private var personRepo: MockPersonRepository!
+    private var touchEventRepo: MockTouchEventRepository!
     private var sut: SettingsViewModel!
 
     override func setUp() {
@@ -23,12 +24,14 @@ final class SettingsViewModelTests: XCTestCase {
         groupRepo = MockGroupRepository()
         tagRepo = MockTagRepository()
         personRepo = MockPersonRepository()
+        touchEventRepo = MockTouchEventRepository()
 
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             groupRepository: groupRepo,
             tagRepository: tagRepo,
-            personRepository: personRepo
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
         )
     }
 
@@ -44,14 +47,17 @@ final class SettingsViewModelTests: XCTestCase {
             settingsRepository: settingsRepo,
             groupRepository: groupRepo,
             tagRepository: tagRepo,
-            personRepository: personRepo
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
         )
 
         let url = sut.exportContacts()
 
         XCTAssertNotNil(url)
         let data = try Data(contentsOf: url!)
-        let decoded = try JSONDecoder().decode([ExportPerson].self, from: data)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode([ExportPerson].self, from: data)
         XCTAssertEqual(decoded.count, 2)
 
         // Clean up temp file
@@ -63,7 +69,9 @@ final class SettingsViewModelTests: XCTestCase {
 
         XCTAssertNotNil(url)
         let data = try Data(contentsOf: url!)
-        let decoded = try JSONDecoder().decode([ExportPerson].self, from: data)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode([ExportPerson].self, from: data)
         XCTAssertTrue(decoded.isEmpty)
 
         try? FileManager.default.removeItem(at: url!)
