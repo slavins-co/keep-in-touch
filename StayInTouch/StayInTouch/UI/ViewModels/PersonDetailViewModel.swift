@@ -19,7 +19,7 @@ final class PersonDetailViewModel: ObservableObject {
     @Published private(set) var email: String?
     @Published private(set) var phoneNumbers: [ContactsFetcher.LabeledValue] = []
     @Published private(set) var emailAddresses: [ContactsFetcher.LabeledValue] = []
-    @Published private(set) var contactBirthday: Birthday?
+    @Published internal(set) var contactBirthday: Birthday?
     @Published var quickActionMessage: String?
     @Published var showPhonePicker = false
     @Published var showEmailPicker = false

@@ -391,6 +391,7 @@ final class PersonDetailViewModelTests: XCTestCase {
 
     func testDisplayBirthdayPrefersManualOverride() {
         let manual = Birthday(month: 1, day: 1, year: nil)
+        let contact = Birthday(month: 7, day: 4, year: 1990)
         let personWithBirthday = TestFactory.makePerson(groupId: group.id, birthday: manual)
         personRepo.people = [personWithBirthday]
 
@@ -401,12 +402,23 @@ final class PersonDetailViewModelTests: XCTestCase {
             tagRepository: tagRepo,
             touchRepository: touchRepo
         )
+        vm.contactBirthday = contact
 
         XCTAssertEqual(vm.displayBirthday, manual)
     }
 
     func testDisplayBirthdayFallsBackToContactBirthday() {
         XCTAssertNil(sut.person.birthday)
+
+        let contactBday = Birthday(month: 7, day: 4, year: 1990)
+        sut.contactBirthday = contactBday
+
+        XCTAssertEqual(sut.displayBirthday, contactBday)
+    }
+
+    func testDisplayBirthdayIsNilWhenNeitherSourceSet() {
+        XCTAssertNil(sut.person.birthday)
+        XCTAssertNil(sut.contactBirthday)
         XCTAssertNil(sut.displayBirthday)
     }
 }
