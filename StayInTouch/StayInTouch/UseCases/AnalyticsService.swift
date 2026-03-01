@@ -3,28 +3,40 @@
 //  StayInTouch
 //
 
+import Foundation
 import TelemetryDeck
 
 enum AnalyticsService {
-    private static var isInitialized = false
+    private static let lock = NSLock()
+    private static var _isInitialized = false
+    private static var _isEnabled = true
 
     static func initialize() {
-        guard !isInitialized else { return }
-        let config = TelemetryDeck.Config(appID: "C41D550D-50EA-40BC-9605-584654EE2D5B")
-        TelemetryDeck.initialize(config: config)
-        isInitialized = true
+        lock.withLock {
+            guard !_isInitialized else { return }
+            let config = TelemetryDeck.Config(appID: "C41D550D-50EA-40BC-9605-584654EE2D5B")
+            TelemetryDeck.initialize(config: config)
+            // Read initial analytics setting from Core Data
+            let repo = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext)
+            _isEnabled = repo.fetch()?.analyticsEnabled ?? true
+            _isInitialized = true
+        }
     }
 
     static func track(_ signal: String, parameters: [String: String] = [:]) {
-        guard isEnabled else { return }
-        if !isInitialized {
+        lock.lock()
+        let enabled = _isEnabled
+        if !_isInitialized {
+            lock.unlock()
             initialize()
+        } else {
+            lock.unlock()
         }
+        guard enabled else { return }
         TelemetryDeck.signal(signal, parameters: parameters)
     }
 
-    private static var isEnabled: Bool {
-        let repo = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext)
-        return repo.fetch()?.analyticsEnabled ?? true
+    static func updateEnabled(_ enabled: Bool) {
+        lock.withLock { _isEnabled = enabled }
     }
 }
