@@ -233,6 +233,7 @@ final class OnboardingViewModel: ObservableObject {
                     notificationsMuted: false,
                     customBreachTime: nil,
                     snoozedUntil: nil,
+                    birthday: nil,
                     contactUnavailable: false,
                     isDemoData: false,
                     groupAddedAt: nil,

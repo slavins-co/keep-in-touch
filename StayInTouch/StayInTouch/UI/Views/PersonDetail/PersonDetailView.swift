@@ -35,6 +35,7 @@ struct PersonDetailView: View {
     @State private var showQuickActionUndo = false
     @State private var showRemoveUndo = false
     @State private var pendingRemoveTask: Task<Void, Never>?
+    @State private var showBirthdayEditor = false
     @FocusState private var isNextTouchNotesFocused: Bool
 
     init(person: Person) {
@@ -202,6 +203,19 @@ struct PersonDetailView: View {
                     }
             }
         }
+        .sheet(isPresented: $showBirthdayEditor) {
+            BirthdayEditorSheet(
+                birthday: viewModel.displayBirthday,
+                onSave: { birthday in
+                    viewModel.setBirthday(birthday)
+                    showBirthdayEditor = false
+                },
+                onClear: {
+                    viewModel.setBirthday(nil)
+                    showBirthdayEditor = false
+                }
+            )
+        }
         .confirmationDialog("Choose a number", isPresented: $viewModel.showPhonePicker) {
             ForEach(viewModel.phoneNumbers) { phone in
                 Button("\(phone.label): \(phone.value)") {
@@ -320,10 +334,20 @@ struct PersonDetailView: View {
                 }
             }
 
-            if let lastTouch = viewModel.person.lastTouchAt {
-                Text("Last connected \(lastTouchTimeAgo(lastTouch))")
-                    .font(DS.Typography.metadata)
+            if let birthday = viewModel.displayBirthday {
+                Button {
+                    showBirthdayEditor = true
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "birthday.cake")
+                            .font(.caption)
+                        Text(birthday.formatted)
+                            .font(DS.Typography.metadata)
+                    }
                     .foregroundStyle(DS.Colors.secondaryText)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Birthday \(birthday.formatted), tap to edit")
             }
         }
     }
@@ -528,6 +552,16 @@ struct PersonDetailView: View {
     private var detailsAndSettings: some View {
         DisclosureGroup(isExpanded: $settingsExpanded) {
             VStack(alignment: .leading, spacing: 0) {
+                if viewModel.displayBirthday == nil {
+                    Button {
+                        showBirthdayEditor = true
+                    } label: {
+                        Label("Add Birthday", systemImage: "birthday.cake")
+                            .font(DS.Typography.metadata)
+                    }
+                    .padding(.vertical, DS.Spacing.sm)
+                    SubtleDivider()
+                }
                 frequencySection
                 SubtleDivider()
                 tagsSection
@@ -703,12 +737,6 @@ struct PersonDetailView: View {
         case .overdue: return "Overdue"
         case .unknown: return "Unknown"
         }
-    }
-
-    private func lastTouchTimeAgo(_ date: Date) -> String {
-        let days = Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
-        if days == 0 { return "today" }
-        return "\(days)d ago"
     }
 
     private func statusColor() -> Color {

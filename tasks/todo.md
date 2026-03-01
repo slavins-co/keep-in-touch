@@ -1,10 +1,19 @@
 # TODO - Stay in Touch iOS App
 
 **Project Status:** v0.2.2 (Build 8) — Pre-release Beta
-**Last Updated:** February 27, 2026
+**Last Updated:** March 1, 2026
 
 > **TestFlight Status:** Code blockers resolved. Manual submission steps remain — see `tasks/testflight-guide.md`.
 > When creating PRs, confirm TestFlight readiness is not regressed (deployment target 17.0, PrivacyInfo.xcprivacy present, UIBackgroundModes declared, build number incremented).
+
+---
+
+## Completed — Session 2026-03-01 (Issues #140 + #141: Birthday Display)
+
+- [x] **#140** Remove "last connected" badge from PersonDetailView header
+- [x] **#141** Add birthday display to contact detail page — cake icon + M/DD format, CNContact auto-pull, manual override, edit sheet
+- [x] New `Birthday` value object, Core Data v4 model, ContactsFetcher birthday fetch, export/import support
+- [x] 8 new Birthday tests + 4 ViewModel birthday tests, all tests pass
 
 ---
 

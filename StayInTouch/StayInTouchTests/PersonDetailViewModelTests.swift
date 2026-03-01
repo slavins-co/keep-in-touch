@@ -362,4 +362,51 @@ final class PersonDetailViewModelTests: XCTestCase {
         XCTAssertEqual(vm.person.lastTouchNotes, "Resumed tracking")
         XCTAssertEqual(touchRepo.savedEvents.count, 1)
     }
+
+    // MARK: - Birthday
+
+    func testSetBirthdayPersistsAndPublishes() {
+        let birthday = Birthday(month: 3, day: 15, year: nil)
+        sut.setBirthday(birthday)
+
+        XCTAssertEqual(sut.person.birthday, birthday)
+        XCTAssertEqual(personRepo.savedPersons.last?.birthday, birthday)
+    }
+
+    func testClearBirthdayRemovesIt() {
+        let personWithBirthday = TestFactory.makePerson(groupId: group.id, birthday: Birthday(month: 7, day: 4, year: nil))
+        personRepo.people = [personWithBirthday]
+
+        let vm = PersonDetailViewModel(
+            person: personWithBirthday,
+            personRepository: personRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            touchRepository: touchRepo
+        )
+
+        vm.setBirthday(nil)
+        XCTAssertNil(vm.person.birthday)
+    }
+
+    func testDisplayBirthdayPrefersManualOverride() {
+        let manual = Birthday(month: 1, day: 1, year: nil)
+        let personWithBirthday = TestFactory.makePerson(groupId: group.id, birthday: manual)
+        personRepo.people = [personWithBirthday]
+
+        let vm = PersonDetailViewModel(
+            person: personWithBirthday,
+            personRepository: personRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            touchRepository: touchRepo
+        )
+
+        XCTAssertEqual(vm.displayBirthday, manual)
+    }
+
+    func testDisplayBirthdayFallsBackToContactBirthday() {
+        XCTAssertNil(sut.person.birthday)
+        XCTAssertNil(sut.displayBirthday)
+    }
 }
