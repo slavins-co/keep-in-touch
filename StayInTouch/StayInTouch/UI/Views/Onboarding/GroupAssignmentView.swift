@@ -1,6 +1,6 @@
 //
 //  GroupAssignmentView.swift
-//  StayInTouch
+//  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
 //
@@ -16,7 +16,7 @@ struct GroupAssignmentView: View {
                 .font(DS.Typography.title)
                 .padding(.top)
 
-            Text("Pick how often you want to stay in touch with each person.")
+            Text("Pick how often you want to keep in touch with each person.")
                 .font(DS.Typography.metadata)
                 .foregroundStyle(DS.Colors.secondaryText)
                 .multilineTextAlignment(.center)

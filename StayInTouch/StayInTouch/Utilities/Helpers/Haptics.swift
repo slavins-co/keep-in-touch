@@ -1,6 +1,6 @@
 //
 //  Haptics.swift
-//  StayInTouch
+//  KeepInTouch
 //
 
 import UIKit

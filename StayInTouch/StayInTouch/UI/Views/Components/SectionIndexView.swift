@@ -1,6 +1,6 @@
 //
 //  SectionIndexView.swift
-//  StayInTouch
+//  KeepInTouch
 //
 //  Created by Claude Code on 2/4/26.
 //

@@ -1,4 +1,4 @@
-# Stay in Touch
+# Keep In Touch
 
 > Privacy-first iOS app to maintain friendships through gentle reminders and relationship tracking.
 
@@ -10,9 +10,9 @@
 
 ---
 
-## What is Stay in Touch?
+## What is Keep In Touch?
 
-Never lose track of the people who matter. Stay in Touch helps you maintain friendships by:
+Never lose track of the people who matter. Keep In Touch helps you maintain friendships by:
 
 - **Tracking when you last connected** with friends and family
 - **Organizing contacts by frequency** (Weekly, Bi-Weekly, Monthly, Quarterly)
@@ -25,7 +25,7 @@ Never lose track of the people who matter. Stay in Touch helps you maintain frie
 
 V0.3.0 adds contact photos, JSON import/export, VoiceOver accessibility, and a round of security hardening. The app is feature-complete and preparing for TestFlight submission.
 
-**Up next:** Swipe-to-log for faster connection logging, expanded accessibility, and the "Relationship Journal" UX direction. See [open issues](https://github.com/slavins-co/stay-in-touch-ios/issues) and [release history](https://github.com/slavins-co/stay-in-touch-ios/releases) for details.
+**Up next:** Swipe-to-log for faster connection logging, expanded accessibility, and the "Relationship Journal" UX direction. See [open issues](https://github.com/slavins-co/keep-in-touch/issues) and [release history](https://github.com/slavins-co/keep-in-touch/releases) for details.
 
 ---
 
@@ -63,7 +63,7 @@ No external dependencies beyond [TelemetryDeck](https://telemetrydeck.com) for a
 
 ## Getting Started
 
-**TestFlight:** Preparing for submission — see [#69](https://github.com/slavins-co/stay-in-touch-ios/issues/69).
+**TestFlight:** Preparing for submission — see [#69](https://github.com/slavins-co/keep-in-touch/issues/69).
 
 **Developers:** Clone the repo, open `StayInTouch/StayInTouch.xcodeproj` in Xcode 15+, and run. Grant Contacts and Notifications permissions when prompted.
 
@@ -71,9 +71,9 @@ No external dependencies beyond [TelemetryDeck](https://telemetrydeck.com) for a
 
 ## Issue Tracking
 
-- [Report a bug](https://github.com/slavins-co/stay-in-touch-ios/issues/new?labels=bug-fix)
-- [Request a feature](https://github.com/slavins-co/stay-in-touch-ios/issues/new?labels=feature-request)
-- [Open issues](https://github.com/slavins-co/stay-in-touch-ios/issues) · [Releases](https://github.com/slavins-co/stay-in-touch-ios/releases)
+- [Report a bug](https://github.com/slavins-co/keep-in-touch/issues/new?labels=bug-fix)
+- [Request a feature](https://github.com/slavins-co/keep-in-touch/issues/new?labels=feature-request)
+- [Open issues](https://github.com/slavins-co/keep-in-touch/issues) · [Releases](https://github.com/slavins-co/keep-in-touch/releases)
 
 ---
 

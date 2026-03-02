@@ -1,13 +1,13 @@
 //
 //  StayInTouchUITests.swift
-//  StayInTouchUITests
+//  KeepInTouchUITests
 //
 //  Created by Bradley Slavin on 2/2/26.
 //
 
 import XCTest
 
-final class StayInTouchUITests: XCTestCase {
+final class KeepInTouchUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -29,12 +29,12 @@ final class StayInTouchUITests: XCTestCase {
         app.launch()
 
         // Smoke check: app should render either onboarding or home.
-        let stayInTouchTitle = app.staticTexts["Stay in Touch"]
+        let keepInTouchTitle = app.staticTexts["Keep In Touch"]
         let getStartedButton = app.buttons["Get Started"]
         let contactsPowerText = app.staticTexts["Contacts Power the App"]
 
         XCTAssertTrue(
-            stayInTouchTitle.waitForExistence(timeout: 5) ||
+            keepInTouchTitle.waitForExistence(timeout: 5) ||
             getStartedButton.waitForExistence(timeout: 5) ||
             contactsPowerText.waitForExistence(timeout: 5)
         )

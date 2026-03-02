@@ -4,14 +4,14 @@
 <dict>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.slavins.stayintouch.refresh</string>
+		<string>com.slavins.keepintouch.refresh</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
 	</array>
 	<key>NSContactsUsageDescription</key>
-	<string>We need access to your contacts to help you stay in touch with the people who matter.</string>
+	<string>We need access to your contacts to help you keep in touch with the people who matter.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>We'll send you gentle reminders when it's time to reconnect with someone.</string>
 </dict>

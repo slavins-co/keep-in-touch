@@ -1,6 +1,6 @@
 //
 //  ContactPhotoView.swift
-//  StayInTouch
+//  KeepInTouch
 //
 
 import SwiftUI

@@ -1,6 +1,6 @@
 //
 //  SettingsViewModel.swift
-//  StayInTouch
+//  KeepInTouch
 //
 //  Created by Codex on 2/3/26.
 //
@@ -150,7 +150,7 @@ final class SettingsViewModel: ObservableObject {
     func sendTestNotification() async {
         let content = UNMutableNotificationContent()
         content.title = "Test Notification"
-        content.body = "Stay in Touch test notification."
+        content.body = "Keep In Touch test notification."
         content.sound = .default
         content.userInfo = ["type": "home", "category": "test"]
 
@@ -217,7 +217,7 @@ final class SettingsViewModel: ObservableObject {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         guard let data = try? encoder.encode(exportData) else { return nil }
 
-        let filename = "stayintouch-export-\(ISO8601DateFormatter().string(from: Date())).json"
+        let filename = "keepintouch-export-\(ISO8601DateFormatter().string(from: Date())).json"
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
         do {
             try data.write(to: url, options: .atomic)

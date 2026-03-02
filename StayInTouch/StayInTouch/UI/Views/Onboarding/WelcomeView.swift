@@ -1,6 +1,6 @@
 //
 //  WelcomeView.swift
-//  StayInTouch
+//  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
 //
@@ -16,7 +16,7 @@ struct WelcomeView: View {
             Image(systemName: "person.2.circle.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(DS.Colors.accent)
-            Text("Stay in Touch")
+            Text("Keep In Touch")
                 .font(DS.Typography.largeTitle)
             Text("Never lose track of the people who matter")
                 .font(DS.Typography.metadata)

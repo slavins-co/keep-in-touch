@@ -1,13 +1,13 @@
 //
 //  StayInTouchUITestsLaunchTests.swift
-//  StayInTouchUITests
+//  KeepInTouchUITests
 //
 //  Created by Bradley Slavin on 2/2/26.
 //
 
 import XCTest
 
-final class StayInTouchUITestsLaunchTests: XCTestCase {
+final class KeepInTouchUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

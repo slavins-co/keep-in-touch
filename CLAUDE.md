@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**App Name:** Stay in Touch  
+**App Name:** Keep In Touch
 **Platform:** iOS 17.0+  
 **Language:** Swift + SwiftUI  
 **Architecture:** Clean Architecture with Repository Pattern  
@@ -10,7 +10,7 @@
 
 ## Mission Statement
 
-Privacy-first iOS app that helps users maintain friendships by tracking "last touch" dates, organizing contacts into SLA cadence groups, and providing gentle reminders when relationships need attention.
+Privacy-first iOS app that helps users maintain friendships by tracking "last touch" dates, organizing contacts into SLA cadence groups, and providing gentle reminders when relationships need attention. Formerly named "Stay in Touch", the app was renamed to "Keep In Touch" for the public release.
 
 ---
 
@@ -498,7 +498,7 @@ See FINAL-PRD.md section 7 (Acceptance Criteria)
 2. **Info.plist Keys**
    ```xml
    <key>NSContactsUsageDescription</key>
-   <string>We need access to your contacts to help you stay in touch with the people who matter.</string>
+   <string>We need access to your contacts to help you keep in touch with the people who matter.</string>
    
    <key>NSUserNotificationsUsageDescription</key>
    <string>We'll send you gentle reminders when it's time to reconnect with someone.</string>
@@ -725,7 +725,7 @@ Task {
 - [ ] App icon added (1024x1024)
 
 **Metadata:**
-- App Name: "Stay in Touch"
+- App Name: "Keep In Touch"
 - Subtitle: "Never lose track of friends"
 - Keywords: "contacts, friends, relationships, CRM, reminders"
 - Category: Productivity

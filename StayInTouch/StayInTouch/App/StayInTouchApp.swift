@@ -1,6 +1,6 @@
 //
 //  StayInTouchApp.swift
-//  StayInTouch
+//  KeepInTouch
 //
 //  Created by Bradley Slavin on 2/2/26.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct StayInTouchApp: App {
+struct KeepInTouchApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let coreDataStack: CoreDataStack = {
         if ProcessInfo.processInfo.arguments.contains("-uiTesting") {

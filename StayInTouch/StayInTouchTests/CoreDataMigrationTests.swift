@@ -1,6 +1,6 @@
 //
 //  CoreDataMigrationTests.swift
-//  StayInTouchTests
+//  KeepInTouchTests
 //
 //  Created by Claude on 2/24/26.
 //

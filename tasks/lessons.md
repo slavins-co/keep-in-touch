@@ -1158,6 +1158,37 @@ Secondary issues: `NotificationClassifier` had asymmetric badge counting — `al
 
 ---
 
+### 2026-02-28 - 🔒 Security - Never Trust External Identifiers in Import
+
+**What Happened:**
+Security review of JSON import feature (PR #91) found 3 medium-severity vulnerabilities. The import trusted UUIDs and `cnIdentifier` values from external JSON files without validation, enabling silent data overwrite, touch history tampering, and arbitrary iOS Contact linking.
+
+**Root Cause:**
+Import code used file-supplied `event.id` UUIDs directly (enabling overwrite of existing events), matched contacts by `cnIdentifier` fallback (enabling overwrite of existing contact data), and stored `cnIdentifier` from JSON directly on new records (enabling linking to arbitrary iOS Contacts).
+
+**Solution:**
+Filed as issue #126. Recommended fixes:
+1. Generate new UUIDs for imported touch events
+2. Clear `cnIdentifier` on newly imported contacts (or validate against Contacts framework)
+3. When matching via `cnIdentifier` fallback, skip overwriting `displayName` and show warning
+
+**Prevention Rule:**
+When implementing any data import feature, NEVER trust external identifiers. Always regenerate UUIDs for new records, and validate any cross-system identifiers (like `cnIdentifier`) before using them for matching or linking. Treat imported data as untrusted input at every field level, not just at the parsing stage.
+
+### 2026-02-28 - 🔒 Security - Security Review Workflow for Batch PRs
+
+**What Happened:**
+Completed batch security review of 16 PRs merged in 24 hours. Used `/security-review` skill framework with subagents for each PR. Found that the `origin/HEAD` ref needed to be set (`git remote set-head origin main`) before the skill would work.
+
+**Root Cause:**
+The security-review skill template expects `origin/HEAD` to exist but it wasn't set in the local clone.
+
+**Solution:**
+Run `git remote set-head origin main` before starting batch security reviews.
+
+**Prevention Rule:**
+Before running batch security reviews, ensure `origin/HEAD` is set. For batch reviews, work sequentially and post each comment immediately after review. Track findings for issue creation at the end.
+
 ## Historical Lessons
 
 *This section will be populated as development progresses*
