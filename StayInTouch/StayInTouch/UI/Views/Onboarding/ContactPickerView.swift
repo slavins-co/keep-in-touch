@@ -34,6 +34,9 @@ struct ContactPickerView: View {
             TextField("Search contacts...", text: $viewModel.searchText)
                 .textFieldStyle(.roundedBorder)
                 .padding(.horizontal)
+                .onChange(of: viewModel.searchText) { _, newValue in
+                    if newValue.count > 100 { viewModel.searchText = String(newValue.prefix(100)) }
+                }
 
             ScrollViewReader { proxy in
                 HStack(spacing: 0) {

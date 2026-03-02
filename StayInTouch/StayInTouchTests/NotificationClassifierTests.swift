@@ -81,6 +81,26 @@ final class NotificationClassifierTests: XCTestCase {
         XCTAssertTrue(result.allForDigest.isEmpty)
     }
 
+    // MARK: - Calendar Day Boundary Test
+
+    func testClassifierUsesCalendarDaysNotHours() {
+        // Touch at 11 PM, reference 7 days later at 8 AM → ~6.4 × 24h periods
+        // but 7 calendar days → should classify as dueToday for a 7-day frequency
+        let cal = Calendar.current
+        let touchDate = cal.date(bySettingHour: 23, minute: 0, second: 0, of: Date())!
+        let referenceDate = cal.date(byAdding: .day, value: 7, to: cal.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!)!
+
+        let groupId = UUID()
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+
+        var person = makePerson(groupId: groupId, daysAgo: nil)
+        person.lastTouchAt = touchDate
+        person.groupAddedAt = touchDate
+
+        let result = NotificationClassifier.classify(people: [person], groups: [group], referenceDate: referenceDate)
+        XCTAssertEqual(result.dueToday.count, 1, "7 calendar days should classify as dueToday even if fewer than 7×24 hours elapsed")
+    }
+
     private func makePerson(groupId: UUID, daysAgo: Int?, muted: Bool = false) -> Person {
         let reference = Date()
         let lastTouch = daysAgo.flatMap { Calendar.current.date(byAdding: .day, value: -$0, to: reference) }

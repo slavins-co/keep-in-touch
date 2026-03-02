@@ -39,7 +39,8 @@ enum NotificationClassifier {
             guard let group = groups.first(where: { $0.id == person.groupId }) else { continue }
             guard let lastTouch = FrequencyCalculator(referenceDate: referenceDate).effectiveLastTouchDate(for: person) else { continue }
 
-            let daysSince = Calendar.current.dateComponents([.day], from: lastTouch, to: referenceDate).day ?? 0
+            let cal = Calendar.current
+            let daysSince = cal.dateComponents([.day], from: cal.startOfDay(for: lastTouch), to: cal.startOfDay(for: referenceDate)).day ?? 0
             let type: DailyNotificationType?
             if daysSince > group.frequencyDays {
                 type = .overdue

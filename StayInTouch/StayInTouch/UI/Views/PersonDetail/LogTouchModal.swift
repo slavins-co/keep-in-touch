@@ -55,6 +55,9 @@ struct LogTouchModal: View {
                 }
 
                 TextField("Notes", text: $notes, axis: .vertical)
+                    .onChange(of: notes) { _, newValue in
+                        if newValue.count > 500 { notes = String(newValue.prefix(500)) }
+                    }
             }
             .navigationTitle("Log Connection")
             .toolbar {
