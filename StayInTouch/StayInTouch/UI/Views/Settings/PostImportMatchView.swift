@@ -16,7 +16,6 @@ struct PostImportMatchView: View {
     @State private var linkedNames: [String]
     @State private var unmatchedPeople: [(id: UUID, displayName: String)]
     @State private var linkingPersonId: UUID?
-    @State private var showContactPicker = false
 
     init(importResult: ImportResult, matchSummary: ContactMatchSummary, viewModel: SettingsViewModel, onDismiss: @escaping () -> Void) {
         self.importResult = importResult
@@ -50,7 +49,17 @@ struct PostImportMatchView: View {
                                 Spacer()
                                 Button("Link") {
                                     linkingPersonId = person.id
-                                    showContactPicker = true
+                                    ContactPickerPresenter.present { cnIdentifier in
+                                        if let personId = linkingPersonId {
+                                            viewModel.linkContactManually(personId: personId, cnIdentifier: cnIdentifier)
+                                            if let index = unmatchedPeople.firstIndex(where: { $0.id == personId }) {
+                                                let name = unmatchedPeople[index].displayName
+                                                unmatchedPeople.remove(at: index)
+                                                linkedNames.append(name)
+                                            }
+                                        }
+                                        linkingPersonId = nil
+                                    }
                                 }
                                 .buttonStyle(.bordered)
                                 .controlSize(.small)
@@ -67,27 +76,6 @@ struct PostImportMatchView: View {
                     Button("Done", action: onDismiss)
                         .bold()
                 }
-            }
-            .sheet(isPresented: $showContactPicker) {
-                SingleContactPickerView(
-                    onSelect: { cnIdentifier in
-                        showContactPicker = false
-                        if let personId = linkingPersonId {
-                            viewModel.linkContactManually(personId: personId, cnIdentifier: cnIdentifier)
-                            // Move from unmatched to linked
-                            if let index = unmatchedPeople.firstIndex(where: { $0.id == personId }) {
-                                let name = unmatchedPeople[index].displayName
-                                unmatchedPeople.remove(at: index)
-                                linkedNames.append(name)
-                            }
-                        }
-                        linkingPersonId = nil
-                    },
-                    onCancel: {
-                        showContactPicker = false
-                        linkingPersonId = nil
-                    }
-                )
             }
         }
     }

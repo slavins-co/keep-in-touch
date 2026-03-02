@@ -8,29 +8,41 @@
 import ContactsUI
 import SwiftUI
 
-struct SingleContactPickerView: UIViewControllerRepresentable {
-    let onSelect: (String) -> Void
-    let onCancel: () -> Void
+/// Presents CNContactPickerViewController imperatively from UIKit,
+/// bypassing SwiftUI's sheet stack to avoid the known dismiss-cascade
+/// issue where the picker's auto-dismiss propagates up and closes
+/// parent sheets.
+enum ContactPickerPresenter {
+    static func present(onSelect: @escaping (String) -> Void) {
+        guard let windowScene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene }).first,
+              let rootVC = windowScene.windows.first?.rootViewController else {
+            return
+        }
 
-    func makeUIViewController(context: Context) -> CNContactPickerViewController {
+        // Walk to the topmost presented view controller
+        var topVC = rootVC
+        while let presented = topVC.presentedViewController {
+            topVC = presented
+        }
+
         let picker = CNContactPickerViewController()
-        picker.delegate = context.coordinator
-        return picker
+        let delegate = PickerDelegate(onSelect: onSelect)
+        picker.delegate = delegate
+
+        // Retain the delegate for the lifetime of the picker
+        objc_setAssociatedObject(picker, &PickerDelegate.associatedKey, delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+
+        topVC.present(picker, animated: true)
     }
 
-    func updateUIViewController(_ uiViewController: CNContactPickerViewController, context: Context) {}
+    private final class PickerDelegate: NSObject, CNContactPickerDelegate {
+        static var associatedKey: UInt8 = 0
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onSelect: onSelect, onCancel: onCancel)
-    }
-
-    final class Coordinator: NSObject, CNContactPickerDelegate {
         let onSelect: (String) -> Void
-        let onCancel: () -> Void
 
-        init(onSelect: @escaping (String) -> Void, onCancel: @escaping () -> Void) {
+        init(onSelect: @escaping (String) -> Void) {
             self.onSelect = onSelect
-            self.onCancel = onCancel
         }
 
         func contactPicker(_ picker: CNContactPickerViewController, didSelect contact: CNContact) {
@@ -38,7 +50,7 @@ struct SingleContactPickerView: UIViewControllerRepresentable {
         }
 
         func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
-            onCancel()
+            // Picker auto-dismisses; nothing to do
         }
     }
 }
