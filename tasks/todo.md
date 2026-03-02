@@ -1,10 +1,18 @@
 # TODO - Stay in Touch iOS App
 
 **Project Status:** v0.2.2 (Build 8) — Pre-release Beta
-**Last Updated:** March 1, 2026
+**Last Updated:** March 2, 2026
 
 > **TestFlight Status:** Code blockers resolved. Manual submission steps remain — see `tasks/testflight-guide.md`.
 > When creating PRs, confirm TestFlight readiness is not regressed (deployment target 17.0, PrivacyInfo.xcprivacy present, UIBackgroundModes declared, build number incremented).
+
+---
+
+## Completed — Session 2026-03-02 (Issue #152: Date Calculation Bug)
+
+- [x] **#152** Fix "Today" shown for contacts touched yesterday — normalize to calendar days instead of 24-hour periods
+- [x] FrequencyCalculator: `daysSinceLastTouch()`, `status()`, `daysOverdue()` all use `startOfDay` normalization
+- [x] 3 new edge-case tests for calendar-day boundary scenarios, all pass
 
 ---
 

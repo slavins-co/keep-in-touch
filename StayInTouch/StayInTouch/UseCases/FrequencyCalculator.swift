@@ -25,7 +25,7 @@ struct FrequencyCalculator {
             return .unknown
         }
 
-        let daysSince = Calendar.current.dateComponents([.day], from: lastTouch, to: referenceDate).day ?? 0
+        let daysSince = calendarDaysBetween(from: lastTouch, to: referenceDate)
         if daysSince >= group.frequencyDays {
             return .overdue
         }
@@ -46,7 +46,7 @@ struct FrequencyCalculator {
             return 0
         }
 
-        let daysSince = Calendar.current.dateComponents([.day], from: lastTouch, to: referenceDate).day ?? 0
+        let daysSince = calendarDaysBetween(from: lastTouch, to: referenceDate)
         return max(0, daysSince - group.frequencyDays)
     }
 
@@ -57,6 +57,11 @@ struct FrequencyCalculator {
 
     func daysSinceLastTouch(for person: Person) -> Int? {
         guard let lastTouch = effectiveLastTouchDate(for: person) else { return nil }
-        return Calendar.current.dateComponents([.day], from: lastTouch, to: referenceDate).day
+        return calendarDaysBetween(from: lastTouch, to: referenceDate)
+    }
+
+    private func calendarDaysBetween(from: Date, to: Date) -> Int {
+        let cal = Calendar.current
+        return cal.dateComponents([.day], from: cal.startOfDay(for: from), to: cal.startOfDay(for: to)).day ?? 0
     }
 }
