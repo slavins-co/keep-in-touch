@@ -124,5 +124,5 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 }
 
 enum BackgroundTaskIdentifier {
-    static let refresh = "com.slavins.stayintouch.refresh"
+    static let refresh = "com.slavins.keepintouch.refresh"
 }
