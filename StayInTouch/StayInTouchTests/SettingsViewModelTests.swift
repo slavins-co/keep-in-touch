@@ -42,7 +42,6 @@ final class SettingsViewModelTests: XCTestCase {
             TestFactory.makePerson(name: "Alice"),
             TestFactory.makePerson(name: "Bob")
         ]
-        // Reload to pick up the people
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             groupRepository: groupRepo,
@@ -57,10 +56,10 @@ final class SettingsViewModelTests: XCTestCase {
         let data = try Data(contentsOf: url!)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let decoded = try decoder.decode([ExportPerson].self, from: data)
-        XCTAssertEqual(decoded.count, 2)
+        let decoded = try decoder.decode(ExportData.self, from: data)
+        XCTAssertEqual(decoded.version, 2)
+        XCTAssertEqual(decoded.people.count, 2)
 
-        // Clean up temp file
         try? FileManager.default.removeItem(at: url!)
     }
 
@@ -71,10 +70,186 @@ final class SettingsViewModelTests: XCTestCase {
         let data = try Data(contentsOf: url!)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let decoded = try decoder.decode([ExportPerson].self, from: data)
-        XCTAssertTrue(decoded.isEmpty)
+        let decoded = try decoder.decode(ExportData.self, from: data)
+        XCTAssertTrue(decoded.people.isEmpty)
+        XCTAssertEqual(decoded.version, 2)
 
         try? FileManager.default.removeItem(at: url!)
+    }
+
+    func testExportIncludesGroupsAndTags() throws {
+        let groupId = UUID()
+        let tagId = UUID()
+        groupRepo.groups = [TestFactory.makeGroup(id: groupId, name: "Weekly")]
+        tagRepo.tags = [TestFactory.makeTag(id: tagId, name: "Work")]
+        personRepo.people = [TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tagId])]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let url = sut.exportContacts()!
+        let data = try Data(contentsOf: url)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(ExportData.self, from: data)
+
+        XCTAssertEqual(decoded.groups.count, 1)
+        XCTAssertEqual(decoded.groups.first?.name, "Weekly")
+        XCTAssertEqual(decoded.groups.first?.frequencyDays, 7)
+        XCTAssertEqual(decoded.tags.count, 1)
+        XCTAssertEqual(decoded.tags.first?.name, "Work")
+        XCTAssertEqual(decoded.people.count, 1)
+
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testExportDoesNotIncludeCnIdentifier() throws {
+        personRepo.people = [TestFactory.makePerson(name: "Alice", cnIdentifier: "some-cn-id")]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let url = sut.exportContacts()!
+        let data = try Data(contentsOf: url)
+        let jsonString = String(data: data, encoding: .utf8)!
+
+        XCTAssertFalse(jsonString.contains("cnIdentifier"))
+        XCTAssertFalse(jsonString.contains("some-cn-id"))
+
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testParseImportFileLegacyFormat() throws {
+        // Create a legacy-format JSON ([ExportPerson] array)
+        let legacyPeople = [
+            ExportPerson(
+                id: UUID(),
+                displayName: "Alice",
+                groupId: nil,
+                groupName: nil,
+                tagIds: [],
+                tagNames: [],
+                lastTouchAt: nil,
+                isPaused: false,
+                createdAt: Date(),
+                modifiedAt: Date(),
+                touchEvents: nil,
+                birthday: nil
+            )
+        ]
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(legacyPeople)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("legacy-test.json")
+        try data.write(to: url, options: .atomic)
+
+        let preview = sut.parseImportFile(url: url)
+
+        XCTAssertNotNil(preview)
+        XCTAssertEqual(preview?.newPeople.count, 1)
+        XCTAssertTrue(preview?.newGroups.isEmpty ?? false)
+        XCTAssertTrue(preview?.newTags.isEmpty ?? false)
+
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testParseImportFileNewFormatWithGroups() throws {
+        let groupId = UUID()
+        let tagId = UUID()
+        let exportData = ExportData(
+            version: 2,
+            exportedAt: Date(),
+            groups: [ExportGroup(id: groupId, name: "Custom Frequency", frequencyDays: 21, warningDays: 3, colorHex: nil, sortOrder: 0, isDefault: false)],
+            tags: [ExportTag(id: tagId, name: "Custom Group", colorHex: "#FF0000", sortOrder: 0)],
+            people: [ExportPerson(
+                id: UUID(),
+                displayName: "Bob",
+                groupId: groupId,
+                groupName: "Custom Frequency",
+                tagIds: [tagId],
+                tagNames: ["Custom Group"],
+                lastTouchAt: nil,
+                isPaused: false,
+                createdAt: Date(),
+                modifiedAt: Date(),
+                touchEvents: nil,
+                birthday: nil
+            )]
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(exportData)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("new-format-test.json")
+        try data.write(to: url, options: .atomic)
+
+        let preview = sut.parseImportFile(url: url)
+
+        XCTAssertNotNil(preview)
+        XCTAssertEqual(preview?.newPeople.count, 1)
+        XCTAssertEqual(preview?.newGroups.count, 1)
+        XCTAssertEqual(preview?.newGroups.first?.name, "Custom Frequency")
+        XCTAssertEqual(preview?.newTags.count, 1)
+        XCTAssertEqual(preview?.newTags.first?.name, "Custom Group")
+
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testImportMergesGroupsByName() throws {
+        // Set up existing group "Weekly"
+        let existingGroupId = UUID()
+        groupRepo.groups = [TestFactory.makeGroup(id: existingGroupId, name: "Weekly")]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let importedGroupId = UUID()
+        let exportData = ExportData(
+            version: 2,
+            exportedAt: Date(),
+            groups: [ExportGroup(id: importedGroupId, name: "weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, sortOrder: 0, isDefault: true)],
+            tags: [],
+            people: [ExportPerson(
+                id: UUID(),
+                displayName: "Charlie",
+                groupId: importedGroupId,
+                groupName: "weekly",
+                tagIds: [],
+                tagNames: [],
+                lastTouchAt: nil,
+                isPaused: false,
+                createdAt: Date(),
+                modifiedAt: Date(),
+                touchEvents: nil,
+                birthday: nil
+            )]
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(exportData)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("merge-test.json")
+        try data.write(to: url, options: .atomic)
+
+        let preview = sut.parseImportFile(url: url)
+
+        XCTAssertNotNil(preview)
+        // "weekly" matches existing "Weekly" — no new group created
+        XCTAssertTrue(preview?.newGroups.isEmpty ?? false)
+        // The imported group ID should map to existing group
+        XCTAssertEqual(preview?.groupIdMap[importedGroupId], existingGroupId)
+
+        try? FileManager.default.removeItem(at: url)
     }
 
     // MARK: - Demo Mode

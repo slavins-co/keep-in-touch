@@ -195,7 +195,7 @@ final class SettingsViewModel: ObservableObject {
         let groupNameById = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0.name) })
         let tagNameById = Dictionary(uniqueKeysWithValues: tags.map { ($0.id, $0.name) })
 
-        let payload = people.map { person in
+        let exportPeople = people.map { person in
             ExportPerson.from(
                 person,
                 groupName: groupNameById[person.groupId],
@@ -204,12 +204,20 @@ final class SettingsViewModel: ObservableObject {
             )
         }
 
+        let exportData = ExportData(
+            version: 2,
+            exportedAt: Date(),
+            groups: groups.map { ExportGroup.from($0) },
+            tags: tags.map { ExportTag.from($0) },
+            people: exportPeople
+        )
+
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        guard let data = try? encoder.encode(payload) else { return nil }
+        guard let data = try? encoder.encode(exportData) else { return nil }
 
-        let filename = "contacts-export-\(ISO8601DateFormatter().string(from: Date())).json"
+        let filename = "stayintouch-export-\(ISO8601DateFormatter().string(from: Date())).json"
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
         do {
             try data.write(to: url, options: .atomic)
@@ -227,8 +235,76 @@ final class SettingsViewModel: ObservableObject {
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        guard let imported = try? decoder.decode([ExportPerson].self, from: data) else { return nil }
 
+        // Try new format first, fall back to legacy [ExportPerson] array
+        let importedPeople: [ExportPerson]
+        let importedGroups: [ExportGroup]
+        let importedTags: [ExportTag]
+
+        if let exportData = try? decoder.decode(ExportData.self, from: data) {
+            importedPeople = exportData.people
+            importedGroups = exportData.groups
+            importedTags = exportData.tags
+        } else if let legacyPeople = try? decoder.decode([ExportPerson].self, from: data) {
+            importedPeople = legacyPeople
+            importedGroups = []
+            importedTags = []
+        } else {
+            return nil
+        }
+
+        // --- Group merge: match by normalized name, skip duplicates ---
+        let existingGroups = groupRepository.fetchAll()
+        let existingGroupsByName = Dictionary(
+            grouping: existingGroups,
+            by: { $0.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
+        )
+        var groupIdMap: [UUID: UUID] = [:]
+        var newGroups: [ExportGroup] = []
+
+        for exportGroup in importedGroups {
+            let normalized = exportGroup.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            if let existing = existingGroupsByName[normalized]?.first {
+                groupIdMap[exportGroup.id] = existing.id
+            } else {
+                let newId = UUID()
+                groupIdMap[exportGroup.id] = newId
+                newGroups.append(exportGroup)
+            }
+        }
+        // Pass through any existing group IDs not in the export's group list
+        for group in existingGroups {
+            if groupIdMap[group.id] == nil {
+                groupIdMap[group.id] = group.id
+            }
+        }
+
+        // --- Tag merge: same logic ---
+        let existingTags = tagRepository.fetchAll()
+        let existingTagsByName = Dictionary(
+            grouping: existingTags,
+            by: { $0.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
+        )
+        var tagIdMap: [UUID: UUID] = [:]
+        var newTags: [ExportTag] = []
+
+        for exportTag in importedTags {
+            let normalized = exportTag.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            if let existing = existingTagsByName[normalized]?.first {
+                tagIdMap[exportTag.id] = existing.id
+            } else {
+                let newId = UUID()
+                tagIdMap[exportTag.id] = newId
+                newTags.append(exportTag)
+            }
+        }
+        for tag in existingTags {
+            if tagIdMap[tag.id] == nil {
+                tagIdMap[tag.id] = tag.id
+            }
+        }
+
+        // --- People classification ---
         // Only match by internal UUID — never trust cnIdentifier from external files
         let existingById = Dictionary(uniqueKeysWithValues: personRepository.fetchAll().map { ($0.id, $0) })
 
@@ -237,7 +313,7 @@ final class SettingsViewModel: ObservableObject {
         var skipped = 0
         var touchEventCount = 0
 
-        for person in imported {
+        for person in importedPeople {
             guard !person.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 skipped += 1
                 continue
@@ -255,45 +331,101 @@ final class SettingsViewModel: ObservableObject {
             newPeople: newPeople,
             updatedPeople: updatedPeople,
             skippedCount: skipped,
-            touchEventCount: touchEventCount
+            touchEventCount: touchEventCount,
+            newGroups: newGroups,
+            newTags: newTags,
+            groupIdMap: groupIdMap,
+            tagIdMap: tagIdMap
         )
     }
 
-    func executeImport(_ preview: ImportPreview) async {
+    func executeImport(_ preview: ImportPreview) async -> ImportResult {
+        var importedNewPeople: [(id: UUID, displayName: String)] = []
+
         let backgroundContext = CoreDataStack.shared.newBackgroundContext()
         await backgroundContext.perform {
             let peopleRepo = CoreDataPersonRepository(context: backgroundContext)
             let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
             let groupRepo = CoreDataGroupRepository(context: backgroundContext)
+            let tagRepo = CoreDataTagRepository(context: backgroundContext)
 
-            let groups = groupRepo.fetchAll()
-            let defaultGroupId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id ?? UUID()
-            let validGroupIds = Set(groups.map { $0.id })
+            let now = Date()
+
+            // 1. Create new groups from import
+            let existingGroupCount = groupRepo.fetchAll().count
+            for (index, exportGroup) in preview.newGroups.enumerated() {
+                guard let newId = preview.groupIdMap[exportGroup.id] else { continue }
+                let group = Group(
+                    id: newId,
+                    name: exportGroup.name,
+                    frequencyDays: exportGroup.frequencyDays,
+                    warningDays: exportGroup.warningDays,
+                    colorHex: exportGroup.colorHex,
+                    isDefault: false,
+                    sortOrder: existingGroupCount + index,
+                    createdAt: now,
+                    modifiedAt: now
+                )
+                do {
+                    try groupRepo.save(group)
+                } catch {
+                    AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.executeImport.groups")
+                }
+            }
+
+            // 2. Create new tags from import
+            let existingTagCount = tagRepo.fetchAll().count
+            for (index, exportTag) in preview.newTags.enumerated() {
+                guard let newId = preview.tagIdMap[exportTag.id] else { continue }
+                let tag = Tag(
+                    id: newId,
+                    name: exportTag.name,
+                    colorHex: exportTag.colorHex,
+                    sortOrder: existingTagCount + index,
+                    createdAt: now,
+                    modifiedAt: now
+                )
+                do {
+                    try tagRepo.save(tag)
+                } catch {
+                    AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.executeImport.tags")
+                }
+            }
+
+            // 3. Refresh valid group/tag IDs after creation
+            let allGroups = groupRepo.fetchAll()
+            let defaultGroupId = allGroups.first(where: { $0.isDefault })?.id ?? allGroups.first?.id ?? UUID()
+            let validGroupIds = Set(allGroups.map { $0.id })
 
             // Only match by internal UUID — never trust cnIdentifier from external files
             let existingById = Dictionary(uniqueKeysWithValues: peopleRepo.fetchAll().map { ($0.id, $0) })
             let existingCount = peopleRepo.fetchTracked(includePaused: true).count
             var sortOrder = existingCount
-            let now = Date()
             let assignGroup = AssignGroupUseCase(referenceDate: now)
 
             var personsToSave: [Person] = []
-            // Map exported person IDs to actual saved IDs (new people get fresh UUIDs)
             var importedIdMap: [UUID: UUID] = [:]
 
+            // 4. New people — remap groupId and tagIds
             for exportPerson in preview.newPeople {
                 let newId = UUID()
                 importedIdMap[exportPerson.id] = newId
 
-                let groupId = exportPerson.groupId.flatMap { validGroupIds.contains($0) ? $0 : nil } ?? defaultGroupId
+                let mappedGroupId = exportPerson.groupId
+                    .flatMap { preview.groupIdMap[$0] }
+                    .flatMap { validGroupIds.contains($0) ? $0 : nil }
+                    ?? defaultGroupId
+
+                let mappedTagIds = exportPerson.tagIds.compactMap { preview.tagIdMap[$0] ?? $0 }
+
                 var person = Person(
                     id: newId,
                     cnIdentifier: nil,
                     displayName: exportPerson.displayName,
                     initials: InitialsBuilder.initials(for: exportPerson.displayName),
                     avatarColor: AvatarColors.randomHex(),
-                    groupId: groupId,
-                    tagIds: exportPerson.tagIds,
+                    groupId: mappedGroupId,
+                    tagIds: mappedTagIds,
                     lastTouchAt: exportPerson.lastTouchAt,
                     lastTouchMethod: nil,
                     lastTouchNotes: nil,
@@ -311,24 +443,29 @@ final class SettingsViewModel: ObservableObject {
                     modifiedAt: now,
                     sortOrder: sortOrder
                 )
-                person = assignGroup.assign(person: person, to: groupId)
+                person = assignGroup.assign(person: person, to: mappedGroupId)
                 personsToSave.append(person)
+                importedNewPeople.append((id: newId, displayName: exportPerson.displayName))
                 sortOrder += 1
             }
 
+            // 5. Updated people — remap groupId and tagIds
             for exportPerson in preview.updatedPeople {
                 guard var person = existingById[exportPerson.id] else { continue }
                 importedIdMap[exportPerson.id] = person.id
 
                 person.displayName = exportPerson.displayName
                 person.initials = InitialsBuilder.initials(for: exportPerson.displayName)
-                person.tagIds = exportPerson.tagIds
+                person.tagIds = exportPerson.tagIds.compactMap { preview.tagIdMap[$0] ?? $0 }
                 person.lastTouchAt = exportPerson.lastTouchAt
                 person.isPaused = exportPerson.isPaused
                 person.birthday = exportPerson.birthday.flatMap(Birthday.from(jsonString:))
                 person.modifiedAt = now
 
-                if let newGroupId = exportPerson.groupId, validGroupIds.contains(newGroupId), newGroupId != person.groupId {
+                if let newGroupId = exportPerson.groupId
+                    .flatMap({ preview.groupIdMap[$0] }),
+                   validGroupIds.contains(newGroupId),
+                   newGroupId != person.groupId {
                     person = assignGroup.assign(person: person, to: newGroupId)
                 }
                 personsToSave.append(person)
@@ -340,7 +477,7 @@ final class SettingsViewModel: ObservableObject {
                 AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.executeImport.people")
             }
 
-            // Generate fresh UUIDs for all touch events and map personId to actual saved IDs
+            // 6. Touch events — fresh UUIDs, map personId to actual saved IDs
             let allExported = preview.newPeople + preview.updatedPeople
             for exportPerson in allExported {
                 guard let events = exportPerson.touchEvents,
@@ -368,6 +505,13 @@ final class SettingsViewModel: ObservableObject {
 
         load()
         NotificationCenter.default.post(name: .personDidChange, object: nil)
+
+        return ImportResult(
+            importedPeople: importedNewPeople,
+            totalPeople: preview.totalPeople,
+            groupsCreated: preview.newGroups.count,
+            tagsCreated: preview.newTags.count
+        )
     }
 
     func findNewContacts() async -> Int {
@@ -506,6 +650,52 @@ final class SettingsViewModel: ObservableObject {
     }
 }
 
+struct ExportGroup: Codable {
+    let id: UUID
+    let name: String
+    let frequencyDays: Int
+    let warningDays: Int
+    let colorHex: String?
+    let sortOrder: Int
+    let isDefault: Bool
+
+    static func from(_ group: Group) -> ExportGroup {
+        ExportGroup(
+            id: group.id,
+            name: group.name,
+            frequencyDays: group.frequencyDays,
+            warningDays: group.warningDays,
+            colorHex: group.colorHex,
+            sortOrder: group.sortOrder,
+            isDefault: group.isDefault
+        )
+    }
+}
+
+struct ExportTag: Codable {
+    let id: UUID
+    let name: String
+    let colorHex: String
+    let sortOrder: Int
+
+    static func from(_ tag: Tag) -> ExportTag {
+        ExportTag(
+            id: tag.id,
+            name: tag.name,
+            colorHex: tag.colorHex,
+            sortOrder: tag.sortOrder
+        )
+    }
+}
+
+struct ExportData: Codable {
+    let version: Int
+    let exportedAt: Date
+    let groups: [ExportGroup]
+    let tags: [ExportTag]
+    let people: [ExportPerson]
+}
+
 struct ExportTouchEvent: Codable {
     let id: UUID
     let at: Date
@@ -560,9 +750,20 @@ struct ImportPreview {
     let updatedPeople: [ExportPerson]
     let skippedCount: Int
     let touchEventCount: Int
+    let newGroups: [ExportGroup]
+    let newTags: [ExportTag]
+    let groupIdMap: [UUID: UUID]
+    let tagIdMap: [UUID: UUID]
 
     var totalPeople: Int { newPeople.count + updatedPeople.count }
-    var isEmpty: Bool { newPeople.isEmpty && updatedPeople.isEmpty }
+    var isEmpty: Bool { newPeople.isEmpty && updatedPeople.isEmpty && newGroups.isEmpty && newTags.isEmpty }
+}
+
+struct ImportResult {
+    let importedPeople: [(id: UUID, displayName: String)]
+    let totalPeople: Int
+    let groupsCreated: Int
+    let tagsCreated: Int
 }
 
 struct AppSettingsDefaults {

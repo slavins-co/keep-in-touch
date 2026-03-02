@@ -17,6 +17,32 @@ struct ImportPreviewView: View {
             List {
                 summarySection
 
+                if !preview.newGroups.isEmpty {
+                    Section("New Frequencies (\(preview.newGroups.count))") {
+                        ForEach(preview.newGroups, id: \.id) { group in
+                            Label {
+                                HStack {
+                                    Text(group.name)
+                                    Spacer()
+                                    Text("Every \(group.frequencyDays) days")
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(DS.Colors.secondaryText)
+                                }
+                            } icon: {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                            }
+                        }
+                    }
+                }
+
+                if !preview.newTags.isEmpty {
+                    Section("New Groups (\(preview.newTags.count))") {
+                        ForEach(preview.newTags, id: \.id) { tag in
+                            Label(tag.name, systemImage: "person.3")
+                        }
+                    }
+                }
+
                 if !preview.newPeople.isEmpty {
                     Section("New Contacts (\(preview.newPeople.count))") {
                         ForEach(preview.newPeople, id: \.id) { person in
@@ -57,6 +83,14 @@ struct ImportPreviewView: View {
             }
             if !preview.updatedPeople.isEmpty {
                 Label("\(preview.updatedPeople.count) existing contact\(preview.updatedPeople.count == 1 ? "" : "s") will be updated", systemImage: "arrow.triangle.2.circlepath.circle.fill")
+                    .foregroundStyle(DS.Colors.accent)
+            }
+            if !preview.newGroups.isEmpty {
+                Label("\(preview.newGroups.count) new frequenc\(preview.newGroups.count == 1 ? "y" : "ies") will be created", systemImage: "clock.badge.checkmark.fill")
+                    .foregroundStyle(DS.Colors.accent)
+            }
+            if !preview.newTags.isEmpty {
+                Label("\(preview.newTags.count) new group\(preview.newTags.count == 1 ? "" : "s") will be created", systemImage: "person.3.fill")
                     .foregroundStyle(DS.Colors.accent)
             }
             if preview.touchEventCount > 0 {
