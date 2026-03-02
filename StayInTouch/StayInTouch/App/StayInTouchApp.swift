@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct StayInTouchApp: App {
+struct KeepInTouchApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let coreDataStack: CoreDataStack = {
         if ProcessInfo.processInfo.arguments.contains("-uiTesting") {

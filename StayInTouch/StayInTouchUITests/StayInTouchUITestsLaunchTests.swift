@@ -7,7 +7,7 @@
 
 import XCTest
 
-final class StayInTouchUITestsLaunchTests: XCTestCase {
+final class KeepInTouchUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
