@@ -1,6 +1,6 @@
 //
 //  BirthdayTests.swift
-//  StayInTouchTests
+//  KeepInTouchTests
 //
 //  Created by Claude on 3/1/26.
 //

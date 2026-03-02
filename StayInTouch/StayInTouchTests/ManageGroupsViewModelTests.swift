@@ -1,6 +1,6 @@
 //
 //  ManageGroupsViewModelTests.swift
-//  StayInTouchTests
+//  KeepInTouchTests
 //
 //  Created by Claude on 2/27/26.
 //

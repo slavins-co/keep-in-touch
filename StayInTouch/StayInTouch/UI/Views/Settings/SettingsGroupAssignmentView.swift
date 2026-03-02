@@ -1,6 +1,6 @@
 //
 //  SettingsGroupAssignmentView.swift
-//  StayInTouch
+//  KeepInTouch
 //
 //  Created by Codex on 2/15/26.
 //

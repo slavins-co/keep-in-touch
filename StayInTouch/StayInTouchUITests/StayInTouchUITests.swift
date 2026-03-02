@@ -1,6 +1,6 @@
 //
 //  StayInTouchUITests.swift
-//  StayInTouchUITests
+//  KeepInTouchUITests
 //
 //  Created by Bradley Slavin on 2/2/26.
 //

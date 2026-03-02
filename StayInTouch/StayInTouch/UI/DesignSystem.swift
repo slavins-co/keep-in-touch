@@ -1,6 +1,6 @@
 //
 //  DesignSystem.swift
-//  StayInTouch
+//  KeepInTouch
 //
 //  Design system foundation for the UX redesign (Issue #24).
 //  All views reference DS tokens instead of hardcoding values.

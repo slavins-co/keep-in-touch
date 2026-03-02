@@ -1,6 +1,6 @@
 //
 //  AppLogger.swift
-//  StayInTouch
+//  KeepInTouch
 //
 //  Created by Claude Code on 2/3/26.
 //
@@ -8,7 +8,7 @@
 import Foundation
 import os
 
-/// Centralized logging utility for the Stay in Touch app
+/// Centralized logging utility for the Keep In Touch app
 final class AppLogger {
     private static let subsystem = Bundle.main.bundleIdentifier ?? "com.keepintouch.app"
 

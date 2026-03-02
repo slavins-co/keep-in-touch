@@ -1,6 +1,6 @@
 //
 //  ErrorToast.swift
-//  StayInTouch
+//  KeepInTouch
 //
 //  Created by Claude on 2/24/26.
 //

@@ -1,6 +1,6 @@
 //
 //  AnalyticsService.swift
-//  StayInTouch
+//  KeepInTouch
 //
 
 import Foundation

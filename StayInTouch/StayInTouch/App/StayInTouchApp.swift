@@ -1,6 +1,6 @@
 //
 //  StayInTouchApp.swift
-//  StayInTouch
+//  KeepInTouch
 //
 //  Created by Bradley Slavin on 2/2/26.
 //

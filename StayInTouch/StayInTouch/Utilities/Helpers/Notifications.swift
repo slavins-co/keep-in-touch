@@ -1,6 +1,6 @@
 //
 //  Notifications.swift
-//  StayInTouch
+//  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
 //
