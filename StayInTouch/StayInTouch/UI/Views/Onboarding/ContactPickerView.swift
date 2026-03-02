@@ -31,7 +31,10 @@ struct ContactPickerView: View {
                 .font(DS.Typography.title)
                 .padding(.top)
 
-            TextField("Search contacts...", text: $viewModel.searchText)
+            TextField("Search contacts...", text: Binding(
+                get: { viewModel.searchText },
+                set: { viewModel.searchText = String($0.prefix(100)) }
+            ))
                 .textFieldStyle(.roundedBorder)
                 .padding(.horizontal)
 

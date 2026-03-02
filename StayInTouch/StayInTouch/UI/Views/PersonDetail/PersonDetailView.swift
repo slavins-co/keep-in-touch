@@ -454,6 +454,9 @@ struct PersonDetailView: View {
                 .font(.body)
                 .lineLimit(3...6)
                 .focused($isNextTouchNotesFocused)
+                .onChange(of: nextTouchNotesText) { _, newValue in
+                    if newValue.count > 500 { nextTouchNotesText = String(newValue.prefix(500)) }
+                }
                 .toolbar {
                     ToolbarItemGroup(placement: .keyboard) {
                         Spacer()
@@ -542,7 +545,7 @@ struct PersonDetailView: View {
                 }
                 .listStyle(.plain)
                 .scrollDisabled(true)
-                .frame(height: CGFloat(events.count) * 52)
+                .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.vertical, DS.Spacing.md)

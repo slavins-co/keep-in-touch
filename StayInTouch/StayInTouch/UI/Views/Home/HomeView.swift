@@ -287,7 +287,7 @@ struct HomeView: View {
                 "Search contacts...",
                 text: Binding(
                     get: { viewModel.searchText },
-                    set: { viewModel.updateSearchText($0) }
+                    set: { viewModel.updateSearchText(String($0.prefix(100))) }
                 )
             )
             .textFieldStyle(.plain)
