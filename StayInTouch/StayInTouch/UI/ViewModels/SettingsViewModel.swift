@@ -522,13 +522,10 @@ final class SettingsViewModel: ObservableObject {
         }
 
         let status = CNContactStore.authorizationStatus(for: .contacts)
-        let isAuthorized: Bool
-        if #available(iOS 18.0, *) {
-            isAuthorized = status == .authorized || status == .limited
-        } else {
-            isAuthorized = status == .authorized
-        }
-        guard isAuthorized else {
+        switch status {
+        case .authorized, .limited:
+            break
+        default:
             return ContactMatchSummary(
                 matched: 0,
                 unmatchedPeople: people,
