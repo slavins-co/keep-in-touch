@@ -170,6 +170,7 @@ struct TagPill: View {
             .padding(.vertical, 2)
             .background(Color(hex: colorHex).opacity(0.12))
             .clipShape(Capsule())
+            .accessibilityLabel("Tag: \(name)")
     }
 }
 
