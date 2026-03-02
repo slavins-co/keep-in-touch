@@ -88,7 +88,7 @@ final class DefaultDataSeeder {
     private func seedAppSettings() {
         let entity = AppSettingsEntity(context: context)
         entity.id = AppSettings.singletonId
-        entity.theme = Theme.light.rawValue
+        entity.theme = Theme.system.rawValue
         entity.notificationsEnabled = false
         entity.breachTimeOfDay = LocalTime(hour: 18, minute: 0).toJsonString()
         entity.digestEnabled = false
