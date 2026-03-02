@@ -11,7 +11,7 @@ extension AppSettingsEntity {
     func toDomain() -> AppSettings {
         AppSettings(
             id: id ?? AppSettings.singletonId,
-            theme: Theme(rawValue: theme ?? Theme.light.rawValue) ?? .light,
+            theme: Theme(rawValue: theme ?? Theme.system.rawValue) ?? .system,
             notificationsEnabled: notificationsEnabled,
             breachTimeOfDay: breachTimeOfDay.flatMap(LocalTime.from(jsonString:)) ?? LocalTime(hour: 18, minute: 0),
             digestEnabled: digestEnabled,
