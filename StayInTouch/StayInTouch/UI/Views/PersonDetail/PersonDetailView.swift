@@ -331,23 +331,24 @@ struct PersonDetailView: View {
                     Text(statusLabel())
                         .font(DS.Typography.metadata)
                         .foregroundStyle(DS.Colors.secondaryText)
-                }
-            }
 
-            if let birthday = viewModel.displayBirthday {
-                Button {
-                    showBirthdayEditor = true
-                } label: {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "birthday.cake")
-                            .font(.caption)
-                        Text(birthday.formatted)
-                            .font(DS.Typography.metadata)
+                    if let birthday = viewModel.displayBirthday {
+                        Spacer()
+                        Button {
+                            showBirthdayEditor = true
+                        } label: {
+                            HStack(spacing: DS.Spacing.xs) {
+                                Image(systemName: "gift.fill")
+                                    .font(.caption)
+                                Text(birthday.formatted)
+                                    .font(DS.Typography.metadata)
+                            }
+                            .foregroundStyle(DS.Colors.secondaryText)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Birthday \(birthday.formatted), tap to edit")
                     }
-                    .foregroundStyle(DS.Colors.secondaryText)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Birthday \(birthday.formatted), tap to edit")
             }
         }
     }
