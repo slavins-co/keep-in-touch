@@ -56,6 +56,7 @@ enum ContactsFetcher {
     struct ContactInfo: Equatable {
         let phoneNumbers: [LabeledValue]
         let emailAddresses: [LabeledValue]
+        let birthday: DateComponents?
 
         var phone: String? { phoneNumbers.first?.value }
         var email: String? { emailAddresses.first?.value }
@@ -132,7 +133,8 @@ enum ContactsFetcher {
         let store = CNContactStore()
         let keys: [CNKeyDescriptor] = [
             CNContactPhoneNumbersKey as CNKeyDescriptor,
-            CNContactEmailAddressesKey as CNKeyDescriptor
+            CNContactEmailAddressesKey as CNKeyDescriptor,
+            CNContactBirthdayKey as CNKeyDescriptor
         ]
 
         do {
@@ -145,7 +147,7 @@ enum ContactsFetcher {
                 let label = CNLabeledValue<NSString>.localizedString(forLabel: labeled.label ?? "")
                 return LabeledValue(label: label, value: labeled.value as String)
             }
-            return ContactInfo(phoneNumbers: phones, emailAddresses: emails)
+            return ContactInfo(phoneNumbers: phones, emailAddresses: emails, birthday: contact.birthday)
         } catch let error as NSError {
             if error.domain == CNErrorDomain && error.code == CNError.recordDoesNotExist.rawValue {
                 AppLogger.logWarning("Contact not found: \(identifier)", category: AppLogger.contacts)

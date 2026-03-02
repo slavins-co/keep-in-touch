@@ -148,6 +148,7 @@ enum TestFactory {
         isPaused: Bool = false,
         isTracked: Bool = true,
         snoozedUntil: Date? = nil,
+        birthday: Birthday? = nil,
         cnIdentifier: String? = nil
     ) -> Person {
         Person(
@@ -167,6 +168,7 @@ enum TestFactory {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: snoozedUntil,
+            birthday: birthday,
             contactUnavailable: false,
             isDemoData: false,
             groupAddedAt: Date(),

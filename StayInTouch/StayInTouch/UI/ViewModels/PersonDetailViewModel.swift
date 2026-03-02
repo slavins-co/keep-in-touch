@@ -19,6 +19,7 @@ final class PersonDetailViewModel: ObservableObject {
     @Published private(set) var email: String?
     @Published private(set) var phoneNumbers: [ContactsFetcher.LabeledValue] = []
     @Published private(set) var emailAddresses: [ContactsFetcher.LabeledValue] = []
+    @Published internal(set) var contactBirthday: Birthday?
     @Published var quickActionMessage: String?
     @Published var showPhonePicker = false
     @Published var showEmailPicker = false
@@ -59,6 +60,7 @@ final class PersonDetailViewModel: ObservableObject {
             email = nil
             phoneNumbers = []
             emailAddresses = []
+            contactBirthday = nil
             return
         }
 
@@ -77,6 +79,7 @@ final class PersonDetailViewModel: ObservableObject {
             email = info.email
             phoneNumbers = info.phoneNumbers
             emailAddresses = info.emailAddresses
+            contactBirthday = info.birthday.flatMap(Birthday.from(dateComponents:))
             if person.contactUnavailable {
                 var updated = person
                 updated.contactUnavailable = false
@@ -88,6 +91,7 @@ final class PersonDetailViewModel: ObservableObject {
             email = nil
             phoneNumbers = []
             emailAddresses = []
+            contactBirthday = nil
             if case ContactsFetcherError.contactNotFound = error {
                 if !person.contactUnavailable {
                     var updated = person
@@ -99,6 +103,18 @@ final class PersonDetailViewModel: ObservableObject {
                 AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.refreshContactInfo")
             }
         }
+    }
+
+    /// Returns the birthday to display: manual override takes precedence over CNContact birthday
+    var displayBirthday: Birthday? {
+        person.birthday ?? contactBirthday
+    }
+
+    func setBirthday(_ birthday: Birthday?) {
+        var updated = person
+        updated.birthday = birthday
+        updated.modifiedAt = Date()
+        savePerson(updated)
     }
 
     func reloadPerson() {

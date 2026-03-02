@@ -303,6 +303,7 @@ final class SettingsViewModel: ObservableObject {
                     notificationsMuted: false,
                     customBreachTime: nil,
                     snoozedUntil: nil,
+                    birthday: exportPerson.birthday.flatMap(Birthday.from(jsonString:)),
                     contactUnavailable: false,
                     isDemoData: false,
                     groupAddedAt: nil,
@@ -324,6 +325,7 @@ final class SettingsViewModel: ObservableObject {
                 person.tagIds = exportPerson.tagIds
                 person.lastTouchAt = exportPerson.lastTouchAt
                 person.isPaused = exportPerson.isPaused
+                person.birthday = exportPerson.birthday.flatMap(Birthday.from(jsonString:))
                 person.modifiedAt = now
 
                 if let newGroupId = exportPerson.groupId, validGroupIds.contains(newGroupId), newGroupId != person.groupId {
@@ -444,6 +446,7 @@ final class SettingsViewModel: ObservableObject {
                     notificationsMuted: false,
                     customBreachTime: nil,
                     snoozedUntil: nil,
+                    birthday: nil,
                     contactUnavailable: false,
                     isDemoData: false,
                     groupAddedAt: nil,
@@ -532,6 +535,7 @@ struct ExportPerson: Codable {
     let createdAt: Date
     let modifiedAt: Date
     let touchEvents: [ExportTouchEvent]?
+    let birthday: String?
 
     static func from(_ person: Person, groupName: String?, tagNames: [String], touchEvents: [TouchEvent]) -> ExportPerson {
         let exportEvents: [ExportTouchEvent]? = touchEvents.isEmpty ? nil : touchEvents.map { ExportTouchEvent.from($0) }
@@ -547,7 +551,8 @@ struct ExportPerson: Codable {
             isPaused: person.isPaused,
             createdAt: person.createdAt,
             modifiedAt: person.modifiedAt,
-            touchEvents: exportEvents
+            touchEvents: exportEvents,
+            birthday: person.birthday?.toJsonString()
         )
     }
 }
