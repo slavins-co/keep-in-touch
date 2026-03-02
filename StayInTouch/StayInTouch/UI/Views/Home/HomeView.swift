@@ -90,7 +90,7 @@ struct HomeView: View {
             }
             Button("OK", role: .cancel) {}
         } message: {
-            Text("You've imported all the contacts you gave access to. To add more, open Settings \u{2192} Stay in Touch \u{2192} Contacts and select additional contacts or grant full access.")
+            Text("You've imported all the contacts you gave access to. To add more, open Settings \u{2192} Keep In Touch \u{2192} Contacts and select additional contacts or grant full access.")
         }
         .alert("Contacts Access Required", isPresented: $showContactsSettingsAlert) {
             Button("Open Settings") {
@@ -113,7 +113,7 @@ struct HomeView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text("Stay in Touch")
+                Text("Keep In Touch")
                     .font(DS.Typography.largeTitle)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)

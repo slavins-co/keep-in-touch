@@ -144,7 +144,7 @@ struct PersonDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will remove them from Stay in Touch.")
+            Text("This will remove them from Keep In Touch.")
         }
         .sheet(isPresented: $showDatePicker) {
             NavigationStack {

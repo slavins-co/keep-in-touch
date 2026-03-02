@@ -27,7 +27,7 @@ struct ContactPickerView: View {
 
     var body: some View {
         VStack(spacing: DS.Spacing.md) {
-            Text("Who Do You Want to Stay in Touch With?")
+            Text("Who Do You Want to Keep In Touch With?")
                 .font(DS.Typography.title)
                 .padding(.top)
 

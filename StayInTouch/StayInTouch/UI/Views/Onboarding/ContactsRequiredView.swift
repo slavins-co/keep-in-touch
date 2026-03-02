@@ -23,7 +23,7 @@ struct ContactsRequiredView: View {
                     .font(DS.Typography.title)
                     .multilineTextAlignment(.center)
 
-                Text("Stay in Touch needs your contacts to track check-ins and reminders. You can enable access later in Settings.")
+                Text("Keep In Touch needs your contacts to track check-ins and reminders. You can enable access later in Settings.")
                     .font(DS.Typography.metadata)
                     .foregroundStyle(DS.Colors.secondaryText)
                     .multilineTextAlignment(.center)

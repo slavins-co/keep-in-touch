@@ -150,7 +150,7 @@ final class SettingsViewModel: ObservableObject {
     func sendTestNotification() async {
         let content = UNMutableNotificationContent()
         content.title = "Test Notification"
-        content.body = "Stay in Touch test notification."
+        content.body = "Keep In Touch test notification."
         content.sound = .default
         content.userInfo = ["type": "home", "category": "test"]
 

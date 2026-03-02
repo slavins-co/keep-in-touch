@@ -98,7 +98,7 @@ struct SettingsView: View {
             }
             Button("OK", role: .cancel) {}
         } message: {
-            Text("You've imported all the contacts you gave access to. To add more, open Settings \u{2192} Stay in Touch \u{2192} Contacts and select additional contacts or grant full access.")
+            Text("You've imported all the contacts you gave access to. To add more, open Settings \u{2192} Keep In Touch \u{2192} Contacts and select additional contacts or grant full access.")
         }
         .alert("Contacts Access Required", isPresented: $showContactsSettingsAlert) {
             Button("Open Settings") {
@@ -154,7 +154,7 @@ struct SettingsView: View {
                     importPreview = preview
                     showImportPreview = true
                 } else {
-                    importResultMessage = "Could not read the file. Make sure it is a valid Stay in Touch export."
+                    importResultMessage = "Could not read the file. Make sure it is a valid Keep In Touch export."
                     showImportErrorAlert = true
                 }
             case .failure:
@@ -478,7 +478,7 @@ struct SettingsView: View {
     private var aboutSection: some View {
         Section {
             VStack(spacing: DS.Spacing.sm) {
-                Text("Stay in Touch \(appVersion)")
+                Text("Keep In Touch \(appVersion)")
                     .font(DS.Typography.caption)
                     .foregroundStyle(DS.Colors.secondaryText)
                 Text("Privacy-first personal CRM")
