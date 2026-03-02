@@ -83,7 +83,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             person.snoozedUntil = nil
             person.modifiedAt = now
             try personRepo.save(person)
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 NotificationCenter.default.post(name: .personDidChange, object: personId)
             }
         } catch {

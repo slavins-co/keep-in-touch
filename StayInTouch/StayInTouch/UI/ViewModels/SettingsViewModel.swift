@@ -142,9 +142,7 @@ final class SettingsViewModel: ObservableObject {
                 }
             }
         }
-        DispatchQueue.main.async {
-            NotificationCenter.default.post(name: .personDidChange, object: nil)
-        }
+        NotificationCenter.default.post(name: .personDidChange, object: nil)
     }
 
     func sendTestNotification() async {

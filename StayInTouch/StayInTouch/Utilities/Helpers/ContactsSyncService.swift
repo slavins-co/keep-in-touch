@@ -55,7 +55,7 @@ enum ContactsSyncService {
             }
         }
 
-        DispatchQueue.main.async {
+        await MainActor.run {
             NotificationCenter.default.post(name: .contactsDidSync, object: nil)
         }
     }
