@@ -596,7 +596,6 @@ final class SettingsViewModel: ObservableObject {
         person.modifiedAt = Date()
         do {
             try personRepository.save(person)
-            load()
             NotificationCenter.default.post(name: .personDidChange, object: nil)
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "linkContactManually")

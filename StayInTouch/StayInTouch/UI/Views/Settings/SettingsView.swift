@@ -226,6 +226,7 @@ struct SettingsView: View {
         }
         .onAppear { viewModel.load() }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
+            guard !showPostImportMatch else { return }
             viewModel.load()
         }
     }
