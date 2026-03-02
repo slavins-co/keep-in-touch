@@ -217,7 +217,7 @@ final class SettingsViewModel: ObservableObject {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         guard let data = try? encoder.encode(exportData) else { return nil }
 
-        let filename = "stayintouch-export-\(ISO8601DateFormatter().string(from: Date())).json"
+        let filename = "keepintouch-export-\(ISO8601DateFormatter().string(from: Date())).json"
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
         do {
             try data.write(to: url, options: .atomic)
