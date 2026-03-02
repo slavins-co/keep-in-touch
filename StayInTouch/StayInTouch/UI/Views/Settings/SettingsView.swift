@@ -35,6 +35,9 @@ struct SettingsView: View {
     @State private var showImportErrorAlert = false
     @State private var importResultMessage = ""
     @State private var showResetFrequenciesConfirmation = false
+    @State private var showPostImportMatch = false
+    @State private var postImportResult: ImportResult?
+    @State private var postImportMatchSummary: ContactMatchSummary?
 
     var body: some View {
         List {
@@ -167,15 +170,47 @@ struct SettingsView: View {
                         showImportPreview = false
                         Task {
                             isImporting = true
-                            await viewModel.executeImport(preview)
-                            isImporting = false
-                            importResultMessage = "Imported \(preview.totalPeople) contact\(preview.totalPeople == 1 ? "" : "s") successfully."
-                            showImportSuccessAlert = true
+                            let result = await viewModel.executeImport(preview)
+
+                            // Attempt contact matching for newly imported people
+                            if !result.importedPeople.isEmpty {
+                                let matchSummary = await viewModel.matchImportedContacts(people: result.importedPeople)
+                                isImporting = false
+                                postImportResult = result
+                                postImportMatchSummary = matchSummary
+                                showPostImportMatch = true
+                            } else {
+                                isImporting = false
+                                var parts: [String] = []
+                                if result.totalPeople > 0 {
+                                    parts.append("\(result.totalPeople) contact\(result.totalPeople == 1 ? "" : "s")")
+                                }
+                                if result.groupsCreated > 0 {
+                                    parts.append("\(result.groupsCreated) frequenc\(result.groupsCreated == 1 ? "y" : "ies")")
+                                }
+                                if result.tagsCreated > 0 {
+                                    parts.append("\(result.tagsCreated) group\(result.tagsCreated == 1 ? "" : "s")")
+                                }
+                                importResultMessage = parts.isEmpty
+                                    ? "Nothing was imported."
+                                    : "Imported \(parts.joined(separator: ", ")) successfully."
+                                showImportSuccessAlert = true
+                            }
                         }
                     },
                     onCancel: {
                         showImportPreview = false
                     }
+                )
+            }
+        }
+        .sheet(isPresented: $showPostImportMatch) {
+            if let result = postImportResult, let matchSummary = postImportMatchSummary {
+                PostImportMatchView(
+                    importResult: result,
+                    matchSummary: matchSummary,
+                    viewModel: viewModel,
+                    onDismiss: { showPostImportMatch = false }
                 )
             }
         }
@@ -191,6 +226,7 @@ struct SettingsView: View {
         }
         .onAppear { viewModel.load() }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
+            guard !showPostImportMatch else { return }
             viewModel.load()
         }
     }

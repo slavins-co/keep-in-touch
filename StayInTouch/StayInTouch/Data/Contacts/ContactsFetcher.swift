@@ -158,6 +158,68 @@ enum ContactsFetcher {
         }
     }
 
+    // MARK: - Name-Based Matching
+
+    enum ContactMatchResult {
+        case matched(personId: UUID, displayName: String, cnIdentifier: String)
+        case multipleMatches(personId: UUID, displayName: String, matchCount: Int)
+        case noMatch(personId: UUID, displayName: String)
+    }
+
+    static func matchByDisplayName(people: [(id: UUID, displayName: String)]) throws -> [ContactMatchResult] {
+        let status = CNContactStore.authorizationStatus(for: .contacts)
+        switch status {
+        case .denied:
+            throw ContactsFetcherError.permissionDenied
+        case .restricted:
+            throw ContactsFetcherError.permissionRestricted
+        case .notDetermined, .authorized, .limited:
+            break
+        @unknown default:
+            break
+        }
+
+        let store = CNContactStore()
+        let formatterKeys = CNContactFormatter.descriptorForRequiredKeys(for: .fullName)
+        let keys: [CNKeyDescriptor] = [
+            CNContactIdentifierKey as CNKeyDescriptor,
+            CNContactOrganizationNameKey as CNKeyDescriptor,
+            formatterKeys
+        ]
+
+        // Build lookup: normalized display name → [contact identifiers]
+        var contactsByName: [String: [String]] = [:]
+        let request = CNContactFetchRequest(keysToFetch: keys)
+        do {
+            try store.enumerateContacts(with: request) { contact, _ in
+                let name = CNContactFormatter.string(from: contact, style: .fullName)
+                    ?? contact.organizationName
+                let normalized = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !normalized.isEmpty else { return }
+                contactsByName[normalized, default: []].append(contact.identifier)
+            }
+        } catch {
+            AppLogger.logError(error, category: AppLogger.contacts, context: "ContactsFetcher.matchByDisplayName")
+            throw ContactsFetcherError.fetchFailed(error)
+        }
+
+        // Match each person
+        var results: [ContactMatchResult] = []
+        for person in people {
+            let normalized = person.displayName.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            let matches = contactsByName[normalized] ?? []
+            switch matches.count {
+            case 0:
+                results.append(.noMatch(personId: person.id, displayName: person.displayName))
+            case 1:
+                results.append(.matched(personId: person.id, displayName: person.displayName, cnIdentifier: matches[0]))
+            default:
+                results.append(.multipleMatches(personId: person.id, displayName: person.displayName, matchCount: matches.count))
+            }
+        }
+        return results
+    }
+
     static func fetchThumbnailImageData(identifier: String) -> Data? {
         let status = CNContactStore.authorizationStatus(for: .contacts)
         switch status {
