@@ -1,8 +1,8 @@
-# Privacy Policy for Stay in Touch
+# Privacy Policy for Keep In Touch
 
 **Last updated:** February 27, 2026
 
-Stay in Touch is a privacy-first personal CRM app. Your relationship data stays on your device.
+Keep In Touch is a privacy-first personal CRM app. Your relationship data stays on your device.
 
 ## Data Collection
 

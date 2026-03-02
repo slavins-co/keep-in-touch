@@ -1,4 +1,4 @@
-# Asset Reference - Stay in Touch
+# Asset Reference - Keep In Touch
 
 ## Color Palette
 

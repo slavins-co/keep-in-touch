@@ -226,7 +226,7 @@ struct LocalTime {
 **Screen 1: Welcome**
 - **Layout:**
   - App icon (SF Symbol: person.2.circle.fill)
-  - Title: "Stay in Touch"
+  - Title: "Keep In Touch"
   - Subtitle: "Never lose track of the people who matter"
   - 3 benefit bullets:
     - "Track who you haven't talked to lately"
@@ -297,7 +297,7 @@ struct LocalTime {
 
 **Layout Sections:**
 1. **Header**
-   - Large title: "Stay in Touch"
+   - Large title: "Keep In Touch"
    - Settings gear icon (top right)
    - Summary counts row:
      - Red dot + "X overdue"
@@ -579,7 +579,7 @@ or
 
 **6. About**
 ```
-Stay in Touch v1.0
+Keep In Touch v1.0
 Privacy-first personal CRM
 ```
 

@@ -40,8 +40,8 @@ Before TestFlight submission:
 **Location:** Apple Developer Portal → Certificates, Identifiers & Profiles → Identifiers
 
 **App ID to Register:**
-- **Bundle ID:** `slavins.co.StayInTouch` (already used in Xcode)
-- **Description:** Stay in Touch - Personal CRM
+- **Bundle ID:** `slavins.co.KeepInTouch` (already used in Xcode)
+- **Description:** Keep In Touch - Personal CRM
 - **Platform:** iOS
 
 **Required Capabilities:**
@@ -54,8 +54,8 @@ Before TestFlight submission:
 1. Go to https://developer.apple.com/account/resources/identifiers/list
 2. Click "+" to create new App ID
 3. Select "App IDs" → "App"
-4. Description: "Stay in Touch"
-5. Bundle ID: Explicit → "slavins.co.StayInTouch"
+4. Description: "Keep In Touch"
+5. Bundle ID: Explicit → "slavins.co.KeepInTouch"
 6. Capabilities: Enable "Background Modes"
 7. Click "Continue" → "Register"
 ```
@@ -110,9 +110,9 @@ Before TestFlight submission:
 1. Go to https://developer.apple.com/account/resources/profiles/list
 2. Click "+" to create new profile
 3. Select "App Store" under Distribution
-4. Select App ID: "slavins.co.StayInTouch"
+4. Select App ID: "slavins.co.KeepInTouch"
 5. Select Distribution Certificate (created in 1.3)
-6. Profile Name: "Stay in Touch App Store"
+6. Profile Name: "Keep In Touch App Store"
 7. Click "Generate"
 8. Download profile (e.g., "Stay_in_Touch_App_Store.mobileprovision")
 9. Double-click to install in Xcode
@@ -173,7 +173,7 @@ grep -r "IPHONEOS_DEPLOYMENT_TARGET" StayInTouch.xcodeproj/project.pbxproj
 **Alternative (Manual Signing):**
 ```
 1. UNCHECK "Automatically manage signing"
-2. Set "Provisioning Profile" to "Stay in Touch App Store" (downloaded in 1.4)
+2. Set "Provisioning Profile" to "Keep In Touch App Store" (downloaded in 1.4)
 3. Ensure certificate appears as "Apple Distribution: ..."
 ```
 
@@ -275,10 +275,10 @@ Option 3: AI-generated
 1. Log in to https://appstoreconnect.apple.com
 2. Click "My Apps" → "+" → "New App"
 3. Platform: iOS
-4. Name: "Stay in Touch"
+4. Name: "Keep In Touch"
 5. Primary Language: English (U.S.)
-6. Bundle ID: Select "slavins.co.StayInTouch" from dropdown
-7. SKU: "stayintouch-ios-v1" (unique identifier for your records)
+6. Bundle ID: Select "slavins.co.KeepInTouch" from dropdown
+7. SKU: "keepintouch-ios-v1" (unique identifier for your records)
 8. User Access: Full Access
 9. Click "Create"
 ```
@@ -318,12 +318,12 @@ Required for App Store submission
 Can use simple hosted page (GitHub Pages, Notion, etc.)
 
 Sample Privacy Policy Template:
-markdown# Privacy Policy for Stay in Touch
+markdown# Privacy Policy for Keep In Touch
 
 Last updated: February 3, 2026
 
 ## Data Collection
-Stay in Touch does not collect, transmit, or share any personal data. All
+Keep In Touch does not collect, transmit, or share any personal data. All
 information stays on your device.
 
 ## Contacts Access
@@ -431,13 +431,13 @@ fastlane snapshot
 
 ### 3.6 Write App Description
 
-**App Name:** Stay in Touch
+**App Name:** Keep In Touch
 
 **Subtitle (max 30 chars):** Never lose track of friends
 
 **Promotional Text (optional, max 170 chars):**
 ```
-Track your relationships effortlessly. Stay in Touch reminds you when it's
+Track your relationships effortlessly. Keep In Touch reminds you when it's
 time to reconnect with the people who matter most.
 ```
 
@@ -445,7 +445,7 @@ time to reconnect with the people who matter most.
 ```
 NEVER LOSE TRACK OF FRIENDSHIPS
 
-Stay in Touch is your personal relationship manager that helps you maintain
+Keep In Touch is your personal relationship manager that helps you maintain
 meaningful connections. Simply categorize your contacts by how often you want
 to stay in touch, and let the app handle the rest.
 
@@ -485,7 +485,7 @@ PERFECT FOR
 
 YOUR DATA, YOUR DEVICE
 
-Stay in Touch uses Apple's Contacts framework to help you select people to
+Keep In Touch uses Apple's Contacts framework to help you select people to
 track, but all data stays on your device. No analytics, no tracking, no
 external servers.
 
@@ -569,7 +569,7 @@ Solution:
 ```
 Solution:
 1. Go to developer.apple.com → Profiles
-2. Delete existing "Stay in Touch App Store" profile
+2. Delete existing "Keep In Touch App Store" profile
 3. Recreate with your current distribution certificate
 4. Download and double-click to install
 5. Retry archive
@@ -579,7 +579,7 @@ Solution:
 ```
 Solution:
 1. Verify target Bundle Identifier matches App ID exactly
-2. Should be: slavins.co.StayInTouch
+2. Should be: slavins.co.KeepInTouch
 3. Check for typos or extra spaces
 ```
 
@@ -660,7 +660,7 @@ Solution:
 2. Click on build number
 3. Provide Export Compliance Information:
    - "Does your app use encryption?" → NO
-     (Stay in Touch uses only iOS built-in encryption, no custom crypto)
+     (Keep In Touch uses only iOS built-in encryption, no custom crypto)
    - Click "Start Internal Testing" (appears after export compliance)
 ```
 
@@ -684,7 +684,7 @@ Solution:
    your-email@example.com
 
 3. Marketing URL (optional):
-   https://yourdomain.com/stayintouch
+   https://yourdomain.com/keepintouch
 
 4. Privacy Policy URL:
    https://yourdomain.com/privacy
@@ -711,7 +711,7 @@ Solution:
 1. App Store Connect → TestFlight → Internal Testing
 2. Build should be automatically selected
 3. "Internal Testers" section shows your Apple ID
-4. You'll receive email: "Stay in Touch is ready to test"
+4. You'll receive email: "Keep In Touch is ready to test"
 5. Download TestFlight app on iPhone:
    - App Store → Search "TestFlight" → Install
 6. Open TestFlight email → "View in TestFlight"
@@ -746,7 +746,7 @@ Solution:
 **B. Submit for Review (first external build only):**
 ```
 1. Click "Submit for Review"
-2. Provide test credentials if app requires login (N/A for Stay in Touch)
+2. Provide test credentials if app requires login (N/A for Keep In Touch)
 3. Agree to terms
 4. Submit
 5. Wait 24-48 hours for Apple review
@@ -755,7 +755,7 @@ Solution:
 **C. Share with Testers:**
 
 **Option 1: Email Invites**
-- Testers receive email: "You've been invited to test Stay in Touch"
+- Testers receive email: "You've been invited to test Keep In Touch"
 - They click link → Install TestFlight → Install app
 
 **Option 2: Public Link**
@@ -804,7 +804,7 @@ Solution:
 **Request from testers:**
 ```
 Email template:
-"Thanks for testing Stay in Touch!
+"Thanks for testing Keep In Touch!
 
 Please focus on:
 1. Onboarding flow (contacts permission, group setup)
@@ -835,7 +835,7 @@ Send feedback directly through TestFlight or email me at: your-email@example.com
    - TestFlight → Build 1.0 (2) → What to Test
    - Describe what changed
 
-8. Testers receive notification: "Stay in Touch (1.0) Build 2 is ready to test"
+8. Testers receive notification: "Keep In Touch (1.0) Build 2 is ready to test"
 ```
 
 **Build version strategy:**
@@ -883,7 +883,7 @@ Send feedback directly through TestFlight or email me at: your-email@example.com
 - [ ] No hidden features or Easter eggs
 - [ ] Complies with App Store Review Guidelines: https://developer.apple.com/app-store/review/guidelines/
 
-**Specific to Stay in Touch:**
+**Specific to Keep In Touch:**
 - [ ] Contacts permission clearly explained in UI (already done)
 - [ ] Notifications permission clearly explained (already done)
 - [ ] App doesn't mislead about functionality
@@ -990,7 +990,7 @@ Before calling this plan complete, verify:
 Pre-Archive
 
  Deployment target set to iOS 17.0 (all targets)
- Bundle identifier matches App ID: slavins.co.StayInTouch
+ Bundle identifier matches App ID: slavins.co.KeepInTouch
  Version 1.0, Build 1
  App icon 1024x1024 added to Assets
  All tests passing (30+ tests)

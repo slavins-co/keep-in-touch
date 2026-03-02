@@ -1,4 +1,4 @@
-# Stay in Touch
+# Keep In Touch
 
 > Privacy-first iOS app to maintain friendships through gentle reminders and relationship tracking.
 
@@ -10,9 +10,9 @@
 
 ---
 
-## What is Stay in Touch?
+## What is Keep In Touch?
 
-Never lose track of the people who matter. Stay in Touch helps you maintain friendships by:
+Never lose track of the people who matter. Keep In Touch helps you maintain friendships by:
 
 - **Tracking when you last connected** with friends and family
 - **Organizing contacts by frequency** (Weekly, Bi-Weekly, Monthly, Quarterly)
