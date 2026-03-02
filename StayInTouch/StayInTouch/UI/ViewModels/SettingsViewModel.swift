@@ -525,7 +525,6 @@ struct ExportTouchEvent: Codable {
 struct ExportPerson: Codable {
     let id: UUID
     let displayName: String
-    let cnIdentifier: String?
     let groupId: UUID?
     let groupName: String?
     let tagIds: [UUID]
@@ -542,7 +541,6 @@ struct ExportPerson: Codable {
         return ExportPerson(
             id: person.id,
             displayName: person.displayName,
-            cnIdentifier: person.cnIdentifier,
             groupId: person.groupId,
             groupName: groupName,
             tagIds: person.tagIds,
