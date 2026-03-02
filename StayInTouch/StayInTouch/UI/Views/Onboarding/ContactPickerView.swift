@@ -31,12 +31,12 @@ struct ContactPickerView: View {
                 .font(DS.Typography.title)
                 .padding(.top)
 
-            TextField("Search contacts...", text: $viewModel.searchText)
+            TextField("Search contacts...", text: Binding(
+                get: { viewModel.searchText },
+                set: { viewModel.searchText = String($0.prefix(100)) }
+            ))
                 .textFieldStyle(.roundedBorder)
                 .padding(.horizontal)
-                .onChange(of: viewModel.searchText) { _, newValue in
-                    if newValue.count > 100 { viewModel.searchText = String(newValue.prefix(100)) }
-                }
 
             ScrollViewReader { proxy in
                 HStack(spacing: 0) {

@@ -86,9 +86,11 @@ final class NotificationClassifierTests: XCTestCase {
     func testClassifierUsesCalendarDaysNotHours() {
         // Touch at 11 PM, reference 7 days later at 8 AM → ~6.4 × 24h periods
         // but 7 calendar days → should classify as dueToday for a 7-day frequency
+        // Use consistent base date to avoid sub-second date drift between Date() calls
         let cal = Calendar.current
-        let touchDate = cal.date(bySettingHour: 23, minute: 0, second: 0, of: Date())!
-        let referenceDate = cal.date(byAdding: .day, value: 7, to: cal.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!)!
+        let now = Date()
+        let touchDate = cal.date(bySettingHour: 23, minute: 0, second: 0, of: now)!
+        let referenceDate = cal.date(byAdding: .day, value: 7, to: cal.date(bySettingHour: 8, minute: 0, second: 0, of: now)!)!
 
         let groupId = UUID()
         let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
