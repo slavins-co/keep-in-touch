@@ -174,6 +174,18 @@ final class PersonDetailViewModel: ObservableObject {
         savePerson(updated)
     }
 
+    func setCustomDueDate(_ date: Date?) {
+        AnalyticsService.track(date != nil ? "person.customDueDate.set" : "person.customDueDate.cleared")
+        var updated = person
+        updated.customDueDate = date
+        updated.modifiedAt = Date()
+        savePerson(updated)
+    }
+
+    func clearCustomDueDate() {
+        setCustomDueDate(nil)
+    }
+
     func restoreNotificationDefaults() {
         var updated = person
         updated.customBreachTime = nil
@@ -256,6 +268,7 @@ final class PersonDetailViewModel: ObservableObject {
         updated.lastTouchMethod = method
         updated.lastTouchNotes = notes
         updated.snoozedUntil = nil
+        updated.customDueDate = nil
         updated.modifiedAt = now
         savePerson(updated)
 

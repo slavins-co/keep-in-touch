@@ -36,10 +36,8 @@ struct PersonStatusService {
         let filtered = people.filter { !($0.isPaused) }
         let dueSoon = filtered.filter { person in
             guard calculator.status(for: person, in: groups) == .dueSoon else { return false }
-            guard let daysSince = calculator.daysSinceLastTouch(for: person) else { return false }
-            guard let group = groups.first(where: { $0.id == person.groupId }) else { return false }
-            let daysUntilDue = group.frequencyDays - daysSince
-            return daysUntilDue > 0 && daysUntilDue <= settings.dueSoonWindowDays
+            let days = daysUntilDue(for: person, groups: groups)
+            return days > 0 && days <= settings.dueSoonWindowDays
         }
 
         return dueSoon.sorted { lhs, rhs in
@@ -58,8 +56,8 @@ struct PersonStatusService {
     }
 
     private func daysUntilDue(for person: Person, groups: [Group]) -> Int {
-        guard let daysSince = calculator.daysSinceLastTouch(for: person) else { return Int.max }
-        guard let group = groups.first(where: { $0.id == person.groupId }) else { return Int.max }
-        return group.frequencyDays - daysSince
+        guard let dueDate = calculator.effectiveDueDate(for: person, in: groups) else { return Int.max }
+        let cal = Calendar.current
+        return cal.dateComponents([.day], from: cal.startOfDay(for: calculator.referenceDate), to: cal.startOfDay(for: dueDate)).day ?? Int.max
     }
 }

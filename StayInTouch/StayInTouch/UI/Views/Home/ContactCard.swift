@@ -69,6 +69,12 @@ struct ContactCard: View {
                 Label(method.rawValue, systemImage: DS.touchMethodIcon(method))
             }
 
+            if person.customDueDate != nil {
+                Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
+                Image(systemName: "calendar.badge.exclamationmark")
+                    .foregroundStyle(DS.Colors.statusDueSoon)
+            }
+
             Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
             Label(frequencyName, systemImage: "arrow.triangle.2.circlepath")
         }
@@ -101,6 +107,9 @@ struct ContactCard: View {
             parts.append("via \(method.rawValue)")
         }
 
+        if person.customDueDate != nil {
+            parts.append("has custom due date")
+        }
         parts.append("\(frequencyName) frequency")
         parts.append("tap to view details")
 

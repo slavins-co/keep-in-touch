@@ -142,7 +142,8 @@ final class SettingsViewModelTests: XCTestCase {
                 createdAt: Date(),
                 modifiedAt: Date(),
                 touchEvents: nil,
-                birthday: nil
+                birthday: nil,
+                customDueDate: nil
             )
         ]
         let encoder = JSONEncoder()
@@ -181,7 +182,8 @@ final class SettingsViewModelTests: XCTestCase {
                 createdAt: Date(),
                 modifiedAt: Date(),
                 touchEvents: nil,
-                birthday: nil
+                birthday: nil,
+                customDueDate: nil
             )]
         )
         let encoder = JSONEncoder()
@@ -232,7 +234,8 @@ final class SettingsViewModelTests: XCTestCase {
                 createdAt: Date(),
                 modifiedAt: Date(),
                 touchEvents: nil,
-                birthday: nil
+                birthday: nil,
+                customDueDate: nil
             )]
         )
         let encoder = JSONEncoder()

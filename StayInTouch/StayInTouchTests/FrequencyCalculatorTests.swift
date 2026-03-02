@@ -28,6 +28,7 @@ final class FrequencyCalculatorTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            customDueDate: nil,
             birthday: nil,
             contactUnavailable: false,
             isDemoData: false,
@@ -62,6 +63,7 @@ final class FrequencyCalculatorTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            customDueDate: nil,
             birthday: nil,
             contactUnavailable: false,
             isDemoData: false,
@@ -94,6 +96,7 @@ final class FrequencyCalculatorTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            customDueDate: nil,
             birthday: nil,
             contactUnavailable: false,
             isDemoData: false,
@@ -128,6 +131,7 @@ final class FrequencyCalculatorTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            customDueDate: nil,
             birthday: nil,
             contactUnavailable: false,
             isDemoData: false,
@@ -167,6 +171,7 @@ final class FrequencyCalculatorTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            customDueDate: nil,
             birthday: nil,
             contactUnavailable: false,
             isDemoData: false,
@@ -204,6 +209,7 @@ final class FrequencyCalculatorTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            customDueDate: nil,
             birthday: nil,
             contactUnavailable: false,
             isDemoData: false,
@@ -242,6 +248,7 @@ final class FrequencyCalculatorTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            customDueDate: nil,
             birthday: nil,
             contactUnavailable: false,
             isDemoData: false,
@@ -254,5 +261,123 @@ final class FrequencyCalculatorTests: XCTestCase {
 
         let status = FrequencyCalculator(referenceDate: referenceDate).status(for: person, in: [group])
         XCTAssertEqual(status, .overdue, "7 calendar days should trigger overdue even if fewer than 7×24 hours elapsed")
+    }
+
+    // MARK: - Custom Due Date Tests (#9)
+
+    func testCustomDueDatePastIsOverdue() {
+        let now = Date()
+        let cal = Calendar.current
+        let groupId = UUID()
+        let lastTouch = cal.date(byAdding: .day, value: -3, to: now)!
+        let customDue = cal.date(byAdding: .day, value: -1, to: now)!
+
+        let person = TestFactory.makePerson(groupId: groupId, lastTouchAt: lastTouch, customDueDate: customDue)
+        let group = Group(id: groupId, name: "Monthly", frequencyDays: 30, warningDays: 5, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: now, modifiedAt: now)
+
+        let calc = FrequencyCalculator(referenceDate: now)
+        XCTAssertEqual(calc.status(for: person, in: [group]), .overdue)
+        XCTAssertEqual(calc.daysOverdue(for: person, in: [group]), 1)
+    }
+
+    func testCustomDueDateInWarningWindowIsDueSoon() {
+        let now = Date()
+        let cal = Calendar.current
+        let groupId = UUID()
+        let lastTouch = cal.date(byAdding: .day, value: -3, to: now)!
+        let customDue = cal.date(byAdding: .day, value: 2, to: now)!
+
+        let person = TestFactory.makePerson(groupId: groupId, lastTouchAt: lastTouch, customDueDate: customDue)
+        let group = Group(id: groupId, name: "Monthly", frequencyDays: 30, warningDays: 5, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: now, modifiedAt: now)
+
+        let status = FrequencyCalculator(referenceDate: now).status(for: person, in: [group])
+        XCTAssertEqual(status, .dueSoon)
+    }
+
+    func testCustomDueDateSoonerThanGroupTakesPrecedence() {
+        let now = Date()
+        let cal = Calendar.current
+        let groupId = UUID()
+        // Last touch 3 days ago, group says due in 7 days (4 remaining)
+        let lastTouch = cal.date(byAdding: .day, value: -3, to: now)!
+        // Custom due date is tomorrow — sooner than group due date
+        let customDue = cal.date(byAdding: .day, value: 1, to: now)!
+
+        let person = TestFactory.makePerson(groupId: groupId, lastTouchAt: lastTouch, customDueDate: customDue)
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: now, modifiedAt: now)
+
+        let status = FrequencyCalculator(referenceDate: now).status(for: person, in: [group])
+        XCTAssertEqual(status, .dueSoon, "Custom due date tomorrow should override group due date (4 days remaining)")
+    }
+
+    func testCustomDueDateLaterThanGroupDoesNotReduceUrgency() {
+        let now = Date()
+        let cal = Calendar.current
+        let groupId = UUID()
+        // Last touch 8 days ago — already overdue for 7-day group
+        let lastTouch = cal.date(byAdding: .day, value: -8, to: now)!
+        // Custom due date far in the future
+        let customDue = cal.date(byAdding: .day, value: 30, to: now)!
+
+        let person = TestFactory.makePerson(groupId: groupId, lastTouchAt: lastTouch, customDueDate: customDue)
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: now, modifiedAt: now)
+
+        let status = FrequencyCalculator(referenceDate: now).status(for: person, in: [group])
+        XCTAssertEqual(status, .overdue, "Custom due date in the future should not mask group-based overdue status")
+    }
+
+    func testNoLastTouchWithCustomDueDateDerivesStatus() {
+        let now = Date()
+        let cal = Calendar.current
+        let groupId = UUID()
+        let customDue = cal.date(byAdding: .day, value: -2, to: now)!
+
+        let person = TestFactory.makePerson(groupId: groupId, customDueDate: customDue)
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: now, modifiedAt: now)
+
+        let calc = FrequencyCalculator(referenceDate: now)
+        XCTAssertEqual(calc.status(for: person, in: [group]), .overdue)
+        XCTAssertEqual(calc.daysOverdue(for: person, in: [group]), 2)
+    }
+
+    func testPausedWithCustomDueDateStillOnTrack() {
+        let now = Date()
+        let cal = Calendar.current
+        let groupId = UUID()
+        let customDue = cal.date(byAdding: .day, value: -5, to: now)!
+
+        let person = TestFactory.makePerson(groupId: groupId, isPaused: true, customDueDate: customDue)
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: now, modifiedAt: now)
+
+        XCTAssertEqual(FrequencyCalculator(referenceDate: now).status(for: person, in: [group]), .onTrack)
+    }
+
+    func testSnoozedWithCustomDueDateStillOnTrack() {
+        let now = Date()
+        let cal = Calendar.current
+        let groupId = UUID()
+        let customDue = cal.date(byAdding: .day, value: -5, to: now)!
+        let snoozedUntil = cal.date(byAdding: .day, value: 3, to: now)!
+
+        let person = TestFactory.makePerson(groupId: groupId, snoozedUntil: snoozedUntil, customDueDate: customDue)
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: now, modifiedAt: now)
+
+        XCTAssertEqual(FrequencyCalculator(referenceDate: now).status(for: person, in: [group]), .onTrack)
+    }
+
+    func testEffectiveDueDateReturnsMinOfGroupAndCustom() {
+        let now = Date()
+        let cal = Calendar.current
+        let groupId = UUID()
+        let lastTouch = cal.date(byAdding: .day, value: -3, to: now)!
+        let customDue = cal.date(byAdding: .day, value: 1, to: now)!
+
+        let person = TestFactory.makePerson(groupId: groupId, lastTouchAt: lastTouch, customDueDate: customDue)
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: now, modifiedAt: now)
+
+        let calc = FrequencyCalculator(referenceDate: now)
+        let dueDate = calc.effectiveDueDate(for: person, in: [group])
+        XCTAssertNotNil(dueDate)
+        XCTAssertEqual(cal.startOfDay(for: dueDate!), cal.startOfDay(for: customDue))
     }
 }

@@ -35,18 +35,20 @@ enum NotificationClassifier {
         var allDueSoon: [Person] = []
         var customOverrides: [CustomNotification] = []
 
+        let calc = FrequencyCalculator(referenceDate: referenceDate)
+        let cal = Calendar.current
+
         for person in people where !person.isPaused && !person.notificationsMuted && !(person.snoozedUntil.map { $0 > referenceDate } ?? false) {
             guard let group = groups.first(where: { $0.id == person.groupId }) else { continue }
-            guard let lastTouch = FrequencyCalculator(referenceDate: referenceDate).effectiveLastTouchDate(for: person) else { continue }
+            guard let dueDate = calc.effectiveDueDate(for: person, in: groups) else { continue }
 
-            let cal = Calendar.current
-            let daysSince = cal.dateComponents([.day], from: cal.startOfDay(for: lastTouch), to: cal.startOfDay(for: referenceDate)).day ?? 0
+            let daysUntilDue = cal.dateComponents([.day], from: cal.startOfDay(for: referenceDate), to: cal.startOfDay(for: dueDate)).day ?? 0
             let type: DailyNotificationType?
-            if daysSince > group.frequencyDays {
+            if daysUntilDue < 0 {
                 type = .overdue
-            } else if daysSince == group.frequencyDays {
+            } else if daysUntilDue == 0 {
                 type = .dueToday
-            } else if daysSince >= max(0, group.frequencyDays - group.warningDays) {
+            } else if daysUntilDue <= group.warningDays {
                 type = .dueSoon
             } else {
                 type = nil

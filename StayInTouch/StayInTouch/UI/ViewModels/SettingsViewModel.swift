@@ -433,6 +433,7 @@ final class SettingsViewModel: ObservableObject {
                     notificationsMuted: false,
                     customBreachTime: nil,
                     snoozedUntil: nil,
+                    customDueDate: nil,
                     birthday: exportPerson.birthday.flatMap(Birthday.from(jsonString:)),
                     contactUnavailable: false,
                     isDemoData: false,
@@ -676,6 +677,7 @@ final class SettingsViewModel: ObservableObject {
                     notificationsMuted: false,
                     customBreachTime: nil,
                     snoozedUntil: nil,
+                    customDueDate: nil,
                     birthday: nil,
                     contactUnavailable: false,
                     isDemoData: false,
@@ -811,6 +813,7 @@ struct ExportPerson: Codable {
     let modifiedAt: Date
     let touchEvents: [ExportTouchEvent]?
     let birthday: String?
+    let customDueDate: Date?
 
     static func from(_ person: Person, groupName: String?, tagNames: [String], touchEvents: [TouchEvent]) -> ExportPerson {
         let exportEvents: [ExportTouchEvent]? = touchEvents.isEmpty ? nil : touchEvents.map { ExportTouchEvent.from($0) }
@@ -826,7 +829,8 @@ struct ExportPerson: Codable {
             createdAt: person.createdAt,
             modifiedAt: person.modifiedAt,
             touchEvents: exportEvents,
-            birthday: person.birthday?.toJsonString()
+            birthday: person.birthday?.toJsonString(),
+            customDueDate: person.customDueDate
         )
     }
 }
