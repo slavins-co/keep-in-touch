@@ -150,12 +150,14 @@ struct SettingsView: View {
         .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [UTType.json]) { result in
             switch result {
             case .success(let url):
-                if let preview = viewModel.parseImportFile(url: url) {
-                    importPreview = preview
-                    showImportPreview = true
-                } else {
-                    importResultMessage = "Could not read the file. Make sure it is a valid Keep In Touch export."
-                    showImportErrorAlert = true
+                Task {
+                    if let preview = await viewModel.parseImportFile(url: url) {
+                        importPreview = preview
+                        showImportPreview = true
+                    } else {
+                        importResultMessage = "Could not read the file. Make sure it is a valid Keep In Touch export."
+                        showImportErrorAlert = true
+                    }
                 }
             case .failure:
                 importResultMessage = "Could not open the file."
