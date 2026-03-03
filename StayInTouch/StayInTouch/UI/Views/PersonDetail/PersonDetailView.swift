@@ -520,6 +520,7 @@ struct PersonDetailView: View {
                     .foregroundStyle(DS.Colors.tertiaryText)
             } else {
                 let events = showFullHistory ? viewModel.touchEvents : Array(viewModel.touchEvents.prefix(3))
+                let rowHeight: CGFloat = 44
                 List {
                     ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
                         let isLatest = index == 0
@@ -565,7 +566,7 @@ struct PersonDetailView: View {
                 }
                 .listStyle(.plain)
                 .scrollDisabled(true)
-                .fixedSize(horizontal: false, vertical: true)
+                .frame(height: CGFloat(events.count) * rowHeight)
             }
         }
         .padding(.vertical, DS.Spacing.md)
