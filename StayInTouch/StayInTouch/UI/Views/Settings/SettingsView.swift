@@ -134,6 +134,7 @@ struct SettingsView: View {
                     showGroupAssignment = false
                 },
                 onCancel: {
+                    shouldShowLastTouchSeeding = false
                     showGroupAssignment = false
                 }
             )

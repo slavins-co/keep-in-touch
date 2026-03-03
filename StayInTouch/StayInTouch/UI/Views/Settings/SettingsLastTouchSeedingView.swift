@@ -23,7 +23,7 @@ struct SettingsLastTouchSeedingView: View {
                     .padding(.top, DS.Spacing.sm)
 
                 List(contacts) { contact in
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         Text(contact.displayName)
                             .font(DS.Typography.contactName)
 
