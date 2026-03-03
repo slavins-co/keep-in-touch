@@ -67,16 +67,20 @@ final class ManageTagsViewModel: ObservableObject {
 
     func removeTagFromPeople(tagId: UUID) {
         let people = personRepository.fetchTracked(includePaused: true)
+        let now = Date()
+        var updatedPeople: [Person] = []
         for person in people where person.tagIds.contains(tagId) {
             var updated = person
             updated.tagIds = updated.tagIds.filter { $0 != tagId }
-            updated.modifiedAt = Date()
-            do {
-                try personRepository.save(updated)
-            } catch {
-                AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageTagsViewModel.removeTagFromPeople")
-                ErrorToastManager.shared.show(.saveFailed("ManageTags"))
-            }
+            updated.modifiedAt = now
+            updatedPeople.append(updated)
+        }
+        guard !updatedPeople.isEmpty else { return }
+        do {
+            try personRepository.batchSave(updatedPeople)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageTagsViewModel.removeTagFromPeople")
+            ErrorToastManager.shared.show(.saveFailed("ManageTags"))
         }
     }
 }
