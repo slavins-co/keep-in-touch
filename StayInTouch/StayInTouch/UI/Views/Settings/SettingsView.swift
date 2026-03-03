@@ -350,7 +350,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.leading, 16)
+                .padding(.leading, DS.Spacing.lg)
             }
 
             Toggle(isOn: Binding(
@@ -372,7 +372,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.leading, 16)
+                .padding(.leading, DS.Spacing.lg)
 
                 Button {
                     showDigestTimePicker = true
@@ -384,7 +384,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.leading, 16)
+                .padding(.leading, DS.Spacing.lg)
             }
 
             Picker("Reminder Grouping", selection: Binding(
@@ -448,7 +448,11 @@ struct SettingsView: View {
                 Text("Your relationship data never leaves your phone. Anonymous usage statistics help us improve the app.")
                 VStack(spacing: DS.Spacing.sm) {
                     Text("Keep In Touch \(appVersion)")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(DS.Colors.secondaryText)
                     Text("Privacy-first personal CRM")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(DS.Colors.secondaryText)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, DS.Spacing.sm)
