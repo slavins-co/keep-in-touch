@@ -281,7 +281,7 @@ final class OnboardingViewModelTests: XCTestCase {
 
     func testProgressFractionAtContactsPermission() {
         sut.goToContactsPermission()
-        XCTAssertEqual(sut.progressFraction, 0.2, accuracy: 0.01)
+        XCTAssertEqual(sut.progressFraction, 0.15, accuracy: 0.01)
     }
 
     func testProgressAdvancesFromContactsPermissionToContactsRequired() {
@@ -292,7 +292,7 @@ final class OnboardingViewModelTests: XCTestCase {
         let requiredProgress = sut.progressFraction
 
         XCTAssertGreaterThan(requiredProgress, permissionProgress)
-        XCTAssertEqual(requiredProgress, 0.4, accuracy: 0.01)
+        XCTAssertEqual(requiredProgress, 0.3, accuracy: 0.01)
     }
 
     func testProgressAdvancesFromNotificationsPermissionToSkipped() {
@@ -347,5 +347,84 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertTrue(sut.isCompleting)
         // Progress should be 1.0 during completion
         XCTAssertEqual(sut.progressFraction, 1.0, accuracy: 0.01)
+    }
+
+    // MARK: - Last Touch Seeding Step
+
+    func testContinueFromGroupAssignmentGoesToLastTouchSeeding() {
+        let contact = ContactSummary(identifier: "abc123", displayName: "Alice", initials: "AL")
+        sut.contacts = [contact]
+        sut.selectedContactIds = ["abc123"]
+
+        sut.continueFromContactPicker()
+        XCTAssertEqual(sut.step, .groupAssignment)
+
+        sut.continueFromGroupAssignment()
+        XCTAssertEqual(sut.step, .lastTouchSeeding)
+    }
+
+    func testContinueFromLastTouchSeedingGoesToNotifications() async throws {
+        let contact = ContactSummary(identifier: "abc123", displayName: "Alice", initials: "AL")
+        sut.contacts = [contact]
+        sut.selectedContactIds = ["abc123"]
+
+        sut.continueFromContactPicker()
+        sut.continueFromGroupAssignment()
+        XCTAssertEqual(sut.step, .lastTouchSeeding)
+
+        sut.continueFromLastTouchSeeding()
+        // Allow Task to complete
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(sut.step, .notificationsPermission)
+    }
+
+    func testProgressFractionAtLastTouchSeeding() {
+        let contact = ContactSummary(identifier: "abc123", displayName: "Alice", initials: "AL")
+        sut.contacts = [contact]
+        sut.selectedContactIds = ["abc123"]
+
+        sut.continueFromContactPicker()
+        sut.continueFromGroupAssignment()
+
+        XCTAssertEqual(sut.progressFraction, 0.7, accuracy: 0.01)
+    }
+
+    func testLastTouchSelectionsDefaultToCantRemember() {
+        let contact = ContactSummary(identifier: "abc123", displayName: "Alice", initials: "AL")
+        sut.contacts = [contact]
+        sut.selectedContactIds = ["abc123"]
+
+        sut.continueFromContactPicker()
+        sut.continueFromGroupAssignment()
+
+        XCTAssertEqual(sut.contactLastTouchSelections["abc123"], .cantRemember)
+    }
+
+    func testGoBackFromLastTouchSeedingPreservesSelections() {
+        let contact = ContactSummary(identifier: "abc123", displayName: "Alice", initials: "AL")
+        sut.contacts = [contact]
+        sut.selectedContactIds = ["abc123"]
+
+        sut.continueFromContactPicker()
+        sut.continueFromGroupAssignment()
+        sut.contactLastTouchSelections["abc123"] = .thisMonth
+
+        sut.goBack()
+        XCTAssertEqual(sut.step, .groupAssignment)
+        XCTAssertEqual(sut.contactLastTouchSelections["abc123"], .thisMonth)
+    }
+
+    func testProgressAdvancesThroughLastTouchSeeding() {
+        let contact = ContactSummary(identifier: "abc123", displayName: "Alice", initials: "AL")
+        sut.contacts = [contact]
+        sut.selectedContactIds = ["abc123"]
+
+        sut.continueFromContactPicker()
+        let groupProgress = sut.progressFraction
+
+        sut.continueFromGroupAssignment()
+        let seedProgress = sut.progressFraction
+
+        XCTAssertGreaterThan(seedProgress, groupProgress)
     }
 }

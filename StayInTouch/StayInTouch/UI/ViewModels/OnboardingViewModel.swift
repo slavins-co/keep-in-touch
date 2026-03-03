@@ -17,6 +17,7 @@ final class OnboardingViewModel: ObservableObject {
         case contactsRequired
         case contactPicker
         case groupAssignment
+        case lastTouchSeeding
         case notificationsPermission
         case notificationsSkipped
     }
@@ -35,10 +36,11 @@ final class OnboardingViewModel: ObservableObject {
         if isCompleting { return 1.0 }
         switch step {
         case .welcome:                 return 0
-        case .contactsPermission:      return 0.2
-        case .contactsRequired:        return 0.4
-        case .contactPicker:           return 0.4
-        case .groupAssignment:         return 0.6
+        case .contactsPermission:      return 0.15
+        case .contactsRequired:        return 0.3
+        case .contactPicker:           return 0.3
+        case .groupAssignment:         return 0.5
+        case .lastTouchSeeding:        return 0.7
         case .notificationsPermission: return 0.85
         case .notificationsSkipped:    return 0.95
         }
@@ -52,6 +54,7 @@ final class OnboardingViewModel: ObservableObject {
     @Published var groups: [Group] = []
     @Published var selectedGroupId: UUID?
     @Published var contactGroupSelections: [String: UUID] = [:]
+    @Published var contactLastTouchSelections: [String: LastTouchOption] = [:]
 
     private let coreDataStack: CoreDataStack
     private let personRepository: PersonRepository
@@ -146,6 +149,11 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     func continueFromGroupAssignment() {
+        seedLastTouchSelectionsIfNeeded()
+        pushAndNavigate(to: .lastTouchSeeding)
+    }
+
+    func continueFromLastTouchSeeding() {
         Task {
             await importSelectedContacts()
             pushAndNavigate(to: .notificationsPermission)
@@ -207,25 +215,31 @@ final class OnboardingViewModel: ObservableObject {
 
         let backgroundContext = coreDataStack.newBackgroundContext()
         let repo = CoreDataPersonRepository(context: backgroundContext)
+        let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
 
         await backgroundContext.perform {
             let existingCount = repo.fetchAll().count
             var sortOrder = existingCount
 
             var personsToSave: [Person] = []
+            var touchEventsToSave: [TouchEvent] = []
 
             for contact in selected {
                 let groupId = self.contactGroupSelections[contact.identifier] ?? defaultGroupId
+                let lastTouchOption = self.contactLastTouchSelections[contact.identifier] ?? .cantRemember
+                let seedDate = lastTouchOption.approximateDate(from: now)
+
+                let personId = UUID()
                 let person = Person(
-                    id: UUID(),
+                    id: personId,
                     cnIdentifier: contact.identifier,
                     displayName: contact.displayName,
                     initials: contact.initials,
                     avatarColor: AvatarColors.randomHex(),
                     groupId: groupId,
                     tagIds: [],
-                    lastTouchAt: nil,
-                    lastTouchMethod: nil,
+                    lastTouchAt: seedDate,
+                    lastTouchMethod: seedDate != nil ? .other : nil,
                     lastTouchNotes: nil,
                     nextTouchNotes: nil,
                     isPaused: false,
@@ -244,14 +258,39 @@ final class OnboardingViewModel: ObservableObject {
                 )
 
                 personsToSave.append(AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId))
+
+                if let seedDate {
+                    touchEventsToSave.append(TouchEvent(
+                        id: UUID(),
+                        personId: personId,
+                        at: seedDate,
+                        method: .other,
+                        notes: nil,
+                        timeOfDay: nil,
+                        createdAt: now,
+                        modifiedAt: now
+                    ))
+                }
+
                 sortOrder += 1
             }
 
             do {
+                if !touchEventsToSave.isEmpty {
+                    try touchRepo.batchSave(touchEventsToSave)
+                }
                 try repo.batchSave(personsToSave)
             } catch {
                 AppLogger.logError(error, category: AppLogger.viewModel, context: "OnboardingViewModel.importContacts")
                 ErrorToastManager.shared.show(.saveFailed("Onboarding"))
+            }
+        }
+    }
+
+    private func seedLastTouchSelectionsIfNeeded() {
+        for contactId in selectedContactIds {
+            if contactLastTouchSelections[contactId] == nil {
+                contactLastTouchSelections[contactId] = .cantRemember
             }
         }
     }

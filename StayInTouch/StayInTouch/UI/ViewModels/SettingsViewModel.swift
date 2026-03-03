@@ -810,13 +810,14 @@ final class SettingsViewModel: ObservableObject {
         await importSelectedContacts(summaries, groupAssignments: [:])
     }
 
-    func importSelectedContacts(_ summaries: [ContactSummary], groupAssignments: [String: UUID]) async {
+    func importSelectedContacts(_ summaries: [ContactSummary], groupAssignments: [String: UUID], lastTouchSelections: [String: LastTouchOption] = [:]) async {
         guard !summaries.isEmpty else { return }
 
         let backgroundContext = CoreDataStack.shared.newBackgroundContext()
         await backgroundContext.perform {
             let peopleRepo = CoreDataPersonRepository(context: backgroundContext)
             let groupRepo = CoreDataGroupRepository(context: backgroundContext)
+            let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
 
             let groups = groupRepo.fetchAll()
             let defaultGroupId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id
@@ -827,19 +828,24 @@ final class SettingsViewModel: ObservableObject {
             let now = Date()
 
             var personsToSave: [Person] = []
+            var touchEventsToSave: [TouchEvent] = []
 
             for summary in summaries {
                 let groupId = groupAssignments[summary.identifier] ?? defaultGroupId
+                let lastTouchOption = lastTouchSelections[summary.identifier] ?? .cantRemember
+                let seedDate = lastTouchOption.approximateDate(from: now)
+
+                let personId = UUID()
                 let person = Person(
-                    id: UUID(),
+                    id: personId,
                     cnIdentifier: summary.identifier,
                     displayName: summary.displayName,
                     initials: summary.initials,
                     avatarColor: AvatarColors.randomHex(),
                     groupId: groupId,
                     tagIds: [],
-                    lastTouchAt: nil,
-                    lastTouchMethod: nil,
+                    lastTouchAt: seedDate,
+                    lastTouchMethod: seedDate != nil ? .other : nil,
                     lastTouchNotes: nil,
                     nextTouchNotes: nil,
                     isPaused: false,
@@ -858,10 +864,27 @@ final class SettingsViewModel: ObservableObject {
                 )
 
                 personsToSave.append(AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId))
+
+                if let seedDate {
+                    touchEventsToSave.append(TouchEvent(
+                        id: UUID(),
+                        personId: personId,
+                        at: seedDate,
+                        method: .other,
+                        notes: nil,
+                        timeOfDay: nil,
+                        createdAt: now,
+                        modifiedAt: now
+                    ))
+                }
+
                 sortOrder += 1
             }
 
             do {
+                if !touchEventsToSave.isEmpty {
+                    try touchRepo.batchSave(touchEventsToSave)
+                }
                 try peopleRepo.batchSave(personsToSave)
             } catch {
                 AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.importSelectedContacts")

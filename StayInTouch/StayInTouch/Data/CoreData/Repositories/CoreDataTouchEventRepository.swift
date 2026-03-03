@@ -56,6 +56,16 @@ final class CoreDataTouchEventRepository: TouchEventRepository {
         }
     }
 
+    func batchSave(_ touchEvents: [TouchEvent]) throws {
+        try context.performAndWait {
+            for touchEvent in touchEvents {
+                let entity = fetchEntity(id: touchEvent.id) ?? TouchEventEntity(context: context)
+                entity.apply(touchEvent)
+            }
+            try context.save()
+        }
+    }
+
     func delete(id: UUID) throws {
         try context.performAndWait {
             guard let entity = fetchEntity(id: id) else { return }
