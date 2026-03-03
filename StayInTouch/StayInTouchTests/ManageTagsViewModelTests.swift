@@ -56,6 +56,20 @@ final class ManageTagsViewModelTests: XCTestCase {
                        "Tag should be removed from repository")
     }
 
+    func testDeleteTagUsesBatchSave() {
+        let groupId = UUID()
+        let person1 = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tag.id])
+        let person2 = TestFactory.makePerson(name: "Bob", groupId: groupId, tagIds: [tag.id])
+        personRepo.people = [person1, person2]
+
+        sut.delete(tag: tag)
+
+        XCTAssertEqual(personRepo.batchSaveCallCount, 1,
+                       "Should use single batchSave instead of individual saves")
+        XCTAssertEqual(personRepo.savedPersons.count, 2,
+                       "Both people should still be updated")
+    }
+
     func testDeleteTagRemovesFromPeopleBeforeDeleting() {
         // Verify order: removeTagFromPeople runs before tagRepository.delete
         // After delete, tag should be gone AND people should be cleaned

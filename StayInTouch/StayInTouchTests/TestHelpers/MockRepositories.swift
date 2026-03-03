@@ -41,7 +41,9 @@ final class MockPersonRepository: PersonRepository {
             people.append(person)
         }
     }
+    var batchSaveCallCount = 0
     func batchSave(_ persons: [Person]) throws {
+        batchSaveCallCount += 1
         for person in persons {
             try save(person)
         }

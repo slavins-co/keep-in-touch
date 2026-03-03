@@ -54,6 +54,20 @@ final class ManageGroupsViewModelTests: XCTestCase {
                        "Group should be removed from repository")
     }
 
+    func testDeleteGroupUsesBatchSave() {
+        let person1 = TestFactory.makePerson(name: "Alice", groupId: customGroup.id)
+        let person2 = TestFactory.makePerson(name: "Bob", groupId: customGroup.id)
+        personRepo.people = [person1, person2]
+
+        sut.delete(group: customGroup)
+
+        XCTAssertEqual(personRepo.batchSaveCallCount, 1,
+                       "Should use single batchSave instead of individual saves")
+        let reassigned = personRepo.savedPersons.filter { $0.groupId == defaultGroup.id }
+        XCTAssertEqual(reassigned.count, 2,
+                       "Both people should be reassigned via batch save")
+    }
+
     func testDeleteGroupWithNoPeopleJustDeletes() {
         personRepo.people = []
 

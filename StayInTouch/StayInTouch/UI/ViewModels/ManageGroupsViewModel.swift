@@ -86,17 +86,20 @@ final class ManageGroupsViewModel: ObservableObject {
 
     func movePeople(from group: Group, to defaultGroup: Group) {
         let people = personRepository.fetchByGroup(id: group.id, includePaused: true)
-        for person in people {
+        guard !people.isEmpty else { return }
+        let now = Date()
+        let updatedPeople = people.map { person -> Person in
             var updated = person
             updated.groupId = defaultGroup.id
-            updated.groupAddedAt = Date()
-            updated.modifiedAt = Date()
-            do {
-                try personRepository.save(updated)
-            } catch {
-                AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.movePeople")
-                ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
-            }
+            updated.groupAddedAt = now
+            updated.modifiedAt = now
+            return updated
+        }
+        do {
+            try personRepository.batchSave(updatedPeople)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.movePeople")
+            ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
         }
     }
 
