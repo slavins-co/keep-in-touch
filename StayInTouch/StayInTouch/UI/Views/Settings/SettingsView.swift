@@ -166,11 +166,11 @@ struct SettingsView: View {
             if let preview = importPreview {
                 ImportPreviewView(
                     preview: preview,
-                    onImport: {
+                    onImport: { resolvedPreview in
                         showImportPreview = false
                         Task {
                             isImporting = true
-                            let result = await viewModel.executeImport(preview)
+                            let result = await viewModel.executeImport(resolvedPreview)
 
                             // Attempt contact matching for newly imported people
                             if !result.importedPeople.isEmpty {
