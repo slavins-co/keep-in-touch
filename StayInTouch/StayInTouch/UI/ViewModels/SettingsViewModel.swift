@@ -303,11 +303,47 @@ final class SettingsViewModel: ObservableObject {
         }
 
         // --- People classification ---
-        // Only match by internal UUID — never trust cnIdentifier from external files
-        let existingById = Dictionary(uniqueKeysWithValues: personRepository.fetchAll().map { ($0.id, $0) })
+        // Never trust cnIdentifier from external files — use address book as trusted intermediary
+        let allExistingPeople = personRepository.fetchAll()
+        let existingById = Dictionary(uniqueKeysWithValues: allExistingPeople.map { ($0.id, $0) })
+
+        // CN-based dedup: build lookup of tracked people by their CNContact identifier
+        let existingByCNId: [String: Person] = Dictionary(
+            uniqueKeysWithValues: allExistingPeople.compactMap { p in
+                guard let cn = p.cnIdentifier else { return nil }
+                return (cn, p)
+            }
+        )
+
+        // Fetch device address book contacts: normalized name → [cnIdentifier]
+        var deviceContactsByName: [String: [String]] = [:]
+        if CNContactStore.authorizationStatus(for: .contacts) == .authorized {
+            let store = CNContactStore()
+            let keys: [CNKeyDescriptor] = [
+                CNContactIdentifierKey as CNKeyDescriptor,
+                CNContactFormatter.descriptorForRequiredKeys(for: .fullName),
+                CNContactOrganizationNameKey as CNKeyDescriptor
+            ]
+            let request = CNContactFetchRequest(keysToFetch: keys)
+            try? store.enumerateContacts(with: request) { contact, _ in
+                let name = CNContactFormatter.string(from: contact, style: .fullName)
+                    ?? contact.organizationName
+                let normalized = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !normalized.isEmpty else { return }
+                deviceContactsByName[normalized, default: []].append(contact.identifier)
+            }
+        }
+
+        // Name-only fallback for contacts not in address book
+        let existingTrackedByName = Dictionary(
+            grouping: allExistingPeople.filter { $0.isTracked },
+            by: { $0.displayName.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
+        )
 
         var newPeople: [ExportPerson] = []
         var updatedPeople: [ExportPerson] = []
+        var remappedIds: [UUID: UUID] = [:]
+        var ambiguousPeople: [(export: ExportPerson, candidates: [Person])] = []
         var skipped = 0
         var touchEventCount = 0
 
@@ -316,11 +352,36 @@ final class SettingsViewModel: ObservableObject {
                 skipped += 1
                 continue
             }
+            let normalizedName = person.displayName.lowercased()
+                .trimmingCharacters(in: .whitespacesAndNewlines)
 
             if existingById[person.id] != nil {
+                // 1. UUID match — same app/DB
                 updatedPeople.append(person)
             } else {
-                newPeople.append(person)
+                // 2. CN match: find device contacts with this name, filter to tracked
+                let cnIds = deviceContactsByName[normalizedName] ?? []
+                let trackedMatches = cnIds.compactMap { existingByCNId[$0] }
+                    .filter { existingById[$0.id] != nil }
+                let uniqueMatches = Dictionary(grouping: trackedMatches, by: { $0.id })
+                    .values.compactMap(\.first)
+
+                if uniqueMatches.count == 1 {
+                    // Single tracked match via address book → auto-match
+                    updatedPeople.append(person)
+                    remappedIds[person.id] = uniqueMatches[0].id
+                } else if uniqueMatches.count > 1 {
+                    // Multiple tracked matches → user must disambiguate
+                    ambiguousPeople.append((export: person, candidates: uniqueMatches))
+                } else if let nameMatches = existingTrackedByName[normalizedName],
+                          nameMatches.count == 1 {
+                    // 3. Name-only fallback (contact not in address book)
+                    updatedPeople.append(person)
+                    remappedIds[person.id] = nameMatches[0].id
+                } else {
+                    // 4. No match → new contact
+                    newPeople.append(person)
+                }
             }
             touchEventCount += person.touchEvents?.count ?? 0
         }
@@ -333,7 +394,9 @@ final class SettingsViewModel: ObservableObject {
             newGroups: newGroups,
             newTags: newTags,
             groupIdMap: groupIdMap,
-            tagIdMap: tagIdMap
+            tagIdMap: tagIdMap,
+            remappedIds: remappedIds,
+            ambiguousPeople: ambiguousPeople
         )
     }
 
@@ -448,9 +511,15 @@ final class SettingsViewModel: ObservableObject {
                 sortOrder += 1
             }
 
-            // 5. Updated people — remap groupId and tagIds
-            for exportPerson in preview.updatedPeople {
-                guard var person = existingById[exportPerson.id] else { continue }
+            // 5. Updated people — use remappedIds for CN/name-matched contacts
+            // Include disambiguated people that the user resolved
+            let allUpdatedPeople: [ExportPerson] = preview.updatedPeople + preview.ambiguousPeople
+                .filter { preview.remappedIds[$0.export.id] != nil }
+                .map(\.export)
+
+            for exportPerson in allUpdatedPeople {
+                let lookupId = preview.remappedIds[exportPerson.id] ?? exportPerson.id
+                guard var person = existingById[lookupId] else { continue }
                 importedIdMap[exportPerson.id] = person.id
 
                 person.displayName = exportPerson.displayName
@@ -477,7 +546,10 @@ final class SettingsViewModel: ObservableObject {
             }
 
             // 6. Touch events — fresh UUIDs, map personId to actual saved IDs
-            let allExported = preview.newPeople + preview.updatedPeople
+            let allExported = preview.newPeople + allUpdatedPeople
+            // Track most recent event per person for denormalized field update
+            var mostRecentEvent: [UUID: ExportTouchEvent] = [:]
+
             for exportPerson in allExported {
                 guard let events = exportPerson.touchEvents,
                       let actualPersonId = importedIdMap[exportPerson.id] else { continue }
@@ -497,6 +569,36 @@ final class SettingsViewModel: ObservableObject {
                         try touchRepo.save(touchEvent)
                     } catch {
                         AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.executeImport.touchEvents")
+                    }
+
+                    // Track most recent event per person
+                    if let current = mostRecentEvent[actualPersonId] {
+                        if event.at > current.at { mostRecentEvent[actualPersonId] = event }
+                    } else {
+                        mostRecentEvent[actualPersonId] = event
+                    }
+                }
+            }
+
+            // 7. Update denormalized fields from imported touch events
+            if !mostRecentEvent.isEmpty {
+                var denormUpdates: [Person] = []
+                for (personId, recentEvent) in mostRecentEvent {
+                    guard var person = peopleRepo.fetch(id: personId) else { continue }
+                    // Only update if imported event is more recent than stored
+                    if person.lastTouchAt == nil || recentEvent.at > (person.lastTouchAt ?? .distantPast) {
+                        person.lastTouchAt = recentEvent.at
+                        person.lastTouchMethod = TouchMethod(rawValue: recentEvent.method)
+                        person.lastTouchNotes = recentEvent.notes
+                        person.modifiedAt = now
+                        denormUpdates.append(person)
+                    }
+                }
+                if !denormUpdates.isEmpty {
+                    do {
+                        try peopleRepo.batchSave(denormUpdates)
+                    } catch {
+                        AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.executeImport.denorm")
                     }
                 }
             }
@@ -842,9 +944,13 @@ struct ImportPreview {
     let newTags: [ExportTag]
     let groupIdMap: [UUID: UUID]
     let tagIdMap: [UUID: UUID]
+    /// Maps export person UUID → existing tracked Person UUID (auto-matched via address book or name)
+    var remappedIds: [UUID: UUID]
+    /// Imported people that matched multiple tracked contacts — user must disambiguate
+    let ambiguousPeople: [(export: ExportPerson, candidates: [Person])]
 
-    var totalPeople: Int { newPeople.count + updatedPeople.count }
-    var isEmpty: Bool { newPeople.isEmpty && updatedPeople.isEmpty && newGroups.isEmpty && newTags.isEmpty }
+    var totalPeople: Int { newPeople.count + updatedPeople.count + ambiguousPeople.count }
+    var isEmpty: Bool { newPeople.isEmpty && updatedPeople.isEmpty && ambiguousPeople.isEmpty && newGroups.isEmpty && newTags.isEmpty }
 }
 
 struct ImportResult {

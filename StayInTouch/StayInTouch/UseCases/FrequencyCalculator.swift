@@ -63,10 +63,11 @@ struct FrequencyCalculator {
 
         let customDue = person.customDueDate.map { cal.startOfDay(for: $0) }
 
+        // Custom due date fully replaces group frequency when set.
+        // It does not combine with group — it IS the due date.
         switch (groupDueDate, customDue) {
-        case let (g?, c?): return min(g, c)
-        case let (g?, nil): return g
-        case let (nil, c?): return c
+        case (_, let c?): return c
+        case (let g?, nil): return g
         case (nil, nil): return nil
         }
     }

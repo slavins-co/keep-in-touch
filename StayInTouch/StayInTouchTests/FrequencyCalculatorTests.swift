@@ -310,20 +310,20 @@ final class FrequencyCalculatorTests: XCTestCase {
         XCTAssertEqual(status, .dueSoon, "Custom due date tomorrow should override group due date (4 days remaining)")
     }
 
-    func testCustomDueDateLaterThanGroupDoesNotReduceUrgency() {
+    func testCustomDueDateFullyOverridesGroupFrequency() {
         let now = Date()
         let cal = Calendar.current
         let groupId = UUID()
-        // Last touch 8 days ago — already overdue for 7-day group
+        // Last touch 8 days ago — would be overdue for 7-day group
         let lastTouch = cal.date(byAdding: .day, value: -8, to: now)!
-        // Custom due date far in the future
+        // Custom due date far in the future — fully replaces group frequency
         let customDue = cal.date(byAdding: .day, value: 30, to: now)!
 
         let person = TestFactory.makePerson(groupId: groupId, lastTouchAt: lastTouch, customDueDate: customDue)
         let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: now, modifiedAt: now)
 
         let status = FrequencyCalculator(referenceDate: now).status(for: person, in: [group])
-        XCTAssertEqual(status, .overdue, "Custom due date in the future should not mask group-based overdue status")
+        XCTAssertEqual(status, .onTrack, "Custom due date fully overrides group frequency — 30 days out means on track")
     }
 
     func testNoLastTouchWithCustomDueDateDerivesStatus() {
@@ -365,12 +365,13 @@ final class FrequencyCalculatorTests: XCTestCase {
         XCTAssertEqual(FrequencyCalculator(referenceDate: now).status(for: person, in: [group]), .onTrack)
     }
 
-    func testEffectiveDueDateReturnsMinOfGroupAndCustom() {
+    func testEffectiveDueDateReturnsCustomDateWhenSet() {
         let now = Date()
         let cal = Calendar.current
         let groupId = UUID()
         let lastTouch = cal.date(byAdding: .day, value: -3, to: now)!
-        let customDue = cal.date(byAdding: .day, value: 1, to: now)!
+        // Custom due is later than group due — custom still wins (full override)
+        let customDue = cal.date(byAdding: .day, value: 20, to: now)!
 
         let person = TestFactory.makePerson(groupId: groupId, lastTouchAt: lastTouch, customDueDate: customDue)
         let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: now, modifiedAt: now)
@@ -378,6 +379,26 @@ final class FrequencyCalculatorTests: XCTestCase {
         let calc = FrequencyCalculator(referenceDate: now)
         let dueDate = calc.effectiveDueDate(for: person, in: [group])
         XCTAssertNotNil(dueDate)
-        XCTAssertEqual(cal.startOfDay(for: dueDate!), cal.startOfDay(for: customDue))
+        XCTAssertEqual(cal.startOfDay(for: dueDate!), cal.startOfDay(for: customDue),
+                        "Custom due date should be returned regardless of group frequency")
+    }
+
+    func testCustomDueDateFullyOverridesFrequencyWhenOverdue() {
+        let now = Date()
+        let cal = Calendar.current
+        let groupId = UUID()
+        // Last touch 14 days ago — way overdue for 7-day group
+        let lastTouch = cal.date(byAdding: .day, value: -14, to: now)!
+        // Custom due date 10 days out — this IS the due date now
+        let customDue = cal.date(byAdding: .day, value: 10, to: now)!
+
+        let person = TestFactory.makePerson(groupId: groupId, lastTouchAt: lastTouch, customDueDate: customDue)
+        let group = Group(id: groupId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: now, modifiedAt: now)
+
+        let calc = FrequencyCalculator(referenceDate: now)
+        XCTAssertEqual(calc.status(for: person, in: [group]), .onTrack,
+                        "Person overdue by frequency but custom due date 10 days out should show on track")
+        XCTAssertEqual(calc.daysOverdue(for: person, in: [group]), 0,
+                        "No days overdue when custom due date is in the future")
     }
 }

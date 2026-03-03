@@ -338,4 +338,192 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.tagsCount, 2)
         XCTAssertEqual(sut.pausedCount, 1)
     }
+
+    // MARK: - Import Dedup (Name-Based Fallback)
+
+    func testReimportByNameDoesNotCreateDuplicate() throws {
+        // Existing tracked person with unique name
+        let existingId = UUID()
+        personRepo.people = [TestFactory.makePerson(id: existingId, name: "Alice Smith")]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        // Import file has same name but different UUID (simulating re-export/re-import)
+        let exportData = ExportData(
+            version: 2,
+            exportedAt: Date(),
+            groups: [],
+            tags: [],
+            people: [ExportPerson(
+                id: UUID(), // Different UUID
+                displayName: "Alice Smith",
+                groupId: nil,
+                groupName: nil,
+                tagIds: [],
+                tagNames: [],
+                lastTouchAt: nil,
+                isPaused: false,
+                createdAt: Date(),
+                modifiedAt: Date(),
+                touchEvents: nil,
+                birthday: nil
+            )]
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(exportData)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("dedup-name-test.json")
+        try data.write(to: url, options: .atomic)
+
+        let preview = sut.parseImportFile(url: url)
+
+        XCTAssertNotNil(preview)
+        // Name-only fallback: single tracked person with name "Alice Smith" → auto-match
+        XCTAssertTrue(preview?.newPeople.isEmpty ?? false, "Should NOT create new person — matched by name")
+        XCTAssertEqual(preview?.updatedPeople.count, 1, "Should classify as updated person")
+        XCTAssertEqual(preview?.remappedIds.values.first, existingId, "Should remap to existing person ID")
+
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testReimportWithDuplicateNamesCreatesNew() throws {
+        // Two tracked people with the same name
+        personRepo.people = [
+            TestFactory.makePerson(name: "John Smith"),
+            TestFactory.makePerson(name: "John Smith")
+        ]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let exportData = ExportData(
+            version: 2,
+            exportedAt: Date(),
+            groups: [],
+            tags: [],
+            people: [ExportPerson(
+                id: UUID(),
+                displayName: "John Smith",
+                groupId: nil,
+                groupName: nil,
+                tagIds: [],
+                tagNames: [],
+                lastTouchAt: nil,
+                isPaused: false,
+                createdAt: Date(),
+                modifiedAt: Date(),
+                touchEvents: nil,
+                birthday: nil
+            )]
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(exportData)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("dedup-ambiguous-test.json")
+        try data.write(to: url, options: .atomic)
+
+        let preview = sut.parseImportFile(url: url)
+
+        XCTAssertNotNil(preview)
+        // Two tracked "John Smith" and no CN match in test env → classified as new (not ambiguous,
+        // because CN matching requires contacts access which tests don't have)
+        XCTAssertEqual(preview?.newPeople.count, 1, "Ambiguous name without CN match → new contact")
+
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testReimportByUUIDMatchClassifiesAsUpdated() throws {
+        let existingId = UUID()
+        personRepo.people = [TestFactory.makePerson(id: existingId, name: "Bob")]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let exportData = ExportData(
+            version: 2,
+            exportedAt: Date(),
+            groups: [],
+            tags: [],
+            people: [ExportPerson(
+                id: existingId, // Same UUID
+                displayName: "Bob",
+                groupId: nil,
+                groupName: nil,
+                tagIds: [],
+                tagNames: [],
+                lastTouchAt: nil,
+                isPaused: false,
+                createdAt: Date(),
+                modifiedAt: Date(),
+                touchEvents: nil,
+                birthday: nil
+            )]
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(exportData)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("dedup-uuid-test.json")
+        try data.write(to: url, options: .atomic)
+
+        let preview = sut.parseImportFile(url: url)
+
+        XCTAssertNotNil(preview)
+        XCTAssertTrue(preview?.newPeople.isEmpty ?? false)
+        XCTAssertEqual(preview?.updatedPeople.count, 1, "UUID match → updated person")
+        // No remapping needed for UUID match
+        XCTAssertTrue(preview?.remappedIds.isEmpty ?? false)
+
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testImportPreviewIncludesTouchEventCount() throws {
+        let exportData = ExportData(
+            version: 2,
+            exportedAt: Date(),
+            groups: [],
+            tags: [],
+            people: [ExportPerson(
+                id: UUID(),
+                displayName: "Eve",
+                groupId: nil,
+                groupName: nil,
+                tagIds: [],
+                tagNames: [],
+                lastTouchAt: Date(),
+                isPaused: false,
+                createdAt: Date(),
+                modifiedAt: Date(),
+                touchEvents: [
+                    ExportTouchEvent(id: UUID(), at: Date(), method: "call", notes: "Caught up"),
+                    ExportTouchEvent(id: UUID(), at: Date(), method: "message", notes: nil)
+                ],
+                birthday: nil
+            )]
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(exportData)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("events-count-test.json")
+        try data.write(to: url, options: .atomic)
+
+        let preview = sut.parseImportFile(url: url)
+
+        XCTAssertNotNil(preview)
+        XCTAssertEqual(preview?.touchEventCount, 2)
+
+        try? FileManager.default.removeItem(at: url)
+    }
 }
