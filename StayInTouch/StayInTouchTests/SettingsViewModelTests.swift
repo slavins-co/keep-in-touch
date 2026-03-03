@@ -489,6 +489,74 @@ final class SettingsViewModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
+    func testReimportDoesNotCountExistingTouchEventsAsNew() throws {
+        let personId = UUID()
+        let cal = Calendar.current
+        let touchDate = cal.date(byAdding: .day, value: -3, to: Date())!
+
+        // Existing tracked person with one touch event
+        let person = TestFactory.makePerson(id: personId, name: "Alice Smith")
+        personRepo.people = [person]
+
+        let existingEvent = TouchEvent(
+            id: UUID(),
+            personId: personId,
+            at: touchDate,
+            method: .call,
+            notes: "Caught up",
+            timeOfDay: nil,
+            createdAt: touchDate,
+            modifiedAt: touchDate
+        )
+        touchEventRepo.events = [existingEvent]
+
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        // Export file with same person (different UUID) and same event
+        let exportData = ExportData(
+            version: 2,
+            exportedAt: Date(),
+            groups: [],
+            tags: [],
+            people: [ExportPerson(
+                id: UUID(),
+                displayName: "Alice Smith",
+                groupId: nil,
+                groupName: nil,
+                tagIds: [],
+                tagNames: [],
+                lastTouchAt: touchDate,
+                isPaused: false,
+                createdAt: Date(),
+                modifiedAt: Date(),
+                touchEvents: [
+                    ExportTouchEvent(id: UUID(), at: touchDate, method: "Call", notes: "Caught up")
+                ],
+                birthday: nil
+            )]
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(exportData)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("dedup-test.json")
+        try data.write(to: url, options: .atomic)
+
+        let preview = sut.parseImportFile(url: url)
+
+        XCTAssertNotNil(preview)
+        XCTAssertEqual(preview?.touchEventCount, 1, "File contains 1 total event")
+        XCTAssertEqual(preview?.newTouchEventCount, 0, "Event already exists — should not count as new")
+        XCTAssertEqual(preview?.updatedPeople.count, 1, "Alice should match by name")
+
+        try? FileManager.default.removeItem(at: url)
+    }
+
     func testImportPreviewIncludesTouchEventCount() throws {
         let exportData = ExportData(
             version: 2,
@@ -523,6 +591,7 @@ final class SettingsViewModelTests: XCTestCase {
 
         XCTAssertNotNil(preview)
         XCTAssertEqual(preview?.touchEventCount, 2)
+        XCTAssertEqual(preview?.newTouchEventCount, 2, "New person — all events should be new")
 
         try? FileManager.default.removeItem(at: url)
     }

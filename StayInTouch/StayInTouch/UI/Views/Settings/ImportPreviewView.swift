@@ -121,8 +121,17 @@ struct ImportPreviewView: View {
                     .foregroundStyle(DS.Colors.accent)
             }
             if preview.touchEventCount > 0 {
-                Label("\(preview.touchEventCount) activit\(preview.touchEventCount == 1 ? "y" : "ies") will be imported", systemImage: "hand.tap.fill")
-                    .foregroundStyle(DS.Colors.statusDueSoon)
+                if preview.newTouchEventCount == preview.touchEventCount {
+                    Label("\(preview.touchEventCount) activit\(preview.touchEventCount == 1 ? "y" : "ies") will be imported", systemImage: "hand.tap.fill")
+                        .foregroundStyle(DS.Colors.statusDueSoon)
+                } else if preview.newTouchEventCount > 0 {
+                    let existing = preview.touchEventCount - preview.newTouchEventCount
+                    Label("\(preview.newTouchEventCount) new activit\(preview.newTouchEventCount == 1 ? "y" : "ies") will be imported (\(existing) already exist)", systemImage: "hand.tap.fill")
+                        .foregroundStyle(DS.Colors.statusDueSoon)
+                } else {
+                    Label("All \(preview.touchEventCount) activit\(preview.touchEventCount == 1 ? "y" : "ies") already imported", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(DS.Colors.secondaryText)
+                }
             }
             if preview.skippedCount > 0 {
                 Label("\(preview.skippedCount) invalid entr\(preview.skippedCount == 1 ? "y" : "ies") will be skipped", systemImage: "exclamationmark.triangle.fill")

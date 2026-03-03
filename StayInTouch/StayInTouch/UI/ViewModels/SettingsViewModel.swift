@@ -386,11 +386,49 @@ final class SettingsViewModel: ObservableObject {
             touchEventCount += person.touchEvents?.count ?? 0
         }
 
+        // Compute new vs existing touch events for accurate preview
+        let calendar = Calendar.current
+        var existingEventKeys: Set<String> = []
+
+        // Build keys for all matched people (updatedPeople + ambiguousPeople)
+        let matchedPeople = updatedPeople + ambiguousPeople.map(\.export)
+        for exportPerson in matchedPeople {
+            let actualPersonId = remappedIds[exportPerson.id] ?? exportPerson.id
+            guard existingById[actualPersonId] != nil else { continue }
+            let existing = touchEventRepository.fetchAll(for: actualPersonId)
+            for e in existing {
+                let dayKey = Int(calendar.startOfDay(for: e.at).timeIntervalSince1970)
+                let notesKey = (e.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                existingEventKeys.insert("\(actualPersonId)-\(dayKey)-\(e.method.rawValue)-\(notesKey)")
+            }
+        }
+
+        var newTouchEventCount = 0
+        for exportPerson in matchedPeople {
+            guard let events = exportPerson.touchEvents else { continue }
+            let actualPersonId = remappedIds[exportPerson.id] ?? exportPerson.id
+            for event in events {
+                let method = TouchMethod(rawValue: event.method) ?? .other
+                let dayKey = Int(calendar.startOfDay(for: event.at).timeIntervalSince1970)
+                let notesKey = (event.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let key = "\(actualPersonId)-\(dayKey)-\(method.rawValue)-\(notesKey)"
+                if !existingEventKeys.contains(key) {
+                    newTouchEventCount += 1
+                    existingEventKeys.insert(key)
+                }
+            }
+        }
+        // All events from new people are always new
+        for exportPerson in newPeople {
+            newTouchEventCount += exportPerson.touchEvents?.count ?? 0
+        }
+
         return ImportPreview(
             newPeople: newPeople,
             updatedPeople: updatedPeople,
             skippedCount: skipped,
             touchEventCount: touchEventCount,
+            newTouchEventCount: newTouchEventCount,
             newGroups: newGroups,
             newTags: newTags,
             groupIdMap: groupIdMap,
@@ -550,11 +588,31 @@ final class SettingsViewModel: ObservableObject {
             // Track most recent event per person for denormalized field update
             var mostRecentEvent: [UUID: ExportTouchEvent] = [:]
 
+            // Build content-based dedup set from existing touch events
+            let calendar = Calendar.current
+            var existingEventKeys: Set<String> = []
+            for exportPerson in allExported {
+                guard let actualPersonId = importedIdMap[exportPerson.id] else { continue }
+                let existing = touchRepo.fetchAll(for: actualPersonId)
+                for e in existing {
+                    let dayKey = Int(calendar.startOfDay(for: e.at).timeIntervalSince1970)
+                    let notesKey = (e.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                    existingEventKeys.insert("\(actualPersonId)-\(dayKey)-\(e.method.rawValue)-\(notesKey)")
+                }
+            }
+
             for exportPerson in allExported {
                 guard let events = exportPerson.touchEvents,
                       let actualPersonId = importedIdMap[exportPerson.id] else { continue }
                 for event in events {
                     let method = TouchMethod(rawValue: event.method) ?? .other
+                    let dayKey = Int(calendar.startOfDay(for: event.at).timeIntervalSince1970)
+                    let notesKey = (event.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                    let key = "\(actualPersonId)-\(dayKey)-\(method.rawValue)-\(notesKey)"
+
+                    guard !existingEventKeys.contains(key) else { continue }
+                    existingEventKeys.insert(key)
+
                     let touchEvent = TouchEvent(
                         id: UUID(),
                         personId: actualPersonId,
@@ -940,6 +998,8 @@ struct ImportPreview {
     let updatedPeople: [ExportPerson]
     let skippedCount: Int
     let touchEventCount: Int
+    /// Number of touch events that are genuinely new (not already in the database)
+    let newTouchEventCount: Int
     let newGroups: [ExportGroup]
     let newTags: [ExportTag]
     let groupIdMap: [UUID: UUID]
