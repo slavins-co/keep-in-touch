@@ -11,6 +11,7 @@ import Foundation
 final class GroupContactsViewModel: ObservableObject {
     @Published private(set) var people: [Person] = []
     @Published private(set) var available: [Person] = []
+    @Published private(set) var otherGroups: [Group] = []
 
     let group: Group
 
@@ -34,21 +35,21 @@ final class GroupContactsViewModel: ObservableObject {
             .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
         people = allPeople.filter { $0.groupId == group.id }
         available = allPeople.filter { $0.groupId != group.id }
+        otherGroups = groupRepository.fetchAll()
+            .filter { $0.id != group.id }
+            .sorted { lhs, rhs in
+                if lhs.isDefault != rhs.isDefault { return lhs.isDefault }
+                if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
+                return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+            }
     }
 
-    func removePerson(_ person: Person) {
-        guard let defaultGroup = groupRepository.fetchDefaultGroups().first else {
-            AppLogger.logWarning("[GroupContactsViewModel.removePerson] No default group found", category: AppLogger.viewModel)
-            ErrorToastManager.shared.show(.saveFailed("GroupContacts"))
-            return
-        }
-        guard defaultGroup.id != group.id else { return }
-
-        let updated = AssignGroupUseCase().assign(person: person, to: defaultGroup.id)
+    func movePerson(_ person: Person, to destinationGroupId: UUID) {
+        let updated = AssignGroupUseCase().assign(person: person, to: destinationGroupId)
         do {
             try personRepository.save(updated)
         } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "GroupContactsViewModel.removePerson")
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "GroupContactsViewModel.movePerson")
             ErrorToastManager.shared.show(.saveFailed("GroupContacts"))
         }
         NotificationCenter.default.post(name: .personDidChange, object: updated.id)

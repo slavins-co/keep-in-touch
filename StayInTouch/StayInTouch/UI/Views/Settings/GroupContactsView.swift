@@ -12,6 +12,7 @@ struct GroupContactsView: View {
 
     @StateObject private var viewModel: GroupContactsViewModel
     @State private var showAddContacts = false
+    @State private var removeTarget: Person?
 
     init(group: Group) {
         self.group = group
@@ -29,12 +30,14 @@ struct GroupContactsView: View {
                     Text(person.displayName)
                         .font(DS.Typography.contactName)
                         .swipeActions(edge: .trailing) {
-                            if !group.isDefault {
-                                Button(role: .destructive) {
-                                    viewModel.removePerson(person)
-                                } label: {
-                                    Label("Remove", systemImage: "person.badge.minus")
+                            Button(role: .destructive) {
+                                if group.isDefault {
+                                    removeTarget = person
+                                } else if let defaultId = viewModel.otherGroups.first(where: { $0.isDefault })?.id {
+                                    viewModel.movePerson(person, to: defaultId)
                                 }
+                            } label: {
+                                Label("Remove", systemImage: "person.badge.minus")
                             }
                         }
                 }
@@ -45,6 +48,24 @@ struct GroupContactsView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Add") { showAddContacts = true }
             }
+        }
+        .confirmationDialog(
+            "Move to which frequency?",
+            isPresented: Binding(
+                get: { removeTarget != nil },
+                set: { if !$0 { removeTarget = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            ForEach(viewModel.otherGroups, id: \.id) { destination in
+                Button(destination.name) {
+                    if let person = removeTarget {
+                        viewModel.movePerson(person, to: destination.id)
+                    }
+                    removeTarget = nil
+                }
+            }
+            Button("Cancel", role: .cancel) { removeTarget = nil }
         }
         .sheet(isPresented: $showAddContacts) {
             AddContactsToGroupView(
