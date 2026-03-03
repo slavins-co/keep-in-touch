@@ -520,7 +520,8 @@ struct PersonDetailView: View {
                     .foregroundStyle(DS.Colors.tertiaryText)
             } else {
                 let events = showFullHistory ? viewModel.touchEvents : Array(viewModel.touchEvents.prefix(3))
-                VStack(alignment: .leading, spacing: 0) {
+                let rowHeight: CGFloat = 44
+                List {
                     ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
                         let isLatest = index == 0
 
@@ -538,7 +539,6 @@ struct PersonDetailView: View {
                                     .foregroundStyle(DS.Colors.secondaryText)
                             }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.leading, DS.Spacing.sm)
                         .overlay(alignment: .leading) {
                             if isLatest {
@@ -547,21 +547,26 @@ struct PersonDetailView: View {
                                     .frame(width: 3)
                             }
                         }
-                        .padding(.vertical, DS.Spacing.sm)
-                        .contextMenu {
-                            Button {
-                                showEditTouch = event
-                            } label: {
-                                Label("Edit", systemImage: "pencil")
-                            }
+                        .listRowInsets(EdgeInsets(top: DS.Spacing.sm, leading: 0, bottom: DS.Spacing.sm, trailing: 0))
+                        .listRowSeparator(.hidden)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 showDeleteConfirm = event
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
+                            Button {
+                                showEditTouch = event
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            .tint(DS.Colors.accent)
                         }
                     }
                 }
+                .listStyle(.plain)
+                .scrollDisabled(true)
+                .frame(height: CGFloat(events.count) * rowHeight)
             }
         }
         .padding(.vertical, DS.Spacing.md)
