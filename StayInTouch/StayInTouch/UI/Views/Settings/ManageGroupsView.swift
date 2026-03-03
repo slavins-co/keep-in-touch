@@ -20,26 +20,30 @@ struct ManageGroupsView: View {
     var body: some View {
         List {
             ForEach(viewModel.groups, id: \.id) { group in
-                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                    HStack {
-                        Text(group.name)
-                            .font(DS.Typography.contactName)
-                        if group.isDefault {
-                            Text("Default")
-                                .font(DS.Typography.captionBold)
-                                .foregroundStyle(DS.Colors.secondaryText)
-                                .padding(.horizontal, DS.Spacing.sm)
-                                .padding(.vertical, DS.Spacing.xxs)
-                                .background(DS.Colors.secondaryBackground)
-                                .clipShape(Capsule())
+                NavigationLink {
+                    GroupContactsView(group: group)
+                } label: {
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        HStack {
+                            Text(group.name)
+                                .font(DS.Typography.contactName)
+                            if group.isDefault {
+                                Text("Default")
+                                    .font(DS.Typography.captionBold)
+                                    .foregroundStyle(DS.Colors.secondaryText)
+                                    .padding(.horizontal, DS.Spacing.sm)
+                                    .padding(.vertical, DS.Spacing.xxs)
+                                    .background(DS.Colors.secondaryBackground)
+                                    .clipShape(Capsule())
+                            }
                         }
-                    }
 
-                    Text("Every \(group.frequencyDays) days \u{2022} \(viewModel.countsByGroup[group.id, default: 0]) contacts")
-                        .font(DS.Typography.metadata)
-                        .foregroundStyle(DS.Colors.secondaryText)
+                        Text("Every \(group.frequencyDays) days \u{2022} \(viewModel.countsByGroup[group.id, default: 0]) contacts")
+                            .font(DS.Typography.metadata)
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
+                    .padding(.vertical, DS.Spacing.xs)
                 }
-                .padding(.vertical, DS.Spacing.xs)
                 .swipeActions(edge: .trailing) {
                     if !group.isDefault {
                         Button(role: .destructive) {
