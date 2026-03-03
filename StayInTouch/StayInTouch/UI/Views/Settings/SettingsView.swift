@@ -42,14 +42,11 @@ struct SettingsView: View {
     var body: some View {
         List {
             appearanceSection
-            groupsSection
-            tagsSection
+            peopleSection
             notificationsSection
             dataSection
-            privacySection
-            pausedSection
-            advancedSection
             aboutSection
+            dangerZoneSection
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Settings")
@@ -247,8 +244,8 @@ struct SettingsView: View {
         }
     }
 
-    private var groupsSection: some View {
-        Section("Contact Frequency") {
+    private var peopleSection: some View {
+        Section("People") {
             NavigationLink {
                 ManageGroupsView()
             } label: {
@@ -261,11 +258,7 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-        }
-    }
 
-    private var tagsSection: some View {
-        Section("Groups") {
             NavigationLink {
                 ManageTagsView()
             } label: {
@@ -276,6 +269,59 @@ struct SettingsView: View {
                     Spacer()
                     Text("\(viewModel.tagsCount)")
                         .foregroundStyle(.secondary)
+                }
+            }
+
+            NavigationLink {
+                PausedContactsView()
+            } label: {
+                HStack {
+                    Image(systemName: "pause.circle.fill")
+                        .foregroundStyle(DS.Colors.secondaryText)
+                    Text("Paused Contacts")
+                    Spacer()
+                    Text("\(viewModel.pausedCount)")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Button {
+                Task {
+                    isSyncingContacts = true
+                    let started = Date()
+                    let count = await viewModel.findNewContacts()
+                    pendingImportCount = count
+                    let elapsed = Date().timeIntervalSince(started)
+                    if elapsed < 0.6 {
+                        try? await Task.sleep(nanoseconds: UInt64((0.6 - elapsed) * 1_000_000_000))
+                    }
+                    isSyncingContacts = false
+                    if count > 0 {
+                        showNewContactsPicker = true
+                    } else if viewModel.contactAccessDenied {
+                        showContactsSettingsAlert = true
+                    } else if viewModel.contactAccessLimited {
+                        showLimitedAccessAlert = true
+                    } else {
+                        showNoNewContactsAlert = true
+                    }
+                }
+            } label: {
+                Label("Add from Contacts", systemImage: "person.badge.plus")
+            }
+
+            if let lastSync = viewModel.settings.lastContactsSyncAt {
+                Text("Last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.secondaryText)
+            }
+
+            if isSyncingContacts {
+                HStack(spacing: DS.Spacing.md) {
+                    ProgressView()
+                    Text("Checking contacts...")
+                        .font(DS.Typography.metadata)
+                        .foregroundStyle(DS.Colors.secondaryText)
                 }
             }
         }
@@ -293,14 +339,6 @@ struct SettingsView: View {
                     .foregroundStyle(DS.Colors.statusDueSoon)
             }
 
-            Toggle(isOn: Binding(
-                get: { viewModel.settings.digestEnabled },
-                set: { newValue in viewModel.setDigestEnabled(newValue) }
-            )) {
-                Label("Weekly Digest", systemImage: "bell.badge.fill")
-                    .foregroundStyle(DS.Colors.accent)
-            }
-
             if viewModel.settings.notificationsEnabled {
                 Button {
                     showBreachTimePicker = true
@@ -312,6 +350,15 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .padding(.leading, DS.Spacing.lg)
+            }
+
+            Toggle(isOn: Binding(
+                get: { viewModel.settings.digestEnabled },
+                set: { newValue in viewModel.setDigestEnabled(newValue) }
+            )) {
+                Label("Weekly Digest", systemImage: "bell.badge.fill")
+                    .foregroundStyle(DS.Colors.accent)
             }
 
             if viewModel.settings.digestEnabled {
@@ -325,6 +372,8 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .padding(.leading, DS.Spacing.lg)
+
                 Button {
                     showDigestTimePicker = true
                 } label: {
@@ -335,6 +384,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .padding(.leading, DS.Spacing.lg)
             }
 
             Picker("Reminder Grouping", selection: Binding(
@@ -370,47 +420,48 @@ struct SettingsView: View {
             } label: {
                 Label("Import Contacts", systemImage: "square.and.arrow.down")
             }
+        }
+    }
 
-            Button {
-                Task {
-                    isSyncingContacts = true
-                    let started = Date()
-                    let count = await viewModel.findNewContacts()
-                    pendingImportCount = count
-                    let elapsed = Date().timeIntervalSince(started)
-                    if elapsed < 0.6 {
-                        try? await Task.sleep(nanoseconds: UInt64((0.6 - elapsed) * 1_000_000_000))
-                    }
-                    isSyncingContacts = false
-                    if count > 0 {
-                        showNewContactsPicker = true
-                    } else if viewModel.contactAccessDenied {
-                        showContactsSettingsAlert = true
-                    } else if viewModel.contactAccessLimited {
-                        showLimitedAccessAlert = true
-                    } else {
-                        showNoNewContactsAlert = true
-                    }
-                }
-            } label: {
-                Label("Add from Contacts", systemImage: "arrow.triangle.2.circlepath")
+    private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "v\(version) (\(build))"
+    }
+
+    private var aboutSection: some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { viewModel.settings.analyticsEnabled },
+                set: { viewModel.setAnalyticsEnabled($0) }
+            )) {
+                Label("Anonymous Usage Analytics", systemImage: "shield.checkered")
             }
 
-            if let lastSync = viewModel.settings.lastContactsSyncAt {
-                Text("Last sync: \(lastSync.formatted(date: .abbreviated, time: .shortened))")
-                    .font(DS.Typography.metadata)
-                    .foregroundStyle(DS.Colors.secondaryText)
+            NavigationLink(destination: AdvancedSettingsView(viewModel: viewModel)) {
+                Label("Advanced Settings", systemImage: "gearshape.2")
             }
-
-            if isSyncingContacts {
-                HStack(spacing: DS.Spacing.md) {
-                    ProgressView()
-                    Text("Checking contacts...")
-                        .font(DS.Typography.metadata)
+        } header: {
+            Text("About")
+        } footer: {
+            VStack(spacing: DS.Spacing.md) {
+                Text("Your relationship data never leaves your phone. Anonymous usage statistics help us improve the app.")
+                VStack(spacing: DS.Spacing.sm) {
+                    Text("Keep In Touch \(appVersion)")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(DS.Colors.secondaryText)
+                    Text("Privacy-first personal CRM")
+                        .font(DS.Typography.caption)
                         .foregroundStyle(DS.Colors.secondaryText)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.top, DS.Spacing.sm)
             }
+        }
+    }
 
+    private var dangerZoneSection: some View {
+        Section {
             Button(role: .destructive) {
                 showResetFrequenciesConfirmation = true
             } label: {
@@ -428,67 +479,9 @@ struct SettingsView: View {
             } message: {
                 Text("Been away for a while? No worries \u{2014} this resets the clock on all your contacts so everything starts clean from today. Your touch history, groups, and frequencies are all preserved.")
             }
-        }
-    }
-
-    private var privacySection: some View {
-        Section {
-            Toggle(isOn: Binding(
-                get: { viewModel.settings.analyticsEnabled },
-                set: { viewModel.setAnalyticsEnabled($0) }
-            )) {
-                Label("Anonymous Usage Analytics", systemImage: "shield.checkered")
-            }
         } header: {
-            Text("Privacy")
-        } footer: {
-            Text("Your relationship data never leaves your phone. Anonymous usage statistics help us improve the app.")
-        }
-    }
-
-    private var pausedSection: some View {
-        Section("Paused Contacts") {
-            NavigationLink {
-                PausedContactsView()
-            } label: {
-                HStack {
-                    Image(systemName: "pause.circle.fill")
-                        .foregroundStyle(DS.Colors.secondaryText)
-                    Text("Paused Contacts")
-                    Spacer()
-                    Text("\(viewModel.pausedCount)")
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
-    private var advancedSection: some View {
-        Section("Advanced") {
-            NavigationLink(destination: AdvancedSettingsView(viewModel: viewModel)) {
-                Label("Advanced Settings", systemImage: "gearshape.2")
-            }
-        }
-    }
-
-    private var appVersion: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
-        return "v\(version) (\(build))"
-    }
-
-    private var aboutSection: some View {
-        Section {
-            VStack(spacing: DS.Spacing.sm) {
-                Text("Keep In Touch \(appVersion)")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Colors.secondaryText)
-                Text("Privacy-first personal CRM")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Colors.secondaryText)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, DS.Spacing.sm)
+            Text("Danger Zone")
+                .foregroundStyle(.red)
         }
     }
 
