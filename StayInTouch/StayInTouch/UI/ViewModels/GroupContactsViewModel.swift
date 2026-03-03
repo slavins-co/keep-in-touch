@@ -16,6 +16,7 @@ final class GroupContactsViewModel: ObservableObject {
 
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository
+    private var allPeople: [Person] = []
 
     init(
         group: Group,
@@ -29,17 +30,19 @@ final class GroupContactsViewModel: ObservableObject {
     }
 
     func load() {
-        people = personRepository.fetchByGroup(id: group.id, includePaused: true)
+        allPeople = personRepository.fetchTracked(includePaused: true)
             .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
-
-        let allTracked = personRepository.fetchTracked(includePaused: true)
-            .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
-        available = allTracked.filter { $0.groupId != group.id }
+        people = allPeople.filter { $0.groupId == group.id }
+        available = allPeople.filter { $0.groupId != group.id }
     }
 
     func removePerson(_ person: Person) {
-        guard let defaultGroup = groupRepository.fetchDefaultGroups().first,
-              defaultGroup.id != group.id else { return }
+        guard let defaultGroup = groupRepository.fetchDefaultGroups().first else {
+            AppLogger.logWarning("[GroupContactsViewModel.removePerson] No default group found", category: AppLogger.viewModel)
+            ErrorToastManager.shared.show(.saveFailed("GroupContacts"))
+            return
+        }
+        guard defaultGroup.id != group.id else { return }
 
         let updated = AssignGroupUseCase().assign(person: person, to: defaultGroup.id)
         do {
@@ -54,8 +57,7 @@ final class GroupContactsViewModel: ObservableObject {
 
     func addPeople(_ personIds: [UUID]) {
         let useCase = AssignGroupUseCase()
-        let allTracked = personRepository.fetchTracked(includePaused: true)
-        for person in allTracked where personIds.contains(person.id) {
+        for person in allPeople where personIds.contains(person.id) {
             let updated = useCase.assign(person: person, to: group.id)
             do {
                 try personRepository.save(updated)
