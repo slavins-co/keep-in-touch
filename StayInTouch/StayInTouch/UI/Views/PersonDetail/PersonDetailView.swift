@@ -28,6 +28,8 @@ struct PersonDetailView: View {
     @State private var workingReminderTime = Date()
     @State private var showSnoozeDatePicker = false
     @State private var pickedSnoozeDate = Date()
+    @State private var showCustomDueDatePicker = false
+    @State private var pickedCustomDueDate = Date()
     @State private var nextTouchNotesText: String = ""
     @State private var settingsExpanded = false
     @State private var pendingQuickActionMethod: TouchMethod?
@@ -198,6 +200,24 @@ struct PersonDetailView: View {
                             Button("Save") {
                                 viewModel.snooze(until: pickedSnoozeDate)
                                 showSnoozeDatePicker = false
+                            }
+                        }
+                    }
+            }
+        }
+        .sheet(isPresented: $showCustomDueDatePicker) {
+            NavigationStack {
+                DatePicker("Due by", selection: $pickedCustomDueDate, in: Date()..., displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .padding()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Cancel") { showCustomDueDatePicker = false }
+                        }
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Save") {
+                                viewModel.setCustomDueDate(pickedCustomDueDate)
+                                showCustomDueDatePicker = false
                             }
                         }
                     }
@@ -625,6 +645,27 @@ struct PersonDetailView: View {
                         .font(DS.Typography.metadata)
                 }
             }
+
+            if let customDue = viewModel.person.customDueDate {
+                HStack {
+                    Image(systemName: "calendar.badge.exclamationmark")
+                        .foregroundStyle(DS.Colors.statusDueSoon)
+                    Text("Due by \(customDue.formatted(date: .abbreviated, time: .omitted))")
+                        .font(DS.Typography.metadata)
+                        .foregroundStyle(DS.Colors.statusDueSoon)
+                    Spacer()
+                    Button("Clear") { viewModel.clearCustomDueDate() }
+                        .font(DS.Typography.metadata)
+                }
+            } else {
+                Button {
+                    pickedCustomDueDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
+                    showCustomDueDatePicker = true
+                } label: {
+                    Label("Set Due Date", systemImage: "calendar.badge.exclamationmark")
+                        .font(DS.Typography.metadata)
+                }
+            }
         }
         .padding(.vertical, DS.Spacing.md)
     }
@@ -724,8 +765,9 @@ struct PersonDetailView: View {
     private var daysUntilDue: Int {
         guard let group = viewModel.group else { return 0 }
         let calculator = FrequencyCalculator()
-        let daysSince = calculator.daysSinceLastTouch(for: viewModel.person) ?? 0
-        return max(0, group.frequencyDays - daysSince)
+        guard let dueDate = calculator.effectiveDueDate(for: viewModel.person, in: [group]) else { return 0 }
+        let cal = Calendar.current
+        return max(0, cal.dateComponents([.day], from: cal.startOfDay(for: Date()), to: cal.startOfDay(for: dueDate)).day ?? 0)
     }
 
     // MARK: - Helper Functions
@@ -756,12 +798,11 @@ struct PersonDetailView: View {
     private func frequencySubtext() -> String {
         guard let group = viewModel.group else { return "" }
         let calculator = FrequencyCalculator()
-        let daysSince = calculator.daysSinceLastTouch(for: viewModel.person) ?? 0
-        let remaining = group.frequencyDays - daysSince
 
-        if let effectiveDate = calculator.effectiveLastTouchDate(for: viewModel.person) {
-            let dueDate = Calendar.current.date(byAdding: .day, value: Int(group.frequencyDays), to: effectiveDate)
-            let formatted = dueDate.map { Self.dueDateFormatter.string(from: $0) } ?? "?"
+        if let dueDate = calculator.effectiveDueDate(for: viewModel.person, in: [group]) {
+            let cal = Calendar.current
+            let remaining = cal.dateComponents([.day], from: cal.startOfDay(for: Date()), to: cal.startOfDay(for: dueDate)).day ?? 0
+            let formatted = Self.dueDateFormatter.string(from: dueDate)
             if remaining > 0 {
                 return "Connect every \(group.frequencyDays) days \u{00B7} Due \(formatted) \u{00B7} \(remaining)d remaining"
             }

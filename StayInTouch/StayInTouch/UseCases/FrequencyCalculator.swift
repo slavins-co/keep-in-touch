@@ -21,15 +21,15 @@ struct FrequencyCalculator {
             return .onTrack
         }
 
-        guard let lastTouch = effectiveLastTouchDate(for: person) else {
+        guard let dueDate = effectiveDueDate(for: person, in: groups) else {
             return .unknown
         }
 
-        let daysSince = calendarDaysBetween(from: lastTouch, to: referenceDate)
-        if daysSince >= group.frequencyDays {
+        let daysUntilDue = calendarDaysBetween(from: referenceDate, to: dueDate)
+        if daysUntilDue <= 0 {
             return .overdue
         }
-        if daysSince >= max(0, group.frequencyDays - group.warningDays) {
+        if daysUntilDue <= group.warningDays {
             return .dueSoon
         }
         return .onTrack
@@ -38,16 +38,37 @@ struct FrequencyCalculator {
     func daysOverdue(for person: Person, in groups: [Group]) -> Int {
         if person.isPaused { return 0 }
         if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return 0 }
-        guard let group = groups.first(where: { $0.id == person.groupId }) else {
+        guard groups.first(where: { $0.id == person.groupId }) != nil else {
             return 0
         }
 
-        guard let lastTouch = effectiveLastTouchDate(for: person) else {
+        guard let dueDate = effectiveDueDate(for: person, in: groups) else {
             return 0
         }
 
-        let daysSince = calendarDaysBetween(from: lastTouch, to: referenceDate)
-        return max(0, daysSince - group.frequencyDays)
+        let daysUntilDue = calendarDaysBetween(from: referenceDate, to: dueDate)
+        return max(0, -daysUntilDue)
+    }
+
+    func effectiveDueDate(for person: Person, in groups: [Group]) -> Date? {
+        let cal = Calendar.current
+        guard let group = groups.first(where: { $0.id == person.groupId }) else { return nil }
+
+        let groupDueDate: Date?
+        if let lastTouch = effectiveLastTouchDate(for: person) {
+            groupDueDate = cal.date(byAdding: .day, value: group.frequencyDays, to: cal.startOfDay(for: lastTouch))
+        } else {
+            groupDueDate = nil
+        }
+
+        let customDue = person.customDueDate.map { cal.startOfDay(for: $0) }
+
+        switch (groupDueDate, customDue) {
+        case let (g?, c?): return min(g, c)
+        case let (g?, nil): return g
+        case let (nil, c?): return c
+        case (nil, nil): return nil
+        }
     }
 
     func effectiveLastTouchDate(for person: Person) -> Date? {

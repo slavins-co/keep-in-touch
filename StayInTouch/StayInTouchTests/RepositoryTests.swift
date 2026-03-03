@@ -79,6 +79,7 @@ final class RepositoryTests: XCTestCase {
             notificationsMuted: false,
             customBreachTime: nil,
             snoozedUntil: nil,
+            customDueDate: nil,
             birthday: nil,
             contactUnavailable: false,
             isDemoData: false,

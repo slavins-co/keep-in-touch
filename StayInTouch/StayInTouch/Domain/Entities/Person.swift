@@ -32,6 +32,7 @@ struct Person: Identifiable, Equatable, Hashable {
     var notificationsMuted: Bool
     var customBreachTime: LocalTime?
     var snoozedUntil: Date?
+    var customDueDate: Date?
     var birthday: Birthday?
 
     var contactUnavailable: Bool
