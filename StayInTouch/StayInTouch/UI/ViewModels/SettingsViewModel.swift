@@ -225,7 +225,13 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
-    func parseImportFile(url: URL) -> ImportPreview? {
+    private static func touchEventDedupKey(personId: UUID, date: Date, method: TouchMethod, notes: String?, calendar: Calendar) -> String {
+        let dayKey = Int(calendar.startOfDay(for: date).timeIntervalSince1970)
+        let notesKey = (notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return "\(personId)-\(dayKey)-\(method.rawValue)-\(notesKey)"
+    }
+
+    func parseImportFile(url: URL) async -> ImportPreview? {
         guard url.startAccessingSecurityScopedResource() else { return nil }
         defer { url.stopAccessingSecurityScopedResource() }
 
@@ -309,15 +315,26 @@ final class SettingsViewModel: ObservableObject {
 
         // CN-based dedup: build lookup of tracked people by their CNContact identifier
         let existingByCNId: [String: Person] = Dictionary(
-            uniqueKeysWithValues: allExistingPeople.compactMap { p in
+            allExistingPeople.compactMap { p in
                 guard let cn = p.cnIdentifier else { return nil }
                 return (cn, p)
-            }
+            },
+            uniquingKeysWith: { first, _ in first }
         )
 
         // Fetch device address book contacts: normalized name → [cnIdentifier]
-        var deviceContactsByName: [String: [String]] = [:]
-        if CNContactStore.authorizationStatus(for: .contacts) == .authorized {
+        // Run on background thread to avoid blocking main thread for large contact lists
+        let hasContactsAccess: Bool = {
+            switch CNContactStore.authorizationStatus(for: .contacts) {
+            case .authorized, .limited: return true
+            default: return false
+            }
+        }()
+        let deviceContactsByName: [String: [String]] = await Task.detached {
+            guard hasContactsAccess else {
+                return [:]
+            }
+            var result: [String: [String]] = [:]
             let store = CNContactStore()
             let keys: [CNKeyDescriptor] = [
                 CNContactIdentifierKey as CNKeyDescriptor,
@@ -330,9 +347,10 @@ final class SettingsViewModel: ObservableObject {
                     ?? contact.organizationName
                 let normalized = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !normalized.isEmpty else { return }
-                deviceContactsByName[normalized, default: []].append(contact.identifier)
+                result[normalized, default: []].append(contact.identifier)
             }
-        }
+            return result
+        }.value
 
         // Name-only fallback for contacts not in address book
         let existingTrackedByName = Dictionary(
@@ -397,9 +415,7 @@ final class SettingsViewModel: ObservableObject {
             guard existingById[actualPersonId] != nil else { continue }
             let existing = touchEventRepository.fetchAll(for: actualPersonId)
             for e in existing {
-                let dayKey = Int(calendar.startOfDay(for: e.at).timeIntervalSince1970)
-                let notesKey = (e.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                existingEventKeys.insert("\(actualPersonId)-\(dayKey)-\(e.method.rawValue)-\(notesKey)")
+                existingEventKeys.insert(Self.touchEventDedupKey(personId: actualPersonId, date: e.at, method: e.method, notes: e.notes, calendar: calendar))
             }
         }
 
@@ -409,9 +425,7 @@ final class SettingsViewModel: ObservableObject {
             let actualPersonId = remappedIds[exportPerson.id] ?? exportPerson.id
             for event in events {
                 let method = TouchMethod(rawValue: event.method) ?? .other
-                let dayKey = Int(calendar.startOfDay(for: event.at).timeIntervalSince1970)
-                let notesKey = (event.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                let key = "\(actualPersonId)-\(dayKey)-\(method.rawValue)-\(notesKey)"
+                let key = Self.touchEventDedupKey(personId: actualPersonId, date: event.at, method: method, notes: event.notes, calendar: calendar)
                 if !existingEventKeys.contains(key) {
                     newTouchEventCount += 1
                     existingEventKeys.insert(key)
@@ -595,9 +609,7 @@ final class SettingsViewModel: ObservableObject {
                 guard let actualPersonId = importedIdMap[exportPerson.id] else { continue }
                 let existing = touchRepo.fetchAll(for: actualPersonId)
                 for e in existing {
-                    let dayKey = Int(calendar.startOfDay(for: e.at).timeIntervalSince1970)
-                    let notesKey = (e.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                    existingEventKeys.insert("\(actualPersonId)-\(dayKey)-\(e.method.rawValue)-\(notesKey)")
+                    existingEventKeys.insert(SettingsViewModel.touchEventDedupKey(personId: actualPersonId, date: e.at, method: e.method, notes: e.notes, calendar: calendar))
                 }
             }
 
@@ -606,9 +618,7 @@ final class SettingsViewModel: ObservableObject {
                       let actualPersonId = importedIdMap[exportPerson.id] else { continue }
                 for event in events {
                     let method = TouchMethod(rawValue: event.method) ?? .other
-                    let dayKey = Int(calendar.startOfDay(for: event.at).timeIntervalSince1970)
-                    let notesKey = (event.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                    let key = "\(actualPersonId)-\(dayKey)-\(method.rawValue)-\(notesKey)"
+                    let key = SettingsViewModel.touchEventDedupKey(personId: actualPersonId, date: event.at, method: method, notes: event.notes, calendar: calendar)
 
                     guard !existingEventKeys.contains(key) else { continue }
                     existingEventKeys.insert(key)

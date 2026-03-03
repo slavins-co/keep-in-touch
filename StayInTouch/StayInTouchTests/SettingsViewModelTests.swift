@@ -127,7 +127,7 @@ final class SettingsViewModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
-    func testParseImportFileLegacyFormat() throws {
+    func testParseImportFileLegacyFormat() async throws {
         // Create a legacy-format JSON ([ExportPerson] array)
         let legacyPeople = [
             ExportPerson(
@@ -151,7 +151,7 @@ final class SettingsViewModelTests: XCTestCase {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("legacy-test.json")
         try data.write(to: url, options: .atomic)
 
-        let preview = sut.parseImportFile(url: url)
+        let preview = await sut.parseImportFile(url: url)
 
         XCTAssertNotNil(preview)
         XCTAssertEqual(preview?.newPeople.count, 1)
@@ -161,7 +161,7 @@ final class SettingsViewModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
-    func testParseImportFileNewFormatWithGroups() throws {
+    func testParseImportFileNewFormatWithGroups() async throws {
         let groupId = UUID()
         let tagId = UUID()
         let exportData = ExportData(
@@ -190,7 +190,7 @@ final class SettingsViewModelTests: XCTestCase {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("new-format-test.json")
         try data.write(to: url, options: .atomic)
 
-        let preview = sut.parseImportFile(url: url)
+        let preview = await sut.parseImportFile(url: url)
 
         XCTAssertNotNil(preview)
         XCTAssertEqual(preview?.newPeople.count, 1)
@@ -202,7 +202,7 @@ final class SettingsViewModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
-    func testImportMergesGroupsByName() throws {
+    func testImportMergesGroupsByName() async throws {
         // Set up existing group "Weekly"
         let existingGroupId = UUID()
         groupRepo.groups = [TestFactory.makeGroup(id: existingGroupId, name: "Weekly")]
@@ -241,7 +241,7 @@ final class SettingsViewModelTests: XCTestCase {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("merge-test.json")
         try data.write(to: url, options: .atomic)
 
-        let preview = sut.parseImportFile(url: url)
+        let preview = await sut.parseImportFile(url: url)
 
         XCTAssertNotNil(preview)
         // "weekly" matches existing "Weekly" — no new group created
@@ -341,7 +341,7 @@ final class SettingsViewModelTests: XCTestCase {
 
     // MARK: - Import Dedup (Name-Based Fallback)
 
-    func testReimportByNameDoesNotCreateDuplicate() throws {
+    func testReimportByNameDoesNotCreateDuplicate() async throws {
         // Existing tracked person with unique name
         let existingId = UUID()
         personRepo.people = [TestFactory.makePerson(id: existingId, name: "Alice Smith")]
@@ -380,7 +380,7 @@ final class SettingsViewModelTests: XCTestCase {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("dedup-name-test.json")
         try data.write(to: url, options: .atomic)
 
-        let preview = sut.parseImportFile(url: url)
+        let preview = await sut.parseImportFile(url: url)
 
         XCTAssertNotNil(preview)
         // Name-only fallback: single tracked person with name "Alice Smith" → auto-match
@@ -391,7 +391,7 @@ final class SettingsViewModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
-    func testReimportWithDuplicateNamesCreatesNew() throws {
+    func testReimportWithDuplicateNamesCreatesNew() async throws {
         // Two tracked people with the same name
         personRepo.people = [
             TestFactory.makePerson(name: "John Smith"),
@@ -431,7 +431,7 @@ final class SettingsViewModelTests: XCTestCase {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("dedup-ambiguous-test.json")
         try data.write(to: url, options: .atomic)
 
-        let preview = sut.parseImportFile(url: url)
+        let preview = await sut.parseImportFile(url: url)
 
         XCTAssertNotNil(preview)
         // Two tracked "John Smith" and no CN match in test env → classified as new (not ambiguous,
@@ -441,7 +441,7 @@ final class SettingsViewModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
-    func testReimportByUUIDMatchClassifiesAsUpdated() throws {
+    func testReimportByUUIDMatchClassifiesAsUpdated() async throws {
         let existingId = UUID()
         personRepo.people = [TestFactory.makePerson(id: existingId, name: "Bob")]
         sut = SettingsViewModel(
@@ -478,7 +478,7 @@ final class SettingsViewModelTests: XCTestCase {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("dedup-uuid-test.json")
         try data.write(to: url, options: .atomic)
 
-        let preview = sut.parseImportFile(url: url)
+        let preview = await sut.parseImportFile(url: url)
 
         XCTAssertNotNil(preview)
         XCTAssertTrue(preview?.newPeople.isEmpty ?? false)
@@ -489,7 +489,7 @@ final class SettingsViewModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
-    func testReimportDoesNotCountExistingTouchEventsAsNew() throws {
+    func testReimportDoesNotCountExistingTouchEventsAsNew() async throws {
         let personId = UUID()
         let cal = Calendar.current
         let touchDate = cal.date(byAdding: .day, value: -3, to: Date())!
@@ -547,7 +547,7 @@ final class SettingsViewModelTests: XCTestCase {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("dedup-test.json")
         try data.write(to: url, options: .atomic)
 
-        let preview = sut.parseImportFile(url: url)
+        let preview = await sut.parseImportFile(url: url)
 
         XCTAssertNotNil(preview)
         XCTAssertEqual(preview?.touchEventCount, 1, "File contains 1 total event")
@@ -557,7 +557,7 @@ final class SettingsViewModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
-    func testImportPreviewIncludesTouchEventCount() throws {
+    func testImportPreviewIncludesTouchEventCount() async throws {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
@@ -587,7 +587,7 @@ final class SettingsViewModelTests: XCTestCase {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("events-count-test.json")
         try data.write(to: url, options: .atomic)
 
-        let preview = sut.parseImportFile(url: url)
+        let preview = await sut.parseImportFile(url: url)
 
         XCTAssertNotNil(preview)
         XCTAssertEqual(preview?.touchEventCount, 2)
