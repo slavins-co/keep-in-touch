@@ -85,48 +85,44 @@ struct ContactsListView: View {
         let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
 
         return ScrollViewReader { proxy in
-            ZStack(alignment: .trailing) {
-                ScrollView {
-                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                        ForEach(sections, id: \.letter) { section in
-                            Section {
-                                ForEach(Array(section.people.enumerated()), id: \.element.id) { index, person in
-                                    let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
-                                    let firstTagName = person.tagIds.compactMap { tagsById[$0]?.name }.first
-                                    Button {
-                                        selectPerson(person)
-                                    } label: {
-                                        ContactCard(
-                                            person: person,
-                                            frequencyName: frequencyName,
-                                            status: calculator.status(for: person, in: viewModel.groups),
-                                            daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
-                                            timeAgo: timeAgoText(for: person, calculator: calculator),
-                                            lastMethod: person.lastTouchMethod,
-                                            tagName: firstTagName
-                                        )
-                                    }
-                                    .buttonStyle(.plain)
-                                    .background(DS.Colors.pageBg)
-
-                                    if index < section.people.count - 1 {
-                                        SubtleDivider()
-                                            .padding(.leading, DS.Spacing.lg)
-                                    }
+            ScrollView {
+                LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                    ForEach(sections, id: \.letter) { section in
+                        Section {
+                            ForEach(Array(section.people.enumerated()), id: \.element.id) { index, person in
+                                let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
+                                let firstTagName = person.tagIds.compactMap { tagsById[$0]?.name }.first
+                                Button {
+                                    selectPerson(person)
+                                } label: {
+                                    ContactCard(
+                                        person: person,
+                                        frequencyName: frequencyName,
+                                        status: calculator.status(for: person, in: viewModel.groups),
+                                        daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
+                                        timeAgo: timeAgoText(for: person, calculator: calculator),
+                                        lastMethod: person.lastTouchMethod,
+                                        tagName: firstTagName
+                                    )
                                 }
-                                .background(DS.Colors.pageBg)
-                            } header: {
-                                sectionHeader(letter: section.letter)
-                                    .zIndex(1)
-                                    .id(section.letter)
+                                .buttonStyle(.plain)
+
+                                if index < section.people.count - 1 {
+                                    SubtleDivider()
+                                        .padding(.leading, DS.Spacing.lg)
+                                }
                             }
+                        } header: {
+                            sectionHeader(letter: section.letter)
+                                .id(section.letter)
                         }
                     }
-                    .padding(.leading)
-                    .padding(.trailing, 36)
-                    .padding(.bottom, 80)
                 }
-
+                .padding(.leading)
+                .padding(.trailing, 36)
+                .padding(.bottom, 80)
+            }
+            .overlay(alignment: .trailing) {
                 SectionIndexView(sections: sectionLetters) { letter in
                     withAnimation {
                         proxy.scrollTo(letter, anchor: .top)
