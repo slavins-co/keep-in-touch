@@ -1189,6 +1189,34 @@ Run `git remote set-head origin main` before starting batch security reviews.
 **Prevention Rule:**
 Before running batch security reviews, ensure `origin/HEAD` is set. For batch reviews, work sequentially and post each comment immediately after review. Track findings for issue creation at the end.
 
+### 2026-03-04 - 🎨 SwiftUI - clipShape Nullifies Prior ignoresSafeArea
+
+**What Happened:**
+Applied `.ignoresSafeArea(.container, edges: .bottom)` inside `.background {}` to extend the card's background into the bottom safe area. No visual change — the card still stopped at the safe area boundary.
+
+**Root Cause:**
+`.clipShape()` applied after `.background {}` clips the rendered output to the view's **layout frame**, which respects safe area. Any safe area extension applied to content *before* the clip shape gets clipped away.
+
+**Solution:**
+Moved `.ignoresSafeArea(.container, edges: .bottom)` to *after* `.clipShape()`. The entire clipped view (including its shape) now extends through the bottom safe area to the screen edge.
+
+**Prevention Rule:**
+In SwiftUI, `.clipShape()` clips to layout bounds. Safe area modifiers must go AFTER clip shapes to take effect. Order: `.background()` → `.clipShape()` → `.ignoresSafeArea()`. Never place `.ignoresSafeArea` inside `.background {}` when a `.clipShape()` follows.
+
+### 2026-03-04 - 🎨 UI/UX - NavigationLink Consumers When Changing Nav Bar Visibility
+
+**What Happened:**
+Changed PersonDetailView from NavigationLink push to fullScreenCover and added `.navigationBarHidden(true)`. Code review caught that PausedContactsView (in Settings) still uses NavigationLink to push PersonDetailView — users would be trapped with no back button.
+
+**Root Cause:**
+When modifying a shared view's navigation bar behavior, it's easy to miss all the call sites that push it via NavigationLink. The fullScreenCover path didn't need nav bar hiding (no NavigationStack), but the change broke the NavigationLink path.
+
+**Solution:**
+Removed `.navigationBarHidden(true)` entirely — unnecessary in fullScreenCover context (no NavigationStack) and harmful in NavigationLink context (hides back button).
+
+**Prevention Rule:**
+When changing a view's navigation bar behavior, grep for ALL `NavigationLink` references to that view. Test each navigation path. Prefer not hiding the nav bar if the view is used in both pushed and presented contexts.
+
 ## Historical Lessons
 
 *This section will be populated as development progresses*

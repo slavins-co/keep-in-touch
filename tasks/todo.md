@@ -8,6 +8,18 @@
 
 ---
 
+## Completed — Session 2026-03-04 (Issue #173: fullScreenCover Detail Presentation)
+
+- [x] **#173** Change PersonDetailView from NavigationLink push to fullScreenCover with DismissableFullScreenCover wrapper
+- [x] New DismissableFullScreenCover component: rounded top corners, drag handle, X button, drag-to-dismiss
+- [x] Lifted selectedPerson state to MainTabView — single fullScreenCover serves Home + Contacts tabs
+- [x] Deep link processing moved from HomeView to MainTabView
+- [x] ContactListSection + ContactsListView: NavigationLink → Button with selectPerson closure
+- [x] Code review: caught PausedContactsView nav trap — fixed by removing .navigationBarHidden(true)
+- [x] Security review: PASS
+
+---
+
 ## Completed — Session 2026-03-02 (Issue #152: Date Calculation Bug)
 
 - [x] **#152** Fix "Today" shown for contacts touched yesterday — normalize to calendar days instead of 24-hour periods
