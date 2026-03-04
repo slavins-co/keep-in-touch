@@ -28,7 +28,7 @@ struct StatusSummaryCard: View {
                 .foregroundStyle(numberColor)
         }
         .frame(maxWidth: .infinity)
-        .padding(14)
+        .padding(DS.Spacing.cardPadding)
         .background(backgroundColor)
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.lg)

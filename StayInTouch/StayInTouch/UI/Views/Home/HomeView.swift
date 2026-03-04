@@ -222,9 +222,9 @@ struct HomeView: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.caption2)
                         .foregroundStyle(DS.Colors.filterAccent)
+                        .frame(minWidth: 44)
+                        .contentShape(Rectangle())
                 }
-                .frame(minWidth: 44)
-                .contentShape(Rectangle())
             }
         }
         .frame(maxWidth: .infinity)
