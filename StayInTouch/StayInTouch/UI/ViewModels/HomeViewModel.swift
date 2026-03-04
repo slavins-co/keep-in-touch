@@ -46,7 +46,7 @@ final class HomeViewModel: ObservableObject {
         settings = settingsRepository.fetch()
         groups = groupRepository.fetchAll()
         tags = tagRepository.fetchAll()
-        allPeople = personRepository.fetchTracked(includePaused: false)
+        allPeople = personRepository.fetchTracked(includePaused: true)
 
         applyFilters()
     }

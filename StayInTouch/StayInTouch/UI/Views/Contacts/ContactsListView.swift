@@ -9,6 +9,8 @@ struct ContactsListView: View {
     @ObservedObject var viewModel: HomeViewModel
     var selectPerson: (Person) -> Void
     @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
+    @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Computed Data
 
@@ -44,6 +46,8 @@ struct ContactsListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            contactsHeader
+
             if viewModel.allPeople.isEmpty {
                 Spacer()
                 EmptyStateView(
@@ -62,9 +66,10 @@ struct ContactsListView: View {
                 Spacer()
             } else {
                 contactsList
+                    .overlay(alignment: .bottom) {
+                        contactsSearchBar
+                    }
             }
-
-            contactsSearchBar
         }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
             viewModel.load()
@@ -72,6 +77,20 @@ struct ContactsListView: View {
         .onReceive(NotificationCenter.default.publisher(for: .contactsDidSync)) { _ in
             viewModel.load()
         }
+    }
+
+    // MARK: - Header
+
+    private var contactsHeader: some View {
+        HStack {
+            Text("\(filteredPeople.count) Contacts")
+                .font(DS.Typography.homeSubtitle)
+                .foregroundStyle(Color(.secondaryLabel))
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.vertical, DS.Spacing.sm)
+        .background(DS.Colors.secondaryBackground)
     }
 
     // MARK: - Contacts List
@@ -82,44 +101,47 @@ struct ContactsListView: View {
         let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
 
         return ScrollViewReader { proxy in
-            ZStack(alignment: .trailing) {
-                ScrollView {
-                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                        ForEach(sections, id: \.letter) { section in
-                            Section {
-                                ForEach(Array(section.people.enumerated()), id: \.element.id) { index, person in
-                                    let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
-                                    let tags = person.tagIds.compactMap { tagsById[$0] }
-                                    Button {
-                                        selectPerson(person)
-                                    } label: {
-                                        ContactCard(
-                                            person: person,
-                                            frequencyName: frequencyName,
-                                            tags: tags,
-                                            status: calculator.status(for: person, in: viewModel.groups),
-                                            daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
-                                            timeAgo: timeAgoText(for: person, calculator: calculator),
-                                            lastMethod: person.lastTouchMethod
-                                        )
-                                    }
-                                    .buttonStyle(.plain)
-
-                                    if index < section.people.count - 1 {
-                                        SubtleDivider()
-                                            .padding(.leading, DS.Spacing.lg)
-                                    }
+            ScrollView {
+                LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                    ForEach(sections, id: \.letter) { section in
+                        Section {
+                            ForEach(Array(section.people.enumerated()), id: \.element.id) { index, person in
+                                let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
+                                let firstTagName = person.tagIds.compactMap { tagsById[$0]?.name }.first
+                                Button {
+                                    selectPerson(person)
+                                } label: {
+                                    ContactCard(
+                                        person: person,
+                                        frequencyName: frequencyName,
+                                        status: calculator.status(for: person, in: viewModel.groups),
+                                        daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
+                                        timeAgo: timeAgoText(for: person, calculator: calculator),
+                                        lastMethod: person.lastTouchMethod,
+                                        tagName: firstTagName
+                                    )
                                 }
-                            } header: {
-                                sectionHeader(letter: section.letter)
-                                    .id(section.letter)
+                                .buttonStyle(.plain)
+                                .padding(.leading)
+                                .padding(.trailing, 36)
+
+                                if index < section.people.count - 1 {
+                                    SubtleDivider()
+                                        .padding(.leading, DS.Spacing.lg)
+                                        .padding(.leading)
+                                        .padding(.trailing, 36)
+                                }
                             }
+                        } header: {
+                            sectionHeader(letter: section.letter)
+                                .id(section.letter)
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, DS.Spacing.sm)
                 }
-
+                .padding(.bottom, 80)
+            }
+            .background(DS.Colors.pageBg)
+            .overlay(alignment: .trailing) {
                 SectionIndexView(sections: sectionLetters) { letter in
                     withAnimation {
                         proxy.scrollTo(letter, anchor: .top)
@@ -140,35 +162,63 @@ struct ContactsListView: View {
         }
         .padding(.vertical, DS.Spacing.xs)
         .padding(.horizontal, DS.Spacing.xs)
-        .background(DS.Colors.background)
+        .padding(.leading)
+        .padding(.trailing, 36)
+        .background(DS.Colors.pageBg)
     }
 
     // MARK: - Search Bar
 
     private var contactsSearchBar: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(DS.Colors.tertiaryText)
-            TextField(
-                "Search contacts...",
-                text: $searchText
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [DS.Colors.pageBg.opacity(0), DS.Colors.pageBg],
+                startPoint: .top,
+                endPoint: .bottom
             )
-            .textFieldStyle(.plain)
-            if !searchText.isEmpty {
-                Button {
-                    searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(DS.Colors.tertiaryText)
+            .frame(height: 20)
+
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(DS.Colors.searchBarIcon)
+                TextField(
+                    "Search contacts...",
+                    text: $searchText
+                )
+                .textFieldStyle(.plain)
+                .focused($isSearchFocused)
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(DS.Colors.tertiaryText)
+                    }
                 }
             }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .background(DS.Colors.searchBarBackground)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(
+                        isSearchFocused
+                            ? (colorScheme == .dark ? Color(.systemGray3) : DS.Colors.filterAccent)
+                            : Color(.systemGray5),
+                        lineWidth: isSearchFocused ? 2 : 1
+                    )
+            )
+            .shadow(
+                color: colorScheme == .dark ? .clear : .black.opacity(0.1),
+                radius: 8,
+                y: 2
+            )
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.lg)
+            .frame(maxWidth: .infinity)
+            .background(DS.Colors.pageBg)
         }
-        .padding(.horizontal, DS.Spacing.md)
-        .padding(.vertical, DS.Spacing.sm)
-        .background(DS.Colors.secondaryBackground)
-        .clipShape(Capsule())
-        .padding(.horizontal)
-        .padding(.bottom, DS.Spacing.sm)
     }
 
     // MARK: - Helpers
