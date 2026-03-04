@@ -6,7 +6,7 @@
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey.svg)](LICENSE)
 
-**Version:** 0.3.0 (Build 8) | **Status:** Pre-release Beta
+**Version:** 0.3.1 (Build 9) | **Status:** Pre-release Beta
 
 ---
 
@@ -23,9 +23,9 @@ Never lose track of the people who matter. Keep In Touch helps you maintain frie
 
 ## Current Status
 
-V0.3.0 adds contact photos, JSON import/export, VoiceOver accessibility, and a round of security hardening. The app is feature-complete and preparing for TestFlight submission.
+V0.3.1 renames the app to **Keep In Touch**, adds custom due dates per contact, birthday display, last-connected seeding during import, frequency member management, and a round of import/export reliability fixes. Settings is reorganized into 6 logical sections.
 
-**Up next:** Swipe-to-log for faster connection logging, expanded accessibility, and the "Relationship Journal" UX direction. See [open issues](https://github.com/slavins-co/keep-in-touch/issues) and [release history](https://github.com/slavins-co/keep-in-touch/releases) for details.
+**Up next:** App UX redesign and TestFlight launch. See [open issues](https://github.com/slavins-co/keep-in-touch/issues) and [release history](https://github.com/slavins-co/keep-in-touch/releases) for details.
 
 ---
 
@@ -34,13 +34,15 @@ V0.3.0 adds contact photos, JSON import/export, VoiceOver accessibility, and a r
 **Core**
 - Connection logging with method tracking (Text, Call, In Person, Email)
 - Frequency-based contact groups with configurable cadences
+- Custom due dates per contact (overrides group frequency)
 - Contact photos from iOS Contacts with initials fallback
+- Birthday display from address book with manual override
 - Snooze and pause tracking per contact
 - "Next Time" notes for conversation context
 - Local notifications with quick-log actions
 - Contact search, filtering by frequency and group
 - Full connection history with edit and delete
-- JSON import and export with conflict resolution
+- JSON import and export with deduplication and conflict resolution
 - Dark, light, and system theme support
 
 **Privacy & Security**
