@@ -18,6 +18,7 @@ struct ContactListSection: View {
     let statusForPerson: (Person) -> ContactStatus
     let daysOverdueForPerson: (Person) -> Int
     let timeAgoForPerson: (Person) -> String
+    let selectPerson: (Person) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -48,8 +49,8 @@ struct ContactListSection: View {
                     ForEach(Array(people.enumerated()), id: \.element.id) { index, person in
                         let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
                         let tags = person.tagIds.compactMap { tagsById[$0] }
-                        NavigationLink {
-                            PersonDetailView(person: person)
+                        Button {
+                            selectPerson(person)
                         } label: {
                             ContactCard(
                                 person: person,
