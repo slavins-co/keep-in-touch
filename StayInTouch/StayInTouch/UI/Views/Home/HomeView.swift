@@ -23,6 +23,7 @@ struct HomeView: View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
                 header
+                summaryCards
                 filters
             }
             .background(DS.Colors.secondaryBackground)
@@ -34,13 +35,17 @@ struct HomeView: View {
             if newValue != nil {
                 AnalyticsService.track("filter.applied", parameters: ["type": "frequency"])
             }
-            viewModel.applyFilters()
+            withAnimation(.easeInOut(duration: 0.25)) {
+                viewModel.applyFilters()
+            }
         }
         .onChange(of: viewModel.selectedTagId) { _, newValue in
             if newValue != nil {
                 AnalyticsService.track("filter.applied", parameters: ["type": "group"])
             }
-            viewModel.applyFilters()
+            withAnimation(.easeInOut(duration: 0.25)) {
+                viewModel.applyFilters()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
             viewModel.load()
@@ -98,137 +103,145 @@ struct HomeView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+        VStack(spacing: DS.Spacing.xs) {
             Text("Keep In Touch")
-                .font(DS.Typography.largeTitle)
+                .font(DS.Typography.homeTitle)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
-            HStack(spacing: DS.Spacing.sm) {
-                statusCountText(count: viewModel.overduePeople.count, label: "overdue", color: DS.Colors.statusOverdue)
-                Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
-                statusCountText(count: viewModel.dueSoonPeople.count, label: "due soon", color: DS.Colors.statusDueSoon)
-                Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
-                statusCountText(count: viewModel.allGoodPeople.count, label: "all good", color: DS.Colors.statusAllGood)
-            }
-            .font(DS.Typography.caption)
+            Text("Keep your people close")
+                .font(DS.Typography.homeSubtitle)
+                .foregroundStyle(Color(.secondaryLabel))
         }
+        .frame(maxWidth: .infinity)
         .padding(.horizontal)
         .padding(.top, DS.Spacing.md)
         .padding(.bottom, DS.Spacing.sm)
     }
 
-    @ViewBuilder
-    private func statusCountText(count: Int, label: String, color: Color) -> some View {
-        HStack(spacing: 0) {
-            Text("\(count)")
-                .foregroundColor(color)
-                .contentTransition(.numericText())
-            Text(" \(label)")
-                .foregroundColor(DS.Colors.secondaryText)
-        }
-        .animation(.easeInOut(duration: 0.3), value: count)
-    }
+    // MARK: - Summary Cards
 
-    // MARK: - Filters
+    private var summaryCards: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            StatusSummaryCard(
+                count: viewModel.overduePeople.count,
+                label: "Overdue",
+                numberColor: DS.Colors.statusOverdue,
+                backgroundColor: DS.Colors.overdueCardBackground,
+                borderColor: DS.Colors.overdueCardBorder
+            )
 
-    private var filters: some View {
-        FlowLayout(spacing: DS.Spacing.sm) {
-            frequencyFilterChip
-            tagFilterChip
+            StatusSummaryCard(
+                count: viewModel.dueSoonPeople.count,
+                label: "Due Soon",
+                numberColor: DS.Colors.statusDueSoon,
+                backgroundColor: DS.Colors.dueSoonCardBackground,
+                borderColor: DS.Colors.dueSoonCardBorder
+            )
+
+            StatusSummaryCard(
+                count: viewModel.allGoodPeople.count,
+                label: "All Good",
+                numberColor: DS.Colors.statusAllGood,
+                backgroundColor: DS.Colors.allGoodCardBackground,
+                borderColor: DS.Colors.allGoodCardBorder
+            )
         }
         .padding(.horizontal)
         .padding(.bottom, DS.Spacing.md)
     }
 
-    private var frequencyFilterChip: some View {
-        let isActive = viewModel.selectedGroupId != nil
-        let displayText = viewModel.selectedGroupId.flatMap { id in
-            viewModel.groups.first(where: { $0.id == id })?.name
-        } ?? "Frequency"
+    // MARK: - Filters
 
-        return HStack(spacing: DS.Spacing.xs) {
-            Menu {
-                Button("All Frequencies") { viewModel.selectedGroupId = nil }
-                ForEach(viewModel.groups, id: \.id) { group in
-                    Button(group.name) { viewModel.selectedGroupId = group.id }
-                }
-            } label: {
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(displayText)
-                        .font(.subheadline)
-                        .lineLimit(1)
-                    if !isActive {
-                        Image(systemName: "chevron.down")
-                            .font(.caption2)
-                    }
-                }
-            }
-
-            if isActive {
-                Button { viewModel.selectedGroupId = nil } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(DS.Colors.accent)
-                        .frame(minWidth: 44)
-                        .contentShape(Rectangle())
-                }
-            }
+    private var filters: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            frequencyFilterButton
+            tagFilterButton
         }
-        .padding(.horizontal, DS.Spacing.sm)
-        .padding(.vertical, 6)
-        .background(isActive ? DS.Colors.accent.opacity(0.12) : Color.clear)
-        .foregroundStyle(isActive ? DS.Colors.accent : DS.Colors.secondaryText)
-        .overlay(
-            Capsule()
-                .stroke(isActive ? Color.clear : DS.Colors.separator, lineWidth: 0.5)
-        )
-        .clipShape(Capsule())
+        .padding(.horizontal)
+        .padding(.bottom, DS.Spacing.md)
     }
 
-    private var tagFilterChip: some View {
-        let isActive = viewModel.selectedTagId != nil
-        let displayText = viewModel.selectedTagId.flatMap { id in
-            viewModel.tags.first(where: { $0.id == id })?.name
-        } ?? "Groups"
+    private var frequencyFilterButton: some View {
+        let isActive = viewModel.selectedGroupId != nil
+        let selectedName = viewModel.selectedGroupId.flatMap { id in
+            viewModel.groups.first(where: { $0.id == id })?.name
+        }
+        let displayText = selectedName ?? "Frequency: All"
 
-        return HStack(spacing: DS.Spacing.xs) {
+        return filterButton(
+            displayText: displayText,
+            isActive: isActive,
+            onClear: { viewModel.selectedGroupId = nil }
+        ) {
+            Button("All Frequencies") { viewModel.selectedGroupId = nil }
+            ForEach(viewModel.groups, id: \.id) { group in
+                Button(group.name) { viewModel.selectedGroupId = group.id }
+            }
+        }
+    }
+
+    private var tagFilterButton: some View {
+        let isActive = viewModel.selectedTagId != nil
+        let selectedName = viewModel.selectedTagId.flatMap { id in
+            viewModel.tags.first(where: { $0.id == id })?.name
+        }
+        let displayText = selectedName ?? "Group: All"
+
+        return filterButton(
+            displayText: displayText,
+            isActive: isActive,
+            onClear: { viewModel.selectedTagId = nil }
+        ) {
+            Button("All Groups") { viewModel.selectedTagId = nil }
+            ForEach(viewModel.tags, id: \.id) { tag in
+                Button(tag.name) { viewModel.selectedTagId = tag.id }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func filterButton<MenuContent: View>(
+        displayText: String,
+        isActive: Bool,
+        onClear: @escaping () -> Void,
+        @ViewBuilder menuContent: () -> MenuContent
+    ) -> some View {
+        HStack(spacing: DS.Spacing.xs) {
             Menu {
-                Button("All Groups") { viewModel.selectedTagId = nil }
-                ForEach(viewModel.tags, id: \.id) { tag in
-                    Button(tag.name) { viewModel.selectedTagId = tag.id }
-                }
+                menuContent()
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
                     Text(displayText)
-                        .font(.subheadline)
+                        .font(DS.Typography.filterLabel)
                         .lineLimit(1)
                     if !isActive {
                         Image(systemName: "chevron.down")
-                            .font(.caption2)
+                            .font(DS.Typography.filterChevron)
                     }
                 }
             }
 
             if isActive {
-                Button { viewModel.selectedTagId = nil } label: {
+                Button { onClear() } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.caption2)
-                        .foregroundStyle(DS.Colors.accent)
-                        .frame(minWidth: 44)
+                        .foregroundStyle(DS.Colors.filterAccent)
+                        .padding(.leading, DS.Spacing.xs)
                         .contentShape(Rectangle())
                 }
             }
         }
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, DS.Spacing.sm)
-        .padding(.vertical, 6)
-        .background(isActive ? DS.Colors.accent.opacity(0.12) : Color.clear)
-        .foregroundStyle(isActive ? DS.Colors.accent : DS.Colors.secondaryText)
+        .padding(.vertical, DS.Spacing.sm)
+        .background(isActive ? DS.Colors.filterAccent.opacity(0.08) : Color.clear)
+        .foregroundStyle(isActive ? DS.Colors.filterAccent : Color(.secondaryLabel))
         .overlay(
-            Capsule()
-                .stroke(isActive ? Color.clear : DS.Colors.separator, lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: DS.Radius.md)
+                .stroke(isActive ? DS.Colors.filterAccent : DS.Colors.separator, lineWidth: 1)
         )
-        .clipShape(Capsule())
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
     // MARK: - Search Bar

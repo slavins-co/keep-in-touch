@@ -67,17 +67,17 @@ enum DS {
         static let overdueCardBackground = adaptive(light: "FEF2F2", dark: "1C1C1E")
         static let overdueCardBorder = adaptiveColor(
             light: UIColor(Color(hex: "FEE2E2")),
-            dark: UIColor.white.withAlphaComponent(0.05)
+            dark: UIColor.white.withAlphaComponent(0.15)
         )
         static let dueSoonCardBackground = adaptive(light: "FFFBEB", dark: "1C1C1E")
         static let dueSoonCardBorder = adaptiveColor(
             light: UIColor(Color(hex: "FDE68A")),
-            dark: UIColor.white.withAlphaComponent(0.05)
+            dark: UIColor.white.withAlphaComponent(0.15)
         )
         static let allGoodCardBackground = adaptive(light: "ECFDF5", dark: "1C1C1E")
         static let allGoodCardBorder = adaptiveColor(
             light: UIColor(Color(hex: "A7F3D0")),
-            dark: UIColor.white.withAlphaComponent(0.05)
+            dark: UIColor.white.withAlphaComponent(0.15)
         )
 
         // MARK: Action Buttons
@@ -96,6 +96,10 @@ enum DS {
             light: UIColor(Color(hex: "FEF08A")),
             dark: UIColor.white.withAlphaComponent(0.05)
         )
+
+        // MARK: Filters
+
+        static let filterAccent = adaptive(light: "3D6B4F", dark: "6BCB77")
 
         // MARK: Sheet Overlay
 
@@ -198,6 +202,10 @@ enum DS {
         static let timelineTitle = Font.system(size: 14, weight: .bold)
         static let timelineMono = Font.system(size: 12, weight: .regular, design: .monospaced)
         static let timelineNotes = Font.system(size: 14, weight: .regular)
+        static let homeTitle = Font.title.weight(.bold)
+        static let homeSubtitle = Font.subheadline.weight(.medium)
+        static let filterLabel = Font.footnote.weight(.semibold)
+        static let filterChevron = Font.caption2.weight(.semibold)
     }
 
     // MARK: - Spacing
@@ -207,6 +215,7 @@ enum DS {
         static let xs: CGFloat = 4
         static let sm: CGFloat = 8
         static let md: CGFloat = 12
+        static let cardPadding: CGFloat = 14
         static let lg: CGFloat = 16
         static let xl: CGFloat = 20
         static let xxl: CGFloat = 24
@@ -222,6 +231,14 @@ enum DS {
         static let xl: CGFloat = 20
         static let xxl: CGFloat = 32
         static let full: CGFloat = 999
+    }
+
+    // MARK: - Shadows
+
+    enum Shadow {
+        static let cardColor = Color.black.opacity(0.05)
+        static let cardRadius: CGFloat = 2
+        static let cardY: CGFloat = 1
     }
 
     // MARK: - Touch Method Icons
