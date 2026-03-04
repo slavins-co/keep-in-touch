@@ -222,7 +222,8 @@ struct HomeView: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.caption2)
                         .foregroundStyle(DS.Colors.filterAccent)
-                        .frame(minWidth: 44)
+                        .padding(.leading, DS.Spacing.xs)
+                        .padding(.vertical, DS.Spacing.sm)
                         .contentShape(Rectangle())
                 }
             }
