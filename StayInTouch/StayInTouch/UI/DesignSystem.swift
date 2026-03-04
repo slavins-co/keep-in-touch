@@ -97,6 +97,10 @@ enum DS {
             dark: UIColor.white.withAlphaComponent(0.05)
         )
 
+        // MARK: Filters
+
+        static let filterAccent = Color(hex: "3D6B4F")
+
         // MARK: Sheet Overlay
 
         static let sheetOverlay = adaptiveColor(
@@ -198,6 +202,9 @@ enum DS {
         static let timelineTitle = Font.system(size: 14, weight: .bold)
         static let timelineMono = Font.system(size: 12, weight: .regular, design: .monospaced)
         static let timelineNotes = Font.system(size: 14, weight: .regular)
+        static let homeTitle = Font.system(size: 28, weight: .bold)
+        static let homeSubtitle = Font.system(size: 14, weight: .medium)
+        static let filterLabel = Font.system(size: 13, weight: .semibold)
     }
 
     // MARK: - Spacing
