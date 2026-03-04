@@ -104,14 +104,17 @@ struct ContactsListView: View {
                                         )
                                     }
                                     .buttonStyle(.plain)
+                                    .background(DS.Colors.pageBg)
 
                                     if index < section.people.count - 1 {
                                         SubtleDivider()
                                             .padding(.leading, DS.Spacing.lg)
                                     }
                                 }
+                                .background(DS.Colors.pageBg)
                             } header: {
                                 sectionHeader(letter: section.letter)
+                                    .zIndex(1)
                                     .id(section.letter)
                             }
                         }
@@ -142,7 +145,6 @@ struct ContactsListView: View {
         .padding(.vertical, DS.Spacing.xs)
         .padding(.horizontal, DS.Spacing.xs)
         .background(DS.Colors.pageBg)
-        .zIndex(1)
     }
 
     // MARK: - Search Bar
