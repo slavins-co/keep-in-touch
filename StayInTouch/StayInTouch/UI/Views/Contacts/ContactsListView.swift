@@ -79,7 +79,6 @@ struct ContactsListView: View {
     private var contactsList: some View {
         let calculator = FrequencyCalculator()
         let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
-        let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
 
         return ScrollViewReader { proxy in
             ZStack(alignment: .trailing) {
@@ -89,14 +88,12 @@ struct ContactsListView: View {
                             Section {
                                 ForEach(Array(section.people.enumerated()), id: \.element.id) { index, person in
                                     let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
-                                    let tags = person.tagIds.compactMap { tagsById[$0] }
                                     Button {
                                         selectPerson(person)
                                     } label: {
                                         ContactCard(
                                             person: person,
                                             frequencyName: frequencyName,
-                                            tags: tags,
                                             status: calculator.status(for: person, in: viewModel.groups),
                                             daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
                                             timeAgo: timeAgoText(for: person, calculator: calculator),

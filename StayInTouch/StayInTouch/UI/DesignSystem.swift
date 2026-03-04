@@ -97,6 +97,24 @@ enum DS {
             dark: UIColor.white.withAlphaComponent(0.05)
         )
 
+        // MARK: Group Badge
+
+        static let groupBadgeBackground = adaptiveColor(
+            light: UIColor.systemGray5,
+            dark: UIColor(Color(hex: "2C2C2E"))
+        )
+        static let groupBadgeText = adaptiveColor(
+            light: UIColor.secondaryLabel,
+            dark: UIColor(Color(hex: "9CA3AF"))
+        )
+
+        // MARK: Section Header
+
+        static let sectionHeaderBg = adaptiveColor(
+            light: UIColor.systemBackground.withAlphaComponent(0.95),
+            dark: UIColor(Color(hex: "111111")).withAlphaComponent(0.95)
+        )
+
         // MARK: Filters
 
         static let filterAccent = adaptive(light: "3D6B4F", dark: "6BCB77")
@@ -206,6 +224,9 @@ enum DS {
         static let homeSubtitle = Font.subheadline.weight(.medium)
         static let filterLabel = Font.footnote.weight(.semibold)
         static let filterChevron = Font.caption2.weight(.semibold)
+        static let contactCardName = Font.system(size: 15, weight: .bold)
+        static let contactCardMeta = Font.system(size: 13, weight: .medium)
+        static let groupBadgeLabel = Font.system(size: 10, weight: .bold)
     }
 
     // MARK: - Spacing
@@ -267,20 +288,36 @@ struct SubtleDivider: View {
 struct StatusIndicator: View {
     let status: ContactStatus
     var daysOverdue: Int = 0
+    var dotOnly: Bool = false
+
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            if daysOverdue > 0 {
-                Text("+\(daysOverdue)d")
-                    .font(DS.Typography.captionBold)
-                    .foregroundStyle(DS.Colors.statusOverdue)
-            }
+        if dotOnly {
+            let color = DS.Colors.statusColor(for: status)
             Circle()
-                .fill(DS.Colors.statusColor(for: status))
-                .frame(width: 7, height: 7)
+                .fill(color)
+                .frame(width: 8, height: 8)
+                .shadow(
+                    color: color.opacity(colorScheme == .dark ? 0.4 : 0.3),
+                    radius: colorScheme == .dark ? 4 : 3
+                )
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(statusAccessibilityLabel)
+        } else {
+            HStack(spacing: DS.Spacing.xs) {
+                if daysOverdue > 0 {
+                    Text("+\(daysOverdue)d")
+                        .font(DS.Typography.captionBold)
+                        .foregroundStyle(DS.Colors.statusOverdue)
+                }
+                Circle()
+                    .fill(DS.Colors.statusColor(for: status))
+                    .frame(width: 7, height: 7)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(statusAccessibilityLabel)
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(statusAccessibilityLabel)
     }
 
     private var statusAccessibilityLabel: String {

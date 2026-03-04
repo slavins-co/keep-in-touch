@@ -18,6 +18,8 @@ struct HomeView: View {
     @State private var showLimitedAccessAlert = false
     @State private var isSyncingContacts = false
     @State private var showContactsSettingsAlert = false
+    @FocusState private var isSearchFocused: Bool
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(spacing: 0) {
@@ -29,7 +31,9 @@ struct HomeView: View {
             .background(DS.Colors.secondaryBackground)
 
             content
-            searchBar
+                .overlay(alignment: .bottom) {
+                    floatingSearchBar
+                }
         }
         .onChange(of: viewModel.selectedGroupId) { _, newValue in
             if newValue != nil {
@@ -244,35 +248,59 @@ struct HomeView: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
-    // MARK: - Search Bar
+    // MARK: - Search Bar (Floating)
 
-    private var searchBar: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(DS.Colors.tertiaryText)
-            TextField(
-                "Search contacts...",
-                text: Binding(
-                    get: { viewModel.searchText },
-                    set: { viewModel.updateSearchText(String($0.prefix(100))) }
-                )
+    private var floatingSearchBar: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [DS.Colors.background.opacity(0), DS.Colors.background],
+                startPoint: .top,
+                endPoint: .bottom
             )
-            .textFieldStyle(.plain)
-            if !viewModel.searchText.isEmpty {
-                Button {
-                    viewModel.updateSearchText("")
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(DS.Colors.tertiaryText)
+            .frame(height: 20)
+
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(colorScheme == .dark ? Color(hex: "9CA3AF") : DS.Colors.tertiaryText)
+                TextField(
+                    "Search contacts...",
+                    text: Binding(
+                        get: { viewModel.searchText },
+                        set: { viewModel.updateSearchText(String($0.prefix(100))) }
+                    )
+                )
+                .textFieldStyle(.plain)
+                .focused($isSearchFocused)
+                if !viewModel.searchText.isEmpty {
+                    Button {
+                        viewModel.updateSearchText("")
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(DS.Colors.tertiaryText)
+                    }
                 }
             }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .background(colorScheme == .dark ? Color(hex: "1C1C1E") : .white)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(
+                        isSearchFocused
+                            ? (colorScheme == .dark ? Color(.systemGray3) : DS.Colors.filterAccent)
+                            : Color(.systemGray5),
+                        lineWidth: isSearchFocused ? 2 : 1
+                    )
+            )
+            .shadow(
+                color: colorScheme == .dark ? .clear : .black.opacity(0.1),
+                radius: 8,
+                y: 2
+            )
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.lg)
         }
-        .padding(.horizontal, DS.Spacing.md)
-        .padding(.vertical, DS.Spacing.sm)
-        .background(DS.Colors.secondaryBackground)
-        .clipShape(Capsule())
-        .padding(.horizontal)
-        .padding(.bottom, DS.Spacing.sm)
     }
 
     // MARK: - Content
@@ -280,10 +308,9 @@ struct HomeView: View {
     private var content: some View {
         let calculator = FrequencyCalculator()
         let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
-        let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
 
         return ScrollView {
-            VStack(spacing: DS.Spacing.xl) {
+            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
                 if viewModel.overduePeople.isEmpty && viewModel.dueSoonPeople.isEmpty && viewModel.allGoodPeople.isEmpty {
                     if viewModel.searchText.isEmpty {
                         EmptyStateView(
@@ -303,12 +330,11 @@ struct HomeView: View {
                 } else {
                     ContactListSection(
                         title: "Overdue",
-                        colorHex: "FF3B30",
                         people: viewModel.overduePeople,
                         isCollapsed: collapsedSections.contains("overdue"),
                         onToggle: { toggleSection("overdue") },
                         groupsById: groupsById,
-                        tagsById: tagsById,
+
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
@@ -317,12 +343,11 @@ struct HomeView: View {
 
                     ContactListSection(
                         title: "Due Soon",
-                        colorHex: "FF9500",
                         people: viewModel.dueSoonPeople,
                         isCollapsed: collapsedSections.contains("due-soon"),
                         onToggle: { toggleSection("due-soon") },
                         groupsById: groupsById,
-                        tagsById: tagsById,
+
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
@@ -331,12 +356,11 @@ struct HomeView: View {
 
                     ContactListSection(
                         title: "All Good",
-                        colorHex: "34C759",
                         people: viewModel.allGoodPeople,
                         isCollapsed: collapsedSections.contains("all-good"),
                         onToggle: { toggleSection("all-good") },
                         groupsById: groupsById,
-                        tagsById: tagsById,
+
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
@@ -346,7 +370,7 @@ struct HomeView: View {
             }
             .padding(.horizontal)
             .padding(.top, DS.Spacing.md)
-            .padding(.bottom, DS.Spacing.sm)
+            .padding(.bottom, 80)
         }
         .refreshable {
             await viewModel.refreshFromContacts()
