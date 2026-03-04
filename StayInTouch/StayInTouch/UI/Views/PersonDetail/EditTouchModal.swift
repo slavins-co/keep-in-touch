@@ -12,14 +12,17 @@ struct EditTouchModal: View {
 
     let touch: TouchEvent
     let onSave: (TouchMethod, String?, TimeOfDay?) -> Void
+    let onDelete: (() -> Void)?
 
     @State private var selectedMethod: TouchMethod
     @State private var notes: String
     @State private var selectedTimeOfDay: TimeOfDay?
+    @State private var showDeleteConfirm = false
 
-    init(touch: TouchEvent, onSave: @escaping (TouchMethod, String?, TimeOfDay?) -> Void) {
+    init(touch: TouchEvent, onSave: @escaping (TouchMethod, String?, TimeOfDay?) -> Void, onDelete: (() -> Void)? = nil) {
         self.touch = touch
         self.onSave = onSave
+        self.onDelete = onDelete
         _selectedMethod = State(initialValue: touch.method)
         _notes = State(initialValue: touch.notes ?? "")
         _selectedTimeOfDay = State(initialValue: touch.timeOfDay)
@@ -68,6 +71,22 @@ struct EditTouchModal: View {
                     .onChange(of: notes) { _, newValue in
                         if newValue.count > 500 { notes = String(newValue.prefix(500)) }
                     }
+
+                if onDelete != nil {
+                    Section {
+                        Button(role: .destructive) {
+                            showDeleteConfirm = true
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Label("Delete Connection", systemImage: "trash")
+                                Spacer()
+                            }
+                        }
+                        .accessibilityLabel("Delete this connection")
+                        .accessibilityHint("Permanently removes this connection entry")
+                    }
+                }
             }
             .navigationTitle("Edit Connection")
             .toolbar {
@@ -80,6 +99,16 @@ struct EditTouchModal: View {
                         dismiss()
                     }
                 }
+            }
+            .alert("Delete connection?", isPresented: $showDeleteConfirm) {
+                Button("Delete", role: .destructive) {
+                    Haptics.medium()
+                    onDelete?()
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This can't be undone.")
             }
         }
     }

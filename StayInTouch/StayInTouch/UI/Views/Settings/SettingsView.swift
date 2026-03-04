@@ -522,6 +522,8 @@ struct SettingsView: View {
             )
             .datePickerStyle(.wheel)
             .labelsHidden()
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismissSheets() }
@@ -535,6 +537,7 @@ struct SettingsView: View {
             }
             .onAppear { workingTime = time.toDate() }
         }
+        .presentationDetents([.medium])
     }
 
     private var dayPickerSheet: some View {

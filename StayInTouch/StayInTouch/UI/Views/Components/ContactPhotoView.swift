@@ -8,8 +8,10 @@ import SwiftUI
 struct ContactPhotoView: View {
     let cnIdentifier: String?
     let displayName: String
+    var avatarColor: String = ""
     var size: CGFloat = 36
 
+    @Environment(\.colorScheme) private var colorScheme
     @State private var image: UIImage?
 
     var body: some View {
@@ -21,9 +23,9 @@ struct ContactPhotoView: View {
             } else {
                 Text(InitialsBuilder.initials(for: displayName))
                     .font(.system(size: size * 0.4, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(avatarTextColor)
                     .frame(width: size, height: size)
-                    .background(DS.Colors.accent.opacity(0.7))
+                    .background(avatarBackgroundColor)
             }
         }
         .frame(width: size, height: size)
@@ -31,6 +33,20 @@ struct ContactPhotoView: View {
         .task(id: cnIdentifier) {
             image = await loadImage()
         }
+    }
+
+    private var avatarBackgroundColor: Color {
+        guard !avatarColor.isEmpty else {
+            return DS.Colors.accent.opacity(0.7)
+        }
+        return DS.Colors.avatarColors(for: avatarColor, scheme: colorScheme).background
+    }
+
+    private var avatarTextColor: Color {
+        guard !avatarColor.isEmpty else {
+            return .white
+        }
+        return DS.Colors.avatarColors(for: avatarColor, scheme: colorScheme).text
     }
 
     private func loadImage() async -> UIImage? {

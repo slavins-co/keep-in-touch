@@ -90,10 +90,13 @@ struct PersonDetailView: View {
             }
         }
         .sheet(item: $showEditTouch) { touch in
-            EditTouchModal(touch: touch) { method, notes, timeOfDay in
+            EditTouchModal(touch: touch, onSave: { method, notes, timeOfDay in
                 viewModel.updateTouch(touch, method: method, notes: notes, timeOfDay: timeOfDay)
                 showEditTouch = nil
-            }
+            }, onDelete: {
+                viewModel.deleteTouch(touch)
+                showEditTouch = nil
+            })
         }
         .sheet(isPresented: $showChangeGroup) {
             GroupPickerSheet(
@@ -153,6 +156,8 @@ struct PersonDetailView: View {
                 DatePicker("Last connection", selection: $pickedResumeDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding()
+                    .navigationTitle("Last Connection")
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button("Save") {
@@ -165,12 +170,15 @@ struct PersonDetailView: View {
                         }
                     }
             }
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showReminderTimePicker) {
             NavigationStack {
                 DatePicker("Reminder Time", selection: $workingReminderTime, displayedComponents: .hourAndMinute)
                     .datePickerStyle(.wheel)
                     .labelsHidden()
+                    .navigationTitle("Reminder Time")
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarLeading) {
                             Button("Cancel") { showReminderTimePicker = false }
@@ -186,12 +194,15 @@ struct PersonDetailView: View {
                         workingReminderTime = reminderTimeDate()
                     }
             }
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showSnoozeDatePicker) {
             NavigationStack {
                 DatePicker("Snooze until", selection: $pickedSnoozeDate, in: Date()..., displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding()
+                    .navigationTitle("Snooze Until")
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarLeading) {
                             Button("Cancel") { showSnoozeDatePicker = false }
@@ -204,12 +215,15 @@ struct PersonDetailView: View {
                         }
                     }
             }
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showCustomDueDatePicker) {
             NavigationStack {
                 DatePicker("Due by", selection: $pickedCustomDueDate, in: Date()..., displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding()
+                    .navigationTitle("Due Date")
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarLeading) {
                             Button("Cancel") { showCustomDueDatePicker = false }
@@ -222,6 +236,7 @@ struct PersonDetailView: View {
                         }
                     }
             }
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showBirthdayEditor) {
             BirthdayEditorSheet(
@@ -321,6 +336,7 @@ struct PersonDetailView: View {
             ContactPhotoView(
                 cnIdentifier: viewModel.person.cnIdentifier,
                 displayName: viewModel.person.displayName,
+                avatarColor: viewModel.person.avatarColor,
                 size: 96
             )
             .overlay(Circle().stroke(DS.Colors.heroAvatarRing, lineWidth: 4))
