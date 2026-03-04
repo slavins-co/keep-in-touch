@@ -65,19 +65,20 @@ enum DS {
         // MARK: Summary Card Colors
 
         static let overdueCardBackground = adaptive(light: "FEF2F2", dark: "1C1C1E")
+        // DESIGN: Light/dark structural difference — summary cards: tinted bg + colored border light / neutral #1C1C1E + white/5% border dark
         static let overdueCardBorder = adaptiveColor(
             light: UIColor(Color(hex: "FEE2E2")),
-            dark: UIColor.white.withAlphaComponent(0.15)
+            dark: UIColor.white.withAlphaComponent(0.05)
         )
         static let dueSoonCardBackground = adaptive(light: "FFFBEB", dark: "1C1C1E")
         static let dueSoonCardBorder = adaptiveColor(
             light: UIColor(Color(hex: "FDE68A")),
-            dark: UIColor.white.withAlphaComponent(0.15)
+            dark: UIColor.white.withAlphaComponent(0.05)
         )
         static let allGoodCardBackground = adaptive(light: "ECFDF5", dark: "1C1C1E")
         static let allGoodCardBorder = adaptiveColor(
             light: UIColor(Color(hex: "A7F3D0")),
-            dark: UIColor.white.withAlphaComponent(0.15)
+            dark: UIColor.white.withAlphaComponent(0.05)
         )
 
         // MARK: Action Buttons
@@ -85,7 +86,7 @@ enum DS {
         static let actionButtonBackground = adaptive(light: "2D3339", dark: "2C2C2E")
         static let actionButtonPressed = adaptive(light: "1F252B", dark: "3C3C3E")
         static let actionButtonIconBg = Color.white.opacity(0.1)
-        /// Light: visible icon circle; Dark: no icon circle (opacity 0)
+        // DESIGN: Light/dark structural difference — action button icon circles: white/10% circle in light / absent in dark (direct white icons)
         static let actionButtonIconCircleOpacity = adaptiveColor(
             light: UIColor.white.withAlphaComponent(0.1),
             dark: UIColor.clear
@@ -101,6 +102,7 @@ enum DS {
 
         // MARK: Notes Card
 
+        // DESIGN: Light/dark structural difference — notes card: yellow-50 tint light / neutral #2C2C2E dark
         static let notesBackground = adaptiveColor(
             light: UIColor(Color(hex: "FEFCE8").opacity(0.5)),
             dark: UIColor(Color(hex: "2C2C2E"))
@@ -109,6 +111,7 @@ enum DS {
             light: UIColor(Color(hex: "FEF08A")),
             dark: UIColor.white.withAlphaComponent(0.05)
         )
+        // DESIGN: Light/dark structural difference — notes focus ring: yellow light / gray dark
         static let notesFocusRing = adaptiveColor(
             light: UIColor(Color(hex: "FDE68A")),
             dark: UIColor(Color(hex: "6B7280"))
@@ -213,6 +216,19 @@ enum DS {
             light: UIColor.tertiaryLabel,
             dark: UIColor(Color(hex: "9CA3AF"))
         )
+        // DESIGN: Light/dark structural difference — search focus ring: accent green light / gray-600 dark
+        static let searchBarFocusRing = adaptiveColor(
+            light: UIColor(Color(hex: "3D6B4F")),
+            dark: UIColor.systemGray3
+        )
+        static let searchBarBorder = adaptiveColor(
+            light: UIColor.systemGray5,
+            dark: UIColor.white.withAlphaComponent(0.10)
+        )
+        static let searchBarShadow = adaptiveColor(
+            light: UIColor.black.withAlphaComponent(0.1),
+            dark: UIColor.clear
+        )
 
         // MARK: Filters
 
@@ -221,6 +237,7 @@ enum DS {
         // MARK: Detail Hero
 
         static let heroAccentGreen = adaptive(light: "3D6B4F", dark: "3D6B4F")
+        // DESIGN: Light/dark structural difference — hero avatar ring: solid white 4px light / white/5% dark
         static let heroAvatarRing = adaptiveColor(
             light: UIColor.white,
             dark: UIColor.white.withAlphaComponent(0.05)
@@ -236,9 +253,61 @@ enum DS {
 
         // MARK: Sheet Overlay
 
+        // DESIGN: Light/dark structural difference — sheet overlay: black/40% light / black/60% dark
         static let sheetOverlay = adaptiveColor(
             light: UIColor.black.withAlphaComponent(0.4),
             dark: UIColor.black.withAlphaComponent(0.6)
+        )
+
+        // MARK: Sheet Chrome
+
+        static let sheetDragHandle = adaptiveColor(
+            light: UIColor.systemGray3,
+            dark: UIColor.white.withAlphaComponent(0.2)
+        )
+        static let sheetCloseButtonFg = adaptiveColor(
+            light: UIColor.secondaryLabel,
+            dark: UIColor(Color(hex: "9CA3AF"))
+        )
+        static let sheetCloseButtonBg = adaptiveColor(
+            light: UIColor.systemGray5,
+            dark: UIColor(Color(hex: "2C2C2E"))
+        )
+
+        // MARK: Row Separator
+
+        static let rowSeparator = adaptiveColor(
+            light: UIColor.systemGray6,
+            dark: UIColor.white.withAlphaComponent(0.05)
+        )
+
+        // MARK: Summary Card Dark-Mode Overrides
+
+        /// Shadow: visible in light, absent in dark
+        static let summaryCardShadow = adaptiveColor(
+            light: UIColor.black.withAlphaComponent(0.05),
+            dark: UIColor.clear
+        )
+        /// Label color: status-colored in light, gray-500 in dark
+        static let summaryLabelOverdue = adaptiveColor(
+            light: UIColor(Color(hex: "FF3B30")),
+            dark: UIColor(Color(hex: "6B7280"))
+        )
+        static let summaryLabelDueSoon = adaptiveColor(
+            light: UIColor(Color(hex: "FF9500")),
+            dark: UIColor(Color(hex: "6B7280"))
+        )
+        static let summaryLabelAllGood = adaptiveColor(
+            light: UIColor(Color(hex: "34C759")),
+            dark: UIColor(Color(hex: "6B7280"))
+        )
+
+        // MARK: Status Dot
+
+        /// Shadow opacity: drop shadow in light / colored glow in dark
+        static let statusDotShadowOpacity = adaptiveColor(
+            light: UIColor.black.withAlphaComponent(0.3),
+            dark: UIColor.white.withAlphaComponent(0.4)
         )
 
         // MARK: Status Helpers
@@ -327,7 +396,10 @@ enum DS {
         static let captionBold = Font.caption.weight(.medium)
 
         // New tokens for UX redesign (#171)
-        static let summaryNumber = Font.system(size: 28, weight: .bold)
+        // DESIGN: Light/dark structural difference — summary card numbers: 28px light / 24px dark
+        static func summaryNumber(scheme: ColorScheme) -> Font {
+            Font.system(size: scheme == .dark ? 24 : 28, weight: .bold)
+        }
         static let summaryLabel = Font.system(size: 11, weight: .bold)
         static let sectionHeaderMono = Font.system(size: 11, weight: .bold, design: .monospaced)
         static let tabLabel = Font.system(size: 10, weight: .bold)
@@ -361,6 +433,23 @@ enum DS {
         static let sm: CGFloat = 8
         static let md: CGFloat = 12
         static let cardPadding: CGFloat = 14
+
+        // MARK: Adaptive Layout Values
+
+        // DESIGN: Light/dark structural difference — contact row padding: 14px light / 16px dark
+        static func contactCardVerticalPadding(scheme: ColorScheme) -> CGFloat {
+            scheme == .dark ? lg : cardPadding
+        }
+
+        // DESIGN: Light/dark structural difference — avatar-to-text spacing: 14px light / 16px dark
+        static func contactCardAvatarSpacing(scheme: ColorScheme) -> CGFloat {
+            scheme == .dark ? lg : cardPadding
+        }
+
+        // DESIGN: Light/dark structural difference — section header letter spacing: 1.65 light / 2.2 dark
+        static func sectionHeaderTracking(scheme: ColorScheme) -> CGFloat {
+            scheme == .dark ? 2.2 : 1.65
+        }
         static let lg: CGFloat = 16
         static let xl: CGFloat = 20
         static let xxl: CGFloat = 24
@@ -418,6 +507,7 @@ struct StatusIndicator: View {
 
     var body: some View {
         if dotOnly {
+            // DESIGN: Light/dark structural difference — status dot: drop shadow light / colored glow dark
             let color = DS.Colors.statusColor(for: status)
             Circle()
                 .fill(color)

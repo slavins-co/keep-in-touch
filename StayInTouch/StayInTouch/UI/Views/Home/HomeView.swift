@@ -19,7 +19,6 @@ struct HomeView: View {
     @State private var isSyncingContacts = false
     @State private var showContactsSettingsAlert = false
     @FocusState private var isSearchFocused: Bool
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(spacing: 0) {
@@ -131,6 +130,7 @@ struct HomeView: View {
                 count: viewModel.overduePeople.count,
                 label: "Overdue",
                 numberColor: DS.Colors.statusOverdue,
+                labelColor: DS.Colors.summaryLabelOverdue,
                 backgroundColor: DS.Colors.overdueCardBackground,
                 borderColor: DS.Colors.overdueCardBorder
             )
@@ -139,6 +139,7 @@ struct HomeView: View {
                 count: viewModel.dueSoonPeople.count,
                 label: "Due Soon",
                 numberColor: DS.Colors.statusDueSoon,
+                labelColor: DS.Colors.summaryLabelDueSoon,
                 backgroundColor: DS.Colors.dueSoonCardBackground,
                 borderColor: DS.Colors.dueSoonCardBorder
             )
@@ -147,6 +148,7 @@ struct HomeView: View {
                 count: viewModel.allGoodPeople.count,
                 label: "All Good",
                 numberColor: DS.Colors.statusAllGood,
+                labelColor: DS.Colors.summaryLabelAllGood,
                 backgroundColor: DS.Colors.allGoodCardBackground,
                 borderColor: DS.Colors.allGoodCardBorder
             )
@@ -288,13 +290,13 @@ struct HomeView: View {
                 Capsule()
                     .stroke(
                         isSearchFocused
-                            ? (colorScheme == .dark ? Color(.systemGray3) : DS.Colors.filterAccent)
-                            : Color(.systemGray5),
+                            ? DS.Colors.searchBarFocusRing
+                            : DS.Colors.searchBarBorder,
                         lineWidth: isSearchFocused ? 2 : 1
                     )
             )
             .shadow(
-                color: colorScheme == .dark ? .clear : .black.opacity(0.1),
+                color: DS.Colors.searchBarShadow,
                 radius: 8,
                 y: 2
             )

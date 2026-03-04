@@ -10,7 +10,6 @@ struct ContactsListView: View {
     var selectPerson: (Person) -> Void
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
-    @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Computed Data
 
@@ -204,13 +203,13 @@ struct ContactsListView: View {
                 Capsule()
                     .stroke(
                         isSearchFocused
-                            ? (colorScheme == .dark ? Color(.systemGray3) : DS.Colors.filterAccent)
-                            : Color(.systemGray5),
+                            ? DS.Colors.searchBarFocusRing
+                            : DS.Colors.searchBarBorder,
                         lineWidth: isSearchFocused ? 2 : 1
                     )
             )
             .shadow(
-                color: colorScheme == .dark ? .clear : .black.opacity(0.1),
+                color: DS.Colors.searchBarShadow,
                 radius: 8,
                 y: 2
             )

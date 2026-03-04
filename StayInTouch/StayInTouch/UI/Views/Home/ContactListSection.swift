@@ -45,7 +45,7 @@ struct ContactListSection: View {
 
                     if index < people.count - 1 {
                         Rectangle()
-                            .fill(Color(.systemGray6))
+                            .fill(DS.Colors.rowSeparator)
                             .frame(height: 1)
                             .padding(.leading, 64)
                     }
@@ -62,7 +62,7 @@ struct ContactListSection: View {
             HStack {
                 Text("\(title.uppercased()) \u{00B7} \(people.count)")
                     .font(DS.Typography.sectionHeaderMono)
-                    .tracking(colorScheme == .dark ? 2.2 : 1.65)
+                    .tracking(DS.Spacing.sectionHeaderTracking(scheme: colorScheme))
                     .foregroundStyle(Color(.secondaryLabel))
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -75,7 +75,7 @@ struct ContactListSection: View {
             .background(DS.Colors.pageBg)
             .overlay(alignment: .bottom) {
                 Rectangle()
-                    .fill(Color(.systemGray6))
+                    .fill(DS.Colors.rowSeparator)
                     .frame(height: 1)
             }
         }
