@@ -30,7 +30,7 @@ struct WelcomeView: View {
                 Label("Your data stays on your device", systemImage: "checkmark.circle.fill")
             }
             .font(DS.Typography.metadata)
-            .foregroundStyle(DS.Colors.statusAllGood)
+            .foregroundStyle(DS.Colors.secondaryText)
             .padding()
 
             Button("Get Started") {
