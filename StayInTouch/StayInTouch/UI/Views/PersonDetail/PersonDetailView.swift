@@ -629,14 +629,11 @@ struct PersonDetailView: View {
 
     private var settingsContent: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            // CADENCE
-            settingsSectionHeader("CADENCE")
+            // No heading — Frequency & Reminder Date
             settingsCard {
                 settingsRowFrequency
                 settingsDivider
                 settingsRowCustomDueDate
-                settingsDivider
-                settingsRowSnooze
             }
 
             // DETAILS
@@ -645,13 +642,15 @@ struct PersonDetailView: View {
                 settingsRowBirthday
                 settingsDivider
                 settingsRowGroupsTags
-                settingsDivider
-                settingsRowNotificationTime
             }
 
-            // TRACKING
-            settingsSectionHeader("TRACKING")
+            // TRACKING & NOTIFICATIONS
+            settingsSectionHeader("TRACKING & NOTIFICATIONS")
             settingsCard {
+                settingsRowNotificationTime
+                settingsDivider
+                settingsRowSnooze
+                settingsDivider
                 settingsRowMuteNotifications
                 settingsDivider
                 settingsRowPauseTracking
@@ -730,11 +729,11 @@ struct PersonDetailView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: Settings Row 2 — Custom Due Date
+    // MARK: Settings Row 2 — Set A Reminder Date
 
     private var settingsRowCustomDueDate: some View {
         HStack {
-            Text("Custom Due Date")
+            Text("Set A Reminder Date")
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsItemLabel)
             Spacer()
@@ -802,12 +801,12 @@ struct PersonDetailView: View {
         .padding(.vertical, DS.Spacing.xs)
     }
 
-    // MARK: Settings Row 4 — Groups & Tags
+    // MARK: Settings Row 4 — Groups
 
     private var settingsRowGroupsTags: some View {
         HStack(spacing: DS.Spacing.md) {
             settingsIcon("tag")
-            Text("Groups & Tags")
+            Text("Groups")
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsItemLabel)
             Spacer()
@@ -870,9 +869,8 @@ struct PersonDetailView: View {
             Button {
                 showReminderTimePicker = true
             } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    settingsIcon("bell")
-                    Text("Notification Time")
+                HStack {
+                    Text("Custom Notification Time")
                         .font(DS.Typography.settingsRowLabel)
                         .foregroundStyle(DS.Colors.settingsItemLabel)
                     Spacer()
