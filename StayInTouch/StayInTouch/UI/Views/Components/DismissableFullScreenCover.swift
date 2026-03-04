@@ -64,7 +64,7 @@ struct DismissableFullScreenCover<Content: View>: View {
                 .padding(.trailing, DS.Spacing.lg)
         }
         .padding(.top, DS.Spacing.xl)
-        .padding(.bottom, DS.Spacing.sm)
+        .padding(.bottom, DS.Spacing.md)
         .contentShape(Rectangle())
         .gesture(dragGesture)
     }
