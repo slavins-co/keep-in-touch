@@ -540,7 +540,7 @@ struct PersonDetailView: View {
     private var historyCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text("Contact History")
+                Text("History")
                     .font(DS.Typography.sectionHeader)
                     .foregroundStyle(DS.Colors.secondaryText)
                 Spacer()
@@ -628,30 +628,37 @@ struct PersonDetailView: View {
     }
 
     private var settingsContent: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            settingsRowFrequency
-            settingsDivider
-            settingsRowCustomDueDate
-            settingsDivider
-            settingsRowSnooze
-            settingsDivider
-            settingsRowGroupsTags
-            settingsDivider
-            settingsRowBirthday
-            settingsDivider
-            settingsRowNotificationTime
-            settingsDivider
-            settingsRowMuteNotifications
-            settingsDivider
-            settingsRowPauseTracking
-            settingsDivider
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            // CADENCE
+            settingsSectionHeader("CADENCE")
+            settingsCard {
+                settingsRowFrequency
+                settingsDivider
+                settingsRowCustomDueDate
+                settingsDivider
+                settingsRowSnooze
+            }
+
+            // DETAILS
+            settingsSectionHeader("DETAILS")
+            settingsCard {
+                settingsRowBirthday
+                settingsDivider
+                settingsRowGroupsTags
+                settingsDivider
+                settingsRowNotificationTime
+            }
+
+            // TRACKING
+            settingsSectionHeader("TRACKING")
+            settingsCard {
+                settingsRowMuteNotifications
+                settingsDivider
+                settingsRowPauseTracking
+            }
+
+            // Remove Contact (standalone)
             settingsRowRemoveContact
-        }
-        .padding(.leading, DS.Spacing.sm)
-        .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(DS.Colors.settingsLeftBorder)
-                .frame(width: 1)
         }
     }
 
@@ -659,6 +666,46 @@ struct PersonDetailView: View {
         Rectangle()
             .fill(DS.Colors.settingsSeparator)
             .frame(height: 0.5)
+    }
+
+    private func settingsSectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(DS.Typography.settingsSectionLabel)
+            .foregroundStyle(DS.Colors.settingsItemLabel)
+            .textCase(.uppercase)
+            .tracking(0.5)
+    }
+
+    private func settingsCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content()
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .background(DS.Colors.settingsCardBg)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
+    private func settingsIcon(_ systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 14))
+            .foregroundStyle(DS.Colors.settingsChevron)
+            .frame(width: 32, height: 32)
+            .background(DS.Colors.settingsIconCircle)
+            .clipShape(Circle())
+    }
+
+    private func snoozePill(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(DS.Typography.caption)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .overlay(
+                    Capsule()
+                        .stroke(DS.Colors.settingsSnoozePillBorder, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: Settings Row 1 — Frequency
@@ -741,15 +788,14 @@ struct PersonDetailView: View {
 
             if !(viewModel.person.snoozedUntil.map { $0 > Date() } ?? false) {
                 HStack(spacing: DS.Spacing.sm) {
-                    Button("3d") { snooze(days: 3) }
-                    Button("7d") { snooze(days: 7) }
-                    Button("14d") { snooze(days: 14) }
-                    Button("Pick date") {
+                    snoozePill("3d") { snooze(days: 3) }
+                    snoozePill("7d") { snooze(days: 7) }
+                    snoozePill("14d") { snooze(days: 14) }
+                    snoozePill("Pick date") {
                         pickedSnoozeDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
                         showSnoozeDatePicker = true
                     }
                 }
-                .font(DS.Typography.caption)
             }
         }
         .frame(minHeight: 48)
@@ -759,25 +805,37 @@ struct PersonDetailView: View {
     // MARK: Settings Row 4 — Groups & Tags
 
     private var settingsRowGroupsTags: some View {
-        HStack {
+        HStack(spacing: DS.Spacing.md) {
+            settingsIcon("tag")
             Text("Groups & Tags")
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsItemLabel)
             Spacer()
-            if !personTags.isEmpty {
-                HStack(spacing: DS.Spacing.xs) {
-                    ForEach(personTags.prefix(2), id: \.id) { tag in
-                        TagPill(tag: tag)
+            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+                if !personTags.isEmpty {
+                    HStack(spacing: DS.Spacing.xs) {
+                        ForEach(personTags.prefix(2), id: \.id) { tag in
+                            TagPill(tag: tag)
+                        }
+                        if personTags.count > 2 {
+                            Text("+\(personTags.count - 2)")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(DS.Colors.secondaryText)
+                        }
                     }
-                    if personTags.count > 2 {
-                        Text("+\(personTags.count - 2)")
+                }
+                Button {
+                    showManageTags = true
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text("Manage")
                             .font(DS.Typography.caption)
-                            .foregroundStyle(DS.Colors.secondaryText)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2)
+                            .foregroundStyle(DS.Colors.settingsChevron)
                     }
                 }
             }
-            Button("Manage") { showManageTags = true }
-                .font(DS.Typography.caption)
         }
         .frame(minHeight: 48)
     }
@@ -786,7 +844,8 @@ struct PersonDetailView: View {
 
     private var settingsRowBirthday: some View {
         Button { showBirthdayEditor = true } label: {
-            HStack {
+            HStack(spacing: DS.Spacing.md) {
+                settingsIcon("birthday.cake")
                 Text("Birthday")
                     .font(DS.Typography.settingsRowLabel)
                     .foregroundStyle(DS.Colors.settingsItemLabel)
@@ -811,7 +870,8 @@ struct PersonDetailView: View {
             Button {
                 showReminderTimePicker = true
             } label: {
-                HStack {
+                HStack(spacing: DS.Spacing.md) {
+                    settingsIcon("bell")
                     Text("Notification Time")
                         .font(DS.Typography.settingsRowLabel)
                         .foregroundStyle(DS.Colors.settingsItemLabel)
@@ -880,7 +940,7 @@ struct PersonDetailView: View {
             Text("Remove Contact")
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsRemoveText)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .frame(minHeight: 48)
                 .contentShape(Rectangle())
         }

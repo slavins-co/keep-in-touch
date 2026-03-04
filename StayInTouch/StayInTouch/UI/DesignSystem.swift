@@ -172,6 +172,18 @@ enum DS {
             light: UIColor.systemRed,
             dark: UIColor(Color(hex: "F87171"))
         )
+        static let settingsCardBg = adaptiveColor(
+            light: UIColor.systemGray6,
+            dark: UIColor(Color(hex: "1C1C1E"))
+        )
+        static let settingsIconCircle = adaptiveColor(
+            light: UIColor.systemGray5,
+            dark: UIColor.white.withAlphaComponent(0.10)
+        )
+        static let settingsSnoozePillBorder = adaptiveColor(
+            light: UIColor.systemGray4,
+            dark: UIColor.white.withAlphaComponent(0.15)
+        )
 
         // MARK: Group Badge
 
@@ -339,6 +351,7 @@ enum DS {
         static let settingsHeaderTitle = Font.system(size: 15, weight: .semibold)
         static let settingsRowLabel = Font.system(size: 15)
         static let timelineHint = Font.system(size: 12)
+        static let settingsSectionLabel = Font.system(size: 12, weight: .semibold)
     }
 
     // MARK: - Spacing
