@@ -37,7 +37,7 @@ struct TimelineEntryView: View {
             // Content column
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 HStack {
-                    Text(event.method.rawValue)
+                    Text("\(event.method.rawValue)\(event.timeOfDay.map { " \u{00B7} \($0.rawValue)" } ?? "")")
                         .font(DS.Typography.timelineTitle)
                     Spacer()
                     Text(event.at.formatted(date: .abbreviated, time: .omitted))
