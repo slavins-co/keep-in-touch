@@ -341,7 +341,7 @@ struct PersonDetailView: View {
                     showBirthdayEditor = true
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
-                        Text("\u{1F382}")
+                        Image(systemName: "gift.fill")
                             .font(.caption)
                         Text(birthday.formatted)
                             .font(DS.Typography.contactCardMeta)

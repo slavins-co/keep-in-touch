@@ -30,9 +30,9 @@ final class BirthdayTests: XCTestCase {
     }
 
     func testFormattedOutput() {
-        XCTAssertEqual(Birthday(month: 3, day: 15, year: nil).formatted, "3/15")
-        XCTAssertEqual(Birthday(month: 12, day: 1, year: 1990).formatted, "12/1")
-        XCTAssertEqual(Birthday(month: 1, day: 31, year: nil).formatted, "1/31")
+        XCTAssertEqual(Birthday(month: 3, day: 15, year: nil).formatted, "Mar 15")
+        XCTAssertEqual(Birthday(month: 12, day: 1, year: 1990).formatted, "Dec 1")
+        XCTAssertEqual(Birthday(month: 1, day: 31, year: nil).formatted, "Jan 31")
     }
 
     func testFromDateComponents() {
