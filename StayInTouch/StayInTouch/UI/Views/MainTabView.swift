@@ -47,7 +47,6 @@ struct MainTabView: View {
             DismissableFullScreenCover {
                 PersonDetailView(person: person)
             }
-            .presentationBackground(.clear)
         }
         .onChange(of: deepLinkRouter.pending) { _, newValue in
             if newValue != nil { processPendingDeepLink() }
