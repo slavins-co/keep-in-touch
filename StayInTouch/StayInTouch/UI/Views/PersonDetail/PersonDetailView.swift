@@ -324,7 +324,7 @@ struct PersonDetailView: View {
                 size: 96
             )
             .overlay(Circle().stroke(DS.Colors.heroAvatarRing, lineWidth: 4))
-            .shadow(color: .black.opacity(0.15), radius: 15, y: 5)
+            .shadow(color: .black.opacity(0.10), radius: 8, y: 6)
 
             Text(viewModel.person.displayName)
                 .font(DS.Typography.sheetHeroName)
