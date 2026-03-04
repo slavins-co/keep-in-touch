@@ -83,4 +83,4 @@ No external dependencies beyond [TelemetryDeck](https://telemetrydeck.com) for a
 
 All rights reserved — see [LICENSE](LICENSE).
 
-Built with [Claude Code](https://claude.com/claude-code) by Anthropic.
+Built with the assistance of AI tools.
