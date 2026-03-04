@@ -14,7 +14,7 @@ struct WelcomeView: View {
         VStack(spacing: DS.Spacing.xxl) {
             Spacer()
             Image(systemName: "person.2.circle.fill")
-                .font(.system(size: 56))
+                .font(DS.Typography.onboardingIcon)
                 .foregroundStyle(DS.Colors.accent)
             Text("Keep In Touch")
                 .font(DS.Typography.largeTitle)
@@ -36,8 +36,7 @@ struct WelcomeView: View {
             Button("Get Started") {
                 viewModel.goToContactsPermission()
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(OnboardingPrimaryButtonStyle())
             Spacer()
         }
         .padding()

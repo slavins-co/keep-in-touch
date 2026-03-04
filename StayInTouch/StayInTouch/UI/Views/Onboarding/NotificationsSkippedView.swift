@@ -14,7 +14,7 @@ struct NotificationsSkippedView: View {
         VStack(spacing: DS.Spacing.xxl) {
             Spacer()
             Image(systemName: "bell.slash.fill")
-                .font(.system(size: 56))
+                .font(DS.Typography.onboardingIcon)
                 .foregroundStyle(DS.Colors.accent)
             Text("Notifications Are Off")
                 .font(DS.Typography.title)
@@ -27,8 +27,7 @@ struct NotificationsSkippedView: View {
             Button("Continue") {
                 viewModel.finishFromNotificationsSkipped()
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(OnboardingPrimaryButtonStyle())
             Spacer()
         }
         .padding()

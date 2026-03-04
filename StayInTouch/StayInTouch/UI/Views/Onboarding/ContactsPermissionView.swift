@@ -14,7 +14,7 @@ struct ContactsPermissionView: View {
         VStack(spacing: DS.Spacing.xxl) {
             Spacer()
             Image(systemName: "person.crop.circle.badge.questionmark")
-                .font(.system(size: 56))
+                .font(DS.Typography.onboardingIcon)
                 .foregroundStyle(DS.Colors.accent)
             Text("Connect Your Contacts")
                 .font(DS.Typography.title)
@@ -27,8 +27,7 @@ struct ContactsPermissionView: View {
             Button("Allow Access to Contacts") {
                 Task { await viewModel.requestContactsPermission() }
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(OnboardingPrimaryButtonStyle())
 
             Button("Skip for Now") {
                 viewModel.skipContactsPermission()

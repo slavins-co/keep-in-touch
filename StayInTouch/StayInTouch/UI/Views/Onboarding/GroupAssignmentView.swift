@@ -41,8 +41,8 @@ struct GroupAssignmentView: View {
             Button("Continue") {
                 viewModel.continueFromGroupAssignment()
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(OnboardingPrimaryButtonStyle())
+            .padding(.horizontal)
             .padding(.bottom)
         }
     }

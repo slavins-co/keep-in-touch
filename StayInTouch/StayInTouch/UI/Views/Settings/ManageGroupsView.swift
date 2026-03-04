@@ -64,6 +64,7 @@ struct ManageGroupsView: View {
                 }
             }
         }
+        .tint(DS.Colors.accent)
         .navigationTitle("Manage Frequencies")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {

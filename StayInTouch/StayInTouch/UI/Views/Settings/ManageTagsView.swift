@@ -48,6 +48,7 @@ struct ManageTagsView: View {
                 }
             }
         }
+        .tint(DS.Colors.accent)
         .navigationTitle("Manage Groups")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {

@@ -415,6 +415,9 @@ enum DS {
         static let settingsHeaderTitle = Font.body.weight(.semibold)
         static let settingsRowLabel = Font.body
         static let settingsSectionLabel = Font.caption.weight(.semibold)
+
+        // Tokens for #179 (onboarding)
+        static let onboardingIcon = Font.system(size: 56)
     }
 
     // MARK: - Spacing
@@ -629,5 +632,21 @@ struct FlatSectionModifier: ViewModifier {
 extension View {
     func flatSection() -> some View {
         modifier(FlatSectionModifier())
+    }
+}
+
+// MARK: - Button Styles
+
+/// Primary CTA button for onboarding and full-width actions.
+/// Capsule shape, accent green background, white text.
+struct OnboardingPrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(DS.Typography.ctaButton)
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DS.Spacing.md)
+            .background(configuration.isPressed ? DS.Colors.accent.opacity(0.8) : DS.Colors.accent)
+            .clipShape(Capsule())
     }
 }

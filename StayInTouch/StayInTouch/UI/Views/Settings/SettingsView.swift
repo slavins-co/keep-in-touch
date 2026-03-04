@@ -52,6 +52,7 @@ struct SettingsView: View {
             dangerZoneSection
         }
         .listStyle(.insetGrouped)
+        .tint(DS.Colors.accent)
         .navigationTitle("Settings")
         .sheet(item: $shareItem) { item in
             ShareSheet(items: [item.url]) {
@@ -282,7 +283,7 @@ struct SettingsView: View {
                     Text("Manage Frequencies")
                     Spacer()
                     Text("\(viewModel.groupsCount)")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DS.Colors.secondaryText)
                 }
             }
 
@@ -295,7 +296,7 @@ struct SettingsView: View {
                     Text("Manage Groups")
                     Spacer()
                     Text("\(viewModel.tagsCount)")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DS.Colors.secondaryText)
                 }
             }
 
@@ -308,7 +309,7 @@ struct SettingsView: View {
                     Text("Paused Contacts")
                     Spacer()
                     Text("\(viewModel.pausedCount)")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(DS.Colors.secondaryText)
                 }
             }
 
@@ -374,7 +375,7 @@ struct SettingsView: View {
                         Text("Reminder Time")
                         Spacer()
                         Text(viewModel.settings.breachTimeOfDay.formatted)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DS.Colors.secondaryText)
                     }
                 }
                 .padding(.leading, DS.Spacing.lg)
@@ -396,7 +397,7 @@ struct SettingsView: View {
                         Text("Digest Day")
                         Spacer()
                         Text(viewModel.settings.digestDay.displayName)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DS.Colors.secondaryText)
                     }
                 }
                 .padding(.leading, DS.Spacing.lg)
@@ -408,7 +409,7 @@ struct SettingsView: View {
                         Text("Digest Time")
                         Spacer()
                         Text(viewModel.settings.digestTime.formatted)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(DS.Colors.secondaryText)
                     }
                 }
                 .padding(.leading, DS.Spacing.lg)
@@ -508,7 +509,7 @@ struct SettingsView: View {
             }
         } header: {
             Text("Danger Zone")
-                .foregroundStyle(.red)
+                .foregroundStyle(DS.Colors.destructive)
         }
     }
 
