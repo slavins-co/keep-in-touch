@@ -130,6 +130,22 @@ enum DS {
 
         static let filterAccent = adaptive(light: "3D6B4F", dark: "6BCB77")
 
+        // MARK: Detail Hero
+
+        static let heroAccentGreen = adaptive(light: "3D6B4F", dark: "3D6B4F")
+        static let heroAvatarRing = adaptiveColor(
+            light: UIColor.white,
+            dark: UIColor.white.withAlphaComponent(0.05)
+        )
+        static let ctaContainerBg = adaptiveColor(
+            light: UIColor.systemBackground,
+            dark: UIColor(Color(hex: "1C1C1E"))
+        )
+        static let ctaShadow = adaptiveColor(
+            light: UIColor(Color(hex: "3D6B4F").opacity(0.3)),
+            dark: UIColor(Color(hex: "064E3B").opacity(0.2))
+        )
+
         // MARK: Sheet Overlay
 
         static let sheetOverlay = adaptiveColor(
@@ -238,6 +254,8 @@ enum DS {
         static let contactCardName = Font.system(size: 15, weight: .bold)
         static let contactCardMeta = Font.system(size: 13, weight: .medium)
         static let groupBadgeLabel = Font.system(size: 10, weight: .bold)
+        static let detailStatusLine = Font.system(size: 15, weight: .semibold)
+        static let ctaButton = Font.system(size: 16, weight: .bold)
     }
 
     // MARK: - Spacing

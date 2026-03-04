@@ -11,6 +11,7 @@ struct PersonDetailView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
 
     @StateObject private var viewModel: PersonDetailViewModel
 
@@ -63,8 +64,6 @@ struct PersonDetailView: View {
                     .opacity(viewModel.person.contactUnavailable ? 0.4 : 1.0)
                     .disabled(viewModel.person.contactUnavailable)
 
-                logTouchButton
-
                 SubtleDivider()
 
                 // TIER 2: Context Zone
@@ -81,6 +80,9 @@ struct PersonDetailView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .safeAreaInset(edge: .bottom) {
+            fixedBottomCTA
         }
         .sheet(isPresented: $showLogTouch) {
             LogTouchModal { method, notes, date, timeOfDay in
@@ -316,60 +318,55 @@ struct PersonDetailView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.md) {
+        VStack(alignment: .center, spacing: DS.Spacing.sm) {
             ContactPhotoView(
                 cnIdentifier: viewModel.person.cnIdentifier,
                 displayName: viewModel.person.displayName,
-                size: 56
+                size: 96
             )
+            .overlay(Circle().stroke(DS.Colors.heroAvatarRing, lineWidth: 4))
+            .shadow(color: .black.opacity(0.15), radius: 15, y: 5)
 
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                HStack(spacing: DS.Spacing.sm) {
-                    Text(viewModel.person.displayName)
-                        .font(DS.Typography.heroTitle)
-                        .lineLimit(1)
-                        .layoutPriority(1)
+            Text(viewModel.person.displayName)
+                .font(DS.Typography.sheetHeroName)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
 
-                    if !personTags.isEmpty {
-                        HStack(spacing: DS.Spacing.xs) {
-                            ForEach(personTags.prefix(3), id: \.id) { tag in
-                                TagPill(tag: tag)
-                            }
-                            if personTags.count > 3 {
-                                Text("+\(personTags.count - 3)")
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(DS.Colors.secondaryText)
-                            }
-                        }
-                        .lineLimit(1)
+            Text(statusLabel())
+                .font(DS.Typography.detailStatusLine)
+                .foregroundStyle(statusLineColor)
+                .multilineTextAlignment(.center)
+
+            if let birthday = viewModel.displayBirthday {
+                Button {
+                    showBirthdayEditor = true
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text("\u{1F382}")
+                            .font(.caption)
+                        Text(birthday.formatted)
+                            .font(DS.Typography.contactCardMeta)
                     }
+                    .foregroundStyle(Color(.secondaryLabel))
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Birthday \(birthday.formatted), tap to edit")
+            }
 
+            if !personTags.isEmpty {
                 HStack(spacing: DS.Spacing.sm) {
-                    StatusIndicator(status: currentStatus, daysOverdue: daysOverdue)
-                    Text(statusLabel())
-                        .font(DS.Typography.metadata)
-                        .foregroundStyle(DS.Colors.secondaryText)
-
-                    if let birthday = viewModel.displayBirthday {
-                        Spacer()
-                        Button {
-                            showBirthdayEditor = true
-                        } label: {
-                            HStack(spacing: DS.Spacing.xs) {
-                                Image(systemName: "gift.fill")
-                                    .font(.caption)
-                                Text(birthday.formatted)
-                                    .font(DS.Typography.metadata)
-                            }
+                    ForEach(personTags.prefix(3), id: \.id) { tag in
+                        TagPill(tag: tag)
+                    }
+                    if personTags.count > 3 {
+                        Text("+\(personTags.count - 3)")
+                            .font(DS.Typography.caption)
                             .foregroundStyle(DS.Colors.secondaryText)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Birthday \(birthday.formatted), tap to edit")
                     }
                 }
             }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var unavailableContactBanner: some View {
@@ -413,12 +410,20 @@ struct PersonDetailView: View {
         .padding(.bottom, DS.Spacing.md)
     }
 
+    private var hasPhone: Bool {
+        viewModel.phone != nil || !viewModel.phoneNumbers.isEmpty
+    }
+
+    private var hasEmail: Bool {
+        viewModel.email != nil || !viewModel.emailAddresses.isEmpty
+    }
+
     private var reachOutButtons: some View {
         VStack(spacing: DS.Spacing.sm) {
-            HStack(spacing: 0) {
-                reachOutButton(icon: "message.fill", label: "Message") { open(.message) }
-                reachOutButton(icon: "phone.fill", label: "Call") { open(.call) }
-                reachOutButton(icon: "envelope.fill", label: "Email") { open(.email) }
+            HStack(spacing: DS.Spacing.sm) {
+                actionCard(icon: "message.fill", label: "Message", enabled: hasPhone) { open(.message) }
+                actionCard(icon: "phone.fill", label: "Call", enabled: hasPhone) { open(.call) }
+                actionCard(icon: "envelope.fill", label: "Email", enabled: hasEmail) { open(.email) }
             }
 
             if let message = viewModel.quickActionMessage {
@@ -430,35 +435,63 @@ struct PersonDetailView: View {
         .padding(.vertical, DS.Spacing.md)
     }
 
-    private func reachOutButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
+    private func actionCard(icon: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: DS.Spacing.sm) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(DS.Colors.accent)
-                    .frame(width: 48, height: 48)
-                    .background(DS.Colors.accent.opacity(0.12))
-                    .clipShape(Circle())
+                if colorScheme == .dark {
+                    Image(systemName: icon)
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                } else {
+                    Image(systemName: icon)
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(DS.Colors.actionButtonIconBg)
+                        .clipShape(Circle())
+                }
                 Text(label)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Colors.accent)
+                    .font(DS.Typography.contactCardMeta)
+                    .foregroundStyle(.white)
             }
             .frame(maxWidth: .infinity)
+            .frame(minHeight: 80)
+            .background(DS.Colors.actionButtonBackground)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                    .stroke(DS.Colors.borderSubtle, lineWidth: colorScheme == .dark ? 1 : 0)
+            )
+            .shadow(
+                color: colorScheme == .dark ? .clear : .black.opacity(0.1),
+                radius: 6, y: 2
+            )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ActionCardButtonStyle())
+        .disabled(!enabled)
+        .opacity(enabled ? 1.0 : 0.5)
     }
 
-    private var logTouchButton: some View {
-        Button {
-            showLogTouch = true
-        } label: {
-            Label("Log Connection", systemImage: "plus.circle.fill")
-                .font(.body.weight(.semibold))
-                .frame(maxWidth: .infinity)
+    private var fixedBottomCTA: some View {
+        VStack(spacing: 0) {
+            DS.Colors.borderMedium.frame(height: 1)
+            Button {
+                showLogTouch = true
+            } label: {
+                Text("Log Connection")
+                    .font(DS.Typography.ctaButton)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(DS.Colors.heroAccentGreen)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .shadow(color: DS.Colors.ctaShadow, radius: 8, y: 2)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .padding(.bottom, DS.Spacing.md)
+        .background(DS.Colors.ctaContainerBg)
     }
 
     // MARK: - Tier 2: Context Zone
@@ -773,16 +806,37 @@ struct PersonDetailView: View {
     // MARK: - Helper Functions
 
     private func statusLabel() -> String {
+        let groupName = viewModel.group?.name ?? "Frequency"
+
+        // Check snoozed state first
+        if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
+            let formatted = Self.dueDateFormatter.string(from: snoozedUntil)
+            return "\(groupName) \u{00B7} Snoozed until \(formatted)"
+        }
+
         switch currentStatus {
         case .onTrack:
-            let days = daysUntilDue
-            return days > 0 ? "All good · Due in \(days)d" : "All good"
+            return "\(groupName) \u{00B7} All good"
         case .dueSoon:
             let days = daysUntilDue
-            return days > 0 ? "Check in soon · Due in \(days)d" : "Check in soon"
-        case .overdue: return "Overdue"
-        case .unknown: return "Unknown"
+            return days > 0 ? "\(groupName) \u{00B7} Due in \(days)d" : "\(groupName) \u{00B7} Check in soon"
+        case .overdue:
+            let days = daysOverdue
+            if days >= 14 {
+                let weeks = days / 7
+                return "\(groupName) \u{00B7} Overdue by \(weeks) week\(weeks == 1 ? "" : "s")"
+            }
+            return "\(groupName) \u{00B7} Overdue by \(days) day\(days == 1 ? "" : "s")"
+        case .unknown:
+            return "\(groupName) \u{00B7} No connections yet"
         }
+    }
+
+    private var statusLineColor: Color {
+        if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
+            return DS.Colors.textMuted
+        }
+        return DS.Colors.statusColor(for: currentStatus)
     }
 
     private func statusColor() -> Color {
@@ -928,6 +982,16 @@ struct PersonDetailView: View {
             return settings.breachTimeOfDay.toDate()
         }
         return Date()
+    }
+}
+
+// MARK: - Action Card Button Style
+
+private struct ActionCardButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
 
