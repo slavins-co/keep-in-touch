@@ -35,13 +35,17 @@ struct HomeView: View {
             if newValue != nil {
                 AnalyticsService.track("filter.applied", parameters: ["type": "frequency"])
             }
-            viewModel.applyFilters()
+            withAnimation(.easeInOut(duration: 0.25)) {
+                viewModel.applyFilters()
+            }
         }
         .onChange(of: viewModel.selectedTagId) { _, newValue in
             if newValue != nil {
                 AnalyticsService.track("filter.applied", parameters: ["type": "group"])
             }
-            viewModel.applyFilters()
+            withAnimation(.easeInOut(duration: 0.25)) {
+                viewModel.applyFilters()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
             viewModel.load()
