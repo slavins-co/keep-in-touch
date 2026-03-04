@@ -117,7 +117,7 @@ struct ContactsListView: View {
                         }
                     }
                     .padding(.horizontal)
-                    .padding(.bottom, DS.Spacing.xxl)
+                    .padding(.bottom, DS.Spacing.sm)
                 }
 
                 SectionIndexView(sections: sectionLetters) { letter in

@@ -333,7 +333,7 @@ struct HomeView: View {
             }
             .padding(.horizontal)
             .padding(.top, DS.Spacing.md)
-            .padding(.bottom, DS.Spacing.xxl)
+            .padding(.bottom, DS.Spacing.sm)
         }
         .refreshable {
             await viewModel.refreshFromContacts()

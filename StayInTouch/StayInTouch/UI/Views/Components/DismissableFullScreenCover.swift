@@ -34,7 +34,9 @@ struct DismissableFullScreenCover<Content: View>: View {
                 content
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(DS.Colors.pageBg)
+            .background {
+                DS.Colors.pageBg.ignoresSafeArea(.container, edges: .bottom)
+            }
             .overlay(alignment: .top) {
                 Rectangle()
                     .fill(DS.Colors.borderMedium)
