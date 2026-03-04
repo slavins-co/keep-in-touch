@@ -823,7 +823,7 @@ struct PersonDetailView: View {
     private var settingsRowGroupsTags: some View {
         HStack(spacing: DS.Spacing.md) {
             settingsIcon("tag")
-            Text("Tags")
+            Text("Groups")
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsItemLabel)
             Spacer()
