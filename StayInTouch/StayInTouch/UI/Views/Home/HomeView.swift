@@ -9,7 +9,7 @@ import SwiftUI
 
 struct HomeView: View {
     @Environment(\.openURL) private var openURL
-    @StateObject private var viewModel = HomeViewModel()
+    @ObservedObject var viewModel: HomeViewModel
     @StateObject private var settingsViewModel = SettingsViewModel()
     @State private var collapsedSections: Set<String> = ["all-good"]
     @State private var navigationPath = NavigationPath()
@@ -46,9 +46,6 @@ struct HomeView: View {
             if newValue != nil {
                 AnalyticsService.track("filter.applied", parameters: ["type": "group"])
             }
-            viewModel.applyFilters()
-        }
-        .onChange(of: viewModel.sortOption) { _, _ in
             viewModel.applyFilters()
         }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
@@ -112,19 +109,10 @@ struct HomeView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack {
-                Text("Keep In Touch")
-                    .font(DS.Typography.largeTitle)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                Spacer()
-                NavigationLink {
-                    SettingsView()
-                } label: {
-                    Image(systemName: "gearshape")
-                        .font(.title3)
-                }
-            }
+            Text("Keep In Touch")
+                .font(DS.Typography.largeTitle)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
             HStack(spacing: DS.Spacing.sm) {
                 statusCountText(count: viewModel.overduePeople.count, label: "overdue", color: DS.Colors.statusOverdue)
@@ -156,31 +144,7 @@ struct HomeView: View {
 
     private var filters: some View {
         FlowLayout(spacing: DS.Spacing.sm) {
-            // Sort control (icon only)
-            Menu {
-                ForEach(HomeViewModel.SortOption.allCases, id: \.self) { option in
-                    Button {
-                        viewModel.sortOption = option
-                    } label: {
-                        if viewModel.sortOption == option {
-                            Label("Sort by \(option.rawValue)", systemImage: "checkmark")
-                        } else {
-                            Text("Sort by \(option.rawValue)")
-                        }
-                    }
-                }
-            } label: {
-                Image(systemName: viewModel.sortOption == .name
-                      ? "line.3.horizontal.decrease.circle.fill"
-                      : "line.3.horizontal.decrease.circle")
-                    .font(.title3)
-                    .foregroundStyle(viewModel.sortOption == .name ? DS.Colors.accent : DS.Colors.secondaryText)
-            }
-
-            // Frequency filter chip
             frequencyFilterChip
-
-            // Tag filter chip
             tagFilterChip
         }
         .padding(.horizontal)
@@ -333,32 +297,6 @@ struct HomeView: View {
                             systemImage: "magnifyingglass"
                         )
                     }
-                } else if viewModel.sortOption == .name {
-                    VStack(spacing: 0) {
-                        ForEach(Array(viewModel.nameSortedPeople.enumerated()), id: \.element.id) { index, person in
-                            let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
-                            let tags = person.tagIds.compactMap { tagsById[$0] }
-                            NavigationLink {
-                                PersonDetailView(person: person)
-                            } label: {
-                                ContactCard(
-                                    person: person,
-                                    frequencyName: frequencyName,
-                                    tags: tags,
-                                    status: calculator.status(for: person, in: viewModel.groups),
-                                    daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
-                                    timeAgo: timeAgoText(for: person, calculator: calculator),
-                                    lastMethod: person.lastTouchMethod
-                                )
-                            }
-                            .buttonStyle(.plain)
-
-                            if index < viewModel.nameSortedPeople.count - 1 {
-                                SubtleDivider()
-                                    .padding(.leading, DS.Spacing.lg)
-                            }
-                        }
-                    }
                 } else {
                     ContactListSection(
                         title: "Overdue",
@@ -439,7 +377,6 @@ struct HomeView: View {
     private func selectedDefaults() {
         viewModel.selectedGroupId = nil
         viewModel.selectedTagId = nil
-        viewModel.sortOption = .status
         viewModel.applyFilters()
     }
 

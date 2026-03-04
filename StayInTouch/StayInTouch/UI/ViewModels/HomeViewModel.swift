@@ -9,15 +9,9 @@ import Foundation
 
 @MainActor
 final class HomeViewModel: ObservableObject {
-    enum SortOption: String, CaseIterable {
-        case status = "Status"
-        case name = "Name"
-    }
-
     @Published var searchText = ""
     @Published var selectedGroupId: UUID?
     @Published var selectedTagId: UUID?
-    @Published var sortOption: SortOption = .status
 
     @Published private(set) var allPeople: [Person] = []
     @Published private(set) var groups: [Group] = []
@@ -27,7 +21,6 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var overduePeople: [Person] = []
     @Published private(set) var dueSoonPeople: [Person] = []
     @Published private(set) var allGoodPeople: [Person] = []
-    @Published private(set) var nameSortedPeople: [Person] = []
 
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository
@@ -151,20 +144,13 @@ final class HomeViewModel: ObservableObject {
             let status = FrequencyCalculator().status(for: person, in: groups)
             return status == .onTrack
         }
-        let nameSorted = filtered.sorted {
-            $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
-        }
-
         let allGoodByRecency = allGood.sorted {
             ($0.lastTouchAt ?? .distantPast) > ($1.lastTouchAt ?? .distantPast)
         }
 
-        // All arrays populated regardless of sortOption —
-        // header status counts always read the section arrays.
         overduePeople = overdue
         dueSoonPeople = dueSoon
         allGoodPeople = allGoodByRecency
-        nameSortedPeople = nameSorted
     }
 
     static func filterPeople(

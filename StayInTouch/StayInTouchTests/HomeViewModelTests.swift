@@ -54,25 +54,6 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertEqual(filtered.first?.displayName, "A")
     }
 
-    func testNameSortFlattensAcrossStatuses() {
-        let groupId = UUID()
-        let people = [
-            makePerson(name: "Zoe", groupId: groupId, tagIds: []),
-            makePerson(name: "Amy", groupId: groupId, tagIds: [])
-        ]
-        let viewModel = HomeViewModel(
-            personRepository: InMemoryPersonRepository(people: people),
-            groupRepository: InMemoryGroupRepository(groups: [makeGroup(id: groupId)]),
-            tagRepository: InMemoryTagRepository(tags: []),
-            settingsRepository: InMemorySettingsRepository()
-        )
-
-        viewModel.sortOption = .name
-        viewModel.applyFilters()
-
-        XCTAssertEqual(viewModel.nameSortedPeople.map { $0.displayName }, ["Amy", "Zoe"])
-    }
-
     private func makePerson(name: String, groupId: UUID, tagIds: [UUID]) -> Person {
         Person(
             id: UUID(),
