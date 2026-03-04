@@ -85,6 +85,19 @@ enum DS {
         static let actionButtonBackground = adaptive(light: "2D3339", dark: "2C2C2E")
         static let actionButtonPressed = adaptive(light: "1F252B", dark: "3C3C3E")
         static let actionButtonIconBg = Color.white.opacity(0.1)
+        /// Light: visible icon circle; Dark: no icon circle (opacity 0)
+        static let actionButtonIconCircleOpacity = adaptiveColor(
+            light: UIColor.white.withAlphaComponent(0.1),
+            dark: UIColor.clear
+        )
+        static let actionButtonBorder = adaptiveColor(
+            light: UIColor.clear,
+            dark: UIColor.white.withAlphaComponent(0.05)
+        )
+        static let actionButtonShadow = adaptiveColor(
+            light: UIColor.black.withAlphaComponent(0.1),
+            dark: UIColor.clear
+        )
 
         // MARK: Notes Card
 

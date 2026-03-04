@@ -11,7 +11,6 @@ struct PersonDetailView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.colorScheme) private var colorScheme
 
     @StateObject private var viewModel: PersonDetailViewModel
 
@@ -438,18 +437,12 @@ struct PersonDetailView: View {
     private func actionCard(icon: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: DS.Spacing.sm) {
-                if colorScheme == .dark {
-                    Image(systemName: icon)
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                } else {
-                    Image(systemName: icon)
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                        .frame(width: 36, height: 36)
-                        .background(DS.Colors.actionButtonIconBg)
-                        .clipShape(Circle())
-                }
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(DS.Colors.actionButtonIconCircleOpacity)
+                    .clipShape(Circle())
                 Text(label)
                     .font(DS.Typography.contactCardMeta)
                     .foregroundStyle(.white)
@@ -460,16 +453,13 @@ struct PersonDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(DS.Colors.borderSubtle, lineWidth: colorScheme == .dark ? 1 : 0)
+                    .stroke(DS.Colors.actionButtonBorder, lineWidth: 1)
             )
-            .shadow(
-                color: colorScheme == .dark ? .clear : .black.opacity(0.1),
-                radius: 6, y: 2
-            )
+            .shadow(color: DS.Colors.actionButtonShadow, radius: 6, y: 2)
         }
         .buttonStyle(ActionCardButtonStyle())
         .disabled(!enabled)
-        .opacity(enabled ? 1.0 : 0.5)
+        .opacity(!enabled && !viewModel.person.contactUnavailable ? 0.5 : 1.0)
     }
 
     private var fixedBottomCTA: some View {
@@ -808,7 +798,12 @@ struct PersonDetailView: View {
     private func statusLabel() -> String {
         let groupName = viewModel.group?.name ?? "Frequency"
 
-        // Check snoozed state first
+        // Check paused state first
+        if viewModel.person.isPaused {
+            return "\(groupName) \u{00B7} Paused"
+        }
+
+        // Check snoozed state
         if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
             let formatted = Self.dueDateFormatter.string(from: snoozedUntil)
             return "\(groupName) \u{00B7} Snoozed until \(formatted)"
@@ -833,14 +828,13 @@ struct PersonDetailView: View {
     }
 
     private var statusLineColor: Color {
+        if viewModel.person.isPaused {
+            return DS.Colors.textMuted
+        }
         if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
             return DS.Colors.textMuted
         }
         return DS.Colors.statusColor(for: currentStatus)
-    }
-
-    private func statusColor() -> Color {
-        DS.Colors.statusColor(for: currentStatus)
     }
 
     private static let dueDateFormatter: DateFormatter = {
