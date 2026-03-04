@@ -10,31 +10,25 @@ import SwiftUI
 struct HomeView: View {
     @Environment(\.openURL) private var openURL
     @ObservedObject var viewModel: HomeViewModel
+    var selectPerson: (Person) -> Void
     @StateObject private var settingsViewModel = SettingsViewModel()
     @State private var collapsedSections: Set<String> = ["all-good"]
-    @State private var navigationPath = NavigationPath()
     @State private var showNewContactsPicker = false
     @State private var showNoNewContactsAlert = false
     @State private var showLimitedAccessAlert = false
     @State private var isSyncingContacts = false
     @State private var showContactsSettingsAlert = false
-    @ObservedObject private var deepLinkRouter = DeepLinkRouter.shared
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        VStack(spacing: 0) {
             VStack(spacing: 0) {
-                VStack(spacing: 0) {
-                    header
-                    filters
-                }
-                .background(DS.Colors.secondaryBackground)
+                header
+                filters
+            }
+            .background(DS.Colors.secondaryBackground)
 
-                content
-                searchBar
-            }
-            .navigationDestination(for: Person.self) { person in
-                PersonDetailView(person: person)
-            }
+            content
+            searchBar
         }
         .onChange(of: viewModel.selectedGroupId) { _, newValue in
             if newValue != nil {
@@ -53,9 +47,6 @@ struct HomeView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .contactsDidSync)) { _ in
             viewModel.load()
-        }
-        .onChange(of: deepLinkRouter.pending) { _, newValue in
-            if newValue != nil { processPendingDeepLink() }
         }
         .sheet(isPresented: $showNewContactsPicker) {
             NewContactsPickerView(
@@ -101,7 +92,6 @@ struct HomeView: View {
         }
         .onAppear {
             viewModel.load()
-            processPendingDeepLink()
         }
     }
 
@@ -308,7 +298,8 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) }
+                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
+                        selectPerson: selectPerson
                     )
 
                     ContactListSection(
@@ -321,7 +312,8 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) }
+                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
+                        selectPerson: selectPerson
                     )
 
                     ContactListSection(
@@ -334,7 +326,8 @@ struct HomeView: View {
                         tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
-                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) }
+                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
+                        selectPerson: selectPerson
                     )
                 }
             }
@@ -357,29 +350,6 @@ struct HomeView: View {
                 collapsedSections.insert(key)
             }
         }
-    }
-
-    private func processPendingDeepLink() {
-        guard let destination = deepLinkRouter.pending else { return }
-        deepLinkRouter.pending = nil
-
-        switch destination {
-        case .person(let id):
-            deepLinkRouter.selectedTab = 0
-            if let person = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext).fetch(id: id) {
-                navigationPath = NavigationPath()
-                navigationPath.append(person)
-            }
-        case .home:
-            deepLinkRouter.selectedTab = 0
-            selectedDefaults()
-        }
-    }
-
-    private func selectedDefaults() {
-        viewModel.selectedGroupId = nil
-        viewModel.selectedTagId = nil
-        viewModel.applyFilters()
     }
 
     private func addContactsFromEmptyState() {

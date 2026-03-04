@@ -82,7 +82,7 @@ struct PersonDetailView: View {
             .padding(.horizontal, DS.Spacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(true)
         .sheet(isPresented: $showLogTouch) {
             LogTouchModal { method, notes, date, timeOfDay in
                 viewModel.logTouch(method: method, notes: notes, date: date, timeOfDay: timeOfDay)

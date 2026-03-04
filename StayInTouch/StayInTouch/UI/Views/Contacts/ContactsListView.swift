@@ -7,8 +7,8 @@ import SwiftUI
 
 struct ContactsListView: View {
     @ObservedObject var viewModel: HomeViewModel
+    var selectPerson: (Person) -> Void
     @State private var searchText = ""
-    @State private var navigationPath = NavigationPath()
 
     // MARK: - Computed Data
 
@@ -43,33 +43,28 @@ struct ContactsListView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            VStack(spacing: 0) {
-                if viewModel.allPeople.isEmpty {
-                    Spacer()
-                    EmptyStateView(
-                        title: "No contacts yet",
-                        message: "Import contacts from Settings to get started.",
-                        systemImage: "person.2.slash"
-                    )
-                    Spacer()
-                } else if filteredPeople.isEmpty {
-                    Spacer()
-                    EmptyStateView(
-                        title: "No contacts found",
-                        message: "Try a different search.",
-                        systemImage: "magnifyingglass"
-                    )
-                    Spacer()
-                } else {
-                    contactsList
-                }
+        VStack(spacing: 0) {
+            if viewModel.allPeople.isEmpty {
+                Spacer()
+                EmptyStateView(
+                    title: "No contacts yet",
+                    message: "Import contacts from Settings to get started.",
+                    systemImage: "person.2.slash"
+                )
+                Spacer()
+            } else if filteredPeople.isEmpty {
+                Spacer()
+                EmptyStateView(
+                    title: "No contacts found",
+                    message: "Try a different search.",
+                    systemImage: "magnifyingglass"
+                )
+                Spacer()
+            } else {
+                contactsList
+            }
 
-                contactsSearchBar
-            }
-            .navigationDestination(for: Person.self) { person in
-                PersonDetailView(person: person)
-            }
+            contactsSearchBar
         }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
             viewModel.load()
@@ -95,8 +90,8 @@ struct ContactsListView: View {
                                 ForEach(Array(section.people.enumerated()), id: \.element.id) { index, person in
                                     let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
                                     let tags = person.tagIds.compactMap { tagsById[$0] }
-                                    NavigationLink {
-                                        PersonDetailView(person: person)
+                                    Button {
+                                        selectPerson(person)
                                     } label: {
                                         ContactCard(
                                             person: person,
