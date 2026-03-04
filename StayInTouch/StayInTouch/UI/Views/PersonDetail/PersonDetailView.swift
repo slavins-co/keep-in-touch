@@ -459,7 +459,7 @@ struct PersonDetailView: View {
         }
         .buttonStyle(ActionCardButtonStyle())
         .accessibilityLabel(enabled ? label : "\(label), unavailable")
-        .accessibilityHint(enabled ? "Double tap to \(label.lowercased()) this contact" : "No \(label == "Email" ? "email address" : "phone number") on file")
+        .accessibilityHint(enabled ? "\(label)s this contact" : "No \(label == "Email" ? "email address" : "phone number") on file")
         .disabled(!enabled)
         .opacity(!enabled && !viewModel.person.contactUnavailable ? 0.5 : 1.0)
     }
@@ -945,7 +945,7 @@ struct PersonDetailView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Remove \(viewModel.person.displayName)")
-        .accessibilityHint("Double tap to confirm removal")
+        .accessibilityHint("Confirms removal")
     }
 
     // MARK: - Computed Properties

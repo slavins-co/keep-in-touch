@@ -55,7 +55,7 @@ struct TimelineEntryView: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
-        .accessibilityHint("Double tap to edit, double tap and hold for more options")
+        .accessibilityHint("Opens editor; hold for more options")
     }
 
     private var accessibilityDescription: String {
