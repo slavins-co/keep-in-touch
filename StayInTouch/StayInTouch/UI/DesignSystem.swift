@@ -302,14 +302,6 @@ enum DS {
             dark: UIColor(Color(hex: "6B7280"))
         )
 
-        // MARK: Status Dot
-
-        /// Shadow opacity: drop shadow in light / colored glow in dark
-        static let statusDotShadowOpacity = adaptiveColor(
-            light: UIColor.black.withAlphaComponent(0.3),
-            dark: UIColor.white.withAlphaComponent(0.4)
-        )
-
         // MARK: Status Helpers
 
         static func statusColor(for status: ContactStatus) -> Color {
@@ -395,7 +387,7 @@ enum DS {
         static let caption = Font.caption
         static let captionBold = Font.caption.weight(.medium)
 
-        // New tokens for UX redesign (#171)
+        // Font sizes cannot use UIColor trait-based adaptation, so this accepts `scheme:`.
         // DESIGN: Light/dark structural difference — summary card numbers: 28px light / 24px dark
         static func summaryNumber(scheme: ColorScheme) -> Font {
             Font.system(size: scheme == .dark ? 24 : 28, weight: .bold)
@@ -433,8 +425,14 @@ enum DS {
         static let sm: CGFloat = 8
         static let md: CGFloat = 12
         static let cardPadding: CGFloat = 14
+        static let lg: CGFloat = 16
+        static let xl: CGFloat = 20
+        static let xxl: CGFloat = 24
+        static let xxxl: CGFloat = 32
 
         // MARK: Adaptive Layout Values
+        // Font sizes and CGFloat values cannot use UIColor trait-based adaptation,
+        // so these functions accept `scheme:` as a pragmatic alternative.
 
         // DESIGN: Light/dark structural difference — contact row padding: 14px light / 16px dark
         static func contactCardVerticalPadding(scheme: ColorScheme) -> CGFloat {
@@ -450,10 +448,6 @@ enum DS {
         static func sectionHeaderTracking(scheme: ColorScheme) -> CGFloat {
             scheme == .dark ? 2.2 : 1.65
         }
-        static let lg: CGFloat = 16
-        static let xl: CGFloat = 20
-        static let xxl: CGFloat = 24
-        static let xxxl: CGFloat = 32
     }
 
     // MARK: - Corner Radius
