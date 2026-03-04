@@ -109,6 +109,81 @@ enum DS {
             light: UIColor(Color(hex: "FEF08A")),
             dark: UIColor.white.withAlphaComponent(0.05)
         )
+        static let notesFocusRing = adaptiveColor(
+            light: UIColor(Color(hex: "FDE68A")),
+            dark: UIColor(Color(hex: "6B7280"))
+        )
+        static let notesText = adaptiveColor(
+            light: UIColor.label,
+            dark: UIColor(Color(hex: "D1D5DB"))
+        )
+        static let notesPlaceholder = adaptiveColor(
+            light: UIColor.placeholderText,
+            dark: UIColor(Color(hex: "6B7280"))
+        )
+
+        // MARK: Timeline
+
+        static let timelineLine = adaptiveColor(
+            light: UIColor.systemGray5,
+            dark: UIColor.white.withAlphaComponent(0.10)
+        )
+        static let timelineCircleFill = adaptiveColor(
+            light: UIColor.white,
+            dark: UIColor(Color(hex: "1C1C1E"))
+        )
+        static let timelineCircleLatest = adaptive(light: "10B981", dark: "10B981")
+        static let timelineCircleOther = adaptiveColor(
+            light: UIColor.systemGray3,
+            dark: UIColor(Color(hex: "4B5563"))
+        )
+
+        // MARK: Contact Settings
+
+        static let settingsGearIcon = adaptiveColor(
+            light: UIColor.secondaryLabel,
+            dark: UIColor(Color(hex: "6B7280"))
+        )
+        static let settingsTitle = adaptiveColor(
+            light: UIColor.label,
+            dark: UIColor.white
+        )
+        static let settingsChevron = adaptiveColor(
+            light: UIColor.secondaryLabel,
+            dark: UIColor(Color(hex: "6B7280"))
+        )
+        static let settingsItemLabel = adaptiveColor(
+            light: UIColor.secondaryLabel,
+            dark: UIColor(Color(hex: "9CA3AF"))
+        )
+        static let settingsItemValue = adaptiveColor(
+            light: UIColor.label,
+            dark: UIColor(Color(hex: "D1D5DB"))
+        )
+        static let settingsSeparator = adaptiveColor(
+            light: UIColor.separator,
+            dark: UIColor.white.withAlphaComponent(0.05)
+        )
+        static let settingsRemoveText = adaptiveColor(
+            light: UIColor.systemRed,
+            dark: UIColor(Color(hex: "F87171"))
+        )
+        static let settingsCardBg = adaptiveColor(
+            light: UIColor.systemGray6,
+            dark: UIColor(Color(hex: "1C1C1E"))
+        )
+        static let settingsIconCircle = adaptiveColor(
+            light: UIColor.systemGray5,
+            dark: UIColor.white.withAlphaComponent(0.10)
+        )
+        static let settingsSnoozePillBorder = adaptiveColor(
+            light: UIColor.systemGray4,
+            dark: UIColor.white.withAlphaComponent(0.15)
+        )
+        static let settingsSnoozeActive = adaptiveColor(
+            light: UIColor.systemPurple,
+            dark: UIColor(Color(hex: "C084FC"))
+        )
 
         // MARK: Group Badge
 
@@ -269,6 +344,13 @@ enum DS {
         static let groupBadgeLabel = Font.system(size: 10, weight: .bold)
         static let detailStatusLine = Font.system(size: 15, weight: .semibold)
         static let ctaButton = Font.system(size: 16, weight: .bold)
+
+        // Tokens for #177 (notes, timeline, settings)
+        static let notesLabel = Font.caption2.weight(.bold)
+        static let notesBody = Font.body
+        static let settingsHeaderTitle = Font.body.weight(.semibold)
+        static let settingsRowLabel = Font.body
+        static let settingsSectionLabel = Font.caption.weight(.semibold)
     }
 
     // MARK: - Spacing
