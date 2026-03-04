@@ -92,8 +92,8 @@ struct ContactPickerView: View {
             Button("Continue") {
                 viewModel.continueFromContactPicker()
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(OnboardingPrimaryButtonStyle())
+            .padding(.horizontal)
             .padding(.bottom)
         }
     }

@@ -39,8 +39,8 @@ struct LastTouchSeedingView: View {
             Button("Continue") {
                 viewModel.continueFromLastTouchSeeding()
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(OnboardingPrimaryButtonStyle())
+            .padding(.horizontal)
             .padding(.bottom)
         }
     }
