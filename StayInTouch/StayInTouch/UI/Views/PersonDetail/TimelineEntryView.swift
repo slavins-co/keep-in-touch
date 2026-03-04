@@ -42,16 +42,27 @@ struct TimelineEntryView: View {
                     Spacer()
                     Text(event.at.formatted(date: .abbreviated, time: .omitted))
                         .font(DS.Typography.timelineMono)
-                        .foregroundStyle(Color(.secondaryLabel))
+                        .foregroundStyle(DS.Colors.secondaryText)
                 }
                 if let notes = event.notes, !notes.isEmpty {
                     Text(notes)
                         .font(DS.Typography.timelineNotes)
-                        .foregroundStyle(Color(.label).opacity(0.7))
+                        .foregroundStyle(DS.Colors.secondaryText)
                 }
             }
             .padding(.bottom, isLast ? 0 : DS.Spacing.lg)
         }
         .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityDescription)
+        .accessibilityHint("Tap to edit, press and hold for more options")
+    }
+
+    private var accessibilityDescription: String {
+        let method = event.method.rawValue
+        let date = event.at.formatted(date: .abbreviated, time: .omitted)
+        let timeOfDay = event.timeOfDay.map { ", \($0.rawValue)" } ?? ""
+        let notes = event.notes.map { ", \($0)" } ?? ""
+        return "\(method)\(timeOfDay) on \(date)\(notes)"
     }
 }

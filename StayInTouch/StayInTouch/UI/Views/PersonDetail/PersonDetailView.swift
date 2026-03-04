@@ -540,13 +540,14 @@ struct PersonDetailView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text("History")
-                    .font(DS.Typography.sectionHeader)
-                    .foregroundStyle(DS.Colors.secondaryText)
+                    .font(DS.Typography.settingsHeaderTitle)
+                    .foregroundStyle(DS.Colors.settingsTitle)
                 Spacer()
                 if viewModel.touchEvents.count > 3 {
                     Button(showFullHistory ? "Hide" : "See All") {
                         showFullHistory.toggle()
                     }
+                    .font(DS.Typography.caption)
                 }
             }
 
@@ -567,6 +568,11 @@ struct PersonDetailView: View {
                             showEditTouch = event
                         }
                         .contextMenu {
+                            Button {
+                                showEditTouch = event
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
                             Button(role: .destructive) {
                                 showDeleteConfirm = event
                             } label: {
@@ -675,7 +681,7 @@ struct PersonDetailView: View {
 
     private func settingsIcon(_ systemName: String) -> some View {
         Image(systemName: systemName)
-            .font(.system(size: 14))
+            .font(.footnote)
             .foregroundStyle(DS.Colors.settingsChevron)
             .frame(width: 32, height: 32)
             .background(DS.Colors.settingsIconCircle)
@@ -764,7 +770,7 @@ struct PersonDetailView: View {
                 if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
                     Text("Until \(snoozedUntil.formatted(date: .abbreviated, time: .omitted))")
                         .font(DS.Typography.settingsRowLabel)
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(DS.Colors.settingsSnoozeActive)
                     Button("Remove") { viewModel.clearSnooze() }
                         .font(DS.Typography.caption)
                 } else {
@@ -790,12 +796,12 @@ struct PersonDetailView: View {
         .padding(.vertical, DS.Spacing.xs)
     }
 
-    // MARK: Settings Row 4 — Groups
+    // MARK: Settings Row 4 — Tags
 
     private var settingsRowGroupsTags: some View {
         HStack(spacing: DS.Spacing.md) {
             settingsIcon("tag")
-            Text("Groups")
+            Text("Tags")
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsItemLabel)
             Spacer()
@@ -920,7 +926,7 @@ struct PersonDetailView: View {
         .frame(minHeight: 48)
     }
 
-    // MARK: Settings Row 10 — Remove Contact
+    // MARK: Settings Row 9 — Remove Contact
 
     private var settingsRowRemoveContact: some View {
         Button { showRemoveConfirm = true } label: {
@@ -1003,22 +1009,6 @@ struct PersonDetailView: View {
         f.dateFormat = "MMM d"
         return f
     }()
-
-    private func frequencySubtext() -> String {
-        guard let group = viewModel.group else { return "" }
-        let calculator = FrequencyCalculator()
-
-        if let dueDate = calculator.effectiveDueDate(for: viewModel.person, in: [group]) {
-            let cal = Calendar.current
-            let remaining = cal.dateComponents([.day], from: cal.startOfDay(for: Date()), to: cal.startOfDay(for: dueDate)).day ?? 0
-            let formatted = Self.dueDateFormatter.string(from: dueDate)
-            if remaining > 0 {
-                return "Connect every \(group.frequencyDays) days \u{00B7} Due \(formatted) \u{00B7} \(remaining)d remaining"
-            }
-            return "Connect every \(group.frequencyDays) days \u{00B7} Was due \(formatted)"
-        }
-        return "Connect every \(group.frequencyDays) days"
-    }
 
     private func snooze(days: Int) {
         let date = Calendar.current.date(byAdding: .day, value: days, to: Date()) ?? Date()

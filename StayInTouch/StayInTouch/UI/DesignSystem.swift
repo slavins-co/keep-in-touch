@@ -132,7 +132,7 @@ enum DS {
             light: UIColor.white,
             dark: UIColor(Color(hex: "1C1C1E"))
         )
-        static let timelineCircleLatest = Color(hex: "10B981")
+        static let timelineCircleLatest = adaptive(light: "10B981", dark: "10B981")
         static let timelineCircleOther = adaptiveColor(
             light: UIColor.systemGray3,
             dark: UIColor(Color(hex: "4B5563"))
@@ -164,10 +164,6 @@ enum DS {
             light: UIColor.separator,
             dark: UIColor.white.withAlphaComponent(0.05)
         )
-        static let settingsLeftBorder = adaptiveColor(
-            light: UIColor.systemGray5,
-            dark: UIColor.white.withAlphaComponent(0.05)
-        )
         static let settingsRemoveText = adaptiveColor(
             light: UIColor.systemRed,
             dark: UIColor(Color(hex: "F87171"))
@@ -183,6 +179,10 @@ enum DS {
         static let settingsSnoozePillBorder = adaptiveColor(
             light: UIColor.systemGray4,
             dark: UIColor.white.withAlphaComponent(0.15)
+        )
+        static let settingsSnoozeActive = adaptiveColor(
+            light: UIColor.systemPurple,
+            dark: UIColor(Color(hex: "C084FC"))
         )
 
         // MARK: Group Badge
@@ -346,12 +346,11 @@ enum DS {
         static let ctaButton = Font.system(size: 16, weight: .bold)
 
         // Tokens for #177 (notes, timeline, settings)
-        static let notesLabel = Font.system(size: 11, weight: .bold)
-        static let notesBody = Font.system(size: 15)
-        static let settingsHeaderTitle = Font.system(size: 15, weight: .semibold)
-        static let settingsRowLabel = Font.system(size: 15)
-        static let timelineHint = Font.system(size: 12)
-        static let settingsSectionLabel = Font.system(size: 12, weight: .semibold)
+        static let notesLabel = Font.caption2.weight(.bold)
+        static let notesBody = Font.body
+        static let settingsHeaderTitle = Font.body.weight(.semibold)
+        static let settingsRowLabel = Font.body
+        static let settingsSectionLabel = Font.caption.weight(.semibold)
     }
 
     // MARK: - Spacing
