@@ -365,11 +365,13 @@ struct HomeView: View {
 
         switch destination {
         case .person(let id):
+            deepLinkRouter.selectedTab = 0
             if let person = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext).fetch(id: id) {
                 navigationPath = NavigationPath()
                 navigationPath.append(person)
             }
         case .home:
+            deepLinkRouter.selectedTab = 0
             selectedDefaults()
         }
     }
