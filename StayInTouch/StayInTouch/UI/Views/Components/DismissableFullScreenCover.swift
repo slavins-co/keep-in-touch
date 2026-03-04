@@ -11,7 +11,6 @@ struct DismissableFullScreenCover<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @State private var dragOffset: CGFloat = 0
-    @State private var appeared = false
 
     let content: Content
 
@@ -21,10 +20,12 @@ struct DismissableFullScreenCover<Content: View>: View {
 
     var body: some View {
         ZStack {
-            // Dimming overlay — fades in independently of the slide-up transition
-            DS.Colors.sheetOverlay
+            // Transparent tap target — dismiss when tapping outside the card.
+            // Dimming lives on the presenting view (MainTabView) so it fades
+            // independently instead of sliding with the fullScreenCover.
+            Color.clear
                 .ignoresSafeArea()
-                .opacity(appeared ? 1 : 0)
+                .contentShape(Rectangle())
                 .onTapGesture { dismiss() }
 
             // Sheet content
@@ -46,11 +47,6 @@ struct DismissableFullScreenCover<Content: View>: View {
             .offset(y: max(0, dragOffset))
         }
         .presentationBackground(.clear)
-        .onAppear {
-            withAnimation(.easeIn(duration: 0.25)) {
-                appeared = true
-            }
-        }
     }
 
     // MARK: - Header

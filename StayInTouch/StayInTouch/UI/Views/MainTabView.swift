@@ -43,6 +43,16 @@ struct MainTabView: View {
             .tag(2)
         }
         .tint(DS.Colors.accent)
+        .overlay {
+            // Dimming lives here so it fades in place instead of
+            // sliding with the fullScreenCover transition.
+            if selectedPerson != nil {
+                DS.Colors.sheetOverlay
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: selectedPerson != nil)
         .fullScreenCover(item: $selectedPerson) { person in
             DismissableFullScreenCover {
                 PersonDetailView(person: person)
