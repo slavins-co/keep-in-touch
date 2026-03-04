@@ -39,7 +39,6 @@ struct PersonDetailView: View {
     @State private var pendingRemoveTask: Task<Void, Never>?
     @State private var showBirthdayEditor = false
     @FocusState private var isNextTouchNotesFocused: Bool
-    @AppStorage("hasUsedTimelineLongPress") private var hasUsedTimelineLongPress = false
 
     init(person: Person) {
         _viewModel = StateObject(wrappedValue: PersonDetailViewModel(person: person))
@@ -564,27 +563,16 @@ struct PersonDetailView: View {
                             isLatest: index == 0,
                             isLast: index == events.count - 1
                         )
+                        .onTapGesture {
+                            showEditTouch = event
+                        }
                         .contextMenu {
-                            Button {
-                                hasUsedTimelineLongPress = true
-                                showEditTouch = event
-                            } label: {
-                                Label("Edit", systemImage: "pencil")
-                            }
                             Button(role: .destructive) {
-                                hasUsedTimelineLongPress = true
                                 showDeleteConfirm = event
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
-                    }
-
-                    if !hasUsedTimelineLongPress {
-                        Text("Tap and hold to edit")
-                            .font(DS.Typography.timelineHint)
-                            .foregroundStyle(DS.Colors.tertiaryText)
-                            .padding(.leading, 40)
                     }
                 }
             }
@@ -616,6 +604,7 @@ struct PersonDetailView: View {
                         .animation(.easeInOut(duration: 0.25), value: settingsExpanded)
                 }
                 .padding(.vertical, DS.Spacing.md)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 

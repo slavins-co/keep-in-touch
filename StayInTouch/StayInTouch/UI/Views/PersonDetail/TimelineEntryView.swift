@@ -11,14 +11,14 @@ struct TimelineEntryView: View {
     let isLast: Bool
 
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            // Timeline column
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            // Timeline column — line extends through content bottom padding
             VStack(spacing: 0) {
                 ZStack {
                     Circle()
                         .fill(DS.Colors.timelineCircleFill)
                     Circle()
-                        .stroke(
+                        .strokeBorder(
                             isLatest ? DS.Colors.timelineCircleLatest : DS.Colors.timelineCircleOther,
                             lineWidth: isLatest ? 3 : 2
                         )
@@ -34,7 +34,7 @@ struct TimelineEntryView: View {
             }
             .frame(width: 16)
 
-            // Content column
+            // Content column — bottom padding here so timeline line bridges the gap
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 HStack {
                     Text("\(event.method.rawValue)\(event.timeOfDay.map { " \u{00B7} \($0.rawValue)" } ?? "")")
@@ -50,8 +50,8 @@ struct TimelineEntryView: View {
                         .foregroundStyle(Color(.label).opacity(0.7))
                 }
             }
-            .padding(.leading, DS.Spacing.xxl)
+            .padding(.bottom, isLast ? 0 : DS.Spacing.lg)
         }
-        .padding(.bottom, DS.Spacing.xxxl)
+        .contentShape(Rectangle())
     }
 }
