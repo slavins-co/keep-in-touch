@@ -106,10 +106,14 @@ struct ContactsListView: View {
                                     )
                                 }
                                 .buttonStyle(.plain)
+                                .padding(.leading)
+                                .padding(.trailing, 36)
 
                                 if index < section.people.count - 1 {
                                     SubtleDivider()
                                         .padding(.leading, DS.Spacing.lg)
+                                        .padding(.leading)
+                                        .padding(.trailing, 36)
                                 }
                             }
                         } header: {
@@ -118,10 +122,9 @@ struct ContactsListView: View {
                         }
                     }
                 }
-                .padding(.leading)
-                .padding(.trailing, 36)
                 .padding(.bottom, 80)
             }
+            .background(DS.Colors.pageBg)
             .overlay(alignment: .trailing) {
                 SectionIndexView(sections: sectionLetters) { letter in
                     withAnimation {
@@ -143,6 +146,8 @@ struct ContactsListView: View {
         }
         .padding(.vertical, DS.Spacing.xs)
         .padding(.horizontal, DS.Spacing.xs)
+        .padding(.leading)
+        .padding(.trailing, 36)
         .background(DS.Colors.pageBg)
     }
 

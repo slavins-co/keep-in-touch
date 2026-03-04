@@ -375,6 +375,7 @@ struct HomeView: View {
             .padding(.top, DS.Spacing.md)
             .padding(.bottom, 80)
         }
+        .background(DS.Colors.pageBg)
         .refreshable {
             await viewModel.refreshFromContacts()
         }
