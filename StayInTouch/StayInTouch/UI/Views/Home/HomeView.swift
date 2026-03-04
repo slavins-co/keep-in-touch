@@ -261,7 +261,7 @@ struct HomeView: View {
 
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(colorScheme == .dark ? Color(hex: "9CA3AF") : DS.Colors.tertiaryText)
+                    .foregroundStyle(DS.Colors.searchBarIcon)
                 TextField(
                     "Search contacts...",
                     text: Binding(
@@ -282,7 +282,7 @@ struct HomeView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
-            .background(colorScheme == .dark ? Color(hex: "1C1C1E") : .white)
+            .background(DS.Colors.searchBarBackground)
             .clipShape(Capsule())
             .overlay(
                 Capsule()

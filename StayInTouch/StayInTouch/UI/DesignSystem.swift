@@ -115,6 +115,17 @@ enum DS {
             dark: UIColor(Color(hex: "111111")).withAlphaComponent(0.95)
         )
 
+        // MARK: Search Bar
+
+        static let searchBarBackground = adaptiveColor(
+            light: UIColor.white,
+            dark: UIColor(Color(hex: "1C1C1E"))
+        )
+        static let searchBarIcon = adaptiveColor(
+            light: UIColor.tertiaryLabel,
+            dark: UIColor(Color(hex: "9CA3AF"))
+        )
+
         // MARK: Filters
 
         static let filterAccent = adaptive(light: "3D6B4F", dark: "6BCB77")
