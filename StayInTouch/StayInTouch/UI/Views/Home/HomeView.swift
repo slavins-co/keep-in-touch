@@ -224,7 +224,6 @@ struct HomeView: View {
                         .font(.caption2)
                         .foregroundStyle(DS.Colors.filterAccent)
                         .padding(.leading, DS.Spacing.xs)
-                        .padding(.vertical, DS.Spacing.sm)
                         .contentShape(Rectangle())
                 }
             }
