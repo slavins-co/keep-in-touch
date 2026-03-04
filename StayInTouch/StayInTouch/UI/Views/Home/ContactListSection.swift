@@ -69,8 +69,7 @@ struct ContactListSection: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.sm)
-            .background(.ultraThinMaterial)
-            .background(DS.Colors.sectionHeaderBg)
+            .background(DS.Colors.pageBg)
             .overlay(alignment: .bottom) {
                 Rectangle()
                     .fill(Color(.systemGray6))
