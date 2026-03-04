@@ -19,7 +19,7 @@ struct ContactCard: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(alignment: .center, spacing: DS.Spacing.cardPadding) {
+        HStack(alignment: .center, spacing: DS.Spacing.contactCardAvatarSpacing(scheme: colorScheme)) {
             ContactPhotoView(
                 cnIdentifier: person.cnIdentifier,
                 displayName: person.displayName,
@@ -50,7 +50,7 @@ struct ContactCard: View {
                 statusSymbol
             }
         }
-        .padding(.vertical, colorScheme == .dark ? DS.Spacing.lg : DS.Spacing.cardPadding)
+        .padding(.vertical, DS.Spacing.contactCardVerticalPadding(scheme: colorScheme))
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)

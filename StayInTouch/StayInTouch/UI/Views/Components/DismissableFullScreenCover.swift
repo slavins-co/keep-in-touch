@@ -9,7 +9,6 @@ import SwiftUI
 /// drag handle, close button, and drag-to-dismiss gesture.
 struct DismissableFullScreenCover<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var colorScheme
     @State private var dragOffset: CGFloat = 0
 
     let content: Content
@@ -56,7 +55,7 @@ struct DismissableFullScreenCover<Content: View>: View {
         HStack {
             Spacer()
             RoundedRectangle(cornerRadius: 3)
-                .fill(dragHandleColor)
+                .fill(DS.Colors.sheetDragHandle)
                 .frame(width: 40, height: 6)
             Spacer()
         }
@@ -74,9 +73,9 @@ struct DismissableFullScreenCover<Content: View>: View {
         Button { dismiss() } label: {
             Image(systemName: "xmark")
                 .font(.caption.weight(.bold))
-                .foregroundStyle(closeButtonForeground)
+                .foregroundStyle(DS.Colors.sheetCloseButtonFg)
                 .frame(width: 28, height: 28)
-                .background(closeButtonBackground)
+                .background(DS.Colors.sheetCloseButtonBg)
                 .clipShape(Circle())
         }
         .accessibilityLabel("Close")
@@ -103,25 +102,5 @@ struct DismissableFullScreenCover<Content: View>: View {
                     }
                 }
             }
-    }
-
-    // MARK: - Adaptive Colors
-
-    private var dragHandleColor: Color {
-        colorScheme == .dark
-            ? Color.white.opacity(0.2)
-            : Color(.systemGray3)
-    }
-
-    private var closeButtonForeground: Color {
-        colorScheme == .dark
-            ? Color(hex: "9CA3AF")
-            : Color(.secondaryLabel)
-    }
-
-    private var closeButtonBackground: Color {
-        colorScheme == .dark
-            ? DS.Colors.surfaceSecondary
-            : Color(.systemGray5)
     }
 }
