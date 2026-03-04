@@ -46,6 +46,8 @@ struct ContactsListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            contactsHeader
+
             if viewModel.allPeople.isEmpty {
                 Spacer()
                 EmptyStateView(
@@ -75,6 +77,20 @@ struct ContactsListView: View {
         .onReceive(NotificationCenter.default.publisher(for: .contactsDidSync)) { _ in
             viewModel.load()
         }
+    }
+
+    // MARK: - Header
+
+    private var contactsHeader: some View {
+        HStack {
+            Text("\(filteredPeople.count) Contacts")
+                .font(DS.Typography.homeSubtitle)
+                .foregroundStyle(Color(.secondaryLabel))
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.vertical, DS.Spacing.sm)
+        .background(DS.Colors.secondaryBackground)
     }
 
     // MARK: - Contacts List
