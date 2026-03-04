@@ -386,7 +386,7 @@ struct SettingsView: View {
                 set: { newValue in viewModel.setDigestEnabled(newValue) }
             )) {
                 Label("Weekly Digest", systemImage: "bell.badge.fill")
-                    .foregroundStyle(DS.Colors.accent)
+                    .foregroundStyle(DS.Colors.statusDueSoon)
             }
 
             if viewModel.settings.digestEnabled {
@@ -564,6 +564,7 @@ struct SettingsView: View {
                 }
             }
         }
+        .presentationDetents([.medium])
     }
 
     private func dismissSheets() {
