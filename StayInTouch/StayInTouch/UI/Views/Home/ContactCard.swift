@@ -23,6 +23,7 @@ struct ContactCard: View {
             ContactPhotoView(
                 cnIdentifier: person.cnIdentifier,
                 displayName: person.displayName,
+                avatarColor: person.avatarColor,
                 size: 48
             )
 

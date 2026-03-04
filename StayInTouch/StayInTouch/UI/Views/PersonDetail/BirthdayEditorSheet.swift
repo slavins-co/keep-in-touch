@@ -66,6 +66,7 @@ struct BirthdayEditorSheet: View {
                 }
             }
         }
+        .presentationDetents([.medium])
     }
 
     private var daysInMonth: Int {

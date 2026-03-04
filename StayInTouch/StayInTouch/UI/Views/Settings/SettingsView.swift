@@ -386,7 +386,7 @@ struct SettingsView: View {
                 set: { newValue in viewModel.setDigestEnabled(newValue) }
             )) {
                 Label("Weekly Digest", systemImage: "bell.badge.fill")
-                    .foregroundStyle(DS.Colors.accent)
+                    .foregroundStyle(DS.Colors.statusDueSoon)
             }
 
             if viewModel.settings.digestEnabled {
@@ -522,6 +522,8 @@ struct SettingsView: View {
             )
             .datePickerStyle(.wheel)
             .labelsHidden()
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismissSheets() }
@@ -535,6 +537,7 @@ struct SettingsView: View {
             }
             .onAppear { workingTime = time.toDate() }
         }
+        .presentationDetents([.medium])
     }
 
     private var dayPickerSheet: some View {
@@ -561,6 +564,7 @@ struct SettingsView: View {
                 }
             }
         }
+        .presentationDetents([.medium])
     }
 
     private func dismissSheets() {
