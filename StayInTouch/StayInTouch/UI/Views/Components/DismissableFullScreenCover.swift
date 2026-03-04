@@ -11,6 +11,7 @@ struct DismissableFullScreenCover<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @State private var dragOffset: CGFloat = 0
+    @State private var appeared = false
 
     let content: Content
 
@@ -20,9 +21,10 @@ struct DismissableFullScreenCover<Content: View>: View {
 
     var body: some View {
         ZStack {
-            // Dimming overlay
+            // Dimming overlay — fades in independently of the slide-up transition
             DS.Colors.sheetOverlay
                 .ignoresSafeArea()
+                .opacity(appeared ? 1 : 0)
                 .onTapGesture { dismiss() }
 
             // Sheet content
@@ -44,6 +46,11 @@ struct DismissableFullScreenCover<Content: View>: View {
             .offset(y: max(0, dragOffset))
         }
         .presentationBackground(.clear)
+        .onAppear {
+            withAnimation(.easeIn(duration: 0.25)) {
+                appeared = true
+            }
+        }
     }
 
     // MARK: - Header
@@ -60,7 +67,7 @@ struct DismissableFullScreenCover<Content: View>: View {
             closeButton
                 .padding(.trailing, DS.Spacing.lg)
         }
-        .padding(.top, DS.Spacing.md)
+        .padding(.top, DS.Spacing.xl)
         .padding(.bottom, DS.Spacing.sm)
         .contentShape(Rectangle())
         .gesture(dragGesture)
