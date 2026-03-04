@@ -35,6 +35,6 @@ struct StatusSummaryCard: View {
                 .stroke(borderColor, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-        .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
+        .shadow(color: DS.Shadow.cardColor, radius: DS.Shadow.cardRadius, y: DS.Shadow.cardY)
     }
 }

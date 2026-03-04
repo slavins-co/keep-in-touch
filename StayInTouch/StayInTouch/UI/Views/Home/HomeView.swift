@@ -104,7 +104,7 @@ struct HomeView: View {
 
     private var header: some View {
         VStack(spacing: DS.Spacing.xs) {
-            Text("Keep in Touch")
+            Text("Keep In Touch")
                 .font(DS.Typography.homeTitle)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -217,7 +217,7 @@ struct HomeView: View {
                         .lineLimit(1)
                     if !isActive {
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(DS.Typography.filterChevron)
                     }
                 }
             }

@@ -99,7 +99,7 @@ enum DS {
 
         // MARK: Filters
 
-        static let filterAccent = Color(hex: "3D6B4F")
+        static let filterAccent = adaptive(light: "3D6B4F", dark: "6BCB77")
 
         // MARK: Sheet Overlay
 
@@ -202,9 +202,10 @@ enum DS {
         static let timelineTitle = Font.system(size: 14, weight: .bold)
         static let timelineMono = Font.system(size: 12, weight: .regular, design: .monospaced)
         static let timelineNotes = Font.system(size: 14, weight: .regular)
-        static let homeTitle = Font.system(size: 28, weight: .bold)
-        static let homeSubtitle = Font.system(size: 14, weight: .medium)
-        static let filterLabel = Font.system(size: 13, weight: .semibold)
+        static let homeTitle = Font.title.weight(.bold)
+        static let homeSubtitle = Font.subheadline.weight(.medium)
+        static let filterLabel = Font.footnote.weight(.semibold)
+        static let filterChevron = Font.caption2.weight(.semibold)
     }
 
     // MARK: - Spacing
@@ -230,6 +231,14 @@ enum DS {
         static let xl: CGFloat = 20
         static let xxl: CGFloat = 32
         static let full: CGFloat = 999
+    }
+
+    // MARK: - Shadows
+
+    enum Shadow {
+        static let cardColor = Color.black.opacity(0.05)
+        static let cardRadius: CGFloat = 2
+        static let cardY: CGFloat = 1
     }
 
     // MARK: - Touch Method Icons
