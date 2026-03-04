@@ -34,9 +34,7 @@ struct DismissableFullScreenCover<Content: View>: View {
                 content
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background {
-                DS.Colors.pageBg.ignoresSafeArea(.container, edges: .bottom)
-            }
+            .background(DS.Colors.pageBg)
             .overlay(alignment: .top) {
                 Rectangle()
                     .fill(DS.Colors.borderMedium)
@@ -46,6 +44,7 @@ struct DismissableFullScreenCover<Content: View>: View {
                 topLeadingRadius: DS.Radius.xxl,
                 topTrailingRadius: DS.Radius.xxl
             ))
+            .ignoresSafeArea(.container, edges: .bottom)
             .offset(y: max(0, dragOffset))
         }
         .presentationBackground(.clear)
