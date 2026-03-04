@@ -48,6 +48,7 @@ struct ContactListSection: View {
                             .fill(DS.Colors.rowSeparator)
                             .frame(height: 1)
                             .padding(.leading, 64)
+                            .accessibilityHidden(true)
                     }
                 }
                 .transition(.opacity)

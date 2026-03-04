@@ -41,5 +41,6 @@ struct StatusSummaryCard: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
         .shadow(color: DS.Colors.summaryCardShadow, radius: DS.Shadow.cardRadius, y: DS.Shadow.cardY)
+        .accessibilityElement(children: .combine)
     }
 }
