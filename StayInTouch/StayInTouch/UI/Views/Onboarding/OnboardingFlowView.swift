@@ -45,6 +45,8 @@ struct OnboardingFlowView: View {
                     ContactPickerView(viewModel: viewModel)
                 case .groupAssignment:
                     GroupAssignmentView(viewModel: viewModel)
+                case .lastTouchSeeding:
+                    LastTouchSeedingView(viewModel: viewModel)
                 case .notificationsPermission:
                     NotificationsPermissionView(viewModel: viewModel)
                 case .notificationsSkipped:

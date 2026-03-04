@@ -12,5 +12,6 @@ protocol TouchEventRepository {
     func fetchAll(for personId: UUID) -> [TouchEvent]
     func fetchMostRecent(for personId: UUID) -> TouchEvent?
     func save(_ touchEvent: TouchEvent) throws
+    func batchSave(_ touchEvents: [TouchEvent]) throws
     func delete(id: UUID) throws
 }

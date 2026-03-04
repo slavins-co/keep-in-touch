@@ -117,6 +117,11 @@ final class MockTouchEventRepository: TouchEventRepository {
             events.append(touchEvent)
         }
     }
+    func batchSave(_ touchEvents: [TouchEvent]) throws {
+        for event in touchEvents {
+            try save(event)
+        }
+    }
     func delete(id: UUID) throws {
         deletedIds.append(id)
         events.removeAll { $0.id == id }

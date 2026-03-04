@@ -24,6 +24,9 @@ struct SettingsView: View {
     @State private var showNewContactsPicker = false
     @State private var showGroupAssignment = false
     @State private var shouldShowGroupAssignment = false
+    @State private var showLastTouchSeeding = false
+    @State private var shouldShowLastTouchSeeding = false
+    @State private var groupAssignmentsForImport: [String: UUID] = [:]
     @State private var selectedForImport: [ContactSummary] = []
     @State private var pendingImportCount = 0
     @State private var isSyncingContacts = false
@@ -126,15 +129,33 @@ struct SettingsView: View {
                 contacts: selectedForImport,
                 groups: viewModel.allGroups,
                 onImport: { assignments in
-                    Task {
-                        isSyncingContacts = true
-                        await viewModel.importSelectedContacts(selectedForImport, groupAssignments: assignments)
-                        isSyncingContacts = false
-                    }
+                    groupAssignmentsForImport = assignments
+                    shouldShowLastTouchSeeding = true
                     showGroupAssignment = false
                 },
                 onCancel: {
+                    shouldShowLastTouchSeeding = false
                     showGroupAssignment = false
+                }
+            )
+        }
+        .sheet(isPresented: $showLastTouchSeeding) {
+            SettingsLastTouchSeedingView(
+                contacts: selectedForImport,
+                onContinue: { lastTouchSelections in
+                    Task {
+                        isSyncingContacts = true
+                        await viewModel.importSelectedContacts(
+                            selectedForImport,
+                            groupAssignments: groupAssignmentsForImport,
+                            lastTouchSelections: lastTouchSelections
+                        )
+                        isSyncingContacts = false
+                    }
+                    showLastTouchSeeding = false
+                },
+                onCancel: {
+                    showLastTouchSeeding = false
                 }
             )
         }
@@ -142,6 +163,12 @@ struct SettingsView: View {
             if !isPresented && shouldShowGroupAssignment {
                 shouldShowGroupAssignment = false
                 showGroupAssignment = true
+            }
+        }
+        .onChange(of: showGroupAssignment) { _, isPresented in
+            if !isPresented && shouldShowLastTouchSeeding {
+                shouldShowLastTouchSeeding = false
+                showLastTouchSeeding = true
             }
         }
         .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [UTType.json]) { result in
