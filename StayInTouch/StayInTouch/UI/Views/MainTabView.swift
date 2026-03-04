@@ -25,6 +25,7 @@ struct MainTabView: View {
                     Text("Home")
                 }
                 .tag(0)
+                .accessibilityLabel("Home tab")
 
             ContactsListView(viewModel: viewModel, selectPerson: { selectedPerson = $0 })
                 .tabItem {
@@ -32,6 +33,7 @@ struct MainTabView: View {
                     Text("Contacts")
                 }
                 .tag(1)
+                .accessibilityLabel("Contacts tab")
 
             NavigationStack {
                 SettingsView()
@@ -41,6 +43,7 @@ struct MainTabView: View {
                 Text("Settings")
             }
             .tag(2)
+            .accessibilityLabel("Settings tab")
         }
         .tint(DS.Colors.accent)
         .overlay {

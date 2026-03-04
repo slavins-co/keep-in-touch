@@ -492,6 +492,7 @@ struct SubtleDivider: View {
         Rectangle()
             .fill(DS.Colors.separator)
             .frame(height: 0.5)
+            .accessibilityHidden(true)
     }
 }
 

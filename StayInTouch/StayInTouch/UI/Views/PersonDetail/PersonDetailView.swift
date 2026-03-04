@@ -458,6 +458,8 @@ struct PersonDetailView: View {
             .shadow(color: DS.Colors.actionButtonShadow, radius: 6, y: 2)
         }
         .buttonStyle(ActionCardButtonStyle())
+        .accessibilityLabel(enabled ? label : "\(label), unavailable")
+        .accessibilityHint(enabled ? "Double tap to \(label.lowercased()) this contact" : "No \(label == "Email" ? "email address" : "phone number") on file")
         .disabled(!enabled)
         .opacity(!enabled && !viewModel.person.contactUnavailable ? 0.5 : 1.0)
     }
@@ -477,6 +479,7 @@ struct PersonDetailView: View {
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Log connection with \(viewModel.person.displayName)")
             .shadow(color: DS.Colors.ctaShadow, radius: 8, y: 2)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
@@ -548,6 +551,7 @@ struct PersonDetailView: View {
                         showFullHistory.toggle()
                     }
                     .font(DS.Typography.caption)
+                    .accessibilityLabel(showFullHistory ? "Hide full history" : "See all \(viewModel.touchEvents.count) connections")
                 }
             }
 
@@ -613,6 +617,8 @@ struct PersonDetailView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Contact Settings")
+            .accessibilityHint(settingsExpanded ? "Collapses settings" : "Expands settings")
 
             if settingsExpanded {
                 settingsContent
@@ -938,6 +944,8 @@ struct PersonDetailView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Remove \(viewModel.person.displayName)")
+        .accessibilityHint("Double tap to confirm removal")
     }
 
     // MARK: - Computed Properties

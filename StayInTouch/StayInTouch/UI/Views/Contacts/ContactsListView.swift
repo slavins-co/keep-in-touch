@@ -121,6 +121,7 @@ struct ContactsListView: View {
                                     )
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityHint("Opens contact details")
                                 .padding(.leading)
                                 .padding(.trailing, 36)
 
@@ -164,6 +165,7 @@ struct ContactsListView: View {
         .padding(.leading)
         .padding(.trailing, 36)
         .background(DS.Colors.pageBg)
+        .accessibilityLabel("Section \(letter)")
     }
 
     // MARK: - Search Bar
@@ -193,6 +195,7 @@ struct ContactsListView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(DS.Colors.tertiaryText)
                     }
+                    .accessibilityLabel("Clear search")
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)

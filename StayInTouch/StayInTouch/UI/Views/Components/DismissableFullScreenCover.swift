@@ -57,6 +57,7 @@ struct DismissableFullScreenCover<Content: View>: View {
             RoundedRectangle(cornerRadius: 3)
                 .fill(DS.Colors.sheetDragHandle)
                 .frame(width: 40, height: 6)
+                .accessibilityHidden(true)
             Spacer()
         }
         .overlay(alignment: .trailing) {
@@ -78,7 +79,7 @@ struct DismissableFullScreenCover<Content: View>: View {
                 .background(DS.Colors.sheetCloseButtonBg)
                 .clipShape(Circle())
         }
-        .accessibilityLabel("Close")
+        .accessibilityLabel("Close contact detail")
     }
 
     // MARK: - Drag Gesture

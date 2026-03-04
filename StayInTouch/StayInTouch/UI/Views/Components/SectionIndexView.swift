@@ -24,6 +24,7 @@ struct SectionIndexView: View {
                         .frame(minWidth: 24, minHeight: 18)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Jump to section \(section)")
             }
         }
         .padding(.vertical, 4)

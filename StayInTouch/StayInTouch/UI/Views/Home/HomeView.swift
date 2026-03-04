@@ -236,6 +236,7 @@ struct HomeView: View {
                         .padding(.leading, DS.Spacing.xs)
                         .contentShape(Rectangle())
                 }
+                .accessibilityLabel("Clear filter")
             }
         }
         .frame(maxWidth: .infinity)
@@ -280,6 +281,7 @@ struct HomeView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(DS.Colors.tertiaryText)
                     }
+                    .accessibilityLabel("Clear search")
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
