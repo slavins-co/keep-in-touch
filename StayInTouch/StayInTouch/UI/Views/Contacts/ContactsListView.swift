@@ -9,6 +9,8 @@ struct ContactsListView: View {
     @ObservedObject var viewModel: HomeViewModel
     var selectPerson: (Person) -> Void
     @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
+    @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Computed Data
 
@@ -62,9 +64,10 @@ struct ContactsListView: View {
                 Spacer()
             } else {
                 contactsList
+                    .overlay(alignment: .bottom) {
+                        contactsSearchBar
+                    }
             }
-
-            contactsSearchBar
         }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
             viewModel.load()
@@ -121,7 +124,7 @@ struct ContactsListView: View {
                     }
                     .padding(.leading)
                     .padding(.trailing, 36)
-                    .padding(.bottom, DS.Spacing.sm)
+                    .padding(.bottom, 80)
                 }
 
                 SectionIndexView(sections: sectionLetters) { letter in
@@ -150,29 +153,55 @@ struct ContactsListView: View {
     // MARK: - Search Bar
 
     private var contactsSearchBar: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(DS.Colors.tertiaryText)
-            TextField(
-                "Search contacts...",
-                text: $searchText
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [DS.Colors.pageBg.opacity(0), DS.Colors.pageBg],
+                startPoint: .top,
+                endPoint: .bottom
             )
-            .textFieldStyle(.plain)
-            if !searchText.isEmpty {
-                Button {
-                    searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(DS.Colors.tertiaryText)
+            .frame(height: 20)
+
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(DS.Colors.searchBarIcon)
+                TextField(
+                    "Search contacts...",
+                    text: $searchText
+                )
+                .textFieldStyle(.plain)
+                .focused($isSearchFocused)
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(DS.Colors.tertiaryText)
+                    }
                 }
             }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .background(DS.Colors.searchBarBackground)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(
+                        isSearchFocused
+                            ? (colorScheme == .dark ? Color(.systemGray3) : DS.Colors.filterAccent)
+                            : Color(.systemGray5),
+                        lineWidth: isSearchFocused ? 2 : 1
+                    )
+            )
+            .shadow(
+                color: colorScheme == .dark ? .clear : .black.opacity(0.1),
+                radius: 8,
+                y: 2
+            )
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.lg)
+            .frame(maxWidth: .infinity)
+            .background(DS.Colors.pageBg)
         }
-        .padding(.horizontal, DS.Spacing.md)
-        .padding(.vertical, DS.Spacing.sm)
-        .background(DS.Colors.secondaryBackground)
-        .clipShape(Capsule())
-        .padding(.horizontal)
-        .padding(.bottom, DS.Spacing.sm)
     }
 
     // MARK: - Helpers

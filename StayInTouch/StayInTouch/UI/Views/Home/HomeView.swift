@@ -253,7 +253,7 @@ struct HomeView: View {
     private var floatingSearchBar: some View {
         VStack(spacing: 0) {
             LinearGradient(
-                colors: [DS.Colors.background.opacity(0), DS.Colors.background],
+                colors: [DS.Colors.pageBg.opacity(0), DS.Colors.pageBg],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -300,6 +300,8 @@ struct HomeView: View {
             )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.lg)
+            .frame(maxWidth: .infinity)
+            .background(DS.Colors.pageBg)
         }
     }
 
