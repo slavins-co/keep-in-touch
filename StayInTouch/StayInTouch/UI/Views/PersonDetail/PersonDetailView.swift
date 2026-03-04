@@ -104,6 +104,7 @@ struct PersonDetailView: View {
                 selectedId: viewModel.person.groupId,
                 onSelect: { viewModel.changeGroup(to: $0) }
             )
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showManageTags) {
             TagManagerSheet(
@@ -112,6 +113,7 @@ struct PersonDetailView: View {
                 onAdd: { viewModel.addTag($0) },
                 onRemove: { viewModel.removeTag($0) }
             )
+            .presentationDetents([.medium])
         }
         .alert("Resume tracking?", isPresented: $showResumePrompt) {
             Button("Today") {
