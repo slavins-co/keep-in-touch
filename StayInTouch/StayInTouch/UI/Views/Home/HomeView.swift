@@ -99,7 +99,7 @@ struct HomeView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+        VStack(spacing: DS.Spacing.xs) {
             Text("Keep in Touch")
                 .font(DS.Typography.homeTitle)
                 .lineLimit(1)
@@ -109,6 +109,7 @@ struct HomeView: View {
                 .font(DS.Typography.homeSubtitle)
                 .foregroundStyle(Color(.secondaryLabel))
         }
+        .frame(maxWidth: .infinity)
         .padding(.horizontal)
         .padding(.top, DS.Spacing.md)
         .padding(.bottom, DS.Spacing.sm)
