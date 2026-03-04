@@ -162,7 +162,7 @@ struct HomeView: View {
         let selectedName = viewModel.selectedGroupId.flatMap { id in
             viewModel.groups.first(where: { $0.id == id })?.name
         }
-        let displayText = selectedName.map { "Frequency: \($0)" } ?? "Frequency: All"
+        let displayText = selectedName ?? "Frequency: All"
 
         return filterButton(
             displayText: displayText,
@@ -181,7 +181,7 @@ struct HomeView: View {
         let selectedName = viewModel.selectedTagId.flatMap { id in
             viewModel.tags.first(where: { $0.id == id })?.name
         }
-        let displayText = selectedName.map { "Group: \($0)" } ?? "Group: All"
+        let displayText = selectedName ?? "Group: All"
 
         return filterButton(
             displayText: displayText,

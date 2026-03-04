@@ -67,17 +67,17 @@ enum DS {
         static let overdueCardBackground = adaptive(light: "FEF2F2", dark: "1C1C1E")
         static let overdueCardBorder = adaptiveColor(
             light: UIColor(Color(hex: "FEE2E2")),
-            dark: UIColor.white.withAlphaComponent(0.05)
+            dark: UIColor.white.withAlphaComponent(0.15)
         )
         static let dueSoonCardBackground = adaptive(light: "FFFBEB", dark: "1C1C1E")
         static let dueSoonCardBorder = adaptiveColor(
             light: UIColor(Color(hex: "FDE68A")),
-            dark: UIColor.white.withAlphaComponent(0.05)
+            dark: UIColor.white.withAlphaComponent(0.15)
         )
         static let allGoodCardBackground = adaptive(light: "ECFDF5", dark: "1C1C1E")
         static let allGoodCardBorder = adaptiveColor(
             light: UIColor(Color(hex: "A7F3D0")),
-            dark: UIColor.white.withAlphaComponent(0.05)
+            dark: UIColor.white.withAlphaComponent(0.15)
         )
 
         // MARK: Action Buttons
