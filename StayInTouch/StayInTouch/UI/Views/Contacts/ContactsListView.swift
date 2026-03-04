@@ -116,7 +116,8 @@ struct ContactsListView: View {
                             }
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.leading)
+                    .padding(.trailing, 36)
                     .padding(.bottom, DS.Spacing.sm)
                 }
 
@@ -140,7 +141,8 @@ struct ContactsListView: View {
         }
         .padding(.vertical, DS.Spacing.xs)
         .padding(.horizontal, DS.Spacing.xs)
-        .background(DS.Colors.background)
+        .background(DS.Colors.pageBg)
+        .zIndex(1)
     }
 
     // MARK: - Search Bar
