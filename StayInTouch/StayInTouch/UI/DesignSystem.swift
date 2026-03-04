@@ -85,6 +85,19 @@ enum DS {
         static let actionButtonBackground = adaptive(light: "2D3339", dark: "2C2C2E")
         static let actionButtonPressed = adaptive(light: "1F252B", dark: "3C3C3E")
         static let actionButtonIconBg = Color.white.opacity(0.1)
+        /// Light: visible icon circle; Dark: no icon circle (opacity 0)
+        static let actionButtonIconCircleOpacity = adaptiveColor(
+            light: UIColor.white.withAlphaComponent(0.1),
+            dark: UIColor.clear
+        )
+        static let actionButtonBorder = adaptiveColor(
+            light: UIColor.clear,
+            dark: UIColor.white.withAlphaComponent(0.05)
+        )
+        static let actionButtonShadow = adaptiveColor(
+            light: UIColor.black.withAlphaComponent(0.1),
+            dark: UIColor.clear
+        )
 
         // MARK: Notes Card
 
@@ -129,6 +142,22 @@ enum DS {
         // MARK: Filters
 
         static let filterAccent = adaptive(light: "3D6B4F", dark: "6BCB77")
+
+        // MARK: Detail Hero
+
+        static let heroAccentGreen = adaptive(light: "3D6B4F", dark: "3D6B4F")
+        static let heroAvatarRing = adaptiveColor(
+            light: UIColor.white,
+            dark: UIColor.white.withAlphaComponent(0.05)
+        )
+        static let ctaContainerBg = adaptiveColor(
+            light: UIColor.systemBackground,
+            dark: UIColor(Color(hex: "1C1C1E"))
+        )
+        static let ctaShadow = adaptiveColor(
+            light: UIColor(Color(hex: "3D6B4F").opacity(0.3)),
+            dark: UIColor(Color(hex: "064E3B").opacity(0.2))
+        )
 
         // MARK: Sheet Overlay
 
@@ -238,6 +267,8 @@ enum DS {
         static let contactCardName = Font.system(size: 15, weight: .bold)
         static let contactCardMeta = Font.system(size: 13, weight: .medium)
         static let groupBadgeLabel = Font.system(size: 10, weight: .bold)
+        static let detailStatusLine = Font.system(size: 15, weight: .semibold)
+        static let ctaButton = Font.system(size: 16, weight: .bold)
     }
 
     // MARK: - Spacing
