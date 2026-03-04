@@ -308,6 +308,7 @@ struct HomeView: View {
     private var content: some View {
         let calculator = FrequencyCalculator()
         let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
+        let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
 
         return ScrollView {
             LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
@@ -334,7 +335,7 @@ struct HomeView: View {
                         isCollapsed: collapsedSections.contains("overdue"),
                         onToggle: { toggleSection("overdue") },
                         groupsById: groupsById,
-
+                        tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
@@ -347,7 +348,7 @@ struct HomeView: View {
                         isCollapsed: collapsedSections.contains("due-soon"),
                         onToggle: { toggleSection("due-soon") },
                         groupsById: groupsById,
-
+                        tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
@@ -360,7 +361,7 @@ struct HomeView: View {
                         isCollapsed: collapsedSections.contains("all-good"),
                         onToggle: { toggleSection("all-good") },
                         groupsById: groupsById,
-
+                        tagsById: tagsById,
                         statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },

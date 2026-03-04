@@ -14,6 +14,7 @@ struct ContactCard: View {
     let daysOverdue: Int
     let timeAgo: String
     let lastMethod: TouchMethod?
+    let tagName: String?
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -36,9 +37,17 @@ struct ContactCard: View {
 
             Spacer(minLength: DS.Spacing.xs)
 
-            VStack(alignment: .trailing, spacing: DS.Spacing.sm) {
-                groupBadge
-                StatusIndicator(status: status, dotOnly: true)
+            HStack(spacing: DS.Spacing.sm) {
+                if let tagName {
+                    Text(tagName.uppercased())
+                        .font(DS.Typography.groupBadgeLabel)
+                        .foregroundStyle(DS.Colors.groupBadgeText)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(DS.Colors.groupBadgeBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+                statusSymbol
             }
         }
         .padding(.vertical, colorScheme == .dark ? DS.Spacing.lg : DS.Spacing.cardPadding)
@@ -60,31 +69,35 @@ struct ContactCard: View {
                 .font(DS.Typography.contactCardMeta)
                 .foregroundStyle(DS.Colors.textMuted)
         } else {
-            HStack(spacing: DS.Spacing.xs) {
-                Text("\(timeAgo) \u{00B7} \(frequencyName)")
-                    .font(DS.Typography.contactCardMeta)
-                    .foregroundStyle(Color(.secondaryLabel))
-
-                if person.customDueDate != nil {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color(.secondaryLabel))
-                }
-            }
-            .lineLimit(1)
+            Text("\(timeAgo) \u{00B7} \(frequencyName)")
+                .font(DS.Typography.contactCardMeta)
+                .foregroundStyle(Color(.secondaryLabel))
+                .lineLimit(1)
         }
     }
 
-    // MARK: - Group Badge
+    // MARK: - Status Symbol
 
-    private var groupBadge: some View {
-        Text(frequencyName.uppercased())
-            .font(DS.Typography.groupBadgeLabel)
-            .foregroundStyle(DS.Colors.groupBadgeText)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(DS.Colors.groupBadgeBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+    @ViewBuilder
+    private var statusSymbol: some View {
+        if person.isPaused {
+            Image(systemName: "moon.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(Color(.tertiaryLabel))
+        } else if let snoozed = person.snoozedUntil, snoozed > Date() {
+            Image(systemName: "clock.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(DS.Colors.textMuted)
+        } else if person.customDueDate != nil {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color(.secondaryLabel))
+                StatusIndicator(status: status, dotOnly: true)
+            }
+        } else {
+            StatusIndicator(status: status, dotOnly: true)
+        }
     }
 
     // MARK: - Accessibility
@@ -122,6 +135,9 @@ struct ContactCard: View {
         }
 
         parts.append("\(frequencyName) frequency")
+        if let tagName {
+            parts.append("group \(tagName)")
+        }
         parts.append("tap to view details")
 
         return parts.joined(separator: ", ")

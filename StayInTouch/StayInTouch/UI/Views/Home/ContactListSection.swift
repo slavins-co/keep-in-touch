@@ -13,6 +13,7 @@ struct ContactListSection: View {
     let isCollapsed: Bool
     let onToggle: () -> Void
     let groupsById: [UUID: Group]
+    let tagsById: [UUID: Tag]
     let statusForPerson: (Person) -> ContactStatus
     let daysOverdueForPerson: (Person) -> Int
     let timeAgoForPerson: (Person) -> String
@@ -25,6 +26,7 @@ struct ContactListSection: View {
             if !isCollapsed {
                 ForEach(Array(people.enumerated()), id: \.element.id) { index, person in
                     let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
+                    let firstTagName = person.tagIds.compactMap { tagsById[$0]?.name }.first
                     Button {
                         selectPerson(person)
                     } label: {
@@ -34,7 +36,8 @@ struct ContactListSection: View {
                             status: statusForPerson(person),
                             daysOverdue: daysOverdueForPerson(person),
                             timeAgo: timeAgoForPerson(person),
-                            lastMethod: person.lastTouchMethod
+                            lastMethod: person.lastTouchMethod,
+                            tagName: firstTagName
                         )
                     }
                     .buttonStyle(.plain)
