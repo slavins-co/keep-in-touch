@@ -10,77 +10,95 @@ import SwiftUI
 struct ContactCard: View {
     let person: Person
     let frequencyName: String
-    let tags: [Tag]
     let status: ContactStatus
     let daysOverdue: Int
     let timeAgo: String
     let lastMethod: TouchMethod?
+    let tagName: String?
+
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(alignment: .center, spacing: DS.Spacing.md) {
+        HStack(alignment: .center, spacing: DS.Spacing.contactCardAvatarSpacing(scheme: colorScheme)) {
             ContactPhotoView(
                 cnIdentifier: person.cnIdentifier,
                 displayName: person.displayName,
-                size: 36
+                avatarColor: person.avatarColor,
+                size: 48
             )
 
-            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                // Row 1: Name + inline tags + status
-                HStack(spacing: DS.Spacing.sm) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(person.displayName)
-                    .font(DS.Typography.contactName)
+                    .font(DS.Typography.contactCardName)
+                    .foregroundStyle(DS.Colors.primaryText)
                     .lineLimit(1)
-                    .layoutPriority(1)
 
-                if !tags.isEmpty {
-                    HStack(spacing: DS.Spacing.xs) {
-                        ForEach(tags.prefix(2), id: \.id) { tag in
-                            TagPill(tag: tag)
-                        }
-                        if tags.count > 2 {
-                            Text("+\(tags.count - 2)")
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(DS.Colors.secondaryText)
-                        }
-                    }
-                    .lineLimit(1)
-                }
-
-                Spacer(minLength: DS.Spacing.xs)
-                StatusIndicator(status: status, daysOverdue: daysOverdue)
-            }
-
-                // Row 2: Icon-labeled metadata
                 metadataRow
             }
+
+            Spacer(minLength: DS.Spacing.xs)
+
+            HStack(spacing: DS.Spacing.sm) {
+                if let tagName {
+                    Text(tagName.uppercased())
+                        .font(DS.Typography.groupBadgeLabel)
+                        .foregroundStyle(DS.Colors.groupBadgeText)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(DS.Colors.groupBadgeBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+                statusSymbol
+            }
         }
-        .padding(.vertical, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.contactCardVerticalPadding(scheme: colorScheme))
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
     }
 
+    // MARK: - Metadata Row
+
+    @ViewBuilder
     private var metadataRow: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Label(timeAgo, systemImage: "clock")
-
-            if let method = lastMethod {
-                Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
-                Label(method.rawValue, systemImage: DS.touchMethodIcon(method))
-            }
-
-            if person.customDueDate != nil {
-                Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
-                Image(systemName: "calendar.badge.exclamationmark")
-                    .foregroundStyle(DS.Colors.statusDueSoon)
-            }
-
-            Text("\u{00B7}").foregroundStyle(DS.Colors.tertiaryText)
-            Label(frequencyName, systemImage: "arrow.triangle.2.circlepath")
+        if person.isPaused {
+            Label("Paused", systemImage: "moon.fill")
+                .font(DS.Typography.contactCardMeta)
+                .foregroundStyle(Color(.tertiaryLabel))
+        } else if let snoozed = person.snoozedUntil, snoozed > Date() {
+            Text("Snoozed \u{00B7} \(frequencyName)")
+                .font(DS.Typography.contactCardMeta)
+                .foregroundStyle(DS.Colors.textMuted)
+        } else {
+            Text("\(timeAgo) \u{00B7} \(frequencyName)")
+                .font(DS.Typography.contactCardMeta)
+                .foregroundStyle(Color(.secondaryLabel))
+                .lineLimit(1)
         }
-        .font(DS.Typography.metadata)
-        .foregroundStyle(DS.Colors.secondaryText)
-        .lineLimit(1)
+    }
+
+    // MARK: - Status Symbol
+
+    @ViewBuilder
+    private var statusSymbol: some View {
+        if person.isPaused {
+            Image(systemName: "moon.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(Color(.tertiaryLabel))
+        } else if let snoozed = person.snoozedUntil, snoozed > Date() {
+            Image(systemName: "clock.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(DS.Colors.textMuted)
+        } else if person.customDueDate != nil {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color(.secondaryLabel))
+                StatusIndicator(status: status, dotOnly: true)
+            }
+        } else {
+            StatusIndicator(status: status, dotOnly: true)
+        }
     }
 
     // MARK: - Accessibility
@@ -88,29 +106,39 @@ struct ContactCard: View {
     private var accessibilityDescription: String {
         var parts: [String] = ["Contact \(person.displayName)"]
 
-        switch status {
-        case .overdue:
-            parts.append(daysOverdue > 0 ? "overdue by \(daysOverdue) days" : "overdue")
-        case .dueSoon:
-            parts.append("due soon")
-        case .onTrack:
-            parts.append("on track")
-        case .unknown:
-            parts.append("no contact yet")
+        if person.isPaused {
+            parts.append("paused")
+        } else if let snoozed = person.snoozedUntil, snoozed > Date() {
+            parts.append("snoozed")
+        } else {
+            switch status {
+            case .overdue:
+                parts.append(daysOverdue > 0 ? "overdue by \(daysOverdue) days" : "overdue")
+            case .dueSoon:
+                parts.append("due soon")
+            case .onTrack:
+                parts.append("on track")
+            case .unknown:
+                parts.append("no contact yet")
+            }
+
+            if status != .unknown {
+                parts.append("last contacted \(timeAgo)")
+            }
+
+            if let method = lastMethod {
+                parts.append("via \(method.rawValue)")
+            }
+
+            if person.customDueDate != nil {
+                parts.append("has custom due date")
+            }
         }
 
-        if status != .unknown {
-            parts.append("last contacted \(timeAgo)")
-        }
-
-        if let method = lastMethod {
-            parts.append("via \(method.rawValue)")
-        }
-
-        if person.customDueDate != nil {
-            parts.append("has custom due date")
-        }
         parts.append("\(frequencyName) frequency")
+        if let tagName {
+            parts.append("group \(tagName)")
+        }
         parts.append("tap to view details")
 
         return parts.joined(separator: ", ")

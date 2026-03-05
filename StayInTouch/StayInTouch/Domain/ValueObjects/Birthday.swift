@@ -29,8 +29,10 @@ extension Birthday {
         return Birthday(month: month, day: day, year: dateComponents.year)
     }
 
-    /// Format as "M/DD" (e.g., "3/15")
+    /// Format as "MMM d" (e.g., "Jan 23")
     var formatted: String {
-        "\(month)/\(day)"
+        let symbols = Calendar.current.shortMonthSymbols
+        let index = min(max(month - 1, 0), 11)
+        return "\(symbols[index]) \(day)"
     }
 }

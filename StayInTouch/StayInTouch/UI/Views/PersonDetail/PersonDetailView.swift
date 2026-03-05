@@ -63,8 +63,6 @@ struct PersonDetailView: View {
                     .opacity(viewModel.person.contactUnavailable ? 0.4 : 1.0)
                     .disabled(viewModel.person.contactUnavailable)
 
-                logTouchButton
-
                 SubtleDivider()
 
                 // TIER 2: Context Zone
@@ -82,7 +80,9 @@ struct PersonDetailView: View {
             .padding(.horizontal, DS.Spacing.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            fixedBottomCTA
+        }
         .sheet(isPresented: $showLogTouch) {
             LogTouchModal { method, notes, date, timeOfDay in
                 viewModel.logTouch(method: method, notes: notes, date: date, timeOfDay: timeOfDay)
@@ -90,10 +90,13 @@ struct PersonDetailView: View {
             }
         }
         .sheet(item: $showEditTouch) { touch in
-            EditTouchModal(touch: touch) { method, notes, timeOfDay in
+            EditTouchModal(touch: touch, onSave: { method, notes, timeOfDay in
                 viewModel.updateTouch(touch, method: method, notes: notes, timeOfDay: timeOfDay)
                 showEditTouch = nil
-            }
+            }, onDelete: {
+                viewModel.deleteTouch(touch)
+                showEditTouch = nil
+            })
         }
         .sheet(isPresented: $showChangeGroup) {
             GroupPickerSheet(
@@ -101,6 +104,7 @@ struct PersonDetailView: View {
                 selectedId: viewModel.person.groupId,
                 onSelect: { viewModel.changeGroup(to: $0) }
             )
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showManageTags) {
             TagManagerSheet(
@@ -109,6 +113,7 @@ struct PersonDetailView: View {
                 onAdd: { viewModel.addTag($0) },
                 onRemove: { viewModel.removeTag($0) }
             )
+            .presentationDetents([.medium])
         }
         .alert("Resume tracking?", isPresented: $showResumePrompt) {
             Button("Today") {
@@ -153,6 +158,8 @@ struct PersonDetailView: View {
                 DatePicker("Last connection", selection: $pickedResumeDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding()
+                    .navigationTitle("Last Connection")
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button("Save") {
@@ -165,12 +172,15 @@ struct PersonDetailView: View {
                         }
                     }
             }
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showReminderTimePicker) {
             NavigationStack {
                 DatePicker("Reminder Time", selection: $workingReminderTime, displayedComponents: .hourAndMinute)
                     .datePickerStyle(.wheel)
                     .labelsHidden()
+                    .navigationTitle("Reminder Time")
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarLeading) {
                             Button("Cancel") { showReminderTimePicker = false }
@@ -186,12 +196,15 @@ struct PersonDetailView: View {
                         workingReminderTime = reminderTimeDate()
                     }
             }
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showSnoozeDatePicker) {
             NavigationStack {
                 DatePicker("Snooze until", selection: $pickedSnoozeDate, in: Date()..., displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding()
+                    .navigationTitle("Snooze Until")
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarLeading) {
                             Button("Cancel") { showSnoozeDatePicker = false }
@@ -204,12 +217,15 @@ struct PersonDetailView: View {
                         }
                     }
             }
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showCustomDueDatePicker) {
             NavigationStack {
                 DatePicker("Due by", selection: $pickedCustomDueDate, in: Date()..., displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding()
+                    .navigationTitle("Due Date")
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarLeading) {
                             Button("Cancel") { showCustomDueDatePicker = false }
@@ -222,6 +238,7 @@ struct PersonDetailView: View {
                         }
                     }
             }
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showBirthdayEditor) {
             BirthdayEditorSheet(
@@ -317,60 +334,56 @@ struct PersonDetailView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.md) {
+        VStack(alignment: .center, spacing: DS.Spacing.sm) {
             ContactPhotoView(
                 cnIdentifier: viewModel.person.cnIdentifier,
                 displayName: viewModel.person.displayName,
-                size: 56
+                avatarColor: viewModel.person.avatarColor,
+                size: 96
             )
+            .overlay(Circle().stroke(DS.Colors.heroAvatarRing, lineWidth: 4))
+            .shadow(color: .black.opacity(0.10), radius: 8, y: 6)
 
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                HStack(spacing: DS.Spacing.sm) {
-                    Text(viewModel.person.displayName)
-                        .font(DS.Typography.heroTitle)
-                        .lineLimit(1)
-                        .layoutPriority(1)
+            Text(viewModel.person.displayName)
+                .font(DS.Typography.sheetHeroName)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
 
-                    if !personTags.isEmpty {
-                        HStack(spacing: DS.Spacing.xs) {
-                            ForEach(personTags.prefix(3), id: \.id) { tag in
-                                TagPill(tag: tag)
-                            }
-                            if personTags.count > 3 {
-                                Text("+\(personTags.count - 3)")
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(DS.Colors.secondaryText)
-                            }
-                        }
-                        .lineLimit(1)
+            Text(statusLabel())
+                .font(DS.Typography.detailStatusLine)
+                .foregroundStyle(statusLineColor)
+                .multilineTextAlignment(.center)
+
+            if let birthday = viewModel.displayBirthday {
+                Button {
+                    showBirthdayEditor = true
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "gift.fill")
+                            .font(.caption)
+                        Text(birthday.formatted)
+                            .font(DS.Typography.contactCardMeta)
                     }
+                    .foregroundStyle(Color(.secondaryLabel))
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Birthday \(birthday.formatted), tap to edit")
+            }
 
+            if !personTags.isEmpty {
                 HStack(spacing: DS.Spacing.sm) {
-                    StatusIndicator(status: currentStatus, daysOverdue: daysOverdue)
-                    Text(statusLabel())
-                        .font(DS.Typography.metadata)
-                        .foregroundStyle(DS.Colors.secondaryText)
-
-                    if let birthday = viewModel.displayBirthday {
-                        Spacer()
-                        Button {
-                            showBirthdayEditor = true
-                        } label: {
-                            HStack(spacing: DS.Spacing.xs) {
-                                Image(systemName: "gift.fill")
-                                    .font(.caption)
-                                Text(birthday.formatted)
-                                    .font(DS.Typography.metadata)
-                            }
+                    ForEach(personTags.prefix(3), id: \.id) { tag in
+                        TagPill(tag: tag)
+                    }
+                    if personTags.count > 3 {
+                        Text("+\(personTags.count - 3)")
+                            .font(DS.Typography.caption)
                             .foregroundStyle(DS.Colors.secondaryText)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Birthday \(birthday.formatted), tap to edit")
                     }
                 }
             }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var unavailableContactBanner: some View {
@@ -414,12 +427,20 @@ struct PersonDetailView: View {
         .padding(.bottom, DS.Spacing.md)
     }
 
+    private var hasPhone: Bool {
+        viewModel.phone != nil || !viewModel.phoneNumbers.isEmpty
+    }
+
+    private var hasEmail: Bool {
+        viewModel.email != nil || !viewModel.emailAddresses.isEmpty
+    }
+
     private var reachOutButtons: some View {
         VStack(spacing: DS.Spacing.sm) {
-            HStack(spacing: 0) {
-                reachOutButton(icon: "message.fill", label: "Message") { open(.message) }
-                reachOutButton(icon: "phone.fill", label: "Call") { open(.call) }
-                reachOutButton(icon: "envelope.fill", label: "Email") { open(.email) }
+            HStack(spacing: DS.Spacing.sm) {
+                actionCard(icon: "message.fill", label: "Message", enabled: hasPhone) { open(.message) }
+                actionCard(icon: "phone.fill", label: "Call", enabled: hasPhone) { open(.call) }
+                actionCard(icon: "envelope.fill", label: "Email", enabled: hasEmail) { open(.email) }
             }
 
             if let message = viewModel.quickActionMessage {
@@ -431,47 +452,76 @@ struct PersonDetailView: View {
         .padding(.vertical, DS.Spacing.md)
     }
 
-    private func reachOutButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
+    private func actionCard(icon: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: DS.Spacing.sm) {
                 Image(systemName: icon)
                     .font(.title2)
-                    .foregroundStyle(DS.Colors.accent)
-                    .frame(width: 48, height: 48)
-                    .background(DS.Colors.accent.opacity(0.12))
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(DS.Colors.actionButtonIconCircleOpacity)
                     .clipShape(Circle())
                 Text(label)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Colors.accent)
+                    .font(DS.Typography.contactCardMeta)
+                    .foregroundStyle(.white)
             }
             .frame(maxWidth: .infinity)
+            .frame(minHeight: 80)
+            .background(DS.Colors.actionButtonBackground)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                    .stroke(DS.Colors.actionButtonBorder, lineWidth: 1)
+            )
+            .shadow(color: DS.Colors.actionButtonShadow, radius: 6, y: 2)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ActionCardButtonStyle())
+        .accessibilityLabel(enabled ? label : "\(label), unavailable")
+        .accessibilityHint(enabled ? "\(label)s this contact" : "No \(label == "Email" ? "email address" : "phone number") on file")
+        .disabled(!enabled)
+        .opacity(!enabled && !viewModel.person.contactUnavailable ? 0.5 : 1.0)
     }
 
-    private var logTouchButton: some View {
-        Button {
-            showLogTouch = true
-        } label: {
-            Label("Log Connection", systemImage: "plus.circle.fill")
-                .font(.body.weight(.semibold))
-                .frame(maxWidth: .infinity)
+    private var fixedBottomCTA: some View {
+        VStack(spacing: 0) {
+            DS.Colors.borderMedium.frame(height: 1)
+            Button {
+                showLogTouch = true
+            } label: {
+                Text("Log Connection")
+                    .font(DS.Typography.ctaButton)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(DS.Colors.heroAccentGreen)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Log connection with \(viewModel.person.displayName)")
+            .shadow(color: DS.Colors.ctaShadow, radius: 8, y: 2)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .padding(.bottom, DS.Spacing.md)
+        .background(DS.Colors.ctaContainerBg)
     }
 
     // MARK: - Tier 2: Context Zone
 
     private var conversationContextCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text("Next Time")
-                .font(DS.Typography.caption)
-                .foregroundStyle(DS.Colors.tertiaryText)
+            Text("NOTES FOR NEXT TIME")
+                .font(DS.Typography.notesLabel)
+                .textCase(.uppercase)
+                .tracking(1.5)
+                .foregroundStyle(Color(.secondaryLabel))
 
-            TextField("What to talk about...", text: $nextTouchNotesText, axis: .vertical)
-                .font(.body)
+            TextField("What to talk about...",
+                      text: $nextTouchNotesText,
+                      prompt: Text("What to talk about...").foregroundColor(DS.Colors.notesPlaceholder),
+                      axis: .vertical)
+                .font(DS.Typography.notesBody)
+                .foregroundStyle(DS.Colors.notesText)
+                .lineSpacing(4)
                 .lineLimit(3...6)
                 .focused($isNextTouchNotesFocused)
                 .onChange(of: nextTouchNotesText) { _, newValue in
@@ -492,8 +542,15 @@ struct PersonDetailView: View {
                 }
         }
         .padding(DS.Spacing.lg)
-        .background(DS.Colors.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .background(DS.Colors.notesBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.lg)
+                .stroke(
+                    isNextTouchNotesFocused ? DS.Colors.notesFocusRing : DS.Colors.notesBorder,
+                    lineWidth: isNextTouchNotesFocused ? 2 : 1
+                )
+        )
         .padding(.vertical, DS.Spacing.md)
         .onAppear {
             nextTouchNotesText = viewModel.person.nextTouchNotes ?? ""
@@ -503,14 +560,16 @@ struct PersonDetailView: View {
     private var historyCard: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text("Contact History")
-                    .font(DS.Typography.sectionHeader)
-                    .foregroundStyle(DS.Colors.secondaryText)
+                Text("History")
+                    .font(DS.Typography.settingsHeaderTitle)
+                    .foregroundStyle(DS.Colors.settingsTitle)
                 Spacer()
                 if viewModel.touchEvents.count > 3 {
                     Button(showFullHistory ? "Hide" : "See All") {
                         showFullHistory.toggle()
                     }
+                    .font(DS.Typography.caption)
+                    .accessibilityLabel(showFullHistory ? "Hide full history" : "See all \(viewModel.touchEvents.count) connections")
                 }
             }
 
@@ -520,53 +579,30 @@ struct PersonDetailView: View {
                     .foregroundStyle(DS.Colors.tertiaryText)
             } else {
                 let events = showFullHistory ? viewModel.touchEvents : Array(viewModel.touchEvents.prefix(3))
-                let rowHeight: CGFloat = 44
-                List {
+                VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
-                        let isLatest = index == 0
-
-                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                            HStack(spacing: DS.Spacing.xs) {
-                                Image(systemName: DS.touchMethodIcon(event.method))
-                                    .foregroundStyle(DS.Colors.secondaryText)
-                                    .font(.caption)
-                                Text("\(event.method.rawValue) \u{00B7} \(event.at.formatted(date: .abbreviated, time: .omitted))\(event.timeOfDay.map { " \u{00B7} \($0.rawValue)" } ?? "")")
-                                    .font(DS.Typography.metadata)
-                            }
-                            if let notes = event.notes, !notes.isEmpty {
-                                Text(notes)
-                                    .font(DS.Typography.metadata)
-                                    .foregroundStyle(DS.Colors.secondaryText)
-                            }
+                        TimelineEntryView(
+                            event: event,
+                            isLatest: index == 0,
+                            isLast: index == events.count - 1
+                        )
+                        .onTapGesture {
+                            showEditTouch = event
                         }
-                        .padding(.leading, DS.Spacing.sm)
-                        .overlay(alignment: .leading) {
-                            if isLatest {
-                                RoundedRectangle(cornerRadius: 1.5)
-                                    .fill(DS.Colors.accent)
-                                    .frame(width: 3)
-                            }
-                        }
-                        .listRowInsets(EdgeInsets(top: DS.Spacing.sm, leading: 0, bottom: DS.Spacing.sm, trailing: 0))
-                        .listRowSeparator(.hidden)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                showDeleteConfirm = event
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
+                        .contextMenu {
                             Button {
                                 showEditTouch = event
                             } label: {
                                 Label("Edit", systemImage: "pencil")
                             }
-                            .tint(DS.Colors.accent)
+                            Button(role: .destructive) {
+                                showDeleteConfirm = event
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
                     }
                 }
-                .listStyle(.plain)
-                .scrollDisabled(true)
-                .frame(height: CGFloat(events.count) * rowHeight)
             }
         }
         .padding(.vertical, DS.Spacing.md)
@@ -575,180 +611,359 @@ struct PersonDetailView: View {
     // MARK: - Tier 3: Settings Zone
 
     private var detailsAndSettings: some View {
-        DisclosureGroup(isExpanded: $settingsExpanded) {
-            VStack(alignment: .leading, spacing: 0) {
-                if viewModel.displayBirthday == nil {
-                    Button {
-                        showBirthdayEditor = true
-                    } label: {
-                        Label("Add Birthday", systemImage: "birthday.cake")
-                            .font(DS.Typography.metadata)
-                    }
-                    .padding(.vertical, DS.Spacing.sm)
-                    SubtleDivider()
+        VStack(alignment: .leading, spacing: 0) {
+            // Collapsible header
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    settingsExpanded.toggle()
                 }
-                frequencySection
-                SubtleDivider()
-                tagsSection
-                SubtleDivider()
-                notificationsSection
-                SubtleDivider()
-                dangerSection
+            } label: {
+                HStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: "gearshape.fill")
+                        .foregroundStyle(DS.Colors.settingsGearIcon)
+                    Text("Contact Settings")
+                        .font(DS.Typography.settingsHeaderTitle)
+                        .foregroundStyle(DS.Colors.settingsTitle)
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(DS.Colors.settingsChevron)
+                        .rotationEffect(.degrees(settingsExpanded ? 0 : -90))
+                        .animation(.easeInOut(duration: 0.25), value: settingsExpanded)
+                }
+                .padding(.vertical, DS.Spacing.md)
+                .contentShape(Rectangle())
             }
-        } label: {
-            Text("Details & Settings")
-                .font(DS.Typography.sectionHeader)
-                .foregroundStyle(DS.Colors.secondaryText)
+            .buttonStyle(.plain)
+            .accessibilityLabel("Contact Settings")
+            .accessibilityHint(settingsExpanded ? "Collapses settings" : "Expands settings")
+
+            if settingsExpanded {
+                settingsContent
+                    .transition(.opacity.combined(with: .slide))
+            }
         }
-        .tint(DS.Colors.secondaryText)
         .padding(.vertical, DS.Spacing.md)
     }
 
-    private var frequencySection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+    private var settingsContent: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            // No heading — Frequency & Reminder Date
+            settingsCard {
+                settingsRowFrequency
+                settingsDivider
+                settingsRowCustomDueDate
+            }
+
+            // DETAILS
+            settingsSectionHeader("DETAILS")
+            settingsCard {
+                settingsRowBirthday
+                settingsDivider
+                settingsRowGroupsTags
+            }
+
+            // TRACKING & NOTIFICATIONS
+            settingsSectionHeader("TRACKING & NOTIFICATIONS")
+            settingsCard {
+                settingsRowNotificationTime
+                settingsDivider
+                settingsRowSnooze
+                settingsDivider
+                settingsRowMuteNotifications
+                settingsDivider
+                settingsRowPauseTracking
+            }
+
+            // Remove Contact (standalone)
+            settingsRowRemoveContact
+        }
+    }
+
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(DS.Colors.settingsSeparator)
+            .frame(height: 0.5)
+    }
+
+    private func settingsSectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(DS.Typography.settingsSectionLabel)
+            .foregroundStyle(DS.Colors.settingsItemLabel)
+            .textCase(.uppercase)
+            .tracking(0.5)
+    }
+
+    private func settingsCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content()
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .background(DS.Colors.settingsCardBg)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
+    private func settingsIcon(_ systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.footnote)
+            .foregroundStyle(DS.Colors.settingsChevron)
+            .frame(width: 32, height: 32)
+            .background(DS.Colors.settingsIconCircle)
+            .clipShape(Circle())
+    }
+
+    private func snoozePill(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(DS.Typography.caption)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .overlay(
+                    Capsule()
+                        .stroke(DS.Colors.settingsSnoozePillBorder, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Settings Row 1 — Frequency
+
+    private var settingsRowFrequency: some View {
+        Button { showChangeGroup = true } label: {
             HStack {
-                Text("FREQUENCY")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Colors.secondaryText)
-                    .tracking(0.5)
+                Text("Frequency")
+                    .font(DS.Typography.settingsRowLabel)
+                    .foregroundStyle(DS.Colors.settingsItemLabel)
                 Spacer()
-                Button("Change") { showChangeGroup = true }
-                    .font(DS.Typography.caption)
+                Text(viewModel.group?.name ?? "Not set")
+                    .font(DS.Typography.settingsRowLabel)
+                    .foregroundStyle(DS.Colors.settingsItemValue)
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(DS.Colors.settingsChevron)
             }
-            Text(viewModel.group?.name ?? "Frequency")
-                .font(.body)
-            Text(frequencySubtext())
-                .font(DS.Typography.metadata)
-                .foregroundStyle(DS.Colors.secondaryText)
+            .frame(minHeight: 48)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
 
-            if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
-                HStack {
-                    Image(systemName: "moon.fill")
-                        .foregroundStyle(.purple)
-                    Text("Snoozed until \(snoozedUntil.formatted(date: .abbreviated, time: .omitted))")
-                        .font(DS.Typography.metadata)
-                        .foregroundStyle(.purple)
-                    Spacer()
-                    Button("Clear") { viewModel.clearSnooze() }
-                        .font(DS.Typography.metadata)
-                }
-            } else {
-                Menu {
-                    Button("3 days") { snooze(days: 3) }
-                    Button("1 week") { snooze(days: 7) }
-                    Button("2 weeks") { snooze(days: 14) }
-                    Button("Pick date...") {
-                        pickedSnoozeDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
-                        showSnoozeDatePicker = true
-                    }
-                } label: {
-                    Label("Snooze", systemImage: "moon")
-                        .font(DS.Typography.metadata)
-                }
-            }
+    // MARK: Settings Row 2 — Set A Reminder Date
 
+    private var settingsRowCustomDueDate: some View {
+        HStack {
+            Text("Set A Reminder Date")
+                .font(DS.Typography.settingsRowLabel)
+                .foregroundStyle(DS.Colors.settingsItemLabel)
+            Spacer()
             if let customDue = viewModel.person.customDueDate {
-                HStack {
-                    Image(systemName: "calendar.badge.exclamationmark")
-                        .foregroundStyle(DS.Colors.statusDueSoon)
-                    Text("Due by \(customDue.formatted(date: .abbreviated, time: .omitted))")
-                        .font(DS.Typography.metadata)
-                        .foregroundStyle(DS.Colors.statusDueSoon)
-                    Spacer()
-                    Button("Clear") { viewModel.clearCustomDueDate() }
-                        .font(DS.Typography.metadata)
-                }
+                Text(customDue.formatted(date: .abbreviated, time: .omitted))
+                    .font(DS.Typography.settingsRowLabel)
+                    .foregroundStyle(DS.Colors.settingsItemValue)
+                Button("Clear") { viewModel.clearCustomDueDate() }
+                    .font(DS.Typography.caption)
             } else {
                 Button {
                     pickedCustomDueDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
                     showCustomDueDatePicker = true
                 } label: {
-                    Label("Set Due Date", systemImage: "calendar.badge.exclamationmark")
-                        .font(DS.Typography.metadata)
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text("Not set")
+                            .font(DS.Typography.settingsRowLabel)
+                            .foregroundStyle(DS.Colors.settingsItemValue)
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(DS.Colors.settingsChevron)
+                    }
                 }
+                .buttonStyle(.plain)
             }
         }
-        .padding(.vertical, DS.Spacing.md)
+        .frame(minHeight: 48)
     }
 
-    private var tagsSection: some View {
+    // MARK: Settings Row 3 — Snooze
+
+    private var settingsRowSnooze: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text("GROUPS")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Colors.secondaryText)
-                    .tracking(0.5)
+                Text("Snooze")
+                    .font(DS.Typography.settingsRowLabel)
+                    .foregroundStyle(DS.Colors.settingsItemLabel)
                 Spacer()
-                Button("Manage") { showManageTags = true }
-                    .font(DS.Typography.caption)
+                if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
+                    Text("Until \(snoozedUntil.formatted(date: .abbreviated, time: .omitted))")
+                        .font(DS.Typography.settingsRowLabel)
+                        .foregroundStyle(DS.Colors.settingsSnoozeActive)
+                    Button("Remove") { viewModel.clearSnooze() }
+                        .font(DS.Typography.caption)
+                } else {
+                    Text("Not snoozed")
+                        .font(DS.Typography.settingsRowLabel)
+                        .foregroundStyle(DS.Colors.settingsItemValue)
+                }
             }
 
-            if viewModel.person.tagIds.isEmpty {
-                Text("No groups yet")
-                    .font(DS.Typography.metadata)
-                    .foregroundStyle(DS.Colors.secondaryText)
-            } else {
-                FlowLayout(spacing: DS.Spacing.sm) {
-                    ForEach(viewModel.tags.filter { viewModel.person.tagIds.contains($0.id) }, id: \.id) { tag in
-                        Button {
-                            viewModel.removeTag(tag)
-                        } label: {
-                            TagPill(tag: tag)
-                        }
+            if !(viewModel.person.snoozedUntil.map { $0 > Date() } ?? false) {
+                HStack(spacing: DS.Spacing.sm) {
+                    snoozePill("3d") { snooze(days: 3) }
+                    snoozePill("7d") { snooze(days: 7) }
+                    snoozePill("14d") { snooze(days: 14) }
+                    snoozePill("Pick date") {
+                        pickedSnoozeDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
+                        showSnoozeDatePicker = true
                     }
                 }
             }
         }
-        .padding(.vertical, DS.Spacing.md)
+        .frame(minHeight: 48)
+        .padding(.vertical, DS.Spacing.xs)
     }
 
-    private var notificationsSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text("NOTIFICATIONS")
-                .font(DS.Typography.caption)
-                .foregroundStyle(DS.Colors.secondaryText)
-                .tracking(0.5)
+    // MARK: Settings Row 4 — Tags
 
-            Toggle(isOn: Binding(
-                get: { viewModel.person.notificationsMuted },
-                set: { viewModel.setNotificationsMuted($0) }
-            )) {
-                Text("Mute reminders")
+    private var settingsRowGroupsTags: some View {
+        HStack(spacing: DS.Spacing.md) {
+            settingsIcon("person.2")
+            Text("Groups")
+                .font(DS.Typography.settingsRowLabel)
+                .foregroundStyle(DS.Colors.settingsItemLabel)
+            Spacer()
+            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+                if !personTags.isEmpty {
+                    HStack(spacing: DS.Spacing.xs) {
+                        ForEach(personTags.prefix(2), id: \.id) { tag in
+                            TagPill(tag: tag)
+                        }
+                        if personTags.count > 2 {
+                            Text("+\(personTags.count - 2)")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(DS.Colors.secondaryText)
+                        }
+                    }
+                }
+                Button {
+                    showManageTags = true
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text("Manage")
+                            .font(DS.Typography.caption)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2)
+                            .foregroundStyle(DS.Colors.settingsChevron)
+                    }
+                }
             }
+        }
+        .frame(minHeight: 48)
+    }
 
-            HStack {
-                Text("Reminder time")
+    // MARK: Settings Row 5 — Birthday
+
+    private var settingsRowBirthday: some View {
+        Button { showBirthdayEditor = true } label: {
+            HStack(spacing: DS.Spacing.md) {
+                settingsIcon("birthday.cake")
+                Text("Birthday")
+                    .font(DS.Typography.settingsRowLabel)
+                    .foregroundStyle(DS.Colors.settingsItemLabel)
                 Spacer()
-                Text(reminderTimeLabel())
-                    .foregroundStyle(DS.Colors.secondaryText)
+                Text(viewModel.displayBirthday?.formatted ?? "Add")
+                    .font(DS.Typography.settingsRowLabel)
+                    .foregroundStyle(DS.Colors.settingsItemValue)
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(DS.Colors.settingsChevron)
             }
+            .frame(minHeight: 48)
             .contentShape(Rectangle())
-            .onTapGesture {
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Settings Row 6 — Notification Time
+
+    private var settingsRowNotificationTime: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Button {
                 showReminderTimePicker = true
+            } label: {
+                HStack {
+                    Text("Custom Notification Time")
+                        .font(DS.Typography.settingsRowLabel)
+                        .foregroundStyle(DS.Colors.settingsItemLabel)
+                    Spacer()
+                    Text(reminderTimeLabel())
+                        .font(DS.Typography.settingsRowLabel)
+                        .foregroundStyle(DS.Colors.settingsItemValue)
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(DS.Colors.settingsChevron)
+                }
+                .frame(minHeight: 48)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
             if viewModel.person.customBreachTime != nil {
                 Button("Restore defaults") {
                     viewModel.restoreNotificationDefaults()
                 }
+                .font(DS.Typography.caption)
                 .foregroundStyle(DS.Colors.secondaryText)
+                .padding(.bottom, DS.Spacing.xs)
             }
         }
-        .padding(.vertical, DS.Spacing.md)
     }
 
-    private var dangerSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            if !viewModel.person.isPaused {
-                Button("Pause Tracking") { viewModel.togglePause() }
-                    .font(DS.Typography.metadata)
-                    .foregroundStyle(DS.Colors.secondaryText)
-            }
-            Button("Remove from App") { showRemoveConfirm = true }
-                .font(DS.Typography.metadata)
-                .foregroundStyle(DS.Colors.destructive)
+    // MARK: Settings Row 7 — Mute Notifications
+
+    private var settingsRowMuteNotifications: some View {
+        Toggle(isOn: Binding(
+            get: { viewModel.person.notificationsMuted },
+            set: { viewModel.setNotificationsMuted($0) }
+        )) {
+            Text("Mute Notifications")
+                .font(DS.Typography.settingsRowLabel)
+                .foregroundStyle(DS.Colors.settingsItemLabel)
         }
-        .padding(.vertical, DS.Spacing.md)
+        .frame(minHeight: 48)
+    }
+
+    // MARK: Settings Row 8 — Pause Tracking
+
+    private var settingsRowPauseTracking: some View {
+        Toggle(isOn: Binding(
+            get: { viewModel.person.isPaused },
+            set: { newValue in
+                if newValue {
+                    viewModel.togglePause()
+                } else {
+                    showResumePrompt = true
+                }
+            }
+        )) {
+            Text("Pause Tracking")
+                .font(DS.Typography.settingsRowLabel)
+                .foregroundStyle(DS.Colors.settingsItemLabel)
+        }
+        .frame(minHeight: 48)
+    }
+
+    // MARK: Settings Row 9 — Remove Contact
+
+    private var settingsRowRemoveContact: some View {
+        Button { showRemoveConfirm = true } label: {
+            Text("Remove Contact")
+                .font(DS.Typography.settingsRowLabel)
+                .foregroundStyle(DS.Colors.settingsRemoveText)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(minHeight: 48)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Remove \(viewModel.person.displayName)")
+        .accessibilityHint("Confirms removal")
     }
 
     // MARK: - Computed Properties
@@ -774,20 +989,45 @@ struct PersonDetailView: View {
     // MARK: - Helper Functions
 
     private func statusLabel() -> String {
+        let groupName = viewModel.group?.name ?? "Frequency"
+
+        // Check paused state first
+        if viewModel.person.isPaused {
+            return "\(groupName) \u{00B7} Paused"
+        }
+
+        // Check snoozed state
+        if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
+            let formatted = Self.dueDateFormatter.string(from: snoozedUntil)
+            return "\(groupName) \u{00B7} Snoozed until \(formatted)"
+        }
+
         switch currentStatus {
         case .onTrack:
-            let days = daysUntilDue
-            return days > 0 ? "All good · Due in \(days)d" : "All good"
+            return "\(groupName) \u{00B7} All good"
         case .dueSoon:
             let days = daysUntilDue
-            return days > 0 ? "Check in soon · Due in \(days)d" : "Check in soon"
-        case .overdue: return "Overdue"
-        case .unknown: return "Unknown"
+            return days > 0 ? "\(groupName) \u{00B7} Due in \(days)d" : "\(groupName) \u{00B7} Check in soon"
+        case .overdue:
+            let days = daysOverdue
+            if days >= 14 {
+                let weeks = days / 7
+                return "\(groupName) \u{00B7} Overdue by \(weeks) week\(weeks == 1 ? "" : "s")"
+            }
+            return "\(groupName) \u{00B7} Overdue by \(days) day\(days == 1 ? "" : "s")"
+        case .unknown:
+            return "\(groupName) \u{00B7} No connections yet"
         }
     }
 
-    private func statusColor() -> Color {
-        DS.Colors.statusColor(for: currentStatus)
+    private var statusLineColor: Color {
+        if viewModel.person.isPaused {
+            return DS.Colors.textMuted
+        }
+        if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
+            return DS.Colors.textMuted
+        }
+        return DS.Colors.statusColor(for: currentStatus)
     }
 
     private static let dueDateFormatter: DateFormatter = {
@@ -795,22 +1035,6 @@ struct PersonDetailView: View {
         f.dateFormat = "MMM d"
         return f
     }()
-
-    private func frequencySubtext() -> String {
-        guard let group = viewModel.group else { return "" }
-        let calculator = FrequencyCalculator()
-
-        if let dueDate = calculator.effectiveDueDate(for: viewModel.person, in: [group]) {
-            let cal = Calendar.current
-            let remaining = cal.dateComponents([.day], from: cal.startOfDay(for: Date()), to: cal.startOfDay(for: dueDate)).day ?? 0
-            let formatted = Self.dueDateFormatter.string(from: dueDate)
-            if remaining > 0 {
-                return "Connect every \(group.frequencyDays) days \u{00B7} Due \(formatted) \u{00B7} \(remaining)d remaining"
-            }
-            return "Connect every \(group.frequencyDays) days \u{00B7} Was due \(formatted)"
-        }
-        return "Connect every \(group.frequencyDays) days"
-    }
 
     private func snooze(days: Int) {
         let date = Calendar.current.date(byAdding: .day, value: days, to: Date()) ?? Date()
@@ -929,6 +1153,16 @@ struct PersonDetailView: View {
             return settings.breachTimeOfDay.toDate()
         }
         return Date()
+    }
+}
+
+// MARK: - Action Card Button Style
+
+private struct ActionCardButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
 

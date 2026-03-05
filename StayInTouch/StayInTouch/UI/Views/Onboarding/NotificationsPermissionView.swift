@@ -14,7 +14,7 @@ struct NotificationsPermissionView: View {
         VStack(spacing: DS.Spacing.xxl) {
             Spacer()
             Image(systemName: "bell.badge.fill")
-                .font(.system(size: 56))
+                .font(DS.Typography.onboardingIcon)
                 .foregroundStyle(DS.Colors.accent)
             Text("Stay on Track with Reminders")
                 .font(DS.Typography.title)
@@ -27,8 +27,7 @@ struct NotificationsPermissionView: View {
             Button("Enable Notifications") {
                 Task { await viewModel.requestNotificationsPermission() }
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(OnboardingPrimaryButtonStyle())
 
             Button("Not Now") {
                 viewModel.skipNotifications()

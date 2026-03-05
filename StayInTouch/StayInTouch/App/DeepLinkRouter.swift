@@ -15,6 +15,7 @@ final class DeepLinkRouter: ObservableObject {
     }
 
     @Published var pending: Destination?
+    @Published var selectedTab: Int = 0
 
     /// Parse notification userInfo and set the pending destination.
     nonisolated func handleNotification(userInfo: [AnyHashable: Any]) {

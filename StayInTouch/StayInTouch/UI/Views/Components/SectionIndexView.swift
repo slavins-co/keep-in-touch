@@ -20,10 +20,11 @@ struct SectionIndexView: View {
                     Text(section)
                         .font(.caption2)
                         .fontWeight(.semibold)
-                        .foregroundColor(.blue)
+                        .foregroundColor(DS.Colors.accent)
                         .frame(minWidth: 24, minHeight: 18)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Jump to section \(section)")
             }
         }
         .padding(.vertical, 4)

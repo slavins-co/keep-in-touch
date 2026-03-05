@@ -15,7 +15,7 @@ struct ContactsRequiredView: View {
             Spacer()
 
             Image(systemName: "person.crop.circle.badge.exclamationmark")
-                .font(.system(size: 56))
+                .font(DS.Typography.onboardingIcon)
                 .foregroundStyle(DS.Colors.accent)
 
             VStack(spacing: DS.Spacing.md) {
@@ -31,6 +31,7 @@ struct ContactsRequiredView: View {
 
             Toggle("Use demo data for now", isOn: $viewModel.useDemoData)
                 .toggleStyle(.switch)
+                .tint(DS.Colors.accent)
                 .padding(.horizontal)
 
             Button {
@@ -47,10 +48,8 @@ struct ContactsRequiredView: View {
                 viewModel.continueFromContactsRequired()
             } label: {
                 Text("Continue")
-                    .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(OnboardingPrimaryButtonStyle())
             .padding(.horizontal)
 
             Spacer()

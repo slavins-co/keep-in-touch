@@ -14,7 +14,7 @@ struct WelcomeView: View {
         VStack(spacing: DS.Spacing.xxl) {
             Spacer()
             Image(systemName: "person.2.circle.fill")
-                .font(.system(size: 56))
+                .font(DS.Typography.onboardingIcon)
                 .foregroundStyle(DS.Colors.accent)
             Text("Keep In Touch")
                 .font(DS.Typography.largeTitle)
@@ -30,14 +30,13 @@ struct WelcomeView: View {
                 Label("Your data stays on your device", systemImage: "checkmark.circle.fill")
             }
             .font(DS.Typography.metadata)
-            .foregroundStyle(DS.Colors.statusAllGood)
+            .foregroundStyle(DS.Colors.secondaryText)
             .padding()
 
             Button("Get Started") {
                 viewModel.goToContactsPermission()
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(OnboardingPrimaryButtonStyle())
             Spacer()
         }
         .padding()

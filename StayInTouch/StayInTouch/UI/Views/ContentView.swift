@@ -16,7 +16,7 @@ struct ContentView: View {
             if viewModel.isLoading {
                 ProgressView()
             } else if viewModel.isOnboardingCompleted {
-                HomeView()
+                MainTabView()
                     .transition(.opacity)
             } else {
                 OnboardingFlowView(viewModel: viewModel)

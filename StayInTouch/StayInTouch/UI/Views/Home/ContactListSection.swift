@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ContactListSection: View {
     let title: String
-    let colorHex: String
     let people: [Person]
     let isCollapsed: Bool
     let onToggle: () -> Void
@@ -18,60 +17,71 @@ struct ContactListSection: View {
     let statusForPerson: (Person) -> ContactStatus
     let daysOverdueForPerson: (Person) -> Int
     let timeAgoForPerson: (Person) -> String
+    let selectPerson: (Person) -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack(spacing: 0) {
-            Button(action: onToggle) {
-                HStack {
-                    Circle()
-                        .fill(Color(hex: colorHex))
-                        .frame(width: 8, height: 8)
-                    Text(title)
-                        .font(DS.Typography.sectionHeader)
-                        .foregroundStyle(DS.Colors.primaryText)
-                    Text("\(people.count)")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(DS.Colors.secondaryText)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .rotationEffect(.degrees(isCollapsed ? 0 : 90))
-                        .foregroundStyle(DS.Colors.secondaryText)
-                        .font(.caption)
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("\(title), \(people.count) contacts")
-            .accessibilityHint(isCollapsed ? "Expands section" : "Collapses section")
-
+        Section {
             if !isCollapsed {
-                VStack(spacing: 0) {
-                    ForEach(Array(people.enumerated()), id: \.element.id) { index, person in
-                        let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
-                        let tags = person.tagIds.compactMap { tagsById[$0] }
-                        NavigationLink {
-                            PersonDetailView(person: person)
-                        } label: {
-                            ContactCard(
-                                person: person,
-                                frequencyName: frequencyName,
-                                tags: tags,
-                                status: statusForPerson(person),
-                                daysOverdue: daysOverdueForPerson(person),
-                                timeAgo: timeAgoForPerson(person),
-                                lastMethod: person.lastTouchMethod
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityHint("Opens contact details")
+                ForEach(Array(people.enumerated()), id: \.element.id) { index, person in
+                    let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
+                    let firstTagName = person.tagIds.compactMap { tagsById[$0]?.name }.first
+                    Button {
+                        selectPerson(person)
+                    } label: {
+                        ContactCard(
+                            person: person,
+                            frequencyName: frequencyName,
+                            status: statusForPerson(person),
+                            daysOverdue: daysOverdueForPerson(person),
+                            timeAgo: timeAgoForPerson(person),
+                            lastMethod: person.lastTouchMethod,
+                            tagName: firstTagName
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens contact details")
 
-                        if index < people.count - 1 {
-                            SubtleDivider()
-                                .padding(.leading, DS.Spacing.lg)
-                        }
+                    if index < people.count - 1 {
+                        Rectangle()
+                            .fill(DS.Colors.rowSeparator)
+                            .frame(height: 1)
+                            .padding(.leading, 64)
+                            .accessibilityHidden(true)
                     }
                 }
                 .transition(.opacity)
             }
+        } header: {
+            sectionHeader
         }
+    }
+
+    private var sectionHeader: some View {
+        Button(action: onToggle) {
+            HStack {
+                Text("\(title.uppercased()) \u{00B7} \(people.count)")
+                    .font(DS.Typography.sectionHeaderMono)
+                    .tracking(DS.Spacing.sectionHeaderTracking(scheme: colorScheme))
+                    .foregroundStyle(Color(.secondaryLabel))
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .rotationEffect(.degrees(isCollapsed ? 0 : 90))
+                    .foregroundStyle(Color(.secondaryLabel))
+                    .font(.caption)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
+            .background(DS.Colors.pageBg)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(DS.Colors.rowSeparator)
+                    .frame(height: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title), \(people.count) contacts")
+        .accessibilityHint(isCollapsed ? "Expands section" : "Collapses section")
     }
 }
