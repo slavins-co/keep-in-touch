@@ -125,12 +125,11 @@ struct ContactsListView: View {
                                 .padding(.leading)
                                 .padding(.trailing, 36)
 
-                                if index < section.people.count - 1 {
-                                    SubtleDivider()
-                                        .padding(.leading, DS.Spacing.lg)
-                                        .padding(.leading)
-                                        .padding(.trailing, 36)
-                                }
+                                Rectangle()
+                                    .fill(DS.Colors.rowSeparator)
+                                    .frame(height: 1)
+                                    .padding(.leading, 64)
+                                    .accessibilityHidden(true)
                             }
                         } header: {
                             sectionHeader(letter: section.letter)
@@ -165,6 +164,11 @@ struct ContactsListView: View {
         .padding(.leading)
         .padding(.trailing, 36)
         .background(DS.Colors.pageBg)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(DS.Colors.rowSeparator)
+                .frame(height: 1)
+        }
         .accessibilityLabel("Section \(letter)")
     }
 
