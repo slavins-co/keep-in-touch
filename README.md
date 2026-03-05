@@ -6,7 +6,7 @@
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey.svg)](LICENSE)
 
-**Version:** 0.3.1 (Build 9) | **Status:** Pre-release Beta
+**Version:** 0.3.2 (Build 10) | **Status:** Pre-release Beta
 
 ---
 
@@ -23,27 +23,32 @@ Never lose track of the people who matter. Keep In Touch helps you maintain frie
 
 ## Current Status
 
-V0.3.1 renames the app to **Keep In Touch**, adds custom due dates per contact, birthday display, last-connected seeding during import, frequency member management, and a round of import/export reliability fixes. Settings is reorganized into 6 logical sections.
+V0.3.2 is a complete UX redesign — tab bar navigation (Home, Contacts, Settings), redesigned home screen with status summary cards and floating search, full-screen contact detail with timeline history, a new A-Z Contacts tab, and a centralized design system with adaptive dark/light tokens. Half-height picker sheets, portrait lock, and restored random avatar colors round out the polish.
 
-**Up next:** App UX redesign and TestFlight launch. See [open issues](https://github.com/slavins-co/keep-in-touch/issues) and [release history](https://github.com/slavins-co/keep-in-touch/releases) for details.
+**Up next:** TestFlight launch and accessibility refinements. See [open issues](https://github.com/slavins-co/keep-in-touch/issues) and [release history](https://github.com/slavins-co/keep-in-touch/releases) for details.
 
 ---
 
 ## Features
 
 **Core**
+- Tab bar navigation with Home, Contacts, and Settings tabs
+- Home screen with status summary cards, sticky sections, and floating search
+- A-Z Contacts tab with section index and search
+- Full-screen contact detail with hero section, action buttons, and timeline history
 - Connection logging with method tracking (Text, Call, In Person, Email)
 - Frequency-based contact groups with configurable cadences
 - Custom due dates per contact (overrides group frequency)
-- Contact photos from iOS Contacts with initials fallback
+- Contact photos from iOS Contacts with colorful initials fallback
 - Birthday display from address book with manual override
 - Snooze and pause tracking per contact
 - "Next Time" notes for conversation context
 - Local notifications with quick-log actions
-- Contact search, filtering by frequency and group
+- Half-height picker sheets for dates, times, frequency, and groups
 - Full connection history with edit and delete
 - JSON import and export with deduplication and conflict resolution
-- Dark, light, and system theme support
+- Centralized design system with adaptive dark/light mode tokens
+- Portrait-only orientation on iPhone
 
 **Privacy & Security**
 - All data stored locally on device (Core Data, encrypted at rest by iOS)
