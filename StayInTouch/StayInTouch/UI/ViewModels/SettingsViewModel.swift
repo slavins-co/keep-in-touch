@@ -786,11 +786,10 @@ final class SettingsViewModel: ObservableObject {
 
     func findNewContacts() async -> Int {
         isSyncing = true
-        let started = Date()
+        defer { isSyncing = false }
         contactAccessDenied = false
         contactAccessLimited = false
 
-        let result: Int
         let summaries = await Task.detached {
             do {
                 return try ContactsFetcher.fetchAll()
@@ -804,25 +803,17 @@ final class SettingsViewModel: ObservableObject {
             let status = CNContactStore.authorizationStatus(for: .contacts)
             contactAccessDenied = (status == .denied || status == .restricted)
             contactAccessLimited = Self.isLimitedAccess(status)
-            result = 0
-        } else {
-            let existing = Set(personRepository.fetchTracked(includePaused: true).compactMap { $0.cnIdentifier })
-            let newContacts = summaries.filter { !existing.contains($0.identifier) }
-            if newContacts.isEmpty {
-                let status = CNContactStore.authorizationStatus(for: .contacts)
-                contactAccessLimited = Self.isLimitedAccess(status)
-            }
-            pendingNewContacts = newContacts
-            result = newContacts.count
+            return 0
         }
 
-        // Ensure minimum visible loading duration for UX
-        let elapsed = Date().timeIntervalSince(started)
-        if elapsed < 0.6 {
-            try? await Task.sleep(nanoseconds: UInt64((0.6 - elapsed) * 1_000_000_000))
+        let existing = Set(personRepository.fetchTracked(includePaused: true).compactMap { $0.cnIdentifier })
+        let newContacts = summaries.filter { !existing.contains($0.identifier) }
+        if newContacts.isEmpty {
+            let status = CNContactStore.authorizationStatus(for: .contacts)
+            contactAccessLimited = Self.isLimitedAccess(status)
         }
-        isSyncing = false
-        return result
+        pendingNewContacts = newContacts
+        return newContacts.count
     }
 
     private static func isLimitedAccess(_ status: CNAuthorizationStatus) -> Bool {

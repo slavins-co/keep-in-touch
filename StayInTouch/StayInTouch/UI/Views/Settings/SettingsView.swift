@@ -305,7 +305,13 @@ struct SettingsView: View {
 
             Button {
                 Task {
+                    let started = Date()
                     let count = await viewModel.findNewContacts()
+                    // Ensure minimum visible loading duration for UX
+                    let elapsed = Date().timeIntervalSince(started)
+                    if elapsed < 0.6 {
+                        try? await Task.sleep(nanoseconds: UInt64((0.6 - elapsed) * 1_000_000_000))
+                    }
                     if count > 0 {
                         showNewContactsPicker = true
                     } else if viewModel.contactAccessDenied {
@@ -429,6 +435,15 @@ struct SettingsView: View {
                 showFilePicker = true
             } label: {
                 Label("Import Contacts", systemImage: "square.and.arrow.down")
+            }
+
+            if viewModel.isImporting {
+                HStack(spacing: DS.Spacing.md) {
+                    ProgressView()
+                    Text("Importing...")
+                        .font(DS.Typography.metadata)
+                        .foregroundStyle(DS.Colors.secondaryText)
+                }
             }
         }
     }
