@@ -8,6 +8,31 @@
 
 ---
 
+## Completed — Session 2026-03-06 (Issue #208: Contact Import State Enum)
+
+- [x] **#208** Replace onChange modal chains with ContactImportStep enum (PR #221)
+- [x] 7 @State variables → 2, 2 onChange chains → 0, single sheet(item:) with onDismiss
+- [x] Code review: PASS
+- [x] Security review: PASS
+- [x] Defensive fix: clear pendingImportStep on all cancel paths
+
+---
+
+## Completed — Session 2026-03-06 (Issue #207: Extract SettingsViewModel Services)
+
+- [x] **#207** Extract SettingsViewModel import/export into dedicated services (PR #220)
+- [x] Created `ExportModels.swift` — shared data structures for import/export
+- [x] Created `DataExportService.swift` — JSON export logic
+- [x] Created `DataImportService.swift` — JSON import parsing, execution, contact matching
+- [x] Created `ContactImportService.swift` — device address book contact import
+- [x] SettingsViewModel reduced from 1,084 → ~400 lines (thin orchestrator)
+- [x] Code review: PASS (no issues above threshold)
+- [x] Security review: PASS
+- [x] Post-review fixes: thread safety for viewContext access (score 75), AppSettingsDefaults placement (score 65)
+- [x] All 22 SettingsViewModel tests pass unchanged
+
+---
+
 ## Completed — Session 2026-03-04 (Issue #173: fullScreenCover Detail Presentation)
 
 - [x] **#173** Change PersonDetailView from NavigationLink push to fullScreenCover with DismissableFullScreenCover wrapper

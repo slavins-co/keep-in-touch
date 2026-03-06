@@ -23,6 +23,9 @@ struct SettingsView: View {
     @State private var showContactsSettingsAlert = false
     @State private var contactImportStep: ContactImportStep?
     @State private var pendingImportStep: ContactImportStep?
+    @State private var showImportSuccessBanner = false
+    @State private var importSuccessCount = 0
+    @State private var importBannerTask: Task<Void, Never>?
     @State private var showFilePicker = false
     @State private var importPreview: ImportPreview?
     @State private var showImportPreview = false
@@ -43,6 +46,13 @@ struct SettingsView: View {
             aboutSection
             dangerZoneSection
         }
+        .overlay(alignment: .top) {
+            if showImportSuccessBanner {
+                importSuccessBanner
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: showImportSuccessBanner)
         .listStyle(.insetGrouped)
         .tint(DS.Colors.accent)
         .navigationTitle("Settings")
@@ -107,6 +117,15 @@ struct SettingsView: View {
             if let next = pendingImportStep {
                 pendingImportStep = nil
                 contactImportStep = next
+            } else if importSuccessCount > 0 {
+                showImportSuccessBanner = true
+                importBannerTask?.cancel()
+                importBannerTask = Task {
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    guard !Task.isCancelled else { return }
+                    showImportSuccessBanner = false
+                    importSuccessCount = 0
+                }
             }
         }) { step in
             switch step {
@@ -140,6 +159,7 @@ struct SettingsView: View {
                 SettingsLastTouchSeedingView(
                     contacts: selected,
                     onContinue: { lastTouchSelections in
+                        importSuccessCount = selected.count
                         Task {
                             await viewModel.importSelectedContacts(
                                 selected,
@@ -550,6 +570,32 @@ struct SettingsView: View {
     private func dismissSheets() {
         showBreachTimePicker = false
         showDigestTimePicker = false
+    }
+
+    // MARK: - Import Success Banner
+
+    private var importSuccessBanner: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.white)
+            Text("Imported \(importSuccessCount) contact\(importSuccessCount == 1 ? "" : "s")")
+                .font(DS.Typography.metadata)
+                .foregroundStyle(.white)
+            Spacer()
+            Button {
+                importBannerTask?.cancel()
+                showImportSuccessBanner = false
+                importSuccessCount = 0
+            } label: {
+                Image(systemName: "xmark")
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Colors.statusAllGood)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
     }
 }
 
