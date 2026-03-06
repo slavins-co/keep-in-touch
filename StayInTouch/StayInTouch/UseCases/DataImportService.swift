@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreData
 import Contacts
 
 struct DataImportService {
@@ -13,6 +14,7 @@ struct DataImportService {
     let groupRepository: GroupRepository
     let tagRepository: TagRepository
     let touchEventRepository: TouchEventRepository
+    var backgroundContextProvider: (() -> NSManagedObjectContext)? = nil
 
     static func touchEventDedupKey(personId: UUID, date: Date, method: TouchMethod, notes: String?, calendar: Calendar) -> String {
         let dayKey = Int(calendar.startOfDay(for: date).timeIntervalSince1970)
@@ -244,7 +246,7 @@ struct DataImportService {
     func executeImport(_ preview: ImportPreview) async -> ImportResult {
         var importedNewPeople: [(id: UUID, displayName: String)] = []
 
-        let backgroundContext = CoreDataStack.shared.newBackgroundContext()
+        let backgroundContext = backgroundContextProvider?() ?? CoreDataStack.shared.newBackgroundContext()
         await backgroundContext.perform {
             let peopleRepo = CoreDataPersonRepository(context: backgroundContext)
             let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
