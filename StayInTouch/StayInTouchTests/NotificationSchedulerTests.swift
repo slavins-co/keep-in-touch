@@ -142,6 +142,15 @@ final class NotificationSchedulerTests: XCTestCase {
         await sut.scheduleAll()
 
         XCTAssertGreaterThanOrEqual(mockNotificationCenter.removeAllCallCount, 1, "Should clear before scheduling")
+
+        // Verify removeAll happens before any add
+        if let removeIndex = mockNotificationCenter.operations.firstIndex(where: {
+            if case .removeAll = $0 { return true }; return false
+        }), let addIndex = mockNotificationCenter.operations.firstIndex(where: {
+            if case .add = $0 { return true }; return false
+        }) {
+            XCTAssertLessThan(removeIndex, addIndex, "removeAll must happen before first add")
+        }
     }
 
     // MARK: - Empty People
@@ -273,19 +282,20 @@ final class NotificationSchedulerTests: XCTestCase {
 
     // MARK: - Register Categories
 
-    func testRegisterCategories_setsPersonCategory() {
+    func testRegisterCategories_setsPersonCategory() throws {
         sut.registerCategories()
 
         XCTAssertEqual(mockNotificationCenter.categoriesSet.count, 1)
-        let category = mockNotificationCenter.categoriesSet.first
-        XCTAssertEqual(category?.identifier, NotificationIdentifier.categoryPerson)
-        XCTAssertEqual(category?.actions.count, 1)
-        XCTAssertEqual(category?.actions.first?.identifier, NotificationIdentifier.actionLogConnection)
+        let category = try XCTUnwrap(mockNotificationCenter.categoriesSet.first)
+        XCTAssertEqual(category.identifier, NotificationIdentifier.categoryPerson)
+        XCTAssertEqual(category.actions.count, 1)
+        let action = try XCTUnwrap(category.actions.first)
+        XCTAssertEqual(action.identifier, NotificationIdentifier.actionLogConnection)
     }
 
     // MARK: - Notification Content
 
-    func testSinglePersonNotification_containsPersonName() async {
+    func testSinglePersonNotification_containsPersonName() async throws {
         mockSettingsRepo.settings = makeSettingsWithNotifications(grouping: .perPerson)
         seedWeeklyGroup()
         let person = makeOverduePerson(name: "Sarah Chen")
@@ -293,9 +303,8 @@ final class NotificationSchedulerTests: XCTestCase {
 
         await sut.scheduleAll()
 
-        let request = mockNotificationCenter.addedRequests.first
-        XCTAssertNotNil(request)
-        XCTAssertTrue(request!.content.body.contains("Sarah"), "Notification body should contain person's name")
+        let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first)
+        XCTAssertTrue(request.content.body.contains("Sarah"), "Notification body should contain person's name")
     }
 
     func testNotification_hasBadgeCount() async {
@@ -309,16 +318,15 @@ final class NotificationSchedulerTests: XCTestCase {
         XCTAssertNotNil(request?.content.badge, "Notification should include badge count")
     }
 
-    func testNotification_usesRepeatingCalendarTrigger() async {
+    func testNotification_usesRepeatingCalendarTrigger() async throws {
         mockSettingsRepo.settings = makeSettingsWithNotifications()
         seedWeeklyGroup()
         mockPersonRepo.people = [makeOverduePerson()]
 
         await sut.scheduleAll()
 
-        let request = mockNotificationCenter.addedRequests.first
-        let trigger = request?.trigger as? UNCalendarNotificationTrigger
-        XCTAssertNotNil(trigger, "Should use calendar trigger")
-        XCTAssertTrue(trigger!.repeats, "Trigger should repeat")
+        let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first)
+        let trigger = try XCTUnwrap(request.trigger as? UNCalendarNotificationTrigger, "Should use calendar trigger")
+        XCTAssertTrue(trigger.repeats, "Trigger should repeat")
     }
 }
