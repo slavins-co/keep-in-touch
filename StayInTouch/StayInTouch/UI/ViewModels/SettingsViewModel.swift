@@ -382,3 +382,25 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 }
+
+struct AppSettingsDefaults {
+    static func defaultSettings() -> AppSettings {
+        AppSettings(
+            id: AppSettings.singletonId,
+            theme: .system,
+            notificationsEnabled: false,
+            breachTimeOfDay: LocalTime(hour: 18, minute: 0),
+            digestEnabled: false,
+            digestDay: .friday,
+            digestTime: LocalTime(hour: 18, minute: 0),
+            notificationGrouping: .perType,
+            badgeCountShowDueSoon: false,
+            dueSoonWindowDays: 3,
+            demoModeEnabled: false,
+            analyticsEnabled: true,
+            lastContactsSyncAt: nil,
+            onboardingCompleted: false,
+            appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        )
+    }
+}
