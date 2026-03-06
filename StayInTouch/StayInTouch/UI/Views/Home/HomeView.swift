@@ -16,7 +16,6 @@ struct HomeView: View {
     @State private var showNewContactsPicker = false
     @State private var showNoNewContactsAlert = false
     @State private var showLimitedAccessAlert = false
-    @State private var isSyncingContacts = false
     @State private var showContactsSettingsAlert = false
     @FocusState private var isSearchFocused: Bool
 
@@ -61,9 +60,7 @@ struct HomeView: View {
                 contacts: settingsViewModel.pendingNewContacts,
                 onImport: { selected in
                     Task {
-                        isSyncingContacts = true
                         await settingsViewModel.importSelectedContacts(selected)
-                        isSyncingContacts = false
                     }
                     showNewContactsPicker = false
                 },
@@ -399,9 +396,13 @@ struct HomeView: View {
 
     private func addContactsFromEmptyState() {
         Task {
-            isSyncingContacts = true
+            let started = Date()
             let count = await settingsViewModel.findNewContacts()
-            isSyncingContacts = false
+            // Ensure minimum visible loading duration for UX
+            let elapsed = Date().timeIntervalSince(started)
+            if elapsed < 0.6 {
+                try? await Task.sleep(nanoseconds: UInt64((0.6 - elapsed) * 1_000_000_000))
+            }
             if count > 0 {
                 showNewContactsPicker = true
             } else if settingsViewModel.contactAccessDenied {

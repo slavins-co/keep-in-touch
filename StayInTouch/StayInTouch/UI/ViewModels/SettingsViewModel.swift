@@ -20,6 +20,8 @@ final class SettingsViewModel: ObservableObject {
     @Published var pendingNewContacts: [ContactSummary] = []
     @Published var contactAccessDenied = false
     @Published var contactAccessLimited = false
+    @Published private(set) var isSyncing = false
+    @Published private(set) var isImporting = false
 
     private let settingsRepository: AppSettingsRepository
     private let groupRepository: GroupRepository
@@ -771,9 +773,24 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
+    func performFileImport(_ preview: ImportPreview) async -> (result: ImportResult, matchSummary: ContactMatchSummary?) {
+        isImporting = true
+        defer { isImporting = false }
+        let result = await executeImport(preview)
+        var matchSummary: ContactMatchSummary?
+        if !result.importedPeople.isEmpty {
+            matchSummary = await matchImportedContacts(people: result.importedPeople)
+        }
+        return (result, matchSummary)
+    }
+
     func findNewContacts() async -> Int {
+        isSyncing = true
+        let started = Date()
         contactAccessDenied = false
         contactAccessLimited = false
+
+        let result: Int
         let summaries = await Task.detached {
             do {
                 return try ContactsFetcher.fetchAll()
@@ -782,21 +799,30 @@ final class SettingsViewModel: ObservableObject {
                 return []
             }
         }.value
-        guard !summaries.isEmpty else {
+
+        if summaries.isEmpty {
             let status = CNContactStore.authorizationStatus(for: .contacts)
             contactAccessDenied = (status == .denied || status == .restricted)
             contactAccessLimited = Self.isLimitedAccess(status)
-            return 0
+            result = 0
+        } else {
+            let existing = Set(personRepository.fetchTracked(includePaused: true).compactMap { $0.cnIdentifier })
+            let newContacts = summaries.filter { !existing.contains($0.identifier) }
+            if newContacts.isEmpty {
+                let status = CNContactStore.authorizationStatus(for: .contacts)
+                contactAccessLimited = Self.isLimitedAccess(status)
+            }
+            pendingNewContacts = newContacts
+            result = newContacts.count
         }
 
-        let existing = Set(personRepository.fetchTracked(includePaused: true).compactMap { $0.cnIdentifier })
-        let newContacts = summaries.filter { !existing.contains($0.identifier) }
-        if newContacts.isEmpty {
-            let status = CNContactStore.authorizationStatus(for: .contacts)
-            contactAccessLimited = Self.isLimitedAccess(status)
+        // Ensure minimum visible loading duration for UX
+        let elapsed = Date().timeIntervalSince(started)
+        if elapsed < 0.6 {
+            try? await Task.sleep(nanoseconds: UInt64((0.6 - elapsed) * 1_000_000_000))
         }
-        pendingNewContacts = newContacts
-        return newContacts.count
+        isSyncing = false
+        return result
     }
 
     private static func isLimitedAccess(_ status: CNAuthorizationStatus) -> Bool {
@@ -812,6 +838,8 @@ final class SettingsViewModel: ObservableObject {
 
     func importSelectedContacts(_ summaries: [ContactSummary], groupAssignments: [String: UUID], lastTouchSelections: [String: LastTouchOption] = [:]) async {
         guard !summaries.isEmpty else { return }
+        isImporting = true
+        defer { isImporting = false }
 
         let backgroundContext = CoreDataStack.shared.newBackgroundContext()
         await backgroundContext.perform {
