@@ -10,13 +10,6 @@ struct MainTabView: View {
     @ObservedObject private var deepLinkRouter = DeepLinkRouter.shared
     @State private var selectedPerson: Person?
 
-    init() {
-        let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
-    }
-
     var body: some View {
         TabView(selection: $deepLinkRouter.selectedTab) {
             HomeView(viewModel: viewModel, selectPerson: { selectedPerson = $0 })
@@ -45,6 +38,7 @@ struct MainTabView: View {
             .tag(2)
             .accessibilityLabel("Settings tab")
         }
+        .toolbarBackground(.visible, for: .tabBar)
         .tint(DS.Colors.accent)
         .overlay {
             // Dimming lives here so it fades in place instead of
