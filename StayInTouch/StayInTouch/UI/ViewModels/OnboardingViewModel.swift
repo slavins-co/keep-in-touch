@@ -158,8 +158,8 @@ final class OnboardingViewModel: ObservableObject {
         guard !isImporting else { return }
         isImporting = true
         Task {
+            defer { isImporting = false }
             await importSelectedContacts()
-            isImporting = false
             pushAndNavigate(to: .notificationsPermission)
         }
     }
@@ -167,6 +167,7 @@ final class OnboardingViewModel: ObservableObject {
     func requestNotificationsPermission() async {
         guard !isImporting else { return }
         isImporting = true
+        defer { isImporting = false }
         let center = UNUserNotificationCenter.current()
         let granted = await withCheckedContinuation { continuation in
             center.requestAuthorization(options: [.alert, .sound, .badge]) { allowed, _ in
@@ -174,7 +175,6 @@ final class OnboardingViewModel: ObservableObject {
             }
         }
 
-        isImporting = false
         updateNotificationsEnabled(granted)
 
         if granted {
