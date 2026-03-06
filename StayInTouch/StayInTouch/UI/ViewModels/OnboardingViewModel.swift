@@ -25,6 +25,7 @@ final class OnboardingViewModel: ObservableObject {
     @Published var isLoading = true
     @Published var isOnboardingCompleted = false
     @Published var isCompleting = false
+    @Published var isImporting = false
     @Published var step: Step = .welcome
     private(set) var stepHistory: [Step] = []
 
@@ -154,13 +155,18 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     func continueFromLastTouchSeeding() {
+        guard !isImporting else { return }
+        isImporting = true
         Task {
             await importSelectedContacts()
+            isImporting = false
             pushAndNavigate(to: .notificationsPermission)
         }
     }
 
     func requestNotificationsPermission() async {
+        guard !isImporting else { return }
+        isImporting = true
         let center = UNUserNotificationCenter.current()
         let granted = await withCheckedContinuation { continuation in
             center.requestAuthorization(options: [.alert, .sound, .badge]) { allowed, _ in
@@ -168,6 +174,7 @@ final class OnboardingViewModel: ObservableObject {
             }
         }
 
+        isImporting = false
         updateNotificationsEnabled(granted)
 
         if granted {

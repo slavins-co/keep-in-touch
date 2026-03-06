@@ -40,6 +40,7 @@ struct LastTouchSeedingView: View {
                 viewModel.continueFromLastTouchSeeding()
             }
             .buttonStyle(OnboardingPrimaryButtonStyle())
+            .disabled(viewModel.isImporting)
             .padding(.horizontal)
             .padding(.bottom)
         }

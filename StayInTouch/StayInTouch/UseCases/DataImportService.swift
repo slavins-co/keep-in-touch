@@ -253,11 +253,12 @@ struct DataImportService {
 
             let now = Date()
 
-            // 1. Create new groups from import
+            // 1. Create new groups from import (batch save)
             let existingGroupCount = groupRepo.fetchAll().count
+            var groupsToSave: [Group] = []
             for (index, exportGroup) in preview.newGroups.enumerated() {
                 guard let newId = preview.groupIdMap[exportGroup.id] else { continue }
-                let group = Group(
+                groupsToSave.append(Group(
                     id: newId,
                     name: exportGroup.name,
                     frequencyDays: exportGroup.frequencyDays,
@@ -267,28 +268,33 @@ struct DataImportService {
                     sortOrder: existingGroupCount + index,
                     createdAt: now,
                     modifiedAt: now
-                )
+                ))
+            }
+            if !groupsToSave.isEmpty {
                 do {
-                    try groupRepo.save(group)
+                    try groupRepo.batchSave(groupsToSave)
                 } catch {
                     AppLogger.logError(error, category: AppLogger.viewModel, context: "DataImportService.executeImport.groups")
                 }
             }
 
-            // 2. Create new tags from import
+            // 2. Create new tags from import (batch save)
             let existingTagCount = tagRepo.fetchAll().count
+            var tagsToSave: [Tag] = []
             for (index, exportTag) in preview.newTags.enumerated() {
                 guard let newId = preview.tagIdMap[exportTag.id] else { continue }
-                let tag = Tag(
+                tagsToSave.append(Tag(
                     id: newId,
                     name: exportTag.name,
                     colorHex: exportTag.colorHex,
                     sortOrder: existingTagCount + index,
                     createdAt: now,
                     modifiedAt: now
-                )
+                ))
+            }
+            if !tagsToSave.isEmpty {
                 do {
-                    try tagRepo.save(tag)
+                    try tagRepo.batchSave(tagsToSave)
                 } catch {
                     AppLogger.logError(error, category: AppLogger.viewModel, context: "DataImportService.executeImport.tags")
                 }
@@ -402,6 +408,7 @@ struct DataImportService {
                 }
             }
 
+            var touchEventsToSave: [TouchEvent] = []
             for exportPerson in allExported {
                 guard let events = exportPerson.touchEvents,
                       let actualPersonId = importedIdMap[exportPerson.id] else { continue }
@@ -412,7 +419,7 @@ struct DataImportService {
                     guard !existingEventKeys.contains(key) else { continue }
                     existingEventKeys.insert(key)
 
-                    let touchEvent = TouchEvent(
+                    touchEventsToSave.append(TouchEvent(
                         id: UUID(),
                         personId: actualPersonId,
                         at: event.at,
@@ -421,12 +428,7 @@ struct DataImportService {
                         timeOfDay: nil,
                         createdAt: now,
                         modifiedAt: now
-                    )
-                    do {
-                        try touchRepo.save(touchEvent)
-                    } catch {
-                        AppLogger.logError(error, category: AppLogger.viewModel, context: "DataImportService.executeImport.touchEvents")
-                    }
+                    ))
 
                     // Track most recent event per person
                     if let current = mostRecentEvent[actualPersonId] {
@@ -434,6 +436,13 @@ struct DataImportService {
                     } else {
                         mostRecentEvent[actualPersonId] = event
                     }
+                }
+            }
+            if !touchEventsToSave.isEmpty {
+                do {
+                    try touchRepo.batchSave(touchEventsToSave)
+                } catch {
+                    AppLogger.logError(error, category: AppLogger.viewModel, context: "DataImportService.executeImport.touchEvents")
                 }
             }
 

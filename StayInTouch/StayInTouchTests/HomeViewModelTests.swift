@@ -125,6 +125,7 @@ final class HomeViewModelTests: XCTestCase {
         func fetchAll() -> [Group] { groups }
         func fetchDefaultGroups() -> [Group] { groups.filter { $0.isDefault } }
         func save(_ group: Group) throws {}
+        func batchSave(_ groups: [Group]) throws {}
         func delete(id: UUID) throws {}
     }
 
@@ -133,6 +134,7 @@ final class HomeViewModelTests: XCTestCase {
         func fetch(id: UUID) -> Tag? { tags.first { $0.id == id } }
         func fetchAll() -> [Tag] { tags }
         func save(_ tag: Tag) throws {}
+        func batchSave(_ tags: [Tag]) throws {}
         func delete(id: UUID) throws {}
     }
 

@@ -69,6 +69,9 @@ final class MockGroupRepository: GroupRepository {
             groups.append(group)
         }
     }
+    func batchSave(_ groups: [Group]) throws {
+        for group in groups { try save(group) }
+    }
     func delete(id: UUID) throws {
         groups.removeAll { $0.id == id }
     }
@@ -87,6 +90,9 @@ final class MockTagRepository: TagRepository {
         } else {
             tags.append(tag)
         }
+    }
+    func batchSave(_ tags: [Tag]) throws {
+        for tag in tags { try save(tag) }
     }
     func delete(id: UUID) throws {
         tags.removeAll { $0.id == id }
