@@ -22,12 +22,13 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var dueSoonPeople: [Person] = []
     @Published private(set) var allGoodPeople: [Person] = []
 
+    @Published private(set) var isRefreshing = false
+
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository
     private let tagRepository: TagRepository
     private let settingsRepository: AppSettingsRepository
     private var searchTask: Task<Void, Never>?
-    private var isSyncing = false
 
     init(
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
@@ -67,9 +68,9 @@ final class HomeViewModel: ObservableObject {
     }
 
     func refreshFromContacts() async {
-        guard !isSyncing else { return }
-        isSyncing = true
-        defer { isSyncing = false }
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
 
         let summaries = await Task.detached {
             do {

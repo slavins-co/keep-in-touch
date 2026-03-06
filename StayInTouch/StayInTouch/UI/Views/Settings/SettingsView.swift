@@ -28,12 +28,9 @@ struct SettingsView: View {
     @State private var shouldShowLastTouchSeeding = false
     @State private var groupAssignmentsForImport: [String: UUID] = [:]
     @State private var selectedForImport: [ContactSummary] = []
-    @State private var pendingImportCount = 0
-    @State private var isSyncingContacts = false
     @State private var showFilePicker = false
     @State private var importPreview: ImportPreview?
     @State private var showImportPreview = false
-    @State private var isImporting = false
     @State private var showImportSuccessAlert = false
     @State private var showImportErrorAlert = false
     @State private var importResultMessage = ""
@@ -145,13 +142,11 @@ struct SettingsView: View {
                 contacts: selectedForImport,
                 onContinue: { lastTouchSelections in
                     Task {
-                        isSyncingContacts = true
                         await viewModel.importSelectedContacts(
                             selectedForImport,
                             groupAssignments: groupAssignmentsForImport,
                             lastTouchSelections: lastTouchSelections
                         )
-                        isSyncingContacts = false
                     }
                     showLastTouchSeeding = false
                 },
@@ -196,18 +191,13 @@ struct SettingsView: View {
                     onImport: { resolvedPreview in
                         showImportPreview = false
                         Task {
-                            isImporting = true
-                            let result = await viewModel.executeImport(resolvedPreview)
+                            let (result, matchSummary) = await viewModel.performFileImport(resolvedPreview)
 
-                            // Attempt contact matching for newly imported people
-                            if !result.importedPeople.isEmpty {
-                                let matchSummary = await viewModel.matchImportedContacts(people: result.importedPeople)
-                                isImporting = false
+                            if let matchSummary {
                                 postImportResult = result
                                 postImportMatchSummary = matchSummary
                                 showPostImportMatch = true
                             } else {
-                                isImporting = false
                                 var parts: [String] = []
                                 if result.totalPeople > 0 {
                                     parts.append("\(result.totalPeople) contact\(result.totalPeople == 1 ? "" : "s")")
@@ -315,15 +305,7 @@ struct SettingsView: View {
 
             Button {
                 Task {
-                    isSyncingContacts = true
-                    let started = Date()
                     let count = await viewModel.findNewContacts()
-                    pendingImportCount = count
-                    let elapsed = Date().timeIntervalSince(started)
-                    if elapsed < 0.6 {
-                        try? await Task.sleep(nanoseconds: UInt64((0.6 - elapsed) * 1_000_000_000))
-                    }
-                    isSyncingContacts = false
                     if count > 0 {
                         showNewContactsPicker = true
                     } else if viewModel.contactAccessDenied {
@@ -344,7 +326,7 @@ struct SettingsView: View {
                     .foregroundStyle(DS.Colors.secondaryText)
             }
 
-            if isSyncingContacts {
+            if viewModel.isSyncing {
                 HStack(spacing: DS.Spacing.md) {
                     ProgressView()
                     Text("Checking contacts...")
