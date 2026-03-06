@@ -1217,6 +1217,46 @@ Removed `.navigationBarHidden(true)` entirely — unnecessary in fullScreenCover
 **Prevention Rule:**
 When changing a view's navigation bar behavior, grep for ALL `NavigationLink` references to that view. Test each navigation path. Prefer not hiding the nav bar if the view is used in both pushed and presented contexts.
 
+### 2026-03-06 - 🏗️ Architecture - Thread Safety When Extracting from @MainActor
+
+**What Happened:**
+Extracted `matchImportedContacts` from `@MainActor SettingsViewModel` into a plain `struct DataImportService`. The method called `personRepository.save()` which uses the `viewContext` — but after extraction, these calls could run off the main thread.
+
+**Root Cause:**
+`@MainActor` on SettingsViewModel guaranteed all method bodies ran on the main thread. When moved to a non-isolated struct, `async` methods run in a non-isolated context. Even though the caller (SettingsViewModel) is `@MainActor`, the `await` call suspends and the service method runs elsewhere.
+
+**Solution:**
+Split responsibility: service only fetches data (renamed to `fetchContactMatches`), ViewModel handles all persistence on `@MainActor`. Rule: repo writes using `viewContext` must stay in `@MainActor` code.
+
+**Prevention Rule:**
+When extracting methods from `@MainActor` classes into plain structs/services, audit every repository call. If it uses `viewContext` (main thread context), either keep the write in the `@MainActor` caller or use a background context inside the service. Never assume the caller's actor isolation carries through an `await`.
+
+**Code Example:**
+```swift
+// BAD: Service does viewContext writes off main thread
+struct DataImportService {
+    func matchImportedContacts(...) async -> ContactMatchSummary {
+        // ... fetch matches ...
+        personRepository.save(person) // viewContext — NOT on main thread!
+    }
+}
+
+// GOOD: Service returns data, ViewModel writes on @MainActor
+struct DataImportService {
+    func fetchContactMatches(...) async -> [ContactMatchResult] { ... }
+}
+
+@MainActor class SettingsViewModel {
+    func matchImportedContacts(...) async -> ContactMatchSummary {
+        let results = await importService.fetchContactMatches(...)
+        // Persistence here — guaranteed @MainActor
+        try personRepository.save(person)
+    }
+}
+```
+
+---
+
 ## Historical Lessons
 
 *This section will be populated as development progresses*

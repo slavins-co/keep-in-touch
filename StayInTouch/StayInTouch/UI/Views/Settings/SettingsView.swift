@@ -21,13 +21,11 @@ struct SettingsView: View {
     @State private var showNoNewContactsAlert = false
     @State private var showLimitedAccessAlert = false
     @State private var showContactsSettingsAlert = false
-    @State private var showNewContactsPicker = false
-    @State private var showGroupAssignment = false
-    @State private var shouldShowGroupAssignment = false
-    @State private var showLastTouchSeeding = false
-    @State private var shouldShowLastTouchSeeding = false
-    @State private var groupAssignmentsForImport: [String: UUID] = [:]
-    @State private var selectedForImport: [ContactSummary] = []
+    @State private var contactImportStep: ContactImportStep?
+    @State private var pendingImportStep: ContactImportStep?
+    @State private var showImportSuccessBanner = false
+    @State private var importSuccessCount = 0
+    @State private var importBannerTask: Task<Void, Never>?
     @State private var showFilePicker = false
     @State private var importPreview: ImportPreview?
     @State private var showImportPreview = false
@@ -48,6 +46,13 @@ struct SettingsView: View {
             aboutSection
             dangerZoneSection
         }
+        .overlay(alignment: .top) {
+            if showImportSuccessBanner {
+                importSuccessBanner
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: showImportSuccessBanner)
         .listStyle(.insetGrouped)
         .tint(DS.Colors.accent)
         .navigationTitle("Settings")
@@ -108,63 +113,67 @@ struct SettingsView: View {
         } message: {
             Text("Enable Contacts access in Settings to import contacts.")
         }
-        .sheet(isPresented: $showNewContactsPicker) {
-            NewContactsPickerView(
-                contacts: viewModel.pendingNewContacts,
-                onImport: { selected in
-                    selectedForImport = selected
-                    shouldShowGroupAssignment = true
-                    showNewContactsPicker = false
-                },
-                onCancel: {
-                    viewModel.pendingNewContacts = []
-                    showNewContactsPicker = false
+        .sheet(item: $contactImportStep, onDismiss: {
+            if let next = pendingImportStep {
+                pendingImportStep = nil
+                contactImportStep = next
+            } else if importSuccessCount > 0 {
+                showImportSuccessBanner = true
+                importBannerTask?.cancel()
+                importBannerTask = Task {
+                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    guard !Task.isCancelled else { return }
+                    showImportSuccessBanner = false
+                    importSuccessCount = 0
                 }
-            )
-        }
-        .sheet(isPresented: $showGroupAssignment) {
-            SettingsGroupAssignmentView(
-                contacts: selectedForImport,
-                groups: viewModel.allGroups,
-                onImport: { assignments in
-                    groupAssignmentsForImport = assignments
-                    shouldShowLastTouchSeeding = true
-                    showGroupAssignment = false
-                },
-                onCancel: {
-                    shouldShowLastTouchSeeding = false
-                    showGroupAssignment = false
-                }
-            )
-        }
-        .sheet(isPresented: $showLastTouchSeeding) {
-            SettingsLastTouchSeedingView(
-                contacts: selectedForImport,
-                onContinue: { lastTouchSelections in
-                    Task {
-                        await viewModel.importSelectedContacts(
-                            selectedForImport,
-                            groupAssignments: groupAssignmentsForImport,
-                            lastTouchSelections: lastTouchSelections
-                        )
-                    }
-                    showLastTouchSeeding = false
-                },
-                onCancel: {
-                    showLastTouchSeeding = false
-                }
-            )
-        }
-        .onChange(of: showNewContactsPicker) { _, isPresented in
-            if !isPresented && shouldShowGroupAssignment {
-                shouldShowGroupAssignment = false
-                showGroupAssignment = true
             }
-        }
-        .onChange(of: showGroupAssignment) { _, isPresented in
-            if !isPresented && shouldShowLastTouchSeeding {
-                shouldShowLastTouchSeeding = false
-                showLastTouchSeeding = true
+        }) { step in
+            switch step {
+            case .pickingContacts:
+                NewContactsPickerView(
+                    contacts: viewModel.pendingNewContacts,
+                    onImport: { selected in
+                        pendingImportStep = .assigningGroups(selected: selected)
+                        contactImportStep = nil
+                    },
+                    onCancel: {
+                        viewModel.pendingNewContacts = []
+                        pendingImportStep = nil
+                        contactImportStep = nil
+                    }
+                )
+            case .assigningGroups(let selected):
+                SettingsGroupAssignmentView(
+                    contacts: selected,
+                    groups: viewModel.allGroups,
+                    onImport: { assignments in
+                        pendingImportStep = .seedingLastTouch(selected: selected, assignments: assignments)
+                        contactImportStep = nil
+                    },
+                    onCancel: {
+                        pendingImportStep = nil
+                        contactImportStep = nil
+                    }
+                )
+            case .seedingLastTouch(let selected, let assignments):
+                SettingsLastTouchSeedingView(
+                    contacts: selected,
+                    onContinue: { lastTouchSelections in
+                        importSuccessCount = selected.count
+                        Task {
+                            await viewModel.importSelectedContacts(
+                                selected,
+                                groupAssignments: assignments,
+                                lastTouchSelections: lastTouchSelections
+                            )
+                        }
+                        contactImportStep = nil
+                    },
+                    onCancel: {
+                        pendingImportStep = nil
+                        contactImportStep = nil
+                    }
+                )
             }
         }
         .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [UTType.json]) { result in
@@ -307,7 +316,7 @@ struct SettingsView: View {
                 Task {
                     let count = await viewModel.findNewContacts()
                     if count > 0 {
-                        showNewContactsPicker = true
+                        contactImportStep = .pickingContacts
                     } else if viewModel.contactAccessDenied {
                         showContactsSettingsAlert = true
                     } else if viewModel.contactAccessLimited {
@@ -562,9 +571,49 @@ struct SettingsView: View {
         showBreachTimePicker = false
         showDigestTimePicker = false
     }
+
+    // MARK: - Import Success Banner
+
+    private var importSuccessBanner: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.white)
+            Text("Imported \(importSuccessCount) contact\(importSuccessCount == 1 ? "" : "s")")
+                .font(DS.Typography.metadata)
+                .foregroundStyle(.white)
+            Spacer()
+            Button {
+                importBannerTask?.cancel()
+                showImportSuccessBanner = false
+                importSuccessCount = 0
+            } label: {
+                Image(systemName: "xmark")
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Colors.statusAllGood)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
+    }
 }
 
 private struct ShareItem: Identifiable {
     let id = UUID()
     let url: URL
+}
+
+private enum ContactImportStep: Identifiable {
+    case pickingContacts
+    case assigningGroups(selected: [ContactSummary])
+    case seedingLastTouch(selected: [ContactSummary], assignments: [String: UUID])
+
+    var id: String {
+        switch self {
+        case .pickingContacts: return "picking"
+        case .assigningGroups: return "groups"
+        case .seedingLastTouch: return "seeding"
+        }
+    }
 }
