@@ -28,6 +28,7 @@ struct NotificationsPermissionView: View {
                 Task { await viewModel.requestNotificationsPermission() }
             }
             .buttonStyle(OnboardingPrimaryButtonStyle())
+            .disabled(viewModel.isImporting)
 
             Button("Not Now") {
                 viewModel.skipNotifications()

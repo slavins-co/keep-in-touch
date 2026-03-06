@@ -54,6 +54,16 @@ final class CoreDataGroupRepository: GroupRepository {
         }
     }
 
+    func batchSave(_ groups: [Group]) throws {
+        try context.performAndWait {
+            for group in groups {
+                let entity = fetchEntity(id: group.id) ?? GroupEntity(context: context)
+                entity.apply(group)
+            }
+            try context.save()
+        }
+    }
+
     func delete(id: UUID) throws {
         try context.performAndWait {
             guard let entity = fetchEntity(id: id) else { return }

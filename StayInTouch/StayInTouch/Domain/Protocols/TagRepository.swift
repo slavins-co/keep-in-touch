@@ -11,5 +11,6 @@ protocol TagRepository {
     func fetch(id: UUID) -> Tag?
     func fetchAll() -> [Tag]
     func save(_ tag: Tag) throws
+    func batchSave(_ tags: [Tag]) throws
     func delete(id: UUID) throws
 }

@@ -12,5 +12,6 @@ protocol GroupRepository {
     func fetchAll() -> [Group]
     func fetchDefaultGroups() -> [Group]
     func save(_ group: Group) throws
+    func batchSave(_ groups: [Group]) throws
     func delete(id: UUID) throws
 }

@@ -59,8 +59,8 @@ enum DS {
 
         // MARK: Adaptive Text
 
-        static let textFaint = Color(hex: "6B7280")
-        static let textMuted = Color(hex: "9CA3AF")
+        static let textFaint = adaptiveColor(light: UIColor(Color(hex: "4B5563")), dark: UIColor(Color(hex: "6B7280")))
+        static let textMuted = adaptiveColor(light: UIColor(Color(hex: "6B7280")), dark: UIColor(Color(hex: "9CA3AF")))
 
         // MARK: Summary Card Colors
 

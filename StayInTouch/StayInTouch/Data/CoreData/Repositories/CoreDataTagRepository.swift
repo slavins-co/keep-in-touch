@@ -43,6 +43,16 @@ final class CoreDataTagRepository: TagRepository {
         }
     }
 
+    func batchSave(_ tags: [Tag]) throws {
+        try context.performAndWait {
+            for tag in tags {
+                let entity = fetchEntity(id: tag.id) ?? TagEntity(context: context)
+                entity.apply(tag)
+            }
+            try context.save()
+        }
+    }
+
     func delete(id: UUID) throws {
         try context.performAndWait {
             guard let entity = fetchEntity(id: id) else { return }

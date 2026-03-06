@@ -62,7 +62,8 @@ struct PersonHeroSection: View {
                     .foregroundStyle(Color(.secondaryLabel))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Birthday \(birthday.formatted), tap to edit")
+                .accessibilityLabel("Birthday \(birthday.formatted)")
+                .accessibilityHint("Opens birthday editor")
             }
 
             if !personTags.isEmpty {
