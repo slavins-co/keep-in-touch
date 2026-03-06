@@ -196,7 +196,7 @@ final class NotificationScheduler {
         for person in people {
             let content = UNMutableNotificationContent()
             content.title = type.title
-            content.body = String(format: Self.singlePersonTemplates.randomElement()!, person.displayName)
+            content.body = String(format: Self.singlePersonTemplates.randomElement() ?? "Reach out to %@", person.displayName)
             content.sound = .default
             content.badge = NSNumber(value: badgeCount)
             content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
@@ -235,19 +235,19 @@ final class NotificationScheduler {
     }
 
     private func notificationBody(for people: [Person]) -> String {
-        if people.count == 1 {
-            let template = Self.singlePersonTemplates.randomElement()!
-            return String(format: template, people[0].displayName)
+        if people.count == 1, let person = people.first {
+            let template = Self.singlePersonTemplates.randomElement() ?? "Reach out to %@"
+            return String(format: template, person.displayName)
         }
 
         let preview = people.prefix(3).map { firstName(from: $0.displayName) }.joined(separator: ", ")
-        let template = Self.multiPersonTemplates.randomElement()!
+        let template = Self.multiPersonTemplates.randomElement() ?? "%d people need your attention, including %@"
         return String(format: template, people.count, preview)
     }
 
     private func notificationUserInfo(for people: [Person], type: String) -> [AnyHashable: Any] {
-        if people.count == 1 {
-            return ["type": "person", "personId": people[0].id.uuidString, "category": type]
+        if people.count == 1, let person = people.first {
+            return ["type": "person", "personId": person.id.uuidString, "category": type]
         }
         return ["type": "home", "category": type]
     }
@@ -285,7 +285,7 @@ private extension NotificationScheduler {
         let triggerDate = nextDailyDate(for: time)
         let content = UNMutableNotificationContent()
         content.title = type.title
-        content.body = String(format: Self.singlePersonTemplates.randomElement()!, person.displayName)
+        content.body = String(format: Self.singlePersonTemplates.randomElement() ?? "Reach out to %@", person.displayName)
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
