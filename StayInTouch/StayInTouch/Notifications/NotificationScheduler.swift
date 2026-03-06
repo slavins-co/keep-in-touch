@@ -285,7 +285,7 @@ private extension NotificationScheduler {
         let triggerDate = nextDailyDate(for: time)
         let content = UNMutableNotificationContent()
         content.title = type.title
-        content.body = String(format: Self.singlePersonTemplates.randomElement()!, person.displayName)
+        content.body = String(format: Self.singlePersonTemplates.randomElement() ?? "Reach out to %@", person.displayName)
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
