@@ -384,18 +384,18 @@ final class SettingsViewModel: ObservableObject {
                 let uniqueMatches = Dictionary(grouping: trackedMatches, by: { $0.id })
                     .values.compactMap(\.first)
 
-                if uniqueMatches.count == 1 {
+                if uniqueMatches.count == 1, let match = uniqueMatches.first {
                     // Single tracked match via address book → auto-match
                     updatedPeople.append(person)
-                    remappedIds[person.id] = uniqueMatches[0].id
+                    remappedIds[person.id] = match.id
                 } else if uniqueMatches.count > 1 {
                     // Multiple tracked matches → user must disambiguate
                     ambiguousPeople.append((export: person, candidates: uniqueMatches))
                 } else if let nameMatches = existingTrackedByName[normalizedName],
-                          nameMatches.count == 1 {
+                          nameMatches.count == 1, let match = nameMatches.first {
                     // 3. Name-only fallback (contact not in address book)
                     updatedPeople.append(person)
-                    remappedIds[person.id] = nameMatches[0].id
+                    remappedIds[person.id] = match.id
                 } else {
                     // 4. No match → new contact
                     newPeople.append(person)
