@@ -119,6 +119,7 @@ struct SettingsView: View {
                     },
                     onCancel: {
                         viewModel.pendingNewContacts = []
+                        pendingImportStep = nil
                         contactImportStep = nil
                     }
                 )
@@ -131,6 +132,7 @@ struct SettingsView: View {
                         contactImportStep = nil
                     },
                     onCancel: {
+                        pendingImportStep = nil
                         contactImportStep = nil
                     }
                 )
@@ -148,6 +150,7 @@ struct SettingsView: View {
                         contactImportStep = nil
                     },
                     onCancel: {
+                        pendingImportStep = nil
                         contactImportStep = nil
                     }
                 )
