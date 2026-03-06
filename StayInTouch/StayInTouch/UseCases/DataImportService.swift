@@ -471,84 +471,24 @@ struct DataImportService {
 
     // MARK: - Post-Import Contact Matching
 
-    func matchImportedContacts(people: [(id: UUID, displayName: String)]) async -> ContactMatchSummary {
-        guard !people.isEmpty else {
-            return ContactMatchSummary(matched: 0, unmatchedPeople: [], total: 0, matchedNames: [])
-        }
+    func fetchContactMatches(people: [(id: UUID, displayName: String)]) async -> [ContactsFetcher.ContactMatchResult] {
+        guard !people.isEmpty else { return [] }
 
         let status = CNContactStore.authorizationStatus(for: .contacts)
         switch status {
         case .authorized, .limited:
             break
         default:
-            return ContactMatchSummary(
-                matched: 0,
-                unmatchedPeople: people,
-                total: people.count,
-                matchedNames: []
-            )
+            return []
         }
 
-        let results = await Task.detached { () -> [ContactsFetcher.ContactMatchResult] in
+        return await Task.detached { () -> [ContactsFetcher.ContactMatchResult] in
             do {
                 return try ContactsFetcher.matchByDisplayName(people: people)
             } catch {
-                AppLogger.logError(error, category: AppLogger.contacts, context: "matchImportedContacts")
+                AppLogger.logError(error, category: AppLogger.contacts, context: "fetchContactMatches")
                 return []
             }
         }.value
-
-        guard !results.isEmpty else {
-            return ContactMatchSummary(matched: 0, unmatchedPeople: people, total: people.count, matchedNames: [])
-        }
-
-        var matchedCount = 0
-        var matchedNames: [String] = []
-        var unmatchedPeople: [(id: UUID, displayName: String)] = []
-
-        for result in results {
-            switch result {
-            case .matched(let personId, let displayName, let cnIdentifier):
-                if var person = personRepository.fetch(id: personId) {
-                    person.cnIdentifier = cnIdentifier
-                    person.contactUnavailable = false
-                    person.modifiedAt = Date()
-                    do {
-                        try personRepository.save(person)
-                        matchedCount += 1
-                        matchedNames.append(displayName)
-                    } catch {
-                        AppLogger.logError(error, category: AppLogger.viewModel, context: "matchImportedContacts.save")
-                        unmatchedPeople.append((id: personId, displayName: displayName))
-                    }
-                } else {
-                    unmatchedPeople.append((id: personId, displayName: displayName))
-                }
-            case .multipleMatches(let personId, let displayName, _):
-                unmatchedPeople.append((id: personId, displayName: displayName))
-            case .noMatch(let personId, let displayName):
-                unmatchedPeople.append((id: personId, displayName: displayName))
-            }
-        }
-
-        return ContactMatchSummary(
-            matched: matchedCount,
-            unmatchedPeople: unmatchedPeople,
-            total: people.count,
-            matchedNames: matchedNames
-        )
-    }
-
-    func linkContactManually(personId: UUID, cnIdentifier: String) {
-        guard var person = personRepository.fetch(id: personId) else { return }
-        person.cnIdentifier = cnIdentifier
-        person.contactUnavailable = false
-        person.modifiedAt = Date()
-        do {
-            try personRepository.save(person)
-            NotificationCenter.default.post(name: .personDidChange, object: nil)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "linkContactManually")
-        }
     }
 }

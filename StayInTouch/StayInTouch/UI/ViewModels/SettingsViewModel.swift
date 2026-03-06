@@ -235,16 +235,66 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func matchImportedContacts(people: [(id: UUID, displayName: String)]) async -> ContactMatchSummary {
-        let summary = await importService.matchImportedContacts(people: people)
-        if summary.matched > 0 {
+        let results = await importService.fetchContactMatches(people: people)
+
+        guard !results.isEmpty else {
+            return ContactMatchSummary(matched: 0, unmatchedPeople: people, total: people.count, matchedNames: [])
+        }
+
+        // Persist matches on @MainActor (viewContext must be accessed from main thread)
+        var matchedCount = 0
+        var matchedNames: [String] = []
+        var unmatchedPeople: [(id: UUID, displayName: String)] = []
+
+        for result in results {
+            switch result {
+            case .matched(let personId, let displayName, let cnIdentifier):
+                if var person = personRepository.fetch(id: personId) {
+                    person.cnIdentifier = cnIdentifier
+                    person.contactUnavailable = false
+                    person.modifiedAt = Date()
+                    do {
+                        try personRepository.save(person)
+                        matchedCount += 1
+                        matchedNames.append(displayName)
+                    } catch {
+                        AppLogger.logError(error, category: AppLogger.viewModel, context: "matchImportedContacts.save")
+                        unmatchedPeople.append((id: personId, displayName: displayName))
+                    }
+                } else {
+                    unmatchedPeople.append((id: personId, displayName: displayName))
+                }
+            case .multipleMatches(let personId, let displayName, _):
+                unmatchedPeople.append((id: personId, displayName: displayName))
+            case .noMatch(let personId, let displayName):
+                unmatchedPeople.append((id: personId, displayName: displayName))
+            }
+        }
+
+        if matchedCount > 0 {
             load()
             NotificationCenter.default.post(name: .personDidChange, object: nil)
         }
-        return summary
+
+        return ContactMatchSummary(
+            matched: matchedCount,
+            unmatchedPeople: unmatchedPeople,
+            total: people.count,
+            matchedNames: matchedNames
+        )
     }
 
     func linkContactManually(personId: UUID, cnIdentifier: String) {
-        importService.linkContactManually(personId: personId, cnIdentifier: cnIdentifier)
+        guard var person = personRepository.fetch(id: personId) else { return }
+        person.cnIdentifier = cnIdentifier
+        person.contactUnavailable = false
+        person.modifiedAt = Date()
+        do {
+            try personRepository.save(person)
+            NotificationCenter.default.post(name: .personDidChange, object: nil)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "linkContactManually")
+        }
     }
 
     func performFileImport(_ preview: ImportPreview) async -> (result: ImportResult, matchSummary: ContactMatchSummary?) {
