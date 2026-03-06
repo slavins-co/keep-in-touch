@@ -31,17 +31,20 @@ final class NotificationScheduler {
     private let settingsRepository: AppSettingsRepository
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository
+    private let notificationCenter: UserNotificationCenterProtocol
     private var settingsObserver: NSObjectProtocol?
     private var personObserver: NSObjectProtocol?
 
-    private init(
+    init(
         settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
-        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext)
+        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
+        notificationCenter: UserNotificationCenterProtocol = UNUserNotificationCenter.current()
     ) {
         self.settingsRepository = settingsRepository
         self.personRepository = personRepository
         self.groupRepository = groupRepository
+        self.notificationCenter = notificationCenter
     }
 
     func registerCategories() {
@@ -56,7 +59,7 @@ final class NotificationScheduler {
             intentIdentifiers: [],
             options: []
         )
-        UNUserNotificationCenter.current().setNotificationCategories([personCategory])
+        notificationCenter.setNotificationCategories([personCategory])
     }
 
     func startObserving() {
@@ -99,7 +102,7 @@ final class NotificationScheduler {
         guard let settings = settingsRepository.fetch() else { return }
         if !settings.notificationsEnabled {
             await clearAll()
-            try? await UNUserNotificationCenter.current().setBadgeCount(0)
+            try? await notificationCenter.setBadgeCount(0)
             return
         }
 
@@ -117,7 +120,7 @@ final class NotificationScheduler {
             badgeCount = classified.allOverdue.count
         }
 
-        try? await UNUserNotificationCenter.current().setBadgeCount(badgeCount)
+        try? await notificationCenter.setBadgeCount(badgeCount)
 
         for custom in classified.customOverrides {
             await scheduleCustomTime(person: custom.person, type: custom.type, time: custom.time, badgeCount: badgeCount)
@@ -163,7 +166,7 @@ final class NotificationScheduler {
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         let request = UNNotificationRequest(identifier: type.identifier, content: content, trigger: trigger)
         do {
-            try await UNUserNotificationCenter.current().add(request)
+            try await notificationCenter.add(request)
         } catch {
             AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.scheduleDaily(\(type.identifier))")
         }
@@ -183,7 +186,7 @@ final class NotificationScheduler {
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         let request = UNNotificationRequest(identifier: NotificationIdentifier.dailyCombined, content: content, trigger: trigger)
         do {
-            try await UNUserNotificationCenter.current().add(request)
+            try await notificationCenter.add(request)
         } catch {
             AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.scheduleDailyCombined")
         }
@@ -205,7 +208,7 @@ final class NotificationScheduler {
             let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
             let request = UNNotificationRequest(identifier: "\(type.identifier)_\(person.id.uuidString)", content: content, trigger: trigger)
             do {
-                try await UNUserNotificationCenter.current().add(request)
+                try await notificationCenter.add(request)
             } catch {
                 AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.schedulePerPerson(\(type.identifier), \(person.id))")
             }
@@ -228,7 +231,7 @@ final class NotificationScheduler {
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         let request = UNNotificationRequest(identifier: NotificationIdentifier.weeklyDigest, content: content, trigger: trigger)
         do {
-            try await UNUserNotificationCenter.current().add(request)
+            try await notificationCenter.add(request)
         } catch {
             AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.scheduleWeeklyDigest")
         }
@@ -276,7 +279,7 @@ final class NotificationScheduler {
     }
 
     private func clearAll() async {
-        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        notificationCenter.removeAllPendingNotificationRequests()
     }
 }
 
@@ -294,7 +297,7 @@ private extension NotificationScheduler {
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         let request = UNNotificationRequest(identifier: "\(type.identifier)_custom_\(person.id.uuidString)", content: content, trigger: trigger)
         do {
-            try await UNUserNotificationCenter.current().add(request)
+            try await notificationCenter.add(request)
         } catch {
             AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.scheduleCustomTime(\(type.identifier), \(person.id))")
         }
