@@ -83,27 +83,24 @@ final class GroupContactsViewModelTests: XCTestCase {
 
     // MARK: - movePerson
 
-    func testMovePersonChangesGroupId() {
+    func testMovePersonChangesGroupId() throws {
         let person = sut.people[0]
 
         sut.movePerson(person, to: otherGroup.id)
 
-        let lastSaved = try? XCTUnwrap(personRepo.savedPersons.last)
-        XCTAssertEqual(lastSaved?.groupId, otherGroup.id, "Moved person should have otherGroup's id")
+        let lastSaved = try XCTUnwrap(personRepo.savedPersons.last)
+        XCTAssertEqual(lastSaved.groupId, otherGroup.id, "Moved person should have otherGroup's id")
     }
 
-    func testMovePersonSetsGroupAddedAt() {
+    func testMovePersonSetsGroupAddedAt() throws {
         let person = sut.people[0]
 
         sut.movePerson(person, to: otherGroup.id)
 
-        let lastSaved = try? XCTUnwrap(personRepo.savedPersons.last)
-        let groupAddedAt = lastSaved?.groupAddedAt
-        XCTAssertNotNil(groupAddedAt, "groupAddedAt should be set after move")
-        if let date = groupAddedAt {
-            XCTAssertTrue(abs(date.timeIntervalSinceNow) < 1,
-                          "groupAddedAt should be within the last second")
-        }
+        let lastSaved = try XCTUnwrap(personRepo.savedPersons.last)
+        let groupAddedAt = try XCTUnwrap(lastSaved.groupAddedAt)
+        XCTAssertTrue(abs(groupAddedAt.timeIntervalSinceNow) < 1,
+                      "groupAddedAt should be within the last second")
     }
 
     func testMovePersonSavesToRepo() {
@@ -138,15 +135,15 @@ final class GroupContactsViewModelTests: XCTestCase {
 
     // MARK: - addPeople
 
-    func testAddPeopleAssignsToGroup() {
+    func testAddPeopleAssignsToGroup() throws {
         let person = sut.available[0]
 
         let saveCountBefore = personRepo.savedPersons.count
         sut.addPeople([person.id])
 
         let newSaves = Array(personRepo.savedPersons.dropFirst(saveCountBefore))
-        let lastSaved = try? XCTUnwrap(newSaves.last)
-        XCTAssertEqual(lastSaved?.groupId, currentGroup.id,
+        let lastSaved = try XCTUnwrap(newSaves.last)
+        XCTAssertEqual(lastSaved.groupId, currentGroup.id,
                        "Added person should be assigned to currentGroup")
     }
 
