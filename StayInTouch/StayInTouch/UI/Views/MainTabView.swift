@@ -9,6 +9,7 @@ struct MainTabView: View {
     @StateObject private var viewModel = HomeViewModel()
     @ObservedObject private var deepLinkRouter = DeepLinkRouter.shared
     @State private var selectedPerson: Person?
+    @State private var freshStartReason: FreshStartDetector.Reason?
 
     var body: some View {
         TabView(selection: $deepLinkRouter.selectedTab) {
@@ -60,6 +61,30 @@ struct MainTabView: View {
         }
         .onAppear {
             processPendingDeepLink()
+            // onChange misses the initial value when evaluation
+            // completes during HomeViewModel.init() before the
+            // modifier is registered, so check it here.
+            if let reason = viewModel.freshStartReason, selectedPerson == nil {
+                freshStartReason = reason
+            }
+        }
+        .onChange(of: viewModel.freshStartReason) { _, newValue in
+            if newValue != nil && selectedPerson == nil {
+                freshStartReason = newValue
+            }
+        }
+        .fullScreenCover(item: $freshStartReason) { reason in
+            FreshStartPromptView(
+                reason: reason,
+                onFreshStart: {
+                    await viewModel.executeFreshStart()
+                    freshStartReason = nil
+                },
+                onDismiss: {
+                    viewModel.dismissFreshStartPrompt()
+                    freshStartReason = nil
+                }
+            )
         }
     }
 

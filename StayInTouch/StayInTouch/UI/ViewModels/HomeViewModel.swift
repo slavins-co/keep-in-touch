@@ -23,23 +23,27 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var allGoodPeople: [Person] = []
 
     @Published private(set) var isRefreshing = false
+    @Published var freshStartReason: FreshStartDetector.Reason?
 
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository
     private let tagRepository: TagRepository
     private let settingsRepository: AppSettingsRepository
+    private var promptStore: FreshStartPromptStore
     private var searchTask: Task<Void, Never>?
 
     init(
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
         groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
         tagRepository: TagRepository = CoreDataTagRepository(context: CoreDataStack.shared.viewContext),
-        settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext)
+        settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
+        promptStore: FreshStartPromptStore = FreshStartPromptStore()
     ) {
         self.personRepository = personRepository
         self.groupRepository = groupRepository
         self.tagRepository = tagRepository
         self.settingsRepository = settingsRepository
+        self.promptStore = promptStore
         load()
     }
 
@@ -153,6 +157,8 @@ final class HomeViewModel: ObservableObject {
         overduePeople = overdue
         dueSoonPeople = dueSoon
         allGoodPeople = allGoodByRecency
+
+        evaluateFreshStartPrompt()
     }
 
     static func filterPeople(
@@ -178,6 +184,63 @@ final class HomeViewModel: ObservableObject {
                 .contains { $0.contains(searchLower) }
 
             return nameMatch || tagMatch
+        }
+    }
+
+    // MARK: - Fresh Start Prompt
+
+    func recordAppOpen() {
+        promptStore.recordAppOpen()
+    }
+
+    func dismissFreshStartPrompt() {
+        promptStore.recordDismissal()
+        freshStartReason = nil
+    }
+
+    func executeFreshStart() async {
+        let now = Date()
+        let backgroundContext = CoreDataStack.shared.newBackgroundContext()
+        await backgroundContext.perform {
+            let repo = CoreDataPersonRepository(context: backgroundContext)
+            let people = repo.fetchTracked(includePaused: true)
+            var updated: [Person] = []
+            for var person in people {
+                person.lastTouchAt = now
+                person.modifiedAt = now
+                updated.append(person)
+            }
+            do {
+                try repo.batchSave(updated)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "HomeViewModel.executeFreshStart")
+            }
+        }
+        promptStore.recordDismissal()
+        CoreDataStack.shared.viewContext.refreshAllObjects()
+        freshStartReason = nil
+        load()
+        NotificationCenter.default.post(name: .personDidChange, object: nil)
+    }
+
+    private func evaluateFreshStartPrompt() {
+        let tracked = allPeople.filter { !$0.isDemoData }
+        let overdueNonDemo = overduePeople.filter { !$0.isDemoData }
+
+        let detector = FreshStartDetector()
+        let input = FreshStartDetector.Input(
+            trackedCount: tracked.count,
+            overdueCount: overdueNonDemo.count,
+            lastAppOpenedAt: promptStore.lastAppOpenedAt,
+            lastDismissedAt: promptStore.lastDismissedAt,
+            referenceDate: Date()
+        )
+
+        switch detector.evaluate(input) {
+        case .showPrompt(let reason):
+            freshStartReason = reason
+        case .doNotShow:
+            freshStartReason = nil
         }
     }
 }

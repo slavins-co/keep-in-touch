@@ -97,6 +97,7 @@ struct HomeView: View {
         }
         .onAppear {
             viewModel.load()
+            viewModel.recordAppOpen()
         }
     }
 
