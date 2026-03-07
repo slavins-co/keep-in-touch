@@ -61,6 +61,12 @@ struct MainTabView: View {
         }
         .onAppear {
             processPendingDeepLink()
+            // onChange misses the initial value when evaluation
+            // completes during HomeViewModel.init() before the
+            // modifier is registered, so check it here.
+            if let reason = viewModel.freshStartReason, selectedPerson == nil {
+                freshStartReason = reason
+            }
         }
         .onChange(of: viewModel.freshStartReason) { _, newValue in
             if newValue != nil && selectedPerson == nil {
