@@ -96,6 +96,7 @@ struct HomeView: View {
             Text("Enable Contacts access in Settings to import contacts.")
         }
         .onAppear {
+            viewModel.recordAppOpen()
             viewModel.load()
         }
     }
