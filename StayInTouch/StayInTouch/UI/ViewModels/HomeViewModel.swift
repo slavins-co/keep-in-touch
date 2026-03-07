@@ -23,7 +23,7 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var allGoodPeople: [Person] = []
 
     @Published private(set) var isRefreshing = false
-    @Published private(set) var freshStartReason: FreshStartDetector.Reason?
+    @Published var freshStartReason: FreshStartDetector.Reason?
 
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository

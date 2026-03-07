@@ -9,7 +9,7 @@ struct MainTabView: View {
     @StateObject private var viewModel = HomeViewModel()
     @ObservedObject private var deepLinkRouter = DeepLinkRouter.shared
     @State private var selectedPerson: Person?
-    @State private var showFreshStartPrompt = false
+    @State private var freshStartReason: FreshStartDetector.Reason?
 
     var body: some View {
         TabView(selection: $deepLinkRouter.selectedTab) {
@@ -64,23 +64,21 @@ struct MainTabView: View {
         }
         .onChange(of: viewModel.freshStartReason) { _, newValue in
             if newValue != nil && selectedPerson == nil {
-                showFreshStartPrompt = true
+                freshStartReason = newValue
             }
         }
-        .fullScreenCover(isPresented: $showFreshStartPrompt) {
-            if let reason = viewModel.freshStartReason {
-                FreshStartPromptView(
-                    reason: reason,
-                    onFreshStart: {
-                        await viewModel.executeFreshStart()
-                        showFreshStartPrompt = false
-                    },
-                    onDismiss: {
-                        viewModel.dismissFreshStartPrompt()
-                        showFreshStartPrompt = false
-                    }
-                )
-            }
+        .fullScreenCover(item: $freshStartReason) { reason in
+            FreshStartPromptView(
+                reason: reason,
+                onFreshStart: {
+                    await viewModel.executeFreshStart()
+                    freshStartReason = nil
+                },
+                onDismiss: {
+                    viewModel.dismissFreshStartPrompt()
+                    freshStartReason = nil
+                }
+            )
         }
     }
 

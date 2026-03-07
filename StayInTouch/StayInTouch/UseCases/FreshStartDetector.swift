@@ -20,10 +20,18 @@ struct FreshStartDetector {
         case doNotShow
     }
 
-    enum Reason: Equatable {
+    enum Reason: Equatable, Identifiable {
         case overwhelmed
         case inactive
         case both
+
+        var id: String {
+            switch self {
+            case .overwhelmed: return "overwhelmed"
+            case .inactive:    return "inactive"
+            case .both:        return "both"
+            }
+        }
     }
 
     // MARK: - Thresholds
