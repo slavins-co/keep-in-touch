@@ -192,6 +192,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func resetAllFrequencies() async {
+        AnalyticsService.track("freshStart.confirmed")
         let now = Date()
         let backgroundContext = CoreDataStack.shared.newBackgroundContext()
         await backgroundContext.perform {
@@ -218,7 +219,11 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - Data Export (delegates to DataExportService)
 
     func exportContacts() -> URL? {
-        exportService.exportContacts()
+        let url = exportService.exportContacts()
+        if url != nil {
+            AnalyticsService.track("data.exported")
+        }
+        return url
     }
 
     // MARK: - Data Import (delegates to DataImportService)
@@ -229,6 +234,7 @@ final class SettingsViewModel: ObservableObject {
 
     func executeImport(_ preview: ImportPreview) async -> ImportResult {
         let result = await importService.executeImport(preview)
+        AnalyticsService.track("data.imported", parameters: ["count": "\(result.importedPeople.count)"])
         load()
         NotificationCenter.default.post(name: .personDidChange, object: nil)
         return result
