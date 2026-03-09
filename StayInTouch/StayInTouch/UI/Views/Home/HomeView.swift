@@ -340,7 +340,7 @@ struct HomeView: View {
                         onToggle: { toggleSection("overdue") },
                         groupsById: groupsById,
                         tagsById: tagsById,
-                        statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
+                        statusForPerson: { _ in .overdue },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
                         selectPerson: selectPerson
@@ -353,7 +353,7 @@ struct HomeView: View {
                         onToggle: { toggleSection("due-soon") },
                         groupsById: groupsById,
                         tagsById: tagsById,
-                        statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
+                        statusForPerson: { _ in .dueSoon },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
                         selectPerson: selectPerson
@@ -366,7 +366,7 @@ struct HomeView: View {
                         onToggle: { toggleSection("all-good") },
                         groupsById: groupsById,
                         tagsById: tagsById,
-                        statusForPerson: { calculator.status(for: $0, in: viewModel.groups) },
+                        statusForPerson: { _ in .onTrack },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
                         selectPerson: selectPerson
