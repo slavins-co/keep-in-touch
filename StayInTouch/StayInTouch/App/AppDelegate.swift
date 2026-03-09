@@ -10,6 +10,8 @@ import UserNotifications
 import BackgroundTasks
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    private var privacyWindow: UIWindow?
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -20,6 +22,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         NotificationScheduler.shared.startObserving()
         UNUserNotificationCenter.current().delegate = self
         registerBackgroundTasks()
+        registerPrivacyScreenObservers()
         Task { await NotificationScheduler.shared.scheduleAll() }
         return true
     }
@@ -120,6 +123,48 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let request = BGAppRefreshTaskRequest(identifier: BackgroundTaskIdentifier.refresh)
         request.earliestBeginDate = Calendar.current.date(byAdding: .hour, value: 6, to: Date())
         try? BGTaskScheduler.shared.submit(request)
+    }
+
+    // MARK: - Privacy Screen
+
+    private func registerPrivacyScreenObservers() {
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(sceneWillDeactivate),
+            name: UIScene.willDeactivateNotification, object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(sceneDidActivate),
+            name: UIScene.didActivateNotification, object: nil
+        )
+    }
+
+    @objc private func sceneWillDeactivate() {
+        guard privacyWindow == nil,
+              let scene = UIApplication.shared.connectedScenes
+                  .compactMap({ $0 as? UIWindowScene }).first else { return }
+
+        let window = UIWindow(windowScene: scene)
+        window.windowLevel = .alert + 1
+
+        let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemThickMaterial))
+        blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
+        let vc = UIViewController()
+        vc.view.addSubview(blur)
+        blur.frame = vc.view.bounds
+
+        window.rootViewController = vc
+        window.isHidden = false
+        privacyWindow = window
+    }
+
+    @objc private func sceneDidActivate() {
+        UIView.animate(withDuration: 0.15) {
+            self.privacyWindow?.alpha = 0
+        } completion: { _ in
+            self.privacyWindow?.isHidden = true
+            self.privacyWindow = nil
+        }
     }
 }
 
