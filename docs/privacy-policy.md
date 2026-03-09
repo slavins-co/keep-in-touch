@@ -23,6 +23,7 @@ The following data is collected, among other things:
 - a rounded timestamp (to the nearest hour),
 - device metadata (e.g., system version, app version, device type),
 - additional metadata defined by the app publisher (e.g., "number of items in the database").
+
 What is not stored?
 - No IP addresses (not in logs, not in the database),
 - No cookies or tracking technologies,
