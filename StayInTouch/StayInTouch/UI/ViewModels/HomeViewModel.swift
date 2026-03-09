@@ -88,9 +88,9 @@ final class HomeViewModel: ObservableObject {
         let byId = Dictionary(uniqueKeysWithValues: summaries.map { ($0.identifier, $0) })
 
         let backgroundContext = CoreDataStack.shared.newBackgroundContext()
-        let repo = CoreDataPersonRepository(context: backgroundContext)
 
         await backgroundContext.perform {
+            let repo = CoreDataPersonRepository(context: backgroundContext)
             let people = repo.fetchTracked(includePaused: true)
             var updated: [Person] = []
             for person in people {
