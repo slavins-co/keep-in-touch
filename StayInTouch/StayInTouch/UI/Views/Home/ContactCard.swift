@@ -41,11 +41,17 @@ struct ContactCard: View {
             HStack(spacing: DS.Spacing.sm) {
                 if let firstTag = tags.first {
                     HStack(spacing: DS.Spacing.xs) {
-                        TagPill(tag: firstTag)
+                        Text(firstTag.name.uppercased())
+                            .font(DS.Typography.groupBadgeLabel)
+                            .foregroundStyle(DS.Colors.groupBadgeText)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(DS.Colors.groupBadgeBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
                         if tags.count > 1 {
                             Text("+\(tags.count - 1)")
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(DS.Colors.secondaryText)
+                                .font(DS.Typography.groupBadgeLabel)
+                                .foregroundStyle(DS.Colors.groupBadgeText)
                         }
                     }
                 }
