@@ -205,6 +205,7 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
             snoozedUntil: nil,
             customDueDate: nil,
             birthday: nil,
+            birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: false,
             groupAddedAt: Date(),

@@ -23,6 +23,8 @@ extension AppSettingsEntity {
             demoModeEnabled: demoModeEnabled,
             analyticsEnabled: analyticsEnabled,
             hideContactNamesInNotifications: hideContactNamesInNotifications,
+            birthdayNotificationsEnabled: birthdayNotificationsEnabled,
+            birthdayNotificationTime: birthdayNotificationTime.flatMap(LocalTime.from(jsonString:)) ?? LocalTime(hour: 9, minute: 0),
             lastContactsSyncAt: lastContactsSyncAt,
             onboardingCompleted: onboardingCompleted,
             appVersion: appVersion ?? ""
@@ -43,6 +45,8 @@ extension AppSettingsEntity {
         demoModeEnabled = settings.demoModeEnabled
         analyticsEnabled = settings.analyticsEnabled
         hideContactNamesInNotifications = settings.hideContactNamesInNotifications
+        birthdayNotificationsEnabled = settings.birthdayNotificationsEnabled
+        birthdayNotificationTime = settings.birthdayNotificationTime.toJsonString()
         lastContactsSyncAt = settings.lastContactsSyncAt
         onboardingCompleted = settings.onboardingCompleted
         appVersion = settings.appVersion

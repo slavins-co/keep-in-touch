@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="false" userDefinedModelVersionIdentifier="">
+    <entity name="Person" representedClassName="PersonEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="cnIdentifier" optional="YES" attributeType="String"/>
+        <attribute name="displayName" optional="NO" attributeType="String"/>
+        <attribute name="initials" optional="NO" attributeType="String"/>
+        <attribute name="avatarColor" optional="NO" attributeType="String"/>
+        <attribute name="groupId" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="tagIds" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
+        <attribute name="lastTouchAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lastTouchMethod" optional="YES" attributeType="String"/>
+        <attribute name="lastTouchNotes" optional="YES" attributeType="String"/>
+        <attribute name="nextTouchNotes" optional="YES" attributeType="String"/>
+        <attribute name="isPaused" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="isTracked" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="notificationsMuted" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="customBreachTime" optional="YES" attributeType="String"/>
+        <attribute name="snoozedUntil" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="customDueDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="birthday" optional="YES" attributeType="String"/>
+        <attribute name="birthdayNotificationsEnabled" optional="YES" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
+        <attribute name="groupAddedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="contactUnavailable" optional="NO" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="modifiedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="isDemoData" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="sortOrder" optional="NO" attributeType="Integer 64" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="Group" representedClassName="GroupEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="NO" attributeType="String"/>
+        <attribute name="frequencyDays" optional="NO" attributeType="Integer 64" usesScalarValueType="YES" renamingIdentifier="slaDays"/>
+        <attribute name="warningDays" optional="NO" attributeType="Integer 64" usesScalarValueType="YES"/>
+        <attribute name="colorHex" optional="YES" attributeType="String"/>
+        <attribute name="isDefault" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="sortOrder" optional="NO" attributeType="Integer 64" usesScalarValueType="YES"/>
+        <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="modifiedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="Tag" representedClassName="TagEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="NO" attributeType="String"/>
+        <attribute name="colorHex" optional="NO" attributeType="String"/>
+        <attribute name="sortOrder" optional="NO" attributeType="Integer 64" usesScalarValueType="YES"/>
+        <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="modifiedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="TouchEvent" representedClassName="TouchEventEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="personId" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="at" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="method" optional="NO" attributeType="String"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
+        <attribute name="timeOfDay" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="modifiedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="AppSettings" representedClassName="AppSettingsEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="theme" optional="NO" attributeType="String"/>
+        <attribute name="notificationsEnabled" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="breachTimeOfDay" optional="NO" attributeType="String"/>
+        <attribute name="digestEnabled" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="digestDay" optional="NO" attributeType="String"/>
+        <attribute name="digestTime" optional="NO" attributeType="String"/>
+        <attribute name="notificationGrouping" optional="YES" attributeType="String"/>
+        <attribute name="badgeCountShowDueSoon" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="dueSoonWindowDays" optional="NO" attributeType="Integer 64" usesScalarValueType="YES"/>
+        <attribute name="demoModeEnabled" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="analyticsEnabled" optional="YES" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
+        <attribute name="lastContactsSyncAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="onboardingCompleted" optional="NO" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="appVersion" optional="NO" attributeType="String"/>
+        <attribute name="hideContactNamesInNotifications" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="birthdayNotificationsEnabled" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="birthdayNotificationTime" optional="YES" attributeType="String"/>
+    </entity>
+    <elements>
+        <element name="Person" positionX="-252" positionY="-108" width="128" height="44"/>
+        <element name="Group" positionX="-36" positionY="-108" width="128" height="44"/>
+        <element name="Tag" positionX="180" positionY="-108" width="128" height="44"/>
+        <element name="TouchEvent" positionX="-144" positionY="54" width="128" height="44"/>
+        <element name="AppSettings" positionX="72" positionY="54" width="128" height="44"/>
+    </elements>
+</model>

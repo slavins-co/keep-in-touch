@@ -99,6 +99,7 @@ struct ContactImportService {
                     snoozedUntil: nil,
                     customDueDate: nil,
                     birthday: nil,
+                    birthdayNotificationsEnabled: true,
                     contactUnavailable: false,
                     isDemoData: false,
                     groupAddedAt: nil,

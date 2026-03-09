@@ -140,6 +140,8 @@ final class HomeViewModel: ObservableObject {
             demoModeEnabled: false,
             analyticsEnabled: true,
             hideContactNamesInNotifications: false,
+            birthdayNotificationsEnabled: false,
+            birthdayNotificationTime: LocalTime(hour: 9, minute: 0),
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: ""

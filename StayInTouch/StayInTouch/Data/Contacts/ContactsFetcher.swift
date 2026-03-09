@@ -239,4 +239,27 @@ enum ContactsFetcher {
         }
         return contact.thumbnailImageData
     }
+
+    static func fetchBirthday(identifier: String) -> Birthday? {
+        let status = CNContactStore.authorizationStatus(for: .contacts)
+        switch status {
+        case .denied, .restricted, .notDetermined:
+            return nil
+        case .authorized, .limited:
+            break
+        @unknown default:
+            break
+        }
+
+        let store = CNContactStore()
+        let keys: [CNKeyDescriptor] = [CNContactBirthdayKey as CNKeyDescriptor]
+
+        guard let contact = try? store.unifiedContact(withIdentifier: identifier, keysToFetch: keys) else {
+            return nil
+        }
+        guard let dateComponents = contact.birthday else {
+            return nil
+        }
+        return Birthday.from(dateComponents: dateComponents)
+    }
 }

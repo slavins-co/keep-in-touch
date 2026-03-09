@@ -26,6 +26,8 @@ struct AppSettings: Identifiable, Equatable {
     var demoModeEnabled: Bool
     var analyticsEnabled: Bool
     var hideContactNamesInNotifications: Bool
+    var birthdayNotificationsEnabled: Bool
+    var birthdayNotificationTime: LocalTime
 
     var lastContactsSyncAt: Date?
     var onboardingCompleted: Bool

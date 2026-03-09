@@ -256,6 +256,7 @@ final class OnboardingViewModel: ObservableObject {
                     snoozedUntil: nil,
                     customDueDate: nil,
                     birthday: nil,
+                    birthdayNotificationsEnabled: true,
                     contactUnavailable: false,
                     isDemoData: false,
                     groupAddedAt: nil,

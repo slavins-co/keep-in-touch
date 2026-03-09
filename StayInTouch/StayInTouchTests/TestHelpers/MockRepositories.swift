@@ -163,6 +163,7 @@ enum TestFactory {
         snoozedUntil: Date? = nil,
         customDueDate: Date? = nil,
         birthday: Birthday? = nil,
+        birthdayNotificationsEnabled: Bool = true,
         cnIdentifier: String? = nil
     ) -> Person {
         Person(
@@ -184,6 +185,7 @@ enum TestFactory {
             snoozedUntil: snoozedUntil,
             customDueDate: customDueDate,
             birthday: birthday,
+            birthdayNotificationsEnabled: birthdayNotificationsEnabled,
             contactUnavailable: false,
             isDemoData: false,
             groupAddedAt: Date(),
@@ -249,7 +251,9 @@ enum TestFactory {
     static func makeSettings(
         onboardingCompleted: Bool = false,
         demoModeEnabled: Bool = false,
-        theme: Theme = .system
+        theme: Theme = .system,
+        birthdayNotificationsEnabled: Bool = false,
+        birthdayNotificationTime: LocalTime = LocalTime(hour: 9, minute: 0)
     ) -> AppSettings {
         AppSettings(
             id: AppSettings.singletonId,
@@ -265,6 +269,8 @@ enum TestFactory {
             demoModeEnabled: demoModeEnabled,
             analyticsEnabled: true,
             hideContactNamesInNotifications: false,
+            birthdayNotificationsEnabled: birthdayNotificationsEnabled,
+            birthdayNotificationTime: birthdayNotificationTime,
             lastContactsSyncAt: nil,
             onboardingCompleted: onboardingCompleted,
             appVersion: ""

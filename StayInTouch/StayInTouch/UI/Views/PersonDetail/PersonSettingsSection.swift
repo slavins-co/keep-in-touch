@@ -59,6 +59,10 @@ struct PersonSettingsSection: View {
             settingsSectionHeader("DETAILS")
             settingsCard {
                 settingsRowBirthday
+                if viewModel.displayBirthday != nil {
+                    settingsDivider
+                    settingsRowBirthdayNotifications
+                }
                 settingsDivider
                 settingsRowGroupsTags
             }
@@ -176,9 +180,16 @@ struct PersonSettingsSection: View {
                     .font(DS.Typography.settingsRowLabel)
                     .foregroundStyle(DS.Colors.settingsItemLabel)
                 Spacer()
-                Text(viewModel.displayBirthday?.formatted ?? "Add")
-                    .font(DS.Typography.settingsRowLabel)
-                    .foregroundStyle(DS.Colors.settingsItemValue)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(viewModel.displayBirthday?.formatted ?? "Add")
+                        .font(DS.Typography.settingsRowLabel)
+                        .foregroundStyle(DS.Colors.settingsItemValue)
+                    if viewModel.person.birthday == nil && viewModel.contactBirthday != nil {
+                        Text("from Contacts")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
+                }
                 Image(systemName: "chevron.right")
                     .font(.caption)
                     .foregroundStyle(DS.Colors.settingsChevron)
@@ -187,6 +198,18 @@ struct PersonSettingsSection: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private var settingsRowBirthdayNotifications: some View {
+        Toggle(isOn: Binding(
+            get: { viewModel.person.birthdayNotificationsEnabled },
+            set: { viewModel.setBirthdayNotificationsEnabled($0) }
+        )) {
+            Text("Birthday Notifications")
+                .font(DS.Typography.settingsRowLabel)
+                .foregroundStyle(DS.Colors.settingsItemLabel)
+        }
+        .frame(minHeight: 48)
     }
 
     private var settingsRowGroupsTags: some View {

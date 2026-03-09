@@ -84,6 +84,7 @@ struct ExportPerson: Codable {
     let modifiedAt: Date
     let touchEvents: [ExportTouchEvent]?
     let birthday: String?
+    let birthdayNotificationsEnabled: Bool?
 
     static func from(_ person: Person, groupName: String?, tagNames: [String], touchEvents: [TouchEvent]) -> ExportPerson {
         let exportEvents: [ExportTouchEvent]? = touchEvents.isEmpty ? nil : touchEvents.map { ExportTouchEvent.from($0) }
@@ -99,7 +100,8 @@ struct ExportPerson: Codable {
             createdAt: person.createdAt,
             modifiedAt: person.modifiedAt,
             touchEvents: exportEvents,
-            birthday: person.birthday?.toJsonString()
+            birthday: person.birthday?.toJsonString(),
+            birthdayNotificationsEnabled: person.birthdayNotificationsEnabled
         )
     }
 }
