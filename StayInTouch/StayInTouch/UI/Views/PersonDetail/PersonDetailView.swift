@@ -49,7 +49,12 @@ struct PersonDetailView: View {
                     viewModel: viewModel,
                     onBirthdayEdit: { activeSheet = .birthdayEditor },
                     onResumePrompt: { activeAlert = .resumePrompt },
-                    onRemoveConfirm: { activeAlert = .removeConfirm }
+                    onRemoveConfirm: { activeAlert = .removeConfirm },
+                    onLinkContact: {
+                        ContactPickerPresenter.present { cnIdentifier in
+                            viewModel.relinkContact(cnIdentifier: cnIdentifier)
+                        }
+                    }
                 )
 
                 PersonQuickActionsBar(

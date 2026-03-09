@@ -432,6 +432,7 @@ enum DS {
         static let xl: CGFloat = 20
         static let xxl: CGFloat = 24
         static let xxxl: CGFloat = 32
+        static let tapTarget: CGFloat = 44  // Apple HIG minimum tap target
 
         // MARK: Adaptive Layout Values
         // Font sizes and CGFloat values cannot use UIColor trait-based adaptation,
