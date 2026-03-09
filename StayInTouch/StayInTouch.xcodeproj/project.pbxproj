@@ -260,6 +260,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		E67E17D440224C788ADEBA6D /* Set Version from Git */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
