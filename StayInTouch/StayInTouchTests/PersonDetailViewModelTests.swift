@@ -421,4 +421,41 @@ final class PersonDetailViewModelTests: XCTestCase {
         XCTAssertNil(sut.contactBirthday)
         XCTAssertNil(sut.displayBirthday)
     }
+
+    // MARK: - Load Refreshes Person From Repository
+
+    func testLoadRefreshesPersonFromRepository() {
+        // Simulate Fresh Start: person was overdue, then an external
+        // process (executeFreshStart) updated lastTouchAt in the repo.
+        let overduePerson = TestFactory.makePerson(
+            groupId: group.id,
+            lastTouchAt: Calendar.current.date(byAdding: .day, value: -30, to: Date())
+        )
+        personRepo.people = [overduePerson]
+
+        let vm = PersonDetailViewModel(
+            person: overduePerson,
+            personRepository: personRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            touchRepository: touchRepo
+        )
+
+        // Verify initially overdue
+        let statusBefore = FrequencyCalculator().status(for: vm.person, in: [group])
+        XCTAssertEqual(statusBefore, .overdue)
+
+        // External update (simulates executeFreshStart's batchSave)
+        var refreshed = overduePerson
+        refreshed.lastTouchAt = Date()
+        refreshed.modifiedAt = Date()
+        personRepo.people = [refreshed]
+
+        // Simulate .onAppear calling load()
+        vm.load()
+
+        let statusAfter = FrequencyCalculator().status(for: vm.person, in: [group])
+        XCTAssertEqual(statusAfter, .onTrack,
+            "After load(), person should reflect the updated lastTouchAt from the repository")
+    }
 }

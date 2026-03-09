@@ -155,9 +155,11 @@ struct PersonDetailView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: showQuickActionUndo)
         .animation(.easeInOut(duration: 0.3), value: showRemoveUndo)
+        .onAppear {
+            viewModel.load()
+        }
         .task {
             await viewModel.refreshContactInfo()
-            viewModel.load()
         }
         .onDisappear {
             if showRemoveUndo {
