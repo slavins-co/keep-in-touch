@@ -153,6 +153,7 @@ final class HomeViewModelTests: XCTestCase {
                 dueSoonWindowDays: 3,
                 demoModeEnabled: false,
                 analyticsEnabled: true,
+                hideContactNamesInNotifications: false,
                 lastContactsSyncAt: nil,
                 onboardingCompleted: false,
                 appVersion: ""

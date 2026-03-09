@@ -28,6 +28,21 @@ final class NotificationScheduler {
         "%d connections are waiting, including %@",
     ]
 
+    static let privateSinglePersonTemplates: [String] = [
+        "Time to reconnect with someone",
+        "You have an overdue connection",
+        "Check in with a contact today",
+        "Someone could use a check-in",
+        "A connection is waiting for you",
+        "Don't let a friendship slip away",
+    ]
+
+    static let privateMultiPersonTemplates: [String] = [
+        "You have %d connections to catch up on",
+        "%d people need your attention",
+        "%d connections are waiting for you",
+    ]
+
     private let settingsRepository: AppSettingsRepository
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository
@@ -122,8 +137,10 @@ final class NotificationScheduler {
 
         try? await notificationCenter.setBadgeCount(badgeCount)
 
+        let hideNames = settings.hideContactNamesInNotifications
+
         for custom in classified.customOverrides {
-            await scheduleCustomTime(person: custom.person, type: custom.type, time: custom.time, badgeCount: badgeCount)
+            await scheduleCustomTime(person: custom.person, type: custom.type, time: custom.time, badgeCount: badgeCount, hideNames: hideNames)
         }
 
         switch settings.notificationGrouping {
@@ -155,7 +172,7 @@ final class NotificationScheduler {
 
         let content = UNMutableNotificationContent()
         content.title = type.title
-        content.body = notificationBody(for: people)
+        content.body = notificationBody(for: people, hideNames: settings.hideContactNamesInNotifications)
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = notificationUserInfo(for: people, type: type.userInfoType)
@@ -178,7 +195,7 @@ final class NotificationScheduler {
 
         let content = UNMutableNotificationContent()
         content.title = "Your connections today"
-        content.body = notificationBody(for: people)
+        content.body = notificationBody(for: people, hideNames: settings.hideContactNamesInNotifications)
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = ["type": "home", "category": "daily"]
@@ -196,10 +213,16 @@ final class NotificationScheduler {
         guard !people.isEmpty else { return }
         let triggerDate = nextDailyDate(for: settings.breachTimeOfDay)
 
+        let hideNames = settings.hideContactNamesInNotifications
+
         for person in people {
             let content = UNMutableNotificationContent()
             content.title = type.title
-            content.body = String(format: Self.singlePersonTemplates.randomElement() ?? "Reach out to %@", person.displayName)
+            if hideNames {
+                content.body = Self.privateSinglePersonTemplates.randomElement() ?? "Time to reconnect with someone"
+            } else {
+                content.body = String(format: Self.singlePersonTemplates.randomElement() ?? "Reach out to %@", person.displayName)
+            }
             content.sound = .default
             content.badge = NSNumber(value: badgeCount)
             content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
@@ -223,7 +246,7 @@ final class NotificationScheduler {
 
         let content = UNMutableNotificationContent()
         content.title = "Your week in touch"
-        content.body = notificationBody(for: all)
+        content.body = notificationBody(for: all, hideNames: settings.hideContactNamesInNotifications)
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = notificationUserInfo(for: all, type: "digest")
@@ -237,7 +260,15 @@ final class NotificationScheduler {
         }
     }
 
-    private func notificationBody(for people: [Person]) -> String {
+    private func notificationBody(for people: [Person], hideNames: Bool) -> String {
+        if hideNames {
+            if people.count == 1 {
+                return Self.privateSinglePersonTemplates.randomElement() ?? "Time to reconnect with someone"
+            }
+            let template = Self.privateMultiPersonTemplates.randomElement() ?? "You have %d connections to catch up on"
+            return String(format: template, people.count)
+        }
+
         if people.count == 1, let person = people.first {
             let template = Self.singlePersonTemplates.randomElement() ?? "Reach out to %@"
             return String(format: template, person.displayName)
@@ -284,11 +315,15 @@ final class NotificationScheduler {
 }
 
 private extension NotificationScheduler {
-    func scheduleCustomTime(person: Person, type: DailyNotificationType, time: LocalTime, badgeCount: Int) async {
+    func scheduleCustomTime(person: Person, type: DailyNotificationType, time: LocalTime, badgeCount: Int, hideNames: Bool) async {
         let triggerDate = nextDailyDate(for: time)
         let content = UNMutableNotificationContent()
         content.title = type.title
-        content.body = String(format: Self.singlePersonTemplates.randomElement() ?? "Reach out to %@", person.displayName)
+        if hideNames {
+            content.body = Self.privateSinglePersonTemplates.randomElement() ?? "Time to reconnect with someone"
+        } else {
+            content.body = String(format: Self.singlePersonTemplates.randomElement() ?? "Reach out to %@", person.displayName)
+        }
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
         content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]

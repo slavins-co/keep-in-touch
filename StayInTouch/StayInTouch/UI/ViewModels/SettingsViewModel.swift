@@ -131,6 +131,11 @@ final class SettingsViewModel: ObservableObject {
         save()
     }
 
+    func setHideContactNamesInNotifications(_ hideNames: Bool) {
+        settings.hideContactNamesInNotifications = hideNames
+        save()
+    }
+
     func setAnalyticsEnabled(_ enabled: Bool) {
         settings.analyticsEnabled = enabled
         save()
@@ -404,6 +409,7 @@ struct AppSettingsDefaults {
             dueSoonWindowDays: 3,
             demoModeEnabled: false,
             analyticsEnabled: true,
+            hideContactNamesInNotifications: false,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""

@@ -44,7 +44,8 @@ final class NotificationSchedulerTests: XCTestCase {
     private func makeSettingsWithNotifications(
         grouping: NotificationGrouping = .perType,
         badgeShowDueSoon: Bool = false,
-        digestEnabled: Bool = false
+        digestEnabled: Bool = false,
+        hideNames: Bool = false
     ) -> AppSettings {
         AppSettings(
             id: AppSettings.singletonId,
@@ -59,6 +60,7 @@ final class NotificationSchedulerTests: XCTestCase {
             dueSoonWindowDays: 3,
             demoModeEnabled: false,
             analyticsEnabled: false,
+            hideContactNamesInNotifications: hideNames,
             lastContactsSyncAt: nil,
             onboardingCompleted: true,
             appVersion: ""
@@ -328,5 +330,59 @@ final class NotificationSchedulerTests: XCTestCase {
         let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first)
         let trigger = try XCTUnwrap(request.trigger as? UNCalendarNotificationTrigger, "Should use calendar trigger")
         XCTAssertTrue(trigger.repeats, "Trigger should repeat")
+    }
+
+    // MARK: - Hide Names in Notifications
+
+    func testHideNames_perTypeSinglePerson_omitsName() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(hideNames: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makeOverduePerson(name: "Alice")]
+
+        await sut.scheduleAll()
+
+        let bodies = mockNotificationCenter.addedRequests.map(\.content.body)
+        for body in bodies {
+            XCTAssertFalse(body.contains("Alice"), "Notification body should not contain name when hideNames is true, got: \(body)")
+        }
+    }
+
+    func testHideNames_perPersonGrouping_omitsName() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(grouping: .perPerson, hideNames: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makeOverduePerson(name: "Bob")]
+
+        await sut.scheduleAll()
+
+        let bodies = mockNotificationCenter.addedRequests.map(\.content.body)
+        for body in bodies {
+            XCTAssertFalse(body.contains("Bob"), "Per-person notification should not contain name when hideNames is true, got: \(body)")
+        }
+    }
+
+    func testHideNames_multipleOverdue_omitsNames() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(hideNames: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makeOverduePerson(name: "Carol"), makeOverduePerson(name: "Dave")]
+
+        await sut.scheduleAll()
+
+        let bodies = mockNotificationCenter.addedRequests.map(\.content.body)
+        for body in bodies {
+            XCTAssertFalse(body.contains("Carol"), "Should not contain Carol, got: \(body)")
+            XCTAssertFalse(body.contains("Dave"), "Should not contain Dave, got: \(body)")
+        }
+    }
+
+    func testHideNames_disabled_includesName() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(grouping: .perPerson, hideNames: false)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makeOverduePerson(name: "Eve")]
+
+        await sut.scheduleAll()
+
+        let bodies = mockNotificationCenter.addedRequests.map(\.content.body)
+        let hasName = bodies.contains { $0.contains("Eve") }
+        XCTAssertTrue(hasName, "Notification should contain name when hideNames is false")
     }
 }

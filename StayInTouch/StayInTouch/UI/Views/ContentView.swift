@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = OnboardingViewModel()
     @State private var preferredScheme: ColorScheme? = nil
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         SwiftUI.Group {
@@ -33,6 +34,15 @@ struct ContentView: View {
         }
         .preferredColorScheme(preferredScheme)
         .errorToast()
+        .overlay {
+            if scenePhase != .active {
+                Rectangle()
+                    .fill(.ultraThickMaterial)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.15), value: scenePhase != .active)
     }
 
     private func loadTheme() {

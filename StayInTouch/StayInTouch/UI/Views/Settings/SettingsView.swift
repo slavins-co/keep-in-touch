@@ -421,6 +421,13 @@ struct SettingsView: View {
             )) {
                 Text("Include Due Soon in Badge")
             }
+
+            Toggle(isOn: Binding(
+                get: { viewModel.settings.hideContactNamesInNotifications },
+                set: { viewModel.setHideContactNamesInNotifications($0) }
+            )) {
+                Label("Hide Names in Notifications", systemImage: "eye.slash")
+            }
         }
     }
 

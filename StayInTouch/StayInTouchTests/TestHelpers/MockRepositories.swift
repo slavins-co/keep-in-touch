@@ -264,6 +264,7 @@ enum TestFactory {
             dueSoonWindowDays: 3,
             demoModeEnabled: demoModeEnabled,
             analyticsEnabled: true,
+            hideContactNamesInNotifications: false,
             lastContactsSyncAt: nil,
             onboardingCompleted: onboardingCompleted,
             appVersion: ""
