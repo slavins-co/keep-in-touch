@@ -43,6 +43,19 @@ final class NotificationScheduler {
         "%d connections are waiting for you",
     ]
 
+    static let birthdayTemplates: [String] = [
+        "It's %@'s birthday today!",
+        "Wish %@ a happy birthday!",
+        "Don't forget — it's %@'s birthday!",
+        "%@ is celebrating a birthday today!",
+    ]
+
+    static let privateBirthdayTemplates: [String] = [
+        "A contact has a birthday today!",
+        "Someone is celebrating a birthday!",
+        "Time to send birthday wishes!",
+    ]
+
     private let settingsRepository: AppSettingsRepository
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository
@@ -74,7 +87,13 @@ final class NotificationScheduler {
             intentIdentifiers: [],
             options: []
         )
-        notificationCenter.setNotificationCategories([personCategory])
+        let birthdayCategory = UNNotificationCategory(
+            identifier: NotificationIdentifier.categoryBirthday,
+            actions: [logAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        notificationCenter.setNotificationCategories([personCategory, birthdayCategory])
     }
 
     func startObserving() {
@@ -115,13 +134,16 @@ final class NotificationScheduler {
 
     func scheduleAll() async {
         guard let settings = settingsRepository.fetch() else { return }
+
+        await clearAll()
+
+        // Birthday notifications are independent of daily reminders
+        await scheduleBirthdays(settings: settings)
+
         if !settings.notificationsEnabled {
-            await clearAll()
             try? await notificationCenter.setBadgeCount(0)
             return
         }
-
-        await clearAll()
 
         let now = Date()
         let groups = groupRepository.fetchAll()
@@ -337,6 +359,78 @@ private extension NotificationScheduler {
             AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.scheduleCustomTime(\(type.identifier), \(person.id))")
         }
     }
+
+    func scheduleBirthdays(settings: AppSettings) async {
+        guard settings.birthdayNotificationsEnabled else { return }
+
+        let ignoreSnoozePause = settings.birthdayIgnoreSnoozePause
+        let people = personRepository.fetchTracked(includePaused: ignoreSnoozePause)
+        let hideNames = settings.hideContactNamesInNotifications
+        let time = settings.birthdayNotificationTime
+
+        for person in people {
+            guard person.birthdayNotificationsEnabled else { continue }
+            guard !person.notificationsMuted else { continue }
+            if !ignoreSnoozePause, let snoozedUntil = person.snoozedUntil, snoozedUntil > Date() { continue }
+
+            // Resolve birthday: stored first, then contact-sourced
+            let birthday: Birthday?
+            if let stored = person.birthday {
+                birthday = stored
+            } else if let cnId = person.cnIdentifier {
+                birthday = ContactsFetcher.fetchBirthday(identifier: cnId)
+            } else {
+                birthday = nil
+            }
+
+            guard let birthday else { continue }
+
+            let content = UNMutableNotificationContent()
+            content.title = "Birthday Today 🎂"
+            if hideNames {
+                content.body = Self.privateBirthdayTemplates.randomElement()
+                    ?? "A contact has a birthday today!"
+            } else {
+                content.body = String(
+                    format: Self.birthdayTemplates.randomElement()
+                        ?? "It's %@'s birthday today!",
+                    person.displayName
+                )
+            }
+            content.sound = .default
+            content.threadIdentifier = "birthday"
+            content.categoryIdentifier = NotificationIdentifier.categoryBirthday
+            content.userInfo = [
+                "type": "person",
+                "personId": person.id.uuidString,
+                "category": "birthday"
+            ]
+
+            var dateComponents = DateComponents()
+            dateComponents.month = birthday.month
+            dateComponents.day = birthday.day
+            dateComponents.hour = time.hour
+            dateComponents.minute = time.minute
+
+            let trigger = UNCalendarNotificationTrigger(
+                dateMatching: dateComponents,
+                repeats: true
+            )
+
+            let request = UNNotificationRequest(
+                identifier: "\(NotificationIdentifier.birthdayPrefix)\(person.id.uuidString)",
+                content: content,
+                trigger: trigger
+            )
+
+            do {
+                try await notificationCenter.add(request)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.notifications,
+                    context: "NotificationScheduler.scheduleBirthdays(\(person.id))")
+            }
+        }
+    }
 }
 
 enum DailyNotificationType {
@@ -378,6 +472,9 @@ enum NotificationIdentifier {
 
     static let categoryPerson = "PERSON_REMINDER"
     static let actionLogConnection = "LOG_CONNECTION"
+
+    static let birthdayPrefix = "birthday_"
+    static let categoryBirthday = "BIRTHDAY_REMINDER"
 }
 
 private extension DayOfWeek {

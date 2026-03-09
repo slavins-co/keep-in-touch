@@ -34,6 +34,7 @@ struct Person: Identifiable, Equatable, Hashable {
     var snoozedUntil: Date?
     var customDueDate: Date?
     var birthday: Birthday?
+    var birthdayNotificationsEnabled: Bool
 
     var contactUnavailable: Bool
     var isDemoData: Bool

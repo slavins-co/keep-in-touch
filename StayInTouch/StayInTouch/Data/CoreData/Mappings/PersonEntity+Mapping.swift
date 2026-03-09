@@ -28,6 +28,7 @@ extension PersonEntity {
             snoozedUntil: snoozedUntil,
             customDueDate: customDueDate,
             birthday: birthday.flatMap(Birthday.from(jsonString:)),
+            birthdayNotificationsEnabled: birthdayNotificationsEnabled,
             contactUnavailable: contactUnavailable,
             isDemoData: isDemoData,
             groupAddedAt: groupAddedAt,
@@ -56,6 +57,7 @@ extension PersonEntity {
         snoozedUntil = person.snoozedUntil
         customDueDate = person.customDueDate
         birthday = person.birthday?.toJsonString()
+        birthdayNotificationsEnabled = person.birthdayNotificationsEnabled
         contactUnavailable = person.contactUnavailable
         isDemoData = person.isDemoData
         groupAddedAt = person.groupAddedAt

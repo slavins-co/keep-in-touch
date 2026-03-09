@@ -46,6 +46,7 @@ final class FreshStartIntegrationTests: XCTestCase {
             snoozedUntil: nil,
             customDueDate: nil,
             birthday: nil,
+            birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: isDemoData,
             groupAddedAt: Calendar.current.date(byAdding: .day, value: -60, to: now),
@@ -346,6 +347,9 @@ private struct StubSettingsRepository: AppSettingsRepository {
             demoModeEnabled: false,
             analyticsEnabled: true,
             hideContactNamesInNotifications: false,
+            birthdayNotificationsEnabled: false,
+            birthdayNotificationTime: LocalTime(hour: 9, minute: 0),
+            birthdayIgnoreSnoozePause: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: ""

@@ -136,6 +136,23 @@ final class SettingsViewModel: ObservableObject {
         save()
     }
 
+    func setBirthdayNotificationsEnabled(_ enabled: Bool) {
+        AnalyticsService.track("settings.birthdayNotifications.toggled", parameters: ["enabled": String(enabled)])
+        settings.birthdayNotificationsEnabled = enabled
+        save()
+    }
+
+    func setBirthdayNotificationTime(_ time: LocalTime) {
+        settings.birthdayNotificationTime = time
+        save()
+    }
+
+    func setBirthdayIgnoreSnoozePause(_ enabled: Bool) {
+        AnalyticsService.track("settings.birthdayIgnoreSnoozePause.toggled", parameters: ["enabled": String(enabled)])
+        settings.birthdayIgnoreSnoozePause = enabled
+        save()
+    }
+
     func setAnalyticsEnabled(_ enabled: Bool) {
         settings.analyticsEnabled = enabled
         save()
@@ -410,6 +427,9 @@ struct AppSettingsDefaults {
             demoModeEnabled: false,
             analyticsEnabled: true,
             hideContactNamesInNotifications: false,
+            birthdayNotificationsEnabled: false,
+            birthdayNotificationTime: LocalTime(hour: 9, minute: 0),
+            birthdayIgnoreSnoozePause: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""

@@ -45,7 +45,9 @@ final class NotificationSchedulerTests: XCTestCase {
         grouping: NotificationGrouping = .perType,
         badgeShowDueSoon: Bool = false,
         digestEnabled: Bool = false,
-        hideNames: Bool = false
+        hideNames: Bool = false,
+        birthdayNotificationsEnabled: Bool = false,
+        birthdayIgnoreSnoozePause: Bool = true
     ) -> AppSettings {
         AppSettings(
             id: AppSettings.singletonId,
@@ -61,6 +63,9 @@ final class NotificationSchedulerTests: XCTestCase {
             demoModeEnabled: false,
             analyticsEnabled: false,
             hideContactNamesInNotifications: hideNames,
+            birthdayNotificationsEnabled: birthdayNotificationsEnabled,
+            birthdayNotificationTime: LocalTime(hour: 9, minute: 0),
+            birthdayIgnoreSnoozePause: birthdayIgnoreSnoozePause,
             lastContactsSyncAt: nil,
             onboardingCompleted: true,
             appVersion: ""
@@ -284,15 +289,18 @@ final class NotificationSchedulerTests: XCTestCase {
 
     // MARK: - Register Categories
 
-    func testRegisterCategories_setsPersonCategory() throws {
+    func testRegisterCategories_setsPersonAndBirthdayCategories() throws {
         sut.registerCategories()
 
-        XCTAssertEqual(mockNotificationCenter.categoriesSet.count, 1)
-        let category = try XCTUnwrap(mockNotificationCenter.categoriesSet.first)
-        XCTAssertEqual(category.identifier, NotificationIdentifier.categoryPerson)
-        XCTAssertEqual(category.actions.count, 1)
-        let action = try XCTUnwrap(category.actions.first)
-        XCTAssertEqual(action.identifier, NotificationIdentifier.actionLogConnection)
+        XCTAssertEqual(mockNotificationCenter.categoriesSet.count, 2)
+        let identifiers = Set(mockNotificationCenter.categoriesSet.map(\.identifier))
+        XCTAssertTrue(identifiers.contains(NotificationIdentifier.categoryPerson))
+        XCTAssertTrue(identifiers.contains(NotificationIdentifier.categoryBirthday))
+        for category in mockNotificationCenter.categoriesSet {
+            XCTAssertEqual(category.actions.count, 1)
+            let action = try XCTUnwrap(category.actions.first)
+            XCTAssertEqual(action.identifier, NotificationIdentifier.actionLogConnection)
+        }
     }
 
     // MARK: - Notification Content
@@ -384,5 +392,223 @@ final class NotificationSchedulerTests: XCTestCase {
         let bodies = mockNotificationCenter.addedRequests.map(\.content.body)
         let hasName = bodies.contains { $0.contains("Eve") }
         XCTAssertTrue(hasName, "Notification should contain name when hideNames is false")
+    }
+
+    // MARK: - Birthday Notifications
+
+    private func makePersonWithBirthday(
+        name: String = "Alice",
+        birthday: Birthday = Birthday(month: 3, day: 15, year: nil),
+        birthdayNotificationsEnabled: Bool = true,
+        notificationsMuted: Bool = false,
+        isPaused: Bool = false,
+        snoozedUntil: Date? = nil
+    ) -> Person {
+        var person = TestFactory.makePerson(
+            name: name,
+            groupId: groupId,
+            birthdayNotificationsEnabled: birthdayNotificationsEnabled
+        )
+        person.birthday = birthday
+        person.notificationsMuted = notificationsMuted
+        person.isPaused = isPaused
+        person.snoozedUntil = snoozedUntil
+        return person
+    }
+
+    func testBirthday_globalDisabled_schedulesNone() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: false)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday()]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertTrue(birthdayRequests.isEmpty, "No birthday notifications when global toggle is off")
+    }
+
+    func testBirthday_globalEnabled_schedulesNotification() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let person = makePersonWithBirthday(birthday: Birthday(month: 7, day: 4, year: nil))
+        mockPersonRepo.people = [person]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertEqual(birthdayRequests.count, 1)
+
+        let request = try XCTUnwrap(birthdayRequests.first)
+        XCTAssertEqual(request.identifier, "\(NotificationIdentifier.birthdayPrefix)\(person.id.uuidString)")
+
+        let trigger = try XCTUnwrap(request.trigger as? UNCalendarNotificationTrigger)
+        XCTAssertEqual(trigger.dateComponents.month, 7)
+        XCTAssertEqual(trigger.dateComponents.day, 4)
+        XCTAssertEqual(trigger.dateComponents.hour, 9)
+        XCTAssertEqual(trigger.dateComponents.minute, 0)
+        XCTAssertTrue(trigger.repeats, "Birthday trigger should repeat yearly")
+    }
+
+    func testBirthday_perPersonDisabled_skips() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday(birthdayNotificationsEnabled: false)]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertTrue(birthdayRequests.isEmpty, "Should skip person with birthday notifications disabled")
+    }
+
+    func testBirthday_noBirthday_skips() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        var person = TestFactory.makePerson(name: "NoBday", groupId: groupId)
+        person.birthday = nil
+        mockPersonRepo.people = [person]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertTrue(birthdayRequests.isEmpty, "Should skip person with no birthday")
+    }
+
+    func testBirthday_mutedNotifications_skips() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday(notificationsMuted: true)]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertTrue(birthdayRequests.isEmpty, "Should skip person with muted notifications")
+    }
+
+    func testBirthday_snoozed_skipsWhenOverrideOff() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(
+            birthdayNotificationsEnabled: true,
+            birthdayIgnoreSnoozePause: false
+        )
+        seedWeeklyGroup()
+        let future = Calendar.current.date(byAdding: .day, value: 7, to: Date())!
+        mockPersonRepo.people = [makePersonWithBirthday(snoozedUntil: future)]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertTrue(birthdayRequests.isEmpty, "Should skip snoozed person when override is off")
+    }
+
+    func testBirthday_snoozed_firesWhenOverrideOn() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(
+            birthdayNotificationsEnabled: true,
+            birthdayIgnoreSnoozePause: true
+        )
+        seedWeeklyGroup()
+        let future = Calendar.current.date(byAdding: .day, value: 7, to: Date())!
+        mockPersonRepo.people = [makePersonWithBirthday(snoozedUntil: future)]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertEqual(birthdayRequests.count, 1, "Should schedule birthday for snoozed person when override is on")
+    }
+
+    func testBirthday_paused_firesWhenOverrideOn() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(
+            birthdayNotificationsEnabled: true,
+            birthdayIgnoreSnoozePause: true
+        )
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday(isPaused: true)]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertEqual(birthdayRequests.count, 1, "Should schedule birthday for paused person when override is on")
+    }
+
+    func testBirthday_hideNames_omitsPersonName() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(hideNames: true, birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday(name: "SecretPerson")]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        let request = try XCTUnwrap(birthdayRequests.first)
+        XCTAssertFalse(request.content.body.contains("SecretPerson"), "Birthday notification should not contain name when hideNames is true")
+    }
+
+    func testBirthday_firesIndependentlyOfDailyReminders() async {
+        // Daily reminders OFF but birthday notifications ON
+        var settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        settings.notificationsEnabled = false
+        mockSettingsRepo.settings = settings
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday()]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertEqual(birthdayRequests.count, 1, "Birthday notifications should fire even when daily reminders are off")
+
+        // No daily reminders should be scheduled
+        let dailyRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix("daily_")
+        }
+        XCTAssertTrue(dailyRequests.isEmpty, "Daily reminders should not fire when disabled")
+    }
+
+    func testBirthday_correctThreadAndCategory() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday()]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        let request = try XCTUnwrap(birthdayRequests.first)
+        XCTAssertEqual(request.content.threadIdentifier, "birthday")
+        XCTAssertEqual(request.content.categoryIdentifier, NotificationIdentifier.categoryBirthday)
+    }
+
+    func testBirthday_includesPersonId_inUserInfo() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let person = makePersonWithBirthday()
+        mockPersonRepo.people = [person]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        let request = try XCTUnwrap(birthdayRequests.first)
+        XCTAssertEqual(request.content.userInfo["personId"] as? String, person.id.uuidString)
+        XCTAssertEqual(request.content.userInfo["type"] as? String, "person")
+        XCTAssertEqual(request.content.userInfo["category"] as? String, "birthday")
     }
 }

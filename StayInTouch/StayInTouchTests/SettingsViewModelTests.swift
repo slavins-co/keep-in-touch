@@ -142,7 +142,8 @@ final class SettingsViewModelTests: XCTestCase {
                 createdAt: Date(),
                 modifiedAt: Date(),
                 touchEvents: nil,
-                birthday: nil
+                birthday: nil,
+                birthdayNotificationsEnabled: nil
             )
         ]
         let encoder = JSONEncoder()
@@ -181,7 +182,8 @@ final class SettingsViewModelTests: XCTestCase {
                 createdAt: Date(),
                 modifiedAt: Date(),
                 touchEvents: nil,
-                birthday: nil
+                birthday: nil,
+                birthdayNotificationsEnabled: nil
             )]
         )
         let encoder = JSONEncoder()
@@ -232,7 +234,8 @@ final class SettingsViewModelTests: XCTestCase {
                 createdAt: Date(),
                 modifiedAt: Date(),
                 touchEvents: nil,
-                birthday: nil
+                birthday: nil,
+                birthdayNotificationsEnabled: nil
             )]
         )
         let encoder = JSONEncoder()
@@ -371,7 +374,8 @@ final class SettingsViewModelTests: XCTestCase {
                 createdAt: Date(),
                 modifiedAt: Date(),
                 touchEvents: nil,
-                birthday: nil
+                birthday: nil,
+                birthdayNotificationsEnabled: nil
             )]
         )
         let encoder = JSONEncoder()
@@ -422,7 +426,8 @@ final class SettingsViewModelTests: XCTestCase {
                 createdAt: Date(),
                 modifiedAt: Date(),
                 touchEvents: nil,
-                birthday: nil
+                birthday: nil,
+                birthdayNotificationsEnabled: nil
             )]
         )
         let encoder = JSONEncoder()
@@ -469,7 +474,8 @@ final class SettingsViewModelTests: XCTestCase {
                 createdAt: Date(),
                 modifiedAt: Date(),
                 touchEvents: nil,
-                birthday: nil
+                birthday: nil,
+                birthdayNotificationsEnabled: nil
             )]
         )
         let encoder = JSONEncoder()
@@ -538,7 +544,8 @@ final class SettingsViewModelTests: XCTestCase {
                 touchEvents: [
                     ExportTouchEvent(id: UUID(), at: touchDate, method: "Call", notes: "Caught up")
                 ],
-                birthday: nil
+                birthday: nil,
+                birthdayNotificationsEnabled: nil
             )]
         )
         let encoder = JSONEncoder()
@@ -578,7 +585,8 @@ final class SettingsViewModelTests: XCTestCase {
                     ExportTouchEvent(id: UUID(), at: Date(), method: "call", notes: "Caught up"),
                     ExportTouchEvent(id: UUID(), at: Date(), method: "message", notes: nil)
                 ],
-                birthday: nil
+                birthday: nil,
+                birthdayNotificationsEnabled: nil
             )]
         )
         let encoder = JSONEncoder()

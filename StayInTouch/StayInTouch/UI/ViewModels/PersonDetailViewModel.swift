@@ -120,6 +120,13 @@ final class PersonDetailViewModel: ObservableObject {
         savePerson(updated)
     }
 
+    func setBirthdayNotificationsEnabled(_ enabled: Bool) {
+        AnalyticsService.track("person.birthdayNotifications.toggled", parameters: ["enabled": String(enabled)])
+        var updated = person
+        updated.birthdayNotificationsEnabled = enabled
+        updated.modifiedAt = Date()
+        savePerson(updated)
+    }
 
     func changeGroup(to groupId: UUID) {
         let updated = AssignGroupUseCase().assign(person: person, to: groupId)

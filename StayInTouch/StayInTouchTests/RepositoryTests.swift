@@ -81,6 +81,7 @@ final class RepositoryTests: XCTestCase {
             snoozedUntil: nil,
             customDueDate: nil,
             birthday: nil,
+            birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: false,
             groupAddedAt: nil,
@@ -135,6 +136,9 @@ final class RepositoryTests: XCTestCase {
             demoModeEnabled: false,
             analyticsEnabled: true,
             hideContactNamesInNotifications: false,
+            birthdayNotificationsEnabled: false,
+            birthdayNotificationTime: LocalTime(hour: 9, minute: 0),
+            birthdayIgnoreSnoozePause: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: "1.0"

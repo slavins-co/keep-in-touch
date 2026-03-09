@@ -125,6 +125,7 @@ final class NotificationClassifierTests: XCTestCase {
             snoozedUntil: nil,
             customDueDate: nil,
             birthday: nil,
+            birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: false,
             groupAddedAt: lastTouch,

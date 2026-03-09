@@ -347,6 +347,7 @@ struct DataImportService {
                     snoozedUntil: nil,
                     customDueDate: nil,
                     birthday: exportPerson.birthday.flatMap(Birthday.from(jsonString:)),
+                    birthdayNotificationsEnabled: exportPerson.birthdayNotificationsEnabled ?? true,
                     contactUnavailable: false,
                     isDemoData: false,
                     groupAddedAt: nil,
@@ -377,6 +378,9 @@ struct DataImportService {
                 person.lastTouchAt = exportPerson.lastTouchAt
                 person.isPaused = exportPerson.isPaused
                 person.birthday = exportPerson.birthday.flatMap(Birthday.from(jsonString:))
+                if let birthdayNotifs = exportPerson.birthdayNotificationsEnabled {
+                    person.birthdayNotificationsEnabled = birthdayNotifs
+                }
                 person.modifiedAt = now
 
                 if let newGroupId = exportPerson.groupId

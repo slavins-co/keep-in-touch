@@ -14,6 +14,7 @@ struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
 
     @State private var showBreachTimePicker = false
+    @State private var showBirthdayTimePicker = false
     @State private var showDigestTimePicker = false
     @State private var showDigestDayPicker = false
     @State private var shareItem: ShareItem?
@@ -66,6 +67,13 @@ struct SettingsView: View {
                 title: "Alert Time",
                 time: viewModel.settings.breachTimeOfDay,
                 onSave: { viewModel.setBreachTime($0) }
+            )
+        }
+        .sheet(isPresented: $showBirthdayTimePicker) {
+            timePickerSheet(
+                title: "Birthday Alert Time",
+                time: viewModel.settings.birthdayNotificationTime,
+                onSave: { viewModel.setBirthdayNotificationTime($0) }
             )
         }
         .sheet(isPresented: $showDigestTimePicker) {
@@ -428,6 +436,41 @@ struct SettingsView: View {
             )) {
                 Label("Hide Names in Notifications", systemImage: "eye.slash")
             }
+
+            Toggle(isOn: Binding(
+                get: { viewModel.settings.birthdayNotificationsEnabled },
+                set: { viewModel.setBirthdayNotificationsEnabled($0) }
+            )) {
+                Label("Birthday Reminders", systemImage: "birthday.cake")
+                    .foregroundStyle(DS.Colors.statusDueSoon)
+            }
+
+            if viewModel.settings.birthdayNotificationsEnabled {
+                Button {
+                    showBirthdayTimePicker = true
+                } label: {
+                    HStack {
+                        Text("Birthday Alert Time")
+                        Spacer()
+                        Text(viewModel.settings.birthdayNotificationTime.formatted)
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
+                }
+                .accessibilityLabel("Birthday Alert Time")
+                .accessibilityValue(viewModel.settings.birthdayNotificationTime.formatted)
+                .accessibilityHint("Opens time picker")
+                .padding(.leading, DS.Spacing.lg)
+
+                Toggle(isOn: Binding(
+                    get: { viewModel.settings.birthdayIgnoreSnoozePause },
+                    set: { viewModel.setBirthdayIgnoreSnoozePause($0) }
+                )) {
+                    Text("Include Snoozed & Paused")
+                }
+                .accessibilityLabel("Include Snoozed and Paused contacts")
+                .accessibilityHint("Sends birthday reminders even for snoozed or paused contacts")
+                .padding(.leading, DS.Spacing.lg)
+            }
         }
     }
 
@@ -574,6 +617,7 @@ struct SettingsView: View {
 
     private func dismissSheets() {
         showBreachTimePicker = false
+        showBirthdayTimePicker = false
         showDigestTimePicker = false
     }
 

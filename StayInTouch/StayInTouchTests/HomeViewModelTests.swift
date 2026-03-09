@@ -74,6 +74,7 @@ final class HomeViewModelTests: XCTestCase {
             snoozedUntil: nil,
             customDueDate: nil,
             birthday: nil,
+            birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: false,
             groupAddedAt: Date(),
@@ -154,6 +155,9 @@ final class HomeViewModelTests: XCTestCase {
                 demoModeEnabled: false,
                 analyticsEnabled: true,
                 hideContactNamesInNotifications: false,
+                birthdayNotificationsEnabled: false,
+                birthdayNotificationTime: LocalTime(hour: 9, minute: 0),
+                birthdayIgnoreSnoozePause: true,
                 lastContactsSyncAt: nil,
                 onboardingCompleted: false,
                 appVersion: ""

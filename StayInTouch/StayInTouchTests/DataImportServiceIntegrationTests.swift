@@ -96,7 +96,8 @@ final class DataImportServiceIntegrationTests: XCTestCase {
             createdAt: now,
             modifiedAt: now,
             touchEvents: touchEvents,
-            birthday: nil
+            birthday: nil,
+            birthdayNotificationsEnabled: nil
         )
     }
 

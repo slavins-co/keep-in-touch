@@ -60,6 +60,7 @@ final class DemoDataSeeder {
                     snoozedUntil: nil,
                     customDueDate: nil,
                     birthday: nil,
+                    birthdayNotificationsEnabled: true,
                     contactUnavailable: false,
                     isDemoData: true,
                     groupAddedAt: now,
