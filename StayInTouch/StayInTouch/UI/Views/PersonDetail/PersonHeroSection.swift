@@ -10,6 +10,7 @@ struct PersonHeroSection: View {
     var onBirthdayEdit: () -> Void
     var onResumePrompt: () -> Void
     var onRemoveConfirm: () -> Void
+    var onLinkContact: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -97,13 +98,20 @@ struct PersonHeroSection: View {
                     .foregroundStyle(.white.opacity(0.8))
             }
             Spacer()
-            Button("Remove") { onRemoveConfirm() }
-                .font(DS.Typography.caption.weight(.semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, DS.Spacing.sm)
-                .padding(.vertical, DS.Spacing.xs)
-                .background(.white.opacity(0.2))
-                .clipShape(Capsule())
+            VStack(spacing: DS.Spacing.xs) {
+                Button("Link") { onLinkContact() }
+                    .font(DS.Typography.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(.white.opacity(0.3))
+                    .clipShape(Capsule())
+                Button("Remove") { onRemoveConfirm() }
+                    .font(DS.Typography.caption.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xs)
+            }
         }
         .padding(DS.Spacing.md)
         .background(DS.Colors.statusDueSoon)
