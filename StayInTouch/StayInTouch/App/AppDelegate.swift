@@ -145,11 +145,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
         let window = UIWindow(windowScene: scene)
         window.windowLevel = .alert + 1
+        window.backgroundColor = .clear
 
-        let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemThickMaterial))
+        let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
         blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
         let vc = UIViewController()
+        vc.view.backgroundColor = .clear
         vc.view.addSubview(blur)
         blur.frame = vc.view.bounds
 
