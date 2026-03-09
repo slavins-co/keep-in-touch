@@ -86,35 +86,50 @@ struct PersonHeroSection: View {
     // MARK: - Banners
 
     private var unavailableContactBanner: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.white)
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text("Contact unavailable")
-                    .font(DS.Typography.metadata.weight(.semibold))
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            // Info row
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.white)
-                Text("This contact may have been deleted or merged.")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.white.opacity(0.8))
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Text("Contact unavailable")
+                        .font(DS.Typography.metadata.weight(.semibold))
+                        .foregroundStyle(.white)
+                    Text("This contact may have been deleted or merged.")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
             }
-            Spacer()
-            VStack(spacing: DS.Spacing.xs) {
-                Button("Link") { onLinkContact() }
-                    .font(DS.Typography.caption.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, DS.Spacing.sm)
-                    .padding(.vertical, DS.Spacing.xs)
-                    .background(.white.opacity(0.3))
-                    .clipShape(Capsule())
-                    .accessibilityLabel("Link to a contact")
-                    .accessibilityHint("Opens contact picker to reconnect this person")
-                Button("Remove") { onRemoveConfirm() }
-                    .font(DS.Typography.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .padding(.horizontal, DS.Spacing.sm)
-                    .padding(.vertical, DS.Spacing.xs)
-                    .background(.white.opacity(0.2))
-                    .clipShape(Capsule())
+
+            // Action row — horizontal, 44pt min targets
+            HStack(spacing: DS.Spacing.lg) {
+                Button {
+                    onLinkContact()
+                } label: {
+                    Text("Link to Contact")
+                        .font(DS.Typography.caption.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, DS.Spacing.md)
+                        .frame(minHeight: DS.Spacing.tapTarget)
+                        .background(.white.opacity(0.3))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Link to a contact")
+                .accessibilityHint("Opens contact picker to reconnect this person")
+
+                Button {
+                    onRemoveConfirm()
+                } label: {
+                    Text("Remove")
+                        .font(DS.Typography.caption.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .frame(minHeight: DS.Spacing.tapTarget)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
             }
         }
         .padding(DS.Spacing.md)
