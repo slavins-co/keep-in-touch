@@ -28,6 +28,7 @@ struct AppSettings: Identifiable, Equatable {
     var hideContactNamesInNotifications: Bool
     var birthdayNotificationsEnabled: Bool
     var birthdayNotificationTime: LocalTime
+    var birthdayIgnoreSnoozePause: Bool
 
     var lastContactsSyncAt: Date?
     var onboardingCompleted: Bool

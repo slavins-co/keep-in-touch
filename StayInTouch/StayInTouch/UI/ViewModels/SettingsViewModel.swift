@@ -147,6 +147,12 @@ final class SettingsViewModel: ObservableObject {
         save()
     }
 
+    func setBirthdayIgnoreSnoozePause(_ enabled: Bool) {
+        AnalyticsService.track("settings.birthdayIgnoreSnoozePause.toggled", parameters: ["enabled": String(enabled)])
+        settings.birthdayIgnoreSnoozePause = enabled
+        save()
+    }
+
     func setAnalyticsEnabled(_ enabled: Bool) {
         settings.analyticsEnabled = enabled
         save()
@@ -423,6 +429,7 @@ struct AppSettingsDefaults {
             hideContactNamesInNotifications: false,
             birthdayNotificationsEnabled: false,
             birthdayNotificationTime: LocalTime(hour: 9, minute: 0),
+            birthdayIgnoreSnoozePause: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""

@@ -46,7 +46,8 @@ final class NotificationSchedulerTests: XCTestCase {
         badgeShowDueSoon: Bool = false,
         digestEnabled: Bool = false,
         hideNames: Bool = false,
-        birthdayNotificationsEnabled: Bool = false
+        birthdayNotificationsEnabled: Bool = false,
+        birthdayIgnoreSnoozePause: Bool = true
     ) -> AppSettings {
         AppSettings(
             id: AppSettings.singletonId,
@@ -64,6 +65,7 @@ final class NotificationSchedulerTests: XCTestCase {
             hideContactNamesInNotifications: hideNames,
             birthdayNotificationsEnabled: birthdayNotificationsEnabled,
             birthdayNotificationTime: LocalTime(hour: 9, minute: 0),
+            birthdayIgnoreSnoozePause: birthdayIgnoreSnoozePause,
             lastContactsSyncAt: nil,
             onboardingCompleted: true,
             appVersion: ""
@@ -492,8 +494,11 @@ final class NotificationSchedulerTests: XCTestCase {
         XCTAssertTrue(birthdayRequests.isEmpty, "Should skip person with muted notifications")
     }
 
-    func testBirthday_snoozed_skips() async {
-        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+    func testBirthday_snoozed_skipsWhenOverrideOff() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(
+            birthdayNotificationsEnabled: true,
+            birthdayIgnoreSnoozePause: false
+        )
         seedWeeklyGroup()
         let future = Calendar.current.date(byAdding: .day, value: 7, to: Date())!
         mockPersonRepo.people = [makePersonWithBirthday(snoozedUntil: future)]
@@ -503,7 +508,40 @@ final class NotificationSchedulerTests: XCTestCase {
         let birthdayRequests = mockNotificationCenter.addedRequests.filter {
             $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
         }
-        XCTAssertTrue(birthdayRequests.isEmpty, "Should skip snoozed person")
+        XCTAssertTrue(birthdayRequests.isEmpty, "Should skip snoozed person when override is off")
+    }
+
+    func testBirthday_snoozed_firesWhenOverrideOn() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(
+            birthdayNotificationsEnabled: true,
+            birthdayIgnoreSnoozePause: true
+        )
+        seedWeeklyGroup()
+        let future = Calendar.current.date(byAdding: .day, value: 7, to: Date())!
+        mockPersonRepo.people = [makePersonWithBirthday(snoozedUntil: future)]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertEqual(birthdayRequests.count, 1, "Should schedule birthday for snoozed person when override is on")
+    }
+
+    func testBirthday_paused_firesWhenOverrideOn() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(
+            birthdayNotificationsEnabled: true,
+            birthdayIgnoreSnoozePause: true
+        )
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday(isPaused: true)]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertEqual(birthdayRequests.count, 1, "Should schedule birthday for paused person when override is on")
     }
 
     func testBirthday_hideNames_omitsPersonName() async throws {

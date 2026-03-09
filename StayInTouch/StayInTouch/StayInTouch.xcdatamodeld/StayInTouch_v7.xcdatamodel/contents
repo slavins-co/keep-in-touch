@@ -75,6 +75,7 @@
         <attribute name="hideContactNamesInNotifications" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="birthdayNotificationsEnabled" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="birthdayNotificationTime" optional="YES" attributeType="String"/>
+        <attribute name="birthdayIgnoreSnoozePause" optional="YES" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
     </entity>
     <elements>
         <element name="Person" positionX="-252" positionY="-108" width="128" height="44"/>

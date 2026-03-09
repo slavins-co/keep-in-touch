@@ -456,6 +456,19 @@ struct SettingsView: View {
                             .foregroundStyle(DS.Colors.secondaryText)
                     }
                 }
+                .accessibilityLabel("Birthday Alert Time")
+                .accessibilityValue(viewModel.settings.birthdayNotificationTime.formatted)
+                .accessibilityHint("Opens time picker")
+                .padding(.leading, DS.Spacing.lg)
+
+                Toggle(isOn: Binding(
+                    get: { viewModel.settings.birthdayIgnoreSnoozePause },
+                    set: { viewModel.setBirthdayIgnoreSnoozePause($0) }
+                )) {
+                    Text("Include Snoozed & Paused")
+                }
+                .accessibilityLabel("Include Snoozed and Paused contacts")
+                .accessibilityHint("Sends birthday reminders even for snoozed or paused contacts")
                 .padding(.leading, DS.Spacing.lg)
             }
         }

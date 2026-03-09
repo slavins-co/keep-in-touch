@@ -363,14 +363,15 @@ private extension NotificationScheduler {
     func scheduleBirthdays(settings: AppSettings) async {
         guard settings.birthdayNotificationsEnabled else { return }
 
-        let people = personRepository.fetchTracked(includePaused: false)
+        let ignoreSnoozePause = settings.birthdayIgnoreSnoozePause
+        let people = personRepository.fetchTracked(includePaused: ignoreSnoozePause)
         let hideNames = settings.hideContactNamesInNotifications
         let time = settings.birthdayNotificationTime
 
         for person in people {
             guard person.birthdayNotificationsEnabled else { continue }
             guard !person.notificationsMuted else { continue }
-            if let snoozedUntil = person.snoozedUntil, snoozedUntil > Date() { continue }
+            if !ignoreSnoozePause, let snoozedUntil = person.snoozedUntil, snoozedUntil > Date() { continue }
 
             // Resolve birthday: stored first, then contact-sourced
             let birthday: Birthday?

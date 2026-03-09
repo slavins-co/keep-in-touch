@@ -209,6 +209,8 @@ struct PersonSettingsSection: View {
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsItemLabel)
         }
+        .accessibilityLabel("Birthday Notifications for \(viewModel.person.displayName)")
+        .accessibilityHint("Sends a reminder on this contact's birthday")
         .frame(minHeight: 48)
     }
 

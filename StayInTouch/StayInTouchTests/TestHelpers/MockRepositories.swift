@@ -253,7 +253,8 @@ enum TestFactory {
         demoModeEnabled: Bool = false,
         theme: Theme = .system,
         birthdayNotificationsEnabled: Bool = false,
-        birthdayNotificationTime: LocalTime = LocalTime(hour: 9, minute: 0)
+        birthdayNotificationTime: LocalTime = LocalTime(hour: 9, minute: 0),
+        birthdayIgnoreSnoozePause: Bool = true
     ) -> AppSettings {
         AppSettings(
             id: AppSettings.singletonId,
@@ -271,6 +272,7 @@ enum TestFactory {
             hideContactNamesInNotifications: false,
             birthdayNotificationsEnabled: birthdayNotificationsEnabled,
             birthdayNotificationTime: birthdayNotificationTime,
+            birthdayIgnoreSnoozePause: birthdayIgnoreSnoozePause,
             lastContactsSyncAt: nil,
             onboardingCompleted: onboardingCompleted,
             appVersion: ""

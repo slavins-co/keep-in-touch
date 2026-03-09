@@ -349,6 +349,7 @@ private struct StubSettingsRepository: AppSettingsRepository {
             hideContactNamesInNotifications: false,
             birthdayNotificationsEnabled: false,
             birthdayNotificationTime: LocalTime(hour: 9, minute: 0),
+            birthdayIgnoreSnoozePause: true,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: ""
