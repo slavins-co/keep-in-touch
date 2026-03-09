@@ -10,7 +10,7 @@ import UserNotifications
 import BackgroundTasks
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
-    private var privacyWindow: UIWindow?
+    private static let privacyTag = 48_291
 
     func application(
         _ application: UIApplication,
@@ -139,34 +139,29 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     @objc private func sceneWillDeactivate() {
-        guard privacyWindow == nil,
-              let scene = UIApplication.shared.connectedScenes
-                  .compactMap({ $0 as? UIWindowScene }).first else { return }
-
-        let window = UIWindow(windowScene: scene)
-        window.windowLevel = .alert + 1
-        window.backgroundColor = .clear
+        guard let scene = UIApplication.shared.connectedScenes
+                  .compactMap({ $0 as? UIWindowScene }).first,
+              let window = scene.keyWindow,
+              window.viewWithTag(Self.privacyTag) == nil else { return }
 
         let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+        blur.frame = window.bounds
         blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-
-        let vc = UIViewController()
-        vc.view.backgroundColor = .clear
-        vc.view.addSubview(blur)
-        blur.frame = vc.view.bounds
-
-        window.rootViewController = vc
-        window.isHidden = false
-        privacyWindow = window
+        blur.tag = Self.privacyTag
+        window.addSubview(blur)
     }
 
     @objc private func sceneDidActivate() {
-        UIView.animate(withDuration: 0.15) {
-            self.privacyWindow?.alpha = 0
-        } completion: { _ in
-            self.privacyWindow?.isHidden = true
-            self.privacyWindow = nil
-        }
+        guard let scene = UIApplication.shared.connectedScenes
+                  .compactMap({ $0 as? UIWindowScene }).first,
+              let window = scene.keyWindow,
+              let blur = window.viewWithTag(Self.privacyTag) else { return }
+
+        UIView.animate(withDuration: 0.15, animations: {
+            blur.alpha = 0
+        }, completion: { _ in
+            blur.removeFromSuperview()
+        })
     }
 }
 
