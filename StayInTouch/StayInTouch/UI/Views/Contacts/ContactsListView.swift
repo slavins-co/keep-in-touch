@@ -106,7 +106,7 @@ struct ContactsListView: View {
                         Section {
                             ForEach(Array(section.people.enumerated()), id: \.element.id) { index, person in
                                 let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
-                                let firstTagName = person.tagIds.compactMap { tagsById[$0]?.name }.first
+                                let personTags = person.tagIds.compactMap { tagsById[$0] }
                                 Button {
                                     selectPerson(person)
                                 } label: {
@@ -117,7 +117,7 @@ struct ContactsListView: View {
                                         daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
                                         timeAgo: timeAgoText(for: person, calculator: calculator),
                                         lastMethod: person.lastTouchMethod,
-                                        tagName: firstTagName
+                                        tags: personTags
                                     )
                                 }
                                 .buttonStyle(.plain)
