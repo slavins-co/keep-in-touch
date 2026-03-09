@@ -376,6 +376,7 @@ struct HomeView: View {
             .padding(.horizontal)
             .padding(.top, DS.Spacing.md)
             .padding(.bottom, 80)
+            .id(viewModel.refreshToken)
         }
         .background(DS.Colors.pageBg)
         .refreshable {

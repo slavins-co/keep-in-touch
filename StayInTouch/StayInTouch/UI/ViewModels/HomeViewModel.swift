@@ -24,6 +24,7 @@ final class HomeViewModel: ObservableObject {
 
     @Published private(set) var isRefreshing = false
     @Published var freshStartReason: FreshStartDetector.Reason?
+    @Published private(set) var refreshToken = UUID()
 
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository
@@ -216,6 +217,7 @@ final class HomeViewModel: ObservableObject {
         promptStore.recordDismissal()
         freshStartReason = nil
         load()
+        refreshToken = UUID()
         NotificationCenter.default.post(name: .personDidChange, object: nil)
     }
 
