@@ -1,10 +1,95 @@
 # TODO - Stay in Touch iOS App
 
-**Project Status:** v0.2.2 (Build 8) — Pre-release Beta
-**Last Updated:** March 2, 2026
+**Project Status:** v0.3.2 (Build 8) — Pre-release Beta
+**Last Updated:** March 9, 2026
 
 > **TestFlight Status:** Code blockers resolved. Manual submission steps remain — see `tasks/testflight-guide.md`.
 > When creating PRs, confirm TestFlight readiness is not regressed (deployment target 17.0, PrivacyInfo.xcprivacy present, UIBackgroundModes declared, build number incremented).
+
+---
+
+## v0.3.3 Triage — TestFlight Launch Scope
+
+> **PRESERVE THIS SECTION.** Future sessions: mark items `[x]` as they ship. Do NOT remove, reorder, or overwrite the priority tiers until v0.3.3 is tagged and released. This is the authoritative scope for v0.3.3.
+
+**Implementation order:** ~~#229~~ → ~~#237~~ → ~~#40~~ → ~~#236~~ → ~~#235~~ → #105 → ~~#106~~ → ~~#228~~
+
+### Tier 1 — Must Ship (bugs + analytics)
+
+- [x] **#229** Fix incorrect app version displayed in Settings *(XS — PR #238)*
+- [x] **#237** Fix concurrency & redundant modifier warnings *(S — PR #238)*
+- [x] **#228** Audit and update TelemetryDeck events after refactors *(M — PR #240)*
+
+### Tier 2 — Should Ship (privacy + UX polish)
+
+- [ ] **#105** Add screenshot blur protection on app background *(S — deferred, needs native UIKit approach)*
+- [x] **#106** Add notification privacy setting to hide contact names *(S-M — PR #244)*
+- [x] **#236** Display multiple groups on contact cards in list views *(S — PR #242)*
+- [x] **#235** Add "Link to Contact" option when contact is unavailable *(S — PR #243)*
+- [x] **#40** Reorder PersonDetailView CTAs — Log Connection as primary *(XS — already closed 2026-02-25)*
+
+### Tier 3 — Nice to Have (stretch goals, if time allows)
+
+- [ ] **#34** Swipe-to-log on home screen *(M-L — highest UX priority but gesture complexity)*
+- [ ] **#230** Deduplicate breach + digest notifications for single person *(S — edge case polish)*
+- [ ] **#231** Birthday push notifications with toggle and per-person settings *(M — extends #141)*
+- [ ] **#134** Add CSV export option for spreadsheet use *(S — testers may want to review data)*
+- [ ] **#37** Separate overdue tiers (Recently Due vs Long Overdue) *(S-M — UX improvement)*
+- [ ] **#232** Pull-to-refresh re-sync contact info from iOS Contacts *(S — currently only recalcs statuses)*
+
+### Tier 4 — Deferred to v0.4+
+
+Calendar integration (#234), WhatsApp (#233), Dynamic Type (#202), architecture refactors (#203, #215, #216, #214, #168), VoiceOver picker/editor sheets (#197), full VoiceOver audit (#39), widget (#60), Siri Shortcuts (#80), iCloud sync (#79), iPad layout (#78), localization (#77), stats page (#138), tutorial (#10), UX direction (#45), design polish (#41, #42, #44).
+
+### Not Code (human parallel track)
+
+- [ ] **#65** Create App Store screenshots
+- [ ] **#66** Write App Store description, subtitle, and keywords
+- [ ] **#68** App Store submission checklist
+- [ ] **#69** TestFlight beta validation plan
+- [ ] **#70** Validate core loop retention during beta
+
+---
+
+## Completed — Session 2026-03-09c (Issue #106: Notification Privacy)
+
+- [x] **#106** Hide names in notifications — new `hideContactNamesInNotifications` AppSettings toggle (PR #244)
+- [x] Core Data v5 → v6 lightweight migration for new boolean attribute
+- [x] 4 new notification privacy tests, 280 total tests passing
+- [ ] **#105** Screenshot blur — deferred after 3 failed approaches (SwiftUI overlay, separate UIWindow, key window subview). UIVisualEffectView cannot blur cross-window; key window subview still rendered opaque. Needs deeper investigation.
+- [x] Code review: PASS
+- [x] Security review: PASS
+
+---
+
+## Completed — Session 2026-03-09b (Issues #235, #236: UX Polish)
+
+- [x] **#235** Fix HIG tap target compliance on unavailable contact banner (PR #243)
+- [x] Added `DS.Spacing.tapTarget` (44pt) design system token
+- [x] Restructured banner: info row on top, horizontal action row below with 44pt min-height buttons
+- [x] **#236** Display multiple groups on contact cards (PR #242)
+- [x] Code review: PASS (both PRs)
+- [x] Security review: PASS (both PRs)
+
+---
+
+## Completed — Session 2026-03-09a (Issue #137: Fresh Start for Inactive Users)
+
+- [x] **#137** Auto-prompt Fresh Start for inactive or overwhelmed users (PR #227)
+
+---
+
+## Completed — Session 2026-03-09 (Issues #229, #237, #228)
+
+- [x] **#229** Fix app version display — replace PlistBuddy with build-phase-generated Swift file (PR #238)
+- [x] **#237** Add `alwaysOutOfDate` to version build phase for incremental builds (PR #238)
+- [x] **#228** Audit and update TelemetryDeck events after refactors (PR #240)
+- [x] Swapped filter analytics parameters corrected: `selectedGroupId` → "group", `selectedTagId` → "tag"
+- [x] Added new signals: `freshStart.confirmed`, `data.exported`, `data.imported`
+- [x] Code review: PASS (all 3 PRs)
+- [x] Security review: PASS (all 3 PRs)
+- [x] **#241** Filed issue for backend terminology rename (Group→Cadence, Tag→Group) — post-beta
+- [x] Updated TelemetryDeck dashboard JSON with all 25 signals (31 insights)
 
 ---
 
@@ -136,71 +221,21 @@
 
 ---
 
-## Open Issues
-
-### Bug Fixes (Pre-existing) — All Resolved
-
-- [x] **#26** Add "Done" button to dismiss keyboard on Next Time notes field *(closed)*
-- [x] **#27** Fix touch log sorting — most recent time-of-day should appear first *(closed)*
-- [x] **#28** Fix double "Assign Groups" title on contact import screen *(closed)*
-
-### Design Review — Critical / Important
-
-- [x] **#33** Add DS.Typography.heroTitle token for PersonDetailView *(v0.2.2)*
-- [ ] **#34** ⭐ Swipe-to-log on home screen (highest priority UX improvement)
-- [x] **#35** Surface errors with contextual banners (not silent failures) *(v0.2.1)*
-- [x] **#36** Add undo for destructive actions (delete contact/connection) *(v0.2.2)*
-- [ ] **#37** Separate overdue tiers (Recently Due vs Long Overdue)
-- [x] **#38** Replace HStack filter chips with FlowLayout for overflow *(v0.2.2)*
-- [ ] **#39** VoiceOver audit and accessibility labels
-- [ ] **#40** Reorder PersonDetailView CTAs (Log Connection as primary)
-
-### Design Review — Polish
-
-- [ ] **#41** Add micro-animations (section expand, filter apply, card appear)
-- [ ] **#42** Add empty state illustrations per section
-- [x] **#43** Add "Last connected" timestamp to PersonDetailView hero *(2026-02-27)*
-- [ ] **#44** Apply consistent 2pt/4pt sub-grid spacing rhythm
-
-### UX Direction
-
-- [ ] **#45** "Relationship Journal" UX direction for v0.3 — warm, narrative, action-oriented
-
-### Pre-existing Backlog
-
-- [ ] **#9** Custom due dates per contact (overlaps with #23, evaluate)
-- [ ] **#10** Self-guided tutorial (defer to post-beta)
-
----
-
 ## Milestone: TestFlight Readiness
 
-### Resolved (Build 6 — 2026-02-24)
-- [x] **#46** Add PrivacyInfo.xcprivacy privacy manifest
-- [x] **#47** Change deployment target from iOS 18.5 → 17.0
-- [x] **#48** Add UIBackgroundModes to Info.plist
-- [x] Build number bumped to 6
-- [x] Clean build verified — zero errors
-- [x] All 38+ unit tests passing (5 new migration tests in v0.2.1)
-- [x] App icon exists (1024×1024 PNG, no alpha)
-- [x] Error handling surfaced to users (#35)
-- [x] CoreData migration is safe and versioned (#55)
-- [x] Deleted contacts handled gracefully (#56)
+### Resolved (Build 6+)
+- [x] PrivacyInfo.xcprivacy, deployment target 17.0, UIBackgroundModes
+- [x] Clean build, 278+ unit tests passing, app icon, error handling, safe migration, deleted contact handling
 
-### Not Needed for TestFlight (Fix Before App Store)
-- [ ] Accessibility (VoiceOver, Dynamic Type) — #39 open
-- [ ] Loading states — #43 open (error handling done in #35)
+### Before App Store (not TestFlight blockers)
+- [ ] Full accessibility audit (VoiceOver, Dynamic Type) — #39, #197, #202
 - [ ] **#49** Create and host privacy policy URL
 - [ ] App Store screenshots (use demo mode)
-
-### Recommended Before App Store
 - [ ] Edge-case testing (timezone changes, large contact lists)
 - [ ] Performance testing (100+ contacts, launch time)
 
 ### Manual Steps Remaining
-See `tasks/testflight-guide.md` for step-by-step instructions:
-- [x] Clean git state (Synology Drive artifacts — #50, solved with `core.fileMode false`)
-- [x] Commit and push blocker fixes (v0.2.1 merged to main)
+See `tasks/testflight-guide.md`:
 - [ ] Verify Apple Developer account enrollment
 - [ ] Register App ID in Developer Portal
 - [ ] Create App Store Connect record
@@ -211,6 +246,7 @@ See `tasks/testflight-guide.md` for step-by-step instructions:
 
 ## Post-Beta (Future)
 
+- [ ] **#241** Rename backend terminology: Group→Cadence, Tag→Group (tech debt)
 - [ ] CloudKit sync
 - [ ] Shortcuts integration
 - [ ] Widgets

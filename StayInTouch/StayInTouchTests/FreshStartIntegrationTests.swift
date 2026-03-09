@@ -345,6 +345,7 @@ private struct StubSettingsRepository: AppSettingsRepository {
             dueSoonWindowDays: 3,
             demoModeEnabled: false,
             analyticsEnabled: true,
+            hideContactNamesInNotifications: false,
             lastContactsSyncAt: nil,
             onboardingCompleted: false,
             appVersion: ""

@@ -22,6 +22,7 @@ extension AppSettingsEntity {
             dueSoonWindowDays: Int(dueSoonWindowDays),
             demoModeEnabled: demoModeEnabled,
             analyticsEnabled: analyticsEnabled,
+            hideContactNamesInNotifications: hideContactNamesInNotifications,
             lastContactsSyncAt: lastContactsSyncAt,
             onboardingCompleted: onboardingCompleted,
             appVersion: appVersion ?? ""
@@ -41,6 +42,7 @@ extension AppSettingsEntity {
         dueSoonWindowDays = Int64(settings.dueSoonWindowDays)
         demoModeEnabled = settings.demoModeEnabled
         analyticsEnabled = settings.analyticsEnabled
+        hideContactNamesInNotifications = settings.hideContactNamesInNotifications
         lastContactsSyncAt = settings.lastContactsSyncAt
         onboardingCompleted = settings.onboardingCompleted
         appVersion = settings.appVersion
