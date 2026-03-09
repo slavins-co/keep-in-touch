@@ -14,7 +14,7 @@ struct ContactCard: View {
     let daysOverdue: Int
     let timeAgo: String
     let lastMethod: TouchMethod?
-    let tagName: String?
+    let tags: [Tag]
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -39,14 +39,21 @@ struct ContactCard: View {
             Spacer(minLength: DS.Spacing.xs)
 
             HStack(spacing: DS.Spacing.sm) {
-                if let tagName {
-                    Text(tagName.uppercased())
-                        .font(DS.Typography.groupBadgeLabel)
-                        .foregroundStyle(DS.Colors.groupBadgeText)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(DS.Colors.groupBadgeBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                if let firstTag = tags.first {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(firstTag.name.uppercased())
+                            .font(DS.Typography.groupBadgeLabel)
+                            .foregroundStyle(DS.Colors.groupBadgeText)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(DS.Colors.groupBadgeBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                        if tags.count > 1 {
+                            Text("+\(tags.count - 1)")
+                                .font(DS.Typography.groupBadgeLabel)
+                                .foregroundStyle(DS.Colors.groupBadgeText)
+                        }
+                    }
                 }
                 statusSymbol
             }
@@ -136,8 +143,9 @@ struct ContactCard: View {
         }
 
         parts.append("\(frequencyName) frequency")
-        if let tagName {
-            parts.append("group \(tagName)")
+        if !tags.isEmpty {
+            let groupNames = tags.map(\.name).joined(separator: ", ")
+            parts.append(tags.count == 1 ? "group \(groupNames)" : "groups \(groupNames)")
         }
         parts.append("tap to view details")
 
