@@ -200,24 +200,20 @@ final class HomeViewModel: ObservableObject {
 
     func executeFreshStart() async {
         let now = Date()
-        let backgroundContext = CoreDataStack.shared.newBackgroundContext()
-        await backgroundContext.perform {
-            let repo = CoreDataPersonRepository(context: backgroundContext)
-            let people = repo.fetchTracked(includePaused: true)
-            var updated: [Person] = []
-            for var person in people {
-                person.lastTouchAt = now
-                person.modifiedAt = now
-                updated.append(person)
-            }
-            do {
-                try repo.batchSave(updated)
-            } catch {
-                AppLogger.logError(error, category: AppLogger.viewModel, context: "HomeViewModel.executeFreshStart")
-            }
+        let people = personRepository.fetchTracked(includePaused: true)
+        var updated: [Person] = []
+        for var person in people {
+            person.lastTouchAt = now
+            person.modifiedAt = now
+            updated.append(person)
         }
+        do {
+            try personRepository.batchSave(updated)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "HomeViewModel.executeFreshStart")
+        }
+
         promptStore.recordDismissal()
-        CoreDataStack.shared.viewContext.refreshAllObjects()
         freshStartReason = nil
         load()
         NotificationCenter.default.post(name: .personDidChange, object: nil)
