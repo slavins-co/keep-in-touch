@@ -35,7 +35,7 @@ struct HomeView: View {
         }
         .onChange(of: viewModel.selectedGroupId) { _, newValue in
             if newValue != nil {
-                AnalyticsService.track("filter.applied", parameters: ["type": "frequency"])
+                AnalyticsService.track("filter.applied", parameters: ["type": "group"])
             }
             withAnimation(.easeInOut(duration: 0.25)) {
                 viewModel.applyFilters()
@@ -43,7 +43,7 @@ struct HomeView: View {
         }
         .onChange(of: viewModel.selectedTagId) { _, newValue in
             if newValue != nil {
-                AnalyticsService.track("filter.applied", parameters: ["type": "group"])
+                AnalyticsService.track("filter.applied", parameters: ["type": "tag"])
             }
             withAnimation(.easeInOut(duration: 0.25)) {
                 viewModel.applyFilters()
