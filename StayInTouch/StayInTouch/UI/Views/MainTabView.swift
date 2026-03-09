@@ -73,7 +73,15 @@ struct MainTabView: View {
                 freshStartReason = newValue
             }
         }
-        .fullScreenCover(item: $freshStartReason) { reason in
+        .fullScreenCover(item: $freshStartReason, onDismiss: {
+            // SwiftUI defers re-rendering of views behind a
+            // fullScreenCover, so the Home tab may still show
+            // stale status indicators after executeFreshStart()
+            // updates data while the cover is up. Re-loading
+            // here fires after the cover is fully gone,
+            // guaranteeing the visible view re-renders.
+            viewModel.load()
+        }) { reason in
             FreshStartPromptView(
                 reason: reason,
                 onFreshStart: {
