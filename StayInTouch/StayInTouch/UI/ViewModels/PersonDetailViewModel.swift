@@ -47,6 +47,9 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func load() {
+        if let refreshed = personRepository.fetch(id: person.id) {
+            person = refreshed
+        }
         groups = groupRepository.fetchAll()
         group = groupRepository.fetch(id: person.groupId)
         tags = tagRepository.fetchAll()
@@ -117,12 +120,6 @@ final class PersonDetailViewModel: ObservableObject {
         savePerson(updated)
     }
 
-    func reloadPerson() {
-        if let refreshed = personRepository.fetch(id: person.id) {
-            person = refreshed
-            load()
-        }
-    }
 
     func changeGroup(to groupId: UUID) {
         let updated = AssignGroupUseCase().assign(person: person, to: groupId)
