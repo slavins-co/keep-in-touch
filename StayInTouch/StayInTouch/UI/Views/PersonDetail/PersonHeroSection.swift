@@ -106,11 +106,15 @@ struct PersonHeroSection: View {
                     .padding(.vertical, DS.Spacing.xs)
                     .background(.white.opacity(0.3))
                     .clipShape(Capsule())
+                    .accessibilityLabel("Link to a contact")
+                    .accessibilityHint("Opens contact picker to reconnect this person")
                 Button("Remove") { onRemoveConfirm() }
                     .font(DS.Typography.caption.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.7))
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xs)
+                    .background(.white.opacity(0.2))
+                    .clipShape(Capsule())
             }
         }
         .padding(DS.Spacing.md)

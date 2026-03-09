@@ -321,9 +321,9 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func relinkContact(cnIdentifier: String) {
+        AnalyticsService.track("person.contactRelinked")
         var updated = person
         updated.cnIdentifier = cnIdentifier
-        updated.contactUnavailable = false
         updated.modifiedAt = Date()
         savePerson(updated)
         Task { await refreshContactInfo() }
