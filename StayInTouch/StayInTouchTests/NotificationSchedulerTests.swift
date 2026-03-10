@@ -611,4 +611,204 @@ final class NotificationSchedulerTests: XCTestCase {
         XCTAssertEqual(request.content.userInfo["type"] as? String, "person")
         XCTAssertEqual(request.content.userInfo["category"] as? String, "birthday")
     }
+
+    // MARK: - Birthday Grouping
+
+    func testBirthday_twoPeopleSameBirthday_schedulesSingleGroupedNotification() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let alice = makePersonWithBirthday(name: "Alice", birthday: Birthday(month: 6, day: 10, year: nil))
+        let bob = makePersonWithBirthday(name: "Bob", birthday: Birthday(month: 6, day: 10, year: nil))
+        mockPersonRepo.people = [alice, bob]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertEqual(birthdayRequests.count, 1, "Two people sharing a birthday should produce one grouped notification")
+        XCTAssertTrue(birthdayRequests[0].identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix),
+                      "Grouped notification should use grouped prefix")
+    }
+
+    func testBirthday_twoPeopleSameBirthday_bodyContainsBothNames() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let alice = makePersonWithBirthday(name: "Alice", birthday: Birthday(month: 6, day: 10, year: nil))
+        let bob = makePersonWithBirthday(name: "Bob", birthday: Birthday(month: 6, day: 10, year: nil))
+        mockPersonRepo.people = [alice, bob]
+
+        await sut.scheduleAll()
+
+        let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix)
+        })
+        XCTAssertTrue(request.content.body.contains("Alice"), "Combined body should contain Alice")
+        XCTAssertTrue(request.content.body.contains("Bob"), "Combined body should contain Bob")
+    }
+
+    func testBirthday_threePlusPeopleSameBirthday_schedulesSingleGroupedNotification() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let people = ["Alice", "Bob", "Carol"].map {
+            makePersonWithBirthday(name: $0, birthday: Birthday(month: 4, day: 1, year: nil))
+        }
+        mockPersonRepo.people = people
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertEqual(birthdayRequests.count, 1, "Three people sharing a birthday should produce one grouped notification")
+    }
+
+    func testBirthday_threePlusPeopleSameBirthday_bodyShowsOthersCount() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let people = ["Alice", "Bob", "Carol", "Dave"].map {
+            makePersonWithBirthday(name: $0, birthday: Birthday(month: 4, day: 1, year: nil))
+        }
+        mockPersonRepo.people = people
+
+        await sut.scheduleAll()
+
+        let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix)
+        })
+        // Should mention 2 others (Alice + Bob shown, Carol + Dave = 2 others)
+        XCTAssertTrue(request.content.body.contains("2 others"), "Body should mention 2 others for 4-person group")
+    }
+
+    func testBirthday_differentBirthdays_schedulesPerPersonNotifications() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let alice = makePersonWithBirthday(name: "Alice", birthday: Birthday(month: 3, day: 10, year: nil))
+        let bob = makePersonWithBirthday(name: "Bob", birthday: Birthday(month: 5, day: 20, year: nil))
+        mockPersonRepo.people = [alice, bob]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertEqual(birthdayRequests.count, 2, "Different birthdays should each get individual notifications")
+        // Neither should be grouped
+        let groupedRequests = birthdayRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix)
+        }
+        XCTAssertTrue(groupedRequests.isEmpty, "No grouped notification when birthdays are on different days")
+    }
+
+    func testBirthday_grouped_hideNames_omitsAllNames() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(hideNames: true, birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let alice = makePersonWithBirthday(name: "Alice", birthday: Birthday(month: 6, day: 10, year: nil))
+        let bob = makePersonWithBirthday(name: "Bob", birthday: Birthday(month: 6, day: 10, year: nil))
+        mockPersonRepo.people = [alice, bob]
+
+        await sut.scheduleAll()
+
+        let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix)
+        })
+        XCTAssertFalse(request.content.body.contains("Alice"), "Hidden-names grouped notification must not contain Alice")
+        XCTAssertFalse(request.content.body.contains("Bob"), "Hidden-names grouped notification must not contain Bob")
+        XCTAssertTrue(request.content.body.lowercased().contains("birthday") || request.content.body.lowercased().contains("contact"),
+                      "Hidden-names body should reference birthdays or contacts generically")
+    }
+
+    func testBirthday_grouped_correctTriggerDate() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let alice = makePersonWithBirthday(name: "Alice", birthday: Birthday(month: 8, day: 25, year: nil))
+        let bob = makePersonWithBirthday(name: "Bob", birthday: Birthday(month: 8, day: 25, year: nil))
+        mockPersonRepo.people = [alice, bob]
+
+        await sut.scheduleAll()
+
+        let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix)
+        })
+        let trigger = try XCTUnwrap(request.trigger as? UNCalendarNotificationTrigger)
+        XCTAssertEqual(trigger.dateComponents.month, 8)
+        XCTAssertEqual(trigger.dateComponents.day, 25)
+        XCTAssertEqual(trigger.dateComponents.hour, 9)
+        XCTAssertEqual(trigger.dateComponents.minute, 0)
+        XCTAssertTrue(trigger.repeats)
+    }
+
+    func testBirthday_grouped_userInfoIsHome() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let alice = makePersonWithBirthday(name: "Alice", birthday: Birthday(month: 6, day: 10, year: nil))
+        let bob = makePersonWithBirthday(name: "Bob", birthday: Birthday(month: 6, day: 10, year: nil))
+        mockPersonRepo.people = [alice, bob]
+
+        await sut.scheduleAll()
+
+        let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix)
+        })
+        XCTAssertEqual(request.content.userInfo["type"] as? String, "home")
+        XCTAssertEqual(request.content.userInfo["category"] as? String, "birthday")
+    }
+
+    func testBirthday_mixedSameDayAndDifferentDay_schedulesCorrectly() async {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        // Alice + Bob share a birthday → grouped
+        let alice = makePersonWithBirthday(name: "Alice", birthday: Birthday(month: 6, day: 10, year: nil))
+        let bob = makePersonWithBirthday(name: "Bob", birthday: Birthday(month: 6, day: 10, year: nil))
+        // Carol has a different birthday → individual
+        let carol = makePersonWithBirthday(name: "Carol", birthday: Birthday(month: 9, day: 5, year: nil))
+        mockPersonRepo.people = [alice, bob, carol]
+
+        await sut.scheduleAll()
+
+        let birthdayRequests = mockNotificationCenter.addedRequests.filter {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix)
+        }
+        XCTAssertEqual(birthdayRequests.count, 2, "Should have 1 grouped + 1 individual = 2 total birthday notifications")
+
+        let grouped = birthdayRequests.filter { $0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix) }
+        let individual = birthdayRequests.filter { !$0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix) }
+        XCTAssertEqual(grouped.count, 1, "One grouped notification for Alice+Bob")
+        XCTAssertEqual(individual.count, 1, "One individual notification for Carol")
+    }
+
+    func testBirthday_grouped_hasNoCategoryIdentifier() async throws {
+        // Grouped birthday notifications must not have a categoryIdentifier, because
+        // the BIRTHDAY_REMINDER category includes a "Log Connection" action that
+        // requires a personId — which grouped notifications don't have.
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let alice = makePersonWithBirthday(name: "Alice", birthday: Birthday(month: 6, day: 10, year: nil))
+        let bob = makePersonWithBirthday(name: "Bob", birthday: Birthday(month: 6, day: 10, year: nil))
+        mockPersonRepo.people = [alice, bob]
+
+        await sut.scheduleAll()
+
+        let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix)
+        })
+        XCTAssertTrue(request.content.categoryIdentifier.isEmpty,
+                      "Grouped birthday notification must not have a categoryIdentifier (no personId to log against)")
+    }
+
+    func testBirthday_single_hasCategoryIdentifier() async throws {
+        // Single-person birthday notifications retain the category (Log Connection is meaningful)
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday(name: "Alice")]
+
+        await sut.scheduleAll()
+
+        let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix) &&
+            !$0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix)
+        })
+        XCTAssertEqual(request.content.categoryIdentifier, NotificationIdentifier.categoryBirthday,
+                       "Single-person birthday notification should retain categoryIdentifier for Log Connection action")
+    }
 }
