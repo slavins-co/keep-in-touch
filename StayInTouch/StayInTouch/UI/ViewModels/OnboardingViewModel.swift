@@ -61,6 +61,7 @@ final class OnboardingViewModel: ObservableObject {
     private let personRepository: PersonRepository
     private let groupRepository: GroupRepository
     private let settingsRepository: AppSettingsRepository
+    private let contactImportService: ContactImportService
 
     private var settings: AppSettings?
 
@@ -68,15 +69,31 @@ final class OnboardingViewModel: ObservableObject {
         coreDataStack: CoreDataStack = .shared,
         personRepository: PersonRepository? = nil,
         groupRepository: GroupRepository? = nil,
+        touchEventRepository: TouchEventRepository? = nil,
         settingsRepository: AppSettingsRepository? = nil
     ) {
         self.coreDataStack = coreDataStack
         let context = coreDataStack.viewContext
-        self.personRepository = personRepository ?? CoreDataPersonRepository(context: context)
+        let personRepo = personRepository ?? CoreDataPersonRepository(context: context)
+        let touchRepo = touchEventRepository ?? CoreDataTouchEventRepository(context: context)
+        self.personRepository = personRepo
         self.groupRepository = groupRepository ?? CoreDataGroupRepository(context: context)
         self.settingsRepository = settingsRepository ?? CoreDataAppSettingsRepository(context: context)
+        self.contactImportService = ContactImportService(
+            personRepository: personRepo,
+            touchEventRepository: touchRepo
+        )
 
         loadSettingsAndGroups()
+    }
+
+    convenience init(dependencies: AppDependencies) {
+        self.init(
+            personRepository: dependencies.personRepository,
+            groupRepository: dependencies.groupRepository,
+            touchEventRepository: dependencies.touchEventRepository,
+            settingsRepository: dependencies.settingsRepository
+        )
     }
 
     var filteredContacts: [ContactSummary] {
@@ -215,90 +232,12 @@ final class OnboardingViewModel: ObservableObject {
 
     private func importSelectedContacts() async {
         guard !selectedContactIds.isEmpty else { return }
-        guard let defaultGroupId = selectedGroupId else { return }
-
         let selected = contacts.filter { selectedContactIds.contains($0.identifier) }
-        let now = Date()
-
-        let backgroundContext = coreDataStack.newBackgroundContext()
-
-        // Capture @MainActor properties before entering the Sendable closure
-        let groupSelections = contactGroupSelections
-        let lastTouchSelections = contactLastTouchSelections
-
-        await backgroundContext.perform {
-            // Create repositories inside the closure to avoid capturing non-Sendable types
-            let repo = CoreDataPersonRepository(context: backgroundContext)
-            let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
-
-            let existingCount = repo.fetchAll().count
-            var sortOrder = existingCount
-
-            var personsToSave: [Person] = []
-            var touchEventsToSave: [TouchEvent] = []
-
-            for contact in selected {
-                let groupId = groupSelections[contact.identifier] ?? defaultGroupId
-                let lastTouchOption = lastTouchSelections[contact.identifier] ?? .cantRemember
-                let seedDate = lastTouchOption.approximateDate(from: now)
-
-                let personId = UUID()
-                let person = Person(
-                    id: personId,
-                    cnIdentifier: contact.identifier,
-                    displayName: contact.displayName,
-                    initials: contact.initials,
-                    avatarColor: AvatarColors.randomHex(),
-                    groupId: groupId,
-                    tagIds: [],
-                    lastTouchAt: seedDate,
-                    lastTouchMethod: seedDate != nil ? .other : nil,
-                    lastTouchNotes: nil,
-                    nextTouchNotes: nil,
-                    isPaused: false,
-                    isTracked: true,
-                    notificationsMuted: false,
-                    customBreachTime: nil,
-                    snoozedUntil: nil,
-                    customDueDate: nil,
-                    birthday: nil,
-                    birthdayNotificationsEnabled: true,
-                    contactUnavailable: false,
-                    isDemoData: false,
-                    groupAddedAt: nil,
-                    createdAt: now,
-                    modifiedAt: now,
-                    sortOrder: sortOrder
-                )
-
-                personsToSave.append(AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId))
-
-                if let seedDate {
-                    touchEventsToSave.append(TouchEvent(
-                        id: UUID(),
-                        personId: personId,
-                        at: seedDate,
-                        method: .other,
-                        notes: nil,
-                        timeOfDay: nil,
-                        createdAt: now,
-                        modifiedAt: now
-                    ))
-                }
-
-                sortOrder += 1
-            }
-
-            do {
-                if !touchEventsToSave.isEmpty {
-                    try touchRepo.batchSave(touchEventsToSave)
-                }
-                try repo.batchSave(personsToSave)
-            } catch {
-                AppLogger.logError(error, category: AppLogger.viewModel, context: "OnboardingViewModel.importContacts")
-                Task { @MainActor in ErrorToastManager.shared.show(.saveFailed("Onboarding")) }
-            }
-        }
+        await contactImportService.importSelectedContacts(
+            selected,
+            groupAssignments: contactGroupSelections,
+            lastTouchSelections: contactLastTouchSelections
+        )
     }
 
     private func seedLastTouchSelectionsIfNeeded() {
