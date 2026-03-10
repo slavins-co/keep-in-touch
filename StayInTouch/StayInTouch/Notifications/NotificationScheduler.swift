@@ -179,12 +179,19 @@ final class NotificationScheduler {
         }
 
         if settings.digestEnabled {
-            await scheduleWeeklyDigest(
-                overdue: classified.allForDigest,
-                dueSoon: [],
-                settings: settings,
-                badgeCount: badgeCount
-            )
+            // Dedup: if the digest would only mention one person and daily breach
+            // notifications are enabled, that person is already covered by the daily
+            // alert. Suppress the digest to avoid two notifications about the same person.
+            let digestPeople = classified.allForDigest
+            let isRedundantSinglePerson = digestPeople.count == 1 && settings.notificationsEnabled
+            if !isRedundantSinglePerson {
+                await scheduleWeeklyDigest(
+                    overdue: digestPeople,
+                    dueSoon: [],
+                    settings: settings,
+                    badgeCount: badgeCount
+                )
+            }
         }
     }
 
