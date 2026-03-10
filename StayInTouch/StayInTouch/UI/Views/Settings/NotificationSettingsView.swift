@@ -30,7 +30,7 @@ struct NotificationSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showBreachTimePicker) {
             timePickerSheet(
-                title: "Reminder Time",
+                title: "Alert Time",
                 time: viewModel.settings.breachTimeOfDay,
                 onSave: { viewModel.setBreachTime($0) }
             )
@@ -89,6 +89,9 @@ struct NotificationSettingsView: View {
                             .foregroundStyle(DS.Colors.secondaryText)
                     }
                 }
+                .accessibilityLabel("Reminder Time")
+                .accessibilityValue(viewModel.settings.breachTimeOfDay.formatted)
+                .accessibilityHint("Opens time picker")
                 .padding(.leading, DS.Spacing.lg)
             }
 
@@ -131,6 +134,9 @@ struct NotificationSettingsView: View {
                             .foregroundStyle(DS.Colors.secondaryText)
                     }
                 }
+                .accessibilityLabel("Digest Day")
+                .accessibilityValue(viewModel.settings.digestDay.displayName)
+                .accessibilityHint("Opens day picker")
                 .padding(.leading, DS.Spacing.lg)
 
                 Button {
@@ -143,6 +149,9 @@ struct NotificationSettingsView: View {
                             .foregroundStyle(DS.Colors.secondaryText)
                     }
                 }
+                .accessibilityLabel("Digest Time")
+                .accessibilityValue(viewModel.settings.digestTime.formatted)
+                .accessibilityHint("Opens time picker")
                 .padding(.leading, DS.Spacing.lg)
             }
         }
