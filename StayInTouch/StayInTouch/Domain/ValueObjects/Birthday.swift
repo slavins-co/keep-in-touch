@@ -35,4 +35,10 @@ extension Birthday {
         let index = min(max(month - 1, 0), 11)
         return "\(symbols[index]) \(day)"
     }
+
+    /// Returns true when this birthday's month and day match today's calendar date.
+    var isToday: Bool {
+        let components = Calendar.current.dateComponents([.month, .day], from: Date())
+        return components.month == month && components.day == day
+    }
 }
