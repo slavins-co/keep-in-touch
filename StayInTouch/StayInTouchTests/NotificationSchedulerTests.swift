@@ -43,6 +43,7 @@ final class NotificationSchedulerTests: XCTestCase {
 
     private func makeSettingsWithNotifications(
         grouping: NotificationGrouping = .perType,
+        notificationsEnabled: Bool = true,
         badgeShowDueSoon: Bool = false,
         digestEnabled: Bool = false,
         hideNames: Bool = false,
@@ -52,7 +53,7 @@ final class NotificationSchedulerTests: XCTestCase {
         AppSettings(
             id: AppSettings.singletonId,
             theme: .system,
-            notificationsEnabled: true,
+            notificationsEnabled: notificationsEnabled,
             breachTimeOfDay: LocalTime(hour: 9, minute: 0),
             digestEnabled: digestEnabled,
             digestDay: .friday,
@@ -248,14 +249,15 @@ final class NotificationSchedulerTests: XCTestCase {
     // MARK: - Weekly Digest
 
     func testWeeklyDigest_scheduledWhenEnabled() async {
+        // Two people: digest fires (dedup only suppresses single-person case)
         mockSettingsRepo.settings = makeSettingsWithNotifications(digestEnabled: true)
         seedWeeklyGroup()
-        mockPersonRepo.people = [makeOverduePerson()]
+        mockPersonRepo.people = [makeOverduePerson(name: "Alice"), makeOverduePerson(name: "Bob")]
 
         await sut.scheduleAll()
 
         let identifiers = mockNotificationCenter.addedRequests.map(\.identifier)
-        XCTAssertTrue(identifiers.contains(NotificationIdentifier.weeklyDigest), "Digest should be scheduled when enabled")
+        XCTAssertTrue(identifiers.contains(NotificationIdentifier.weeklyDigest), "Digest should be scheduled when there are multiple people")
     }
 
     func testWeeklyDigest_notScheduledWhenDisabled() async {
@@ -267,6 +269,34 @@ final class NotificationSchedulerTests: XCTestCase {
 
         let identifiers = mockNotificationCenter.addedRequests.map(\.identifier)
         XCTAssertFalse(identifiers.contains(NotificationIdentifier.weeklyDigest), "Digest should not be scheduled when disabled")
+    }
+
+    // MARK: - Digest Deduplication (#230)
+
+    func testWeeklyDigest_suppressedForSinglePersonWhenDailyEnabled() async {
+        // Single person + daily notifications enabled → digest is redundant, suppress it
+        mockSettingsRepo.settings = makeSettingsWithNotifications(digestEnabled: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makeOverduePerson()]
+
+        await sut.scheduleAll()
+
+        let identifiers = mockNotificationCenter.addedRequests.map(\.identifier)
+        XCTAssertFalse(identifiers.contains(NotificationIdentifier.weeklyDigest),
+                       "Digest should be suppressed for a single person when daily breach notifications are also enabled")
+    }
+
+    func testWeeklyDigest_suppressedWhenEmpty() async {
+        // No overdue people → digest is not scheduled regardless of settings
+        mockSettingsRepo.settings = makeSettingsWithNotifications(digestEnabled: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = []
+
+        await sut.scheduleAll()
+
+        let identifiers = mockNotificationCenter.addedRequests.map(\.identifier)
+        XCTAssertFalse(identifiers.contains(NotificationIdentifier.weeklyDigest),
+                       "Digest should not be scheduled when there are no overdue people")
     }
 
     // MARK: - Custom Breach Time

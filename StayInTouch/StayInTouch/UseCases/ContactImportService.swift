@@ -11,6 +11,17 @@ import Contacts
 struct ContactImportService {
     let personRepository: PersonRepository
     let touchEventRepository: TouchEventRepository
+    let coreDataStack: CoreDataStack
+
+    init(
+        personRepository: PersonRepository,
+        touchEventRepository: TouchEventRepository,
+        coreDataStack: CoreDataStack = .shared
+    ) {
+        self.personRepository = personRepository
+        self.touchEventRepository = touchEventRepository
+        self.coreDataStack = coreDataStack
+    }
 
     struct FetchResult {
         let contacts: [ContactSummary]
@@ -57,7 +68,7 @@ struct ContactImportService {
     func importSelectedContacts(_ summaries: [ContactSummary], groupAssignments: [String: UUID] = [:], lastTouchSelections: [String: LastTouchOption] = [:]) async {
         guard !summaries.isEmpty else { return }
 
-        let backgroundContext = CoreDataStack.shared.newBackgroundContext()
+        let backgroundContext = coreDataStack.newBackgroundContext()
         await backgroundContext.perform {
             let peopleRepo = CoreDataPersonRepository(context: backgroundContext)
             let groupRepo = CoreDataGroupRepository(context: backgroundContext)

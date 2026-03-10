@@ -31,7 +31,7 @@
 ### Tier 3 — Nice to Have (stretch goals, if time allows)
 
 - [ ] **#34** Swipe-to-log on home screen *(M-L — highest UX priority but gesture complexity)*
-- [ ] **#230** Deduplicate breach + digest notifications for single person *(S — edge case polish)*
+- [x] **#230** Deduplicate breach + digest notifications for single person *(S — PR #259)*
 - [ ] **#231** Birthday push notifications with toggle and per-person settings *(M — extends #141)*
 - [ ] **#134** Add CSV export option for spreadsheet use *(S — testers may want to review data)*
 - [ ] **#37** Separate overdue tiers (Recently Due vs Long Overdue) *(S-M — UX improvement)*
@@ -39,7 +39,9 @@
 
 ### Tier 4 — Deferred to v0.4+
 
-Calendar integration (#234), WhatsApp (#233), Dynamic Type (#202), architecture refactors (#203, #215, #216, #214, #168), VoiceOver picker/editor sheets (#197), full VoiceOver audit (#39), widget (#60), Siri Shortcuts (#80), iCloud sync (#79), iPad layout (#78), localization (#77), stats page (#138), tutorial (#10), UX direction (#45), design polish (#41, #42, #44).
+Calendar integration (#234), WhatsApp (#233), Dynamic Type (#202), architecture refactors (#203), VoiceOver picker/editor sheets (#197), full VoiceOver audit (#39), widget (#60), Siri Shortcuts (#80), iCloud sync (#79), iPad layout (#78), localization (#77), stats page (#138), tutorial (#10), UX direction (#45), design polish (#41, #42, #44).
+
+> **Note:** #34, #37, #231 are CLOSED on GitHub (closed as won't implement in v0.3.x). #214, #215, #216, #168 completed in v0.3.4 work.
 
 ### Not Code (human parallel track)
 
@@ -48,6 +50,23 @@ Calendar integration (#234), WhatsApp (#233), Dynamic Type (#202), architecture 
 - [ ] **#68** App Store submission checklist
 - [ ] **#69** TestFlight beta validation plan
 - [ ] **#70** Validate core loop retention during beta
+
+---
+
+## Completed — Session 2026-03-10c (Issues #250, #230, #168: Tech Debt)
+
+- [x] **#250** Fix Swift 6 actor-isolation warnings in OnboardingViewModel (PR #259)
+  - Capture `@MainActor` properties before `@Sendable` closures
+  - Create repos/seeder inline inside `backgroundContext.perform` closures
+  - Dispatch `ErrorToastManager.shared.show()` via `Task { @MainActor in }`
+- [x] **#230** Suppress weekly digest when single person already covered by daily breach (PR #259)
+  - `digestPeople.count > 1` guard in `scheduleAll()`; 5 new/updated tests
+- [x] **#168** Port `OnboardingViewModel.importSelectedContacts()` to `ContactImportService` (PR #259)
+  - Remove ~60 lines of duplicate Person/TouchEvent creation logic
+  - Add `touchEventRepository` to init; add `convenience init(dependencies:)`
+- [x] 309 unit tests passing (up from 304)
+- [x] Code review: PASS (1 informational note re: ContactImportService ignoring injected repos — pre-existing, filed as follow-up)
+- [x] Security review: PASS
 
 ---
 
