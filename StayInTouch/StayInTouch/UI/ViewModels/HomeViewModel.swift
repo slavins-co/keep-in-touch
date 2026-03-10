@@ -80,11 +80,11 @@ final class HomeViewModel: ObservableObject {
         // Delegate to the shared sync service so pull-to-refresh stays in sync
         // with foreground sync: display name, initials, birthday, and
         // contactUnavailable are all handled in one place.
+        // syncExistingContacts() posts .contactsDidSync on the MainActor when
+        // done; HomeView observes it and calls load() — no explicit reload needed.
+        // viewContext.automaticallyMergesChangesFromParent ensures the context
+        // is up to date before the notification fires.
         await ContactsSyncService.syncExistingContacts()
-
-        // Force viewContext to pick up background changes before reloading
-        CoreDataStack.shared.viewContext.refreshAllObjects()
-        load()
     }
 
     func applyFilters() {
