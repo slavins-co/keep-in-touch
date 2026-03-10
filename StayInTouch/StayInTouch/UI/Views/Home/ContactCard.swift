@@ -34,7 +34,7 @@ struct ContactCard: View {
                         .foregroundStyle(DS.Colors.primaryText)
                         .lineLimit(1)
                     if person.birthday?.isToday == true {
-                        Image(systemName: "birthday.cake")
+                        Image(systemName: "gift.fill")
                             .font(.caption)
                             .foregroundStyle(Color.pink)
                     }
