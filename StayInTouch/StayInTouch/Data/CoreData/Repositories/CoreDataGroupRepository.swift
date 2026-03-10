@@ -47,28 +47,46 @@ final class CoreDataGroupRepository: GroupRepository {
     }
 
     func save(_ group: Group) throws {
-        try context.performAndWait {
-            let entity = fetchEntity(id: group.id) ?? GroupEntity(context: context)
-            entity.apply(group)
-            try context.save()
+        do {
+            try context.performAndWait {
+                let entity = fetchEntity(id: group.id) ?? GroupEntity(context: context)
+                entity.apply(group)
+                try context.save()
+            }
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.saveFailed(entity: "Group", underlying: error)
         }
     }
 
     func batchSave(_ groups: [Group]) throws {
-        try context.performAndWait {
-            for group in groups {
-                let entity = fetchEntity(id: group.id) ?? GroupEntity(context: context)
-                entity.apply(group)
+        do {
+            try context.performAndWait {
+                for group in groups {
+                    let entity = fetchEntity(id: group.id) ?? GroupEntity(context: context)
+                    entity.apply(group)
+                }
+                try context.save()
             }
-            try context.save()
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.saveFailed(entity: "Group", underlying: error)
         }
     }
 
     func delete(id: UUID) throws {
-        try context.performAndWait {
-            guard let entity = fetchEntity(id: id) else { return }
-            context.delete(entity)
-            try context.save()
+        do {
+            try context.performAndWait {
+                guard let entity = fetchEntity(id: id) else { return }
+                context.delete(entity)
+                try context.save()
+            }
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.deleteFailed(entity: "Group", id: id, underlying: error)
         }
     }
 

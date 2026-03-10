@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = OnboardingViewModel()
     @State private var preferredScheme: ColorScheme? = nil
+    @Environment(\.dependencies) private var dependencies
 
     var body: some View {
         SwiftUI.Group {
@@ -36,8 +37,7 @@ struct ContentView: View {
     }
 
     private func loadTheme() {
-        let repo = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext)
-        let theme = repo.fetch()?.theme ?? .system
+        let theme = dependencies.settingsRepository.fetch()?.theme ?? .system
 
         switch theme {
         case .dark:

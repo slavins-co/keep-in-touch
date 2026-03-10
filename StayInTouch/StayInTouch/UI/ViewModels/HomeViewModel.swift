@@ -48,6 +48,15 @@ final class HomeViewModel: ObservableObject {
         load()
     }
 
+    convenience init(dependencies: AppDependencies) {
+        self.init(
+            personRepository: dependencies.personRepository,
+            groupRepository: dependencies.groupRepository,
+            tagRepository: dependencies.tagRepository,
+            settingsRepository: dependencies.settingsRepository
+        )
+    }
+
     func load() {
         settings = settingsRepository.fetch()
         groups = groupRepository.fetchAll()

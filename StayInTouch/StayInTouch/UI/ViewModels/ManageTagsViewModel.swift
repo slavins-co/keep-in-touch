@@ -24,6 +24,13 @@ final class ManageTagsViewModel: ObservableObject {
         load()
     }
 
+    convenience init(dependencies: AppDependencies) {
+        self.init(
+            tagRepository: dependencies.tagRepository,
+            personRepository: dependencies.personRepository
+        )
+    }
+
     func load() {
         tags = tagRepository.fetchAll().sorted { lhs, rhs in
             if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
@@ -45,8 +52,11 @@ final class ManageTagsViewModel: ObservableObject {
         updated.modifiedAt = Date()
         do {
             try tagRepository.save(updated)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageTagsViewModel.save")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageTagsViewModel.save (unexpected)")
             ErrorToastManager.shared.show(.saveFailed("ManageTags"))
         }
         load()
@@ -58,8 +68,11 @@ final class ManageTagsViewModel: ObservableObject {
         removeTagFromPeople(tagId: tag.id)
         do {
             try tagRepository.delete(id: tag.id)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageTagsViewModel.delete")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageTagsViewModel.delete (unexpected)")
             ErrorToastManager.shared.show(.deleteFailed("ManageTags"))
         }
         load()
@@ -78,8 +91,11 @@ final class ManageTagsViewModel: ObservableObject {
         guard !updatedPeople.isEmpty else { return }
         do {
             try personRepository.batchSave(updatedPeople)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageTagsViewModel.removeTagFromPeople")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageTagsViewModel.removeTagFromPeople (unexpected)")
             ErrorToastManager.shared.show(.saveFailed("ManageTags"))
         }
     }

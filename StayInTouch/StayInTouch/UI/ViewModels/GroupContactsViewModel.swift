@@ -30,6 +30,14 @@ final class GroupContactsViewModel: ObservableObject {
         load()
     }
 
+    convenience init(group: Group, dependencies: AppDependencies) {
+        self.init(
+            group: group,
+            personRepository: dependencies.personRepository,
+            groupRepository: dependencies.groupRepository
+        )
+    }
+
     func load() {
         allPeople = personRepository.fetchTracked(includePaused: true)
             .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }

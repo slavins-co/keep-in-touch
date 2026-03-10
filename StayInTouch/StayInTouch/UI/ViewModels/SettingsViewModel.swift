@@ -67,6 +67,16 @@ final class SettingsViewModel: ObservableObject {
         load()
     }
 
+    convenience init(dependencies: AppDependencies) {
+        self.init(
+            settingsRepository: dependencies.settingsRepository,
+            groupRepository: dependencies.groupRepository,
+            tagRepository: dependencies.tagRepository,
+            personRepository: dependencies.personRepository,
+            touchEventRepository: dependencies.touchEventRepository
+        )
+    }
+
     // MARK: - Settings Management
 
     func load() {
@@ -186,8 +196,10 @@ final class SettingsViewModel: ObservableObject {
                             try touchRepo.delete(id: event.id)
                         }
                         try repo.delete(id: person.id)
-                    } catch {
+                    } catch let error as RepositoryError {
                         AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.updateDemoData")
+                    } catch {
+                        AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.updateDemoData (unexpected)")
                     }
                 }
             }
@@ -228,8 +240,10 @@ final class SettingsViewModel: ObservableObject {
             }
             do {
                 try repo.batchSave(updated)
-            } catch {
+            } catch let error as RepositoryError {
                 AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.resetAllFrequencies")
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.resetAllFrequencies (unexpected)")
             }
         }
         await MainActor.run {
@@ -384,8 +398,11 @@ final class SettingsViewModel: ObservableObject {
     private func save() {
         do {
             try settingsRepository.save(settings)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.save")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.save (unexpected)")
             ErrorToastManager.shared.show(.saveFailed("Settings"))
         }
         NotificationCenter.default.post(name: .settingsDidChange, object: nil)

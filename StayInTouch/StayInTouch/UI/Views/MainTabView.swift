@@ -10,6 +10,7 @@ struct MainTabView: View {
     @ObservedObject private var deepLinkRouter = DeepLinkRouter.shared
     @State private var selectedPerson: Person?
     @State private var freshStartReason: FreshStartDetector.Reason?
+    @Environment(\.dependencies) private var dependencies
 
     var body: some View {
         TabView(selection: $deepLinkRouter.selectedTab) {
@@ -105,7 +106,7 @@ struct MainTabView: View {
         switch destination {
         case .person(let id):
             deepLinkRouter.selectedTab = 0
-            if let person = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext).fetch(id: id) {
+            if let person = dependencies.personRepository.fetch(id: id) {
                 selectedPerson = person
             }
         case .home:

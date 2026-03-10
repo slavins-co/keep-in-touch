@@ -49,28 +49,46 @@ final class CoreDataTouchEventRepository: TouchEventRepository {
     }
 
     func save(_ touchEvent: TouchEvent) throws {
-        try context.performAndWait {
-            let entity = fetchEntity(id: touchEvent.id) ?? TouchEventEntity(context: context)
-            entity.apply(touchEvent)
-            try context.save()
+        do {
+            try context.performAndWait {
+                let entity = fetchEntity(id: touchEvent.id) ?? TouchEventEntity(context: context)
+                entity.apply(touchEvent)
+                try context.save()
+            }
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.saveFailed(entity: "TouchEvent", underlying: error)
         }
     }
 
     func batchSave(_ touchEvents: [TouchEvent]) throws {
-        try context.performAndWait {
-            for touchEvent in touchEvents {
-                let entity = fetchEntity(id: touchEvent.id) ?? TouchEventEntity(context: context)
-                entity.apply(touchEvent)
+        do {
+            try context.performAndWait {
+                for touchEvent in touchEvents {
+                    let entity = fetchEntity(id: touchEvent.id) ?? TouchEventEntity(context: context)
+                    entity.apply(touchEvent)
+                }
+                try context.save()
             }
-            try context.save()
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.saveFailed(entity: "TouchEvent", underlying: error)
         }
     }
 
     func delete(id: UUID) throws {
-        try context.performAndWait {
-            guard let entity = fetchEntity(id: id) else { return }
-            context.delete(entity)
-            try context.save()
+        do {
+            try context.performAndWait {
+                guard let entity = fetchEntity(id: id) else { return }
+                context.delete(entity)
+                try context.save()
+            }
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.deleteFailed(entity: "TouchEvent", id: id, underlying: error)
         }
     }
 

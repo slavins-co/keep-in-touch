@@ -18,6 +18,10 @@ final class PausedContactsViewModel: ObservableObject {
         load()
     }
 
+    convenience init(dependencies: AppDependencies) {
+        self.init(personRepository: dependencies.personRepository)
+    }
+
     func load() {
         people = personRepository.fetchTracked(includePaused: true)
             .filter { $0.isPaused }
