@@ -368,6 +368,10 @@ private extension NotificationScheduler {
         let hideNames = settings.hideContactNamesInNotifications
         let time = settings.birthdayNotificationTime
 
+        // Collect eligible (person, birthday) pairs grouped by calendar date
+        struct BirthdayKey: Hashable { let month: Int; let day: Int }
+        var groups: [BirthdayKey: [(Person, Birthday)]] = [:]
+
         for person in people {
             guard person.birthdayNotificationsEnabled else { continue }
             guard !person.notificationsMuted else { continue }
@@ -384,51 +388,103 @@ private extension NotificationScheduler {
             }
 
             guard let birthday else { continue }
+            let key = BirthdayKey(month: birthday.month, day: birthday.day)
+            groups[key, default: []].append((person, birthday))
+        }
 
-            let content = UNMutableNotificationContent()
-            content.title = "Birthday Today 🎂"
-            if hideNames {
-                content.body = Self.privateBirthdayTemplates.randomElement()
-                    ?? "A contact has a birthday today!"
+        for (key, pairs) in groups {
+            if pairs.count == 1, let (person, birthday) = pairs.first {
+                await scheduleSingleBirthday(person: person, birthday: birthday, time: time, hideNames: hideNames)
             } else {
-                content.body = String(
-                    format: Self.birthdayTemplates.randomElement()
-                        ?? "It's %@'s birthday today!",
-                    person.displayName
-                )
+                await scheduleGroupedBirthday(people: pairs.map(\.0), month: key.month, day: key.day, time: time, hideNames: hideNames)
             }
-            content.sound = .default
-            content.threadIdentifier = "birthday"
-            content.categoryIdentifier = NotificationIdentifier.categoryBirthday
-            content.userInfo = [
-                "type": "person",
-                "personId": person.id.uuidString,
-                "category": "birthday"
-            ]
+        }
+    }
 
-            var dateComponents = DateComponents()
-            dateComponents.month = birthday.month
-            dateComponents.day = birthday.day
-            dateComponents.hour = time.hour
-            dateComponents.minute = time.minute
-
-            let trigger = UNCalendarNotificationTrigger(
-                dateMatching: dateComponents,
-                repeats: true
+    private func scheduleSingleBirthday(person: Person, birthday: Birthday, time: LocalTime, hideNames: Bool) async {
+        let content = UNMutableNotificationContent()
+        content.title = "Birthday Today 🎂"
+        if hideNames {
+            content.body = Self.privateBirthdayTemplates.randomElement()
+                ?? "A contact has a birthday today!"
+        } else {
+            content.body = String(
+                format: Self.birthdayTemplates.randomElement()
+                    ?? "It's %@'s birthday today!",
+                person.displayName
             )
+        }
+        content.sound = .default
+        content.threadIdentifier = "birthday"
+        content.categoryIdentifier = NotificationIdentifier.categoryBirthday
+        content.userInfo = [
+            "type": "person",
+            "personId": person.id.uuidString,
+            "category": "birthday"
+        ]
 
-            let request = UNNotificationRequest(
-                identifier: "\(NotificationIdentifier.birthdayPrefix)\(person.id.uuidString)",
-                content: content,
-                trigger: trigger
-            )
+        var dateComponents = DateComponents()
+        dateComponents.month = birthday.month
+        dateComponents.day = birthday.day
+        dateComponents.hour = time.hour
+        dateComponents.minute = time.minute
 
-            do {
-                try await notificationCenter.add(request)
-            } catch {
-                AppLogger.logError(error, category: AppLogger.notifications,
-                    context: "NotificationScheduler.scheduleBirthdays(\(person.id))")
-            }
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+        let request = UNNotificationRequest(
+            identifier: "\(NotificationIdentifier.birthdayPrefix)\(person.id.uuidString)",
+            content: content,
+            trigger: trigger
+        )
+
+        do {
+            try await notificationCenter.add(request)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.notifications,
+                context: "NotificationScheduler.scheduleSingleBirthday(\(person.id))")
+        }
+    }
+
+    private func scheduleGroupedBirthday(people: [Person], month: Int, day: Int, time: LocalTime, hideNames: Bool) async {
+        let content = UNMutableNotificationContent()
+        content.title = "Birthdays Today 🎂"
+        content.body = groupedBirthdayBody(for: people, hideNames: hideNames)
+        content.sound = .default
+        content.threadIdentifier = "birthday"
+        content.categoryIdentifier = NotificationIdentifier.categoryBirthday
+        content.userInfo = ["type": "home", "category": "birthday"]
+
+        var dateComponents = DateComponents()
+        dateComponents.month = month
+        dateComponents.day = day
+        dateComponents.hour = time.hour
+        dateComponents.minute = time.minute
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+        let request = UNNotificationRequest(
+            identifier: "\(NotificationIdentifier.birthdayGroupedPrefix)\(month)_\(day)",
+            content: content,
+            trigger: trigger
+        )
+
+        do {
+            try await notificationCenter.add(request)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.notifications,
+                context: "NotificationScheduler.scheduleGroupedBirthday(\(month)/\(day))")
+        }
+    }
+
+    private func groupedBirthdayBody(for people: [Person], hideNames: Bool) -> String {
+        guard !hideNames else {
+            return "Multiple contacts have birthdays today!"
+        }
+        let firstNames = people.map { firstName(from: $0.displayName) }
+        switch firstNames.count {
+        case 2:
+            return "\(firstNames[0]) and \(firstNames[1]) have birthdays today!"
+        default:
+            let othersCount = firstNames.count - 2
+            return "\(firstNames[0]), \(firstNames[1]), and \(othersCount) \(othersCount == 1 ? "other" : "others") have birthdays today!"
         }
     }
 }
@@ -474,6 +530,7 @@ enum NotificationIdentifier {
     static let actionLogConnection = "LOG_CONNECTION"
 
     static let birthdayPrefix = "birthday_"
+    static let birthdayGroupedPrefix = "birthday_grouped_"
     static let categoryBirthday = "BIRTHDAY_REMINDER"
 }
 
