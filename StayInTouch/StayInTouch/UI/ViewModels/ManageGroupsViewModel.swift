@@ -24,6 +24,13 @@ final class ManageGroupsViewModel: ObservableObject {
         load()
     }
 
+    convenience init(dependencies: AppDependencies) {
+        self.init(
+            groupRepository: dependencies.groupRepository,
+            personRepository: dependencies.personRepository
+        )
+    }
+
     func load() {
         groups = groupRepository.fetchAll().sorted { lhs, rhs in
             if lhs.isDefault != rhs.isDefault { return lhs.isDefault }
@@ -52,8 +59,11 @@ final class ManageGroupsViewModel: ObservableObject {
                 cleared.modifiedAt = Date()
                 do {
                     try groupRepository.save(cleared)
-                } catch {
+                } catch let error as RepositoryError {
                     AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save.clearDefault")
+                    ErrorToastManager.shared.show(AppError(message: error.userMessage))
+                } catch {
+                    AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save.clearDefault (unexpected)")
                     ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
                 }
             }
@@ -62,8 +72,11 @@ final class ManageGroupsViewModel: ObservableObject {
 
         do {
             try groupRepository.save(updated)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save (unexpected)")
             ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
         }
         load()
@@ -77,8 +90,11 @@ final class ManageGroupsViewModel: ObservableObject {
         }
         do {
             try groupRepository.delete(id: group.id)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.delete")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.delete (unexpected)")
             ErrorToastManager.shared.show(.deleteFailed("ManageGroups"))
         }
         load()
@@ -97,8 +113,11 @@ final class ManageGroupsViewModel: ObservableObject {
         }
         do {
             try personRepository.batchSave(updatedPeople)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.movePeople")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.movePeople (unexpected)")
             ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
         }
     }

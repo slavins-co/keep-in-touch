@@ -46,6 +46,16 @@ final class PersonDetailViewModel: ObservableObject {
         AnalyticsService.track("person.viewed")
     }
 
+    convenience init(person: Person, dependencies: AppDependencies) {
+        self.init(
+            person: person,
+            personRepository: dependencies.personRepository,
+            groupRepository: dependencies.groupRepository,
+            tagRepository: dependencies.tagRepository,
+            touchRepository: dependencies.touchEventRepository
+        )
+    }
+
     func load() {
         if let refreshed = personRepository.fetch(id: person.id) {
             person = refreshed
@@ -216,8 +226,11 @@ final class PersonDetailViewModel: ObservableObject {
             )
             do {
                 try touchRepository.save(touch)
-            } catch {
+            } catch let error as RepositoryError {
                 AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.resumeAndUpdateLastTouch")
+                ErrorToastManager.shared.show(AppError(message: error.userMessage))
+            } catch {
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.resumeAndUpdateLastTouch (unexpected)")
                 ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
             }
 
@@ -262,8 +275,11 @@ final class PersonDetailViewModel: ObservableObject {
         )
         do {
             try touchRepository.save(touch)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.logTouch")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.logTouch (unexpected)")
             ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
         }
 
@@ -287,8 +303,11 @@ final class PersonDetailViewModel: ObservableObject {
         updatedTouch.modifiedAt = Date()
         do {
             try touchRepository.save(updatedTouch)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.updateTouch")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.updateTouch (unexpected)")
             ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
         }
 
@@ -307,8 +326,11 @@ final class PersonDetailViewModel: ObservableObject {
         AnalyticsService.track("connection.deleted")
         do {
             try touchRepository.delete(id: touch.id)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.deleteTouch")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.deleteTouch (unexpected)")
             ErrorToastManager.shared.show(.deleteFailed("PersonDetail"))
         }
         touchEvents = fetchSortedEvents()
@@ -346,8 +368,11 @@ final class PersonDetailViewModel: ObservableObject {
             }
             try personRepository.delete(id: person.id)
             NotificationCenter.default.post(name: .personDidChange, object: person.id)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.deletePerson")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.deletePerson (unexpected)")
             ErrorToastManager.shared.show(.deleteFailed("PersonDetail"))
         }
     }
@@ -415,8 +440,11 @@ final class PersonDetailViewModel: ObservableObject {
             person = updated
             load()
             NotificationCenter.default.post(name: .personDidChange, object: updated.id)
-        } catch {
+        } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.savePerson")
+            ErrorToastManager.shared.show(AppError(message: error.userMessage))
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.savePerson (unexpected)")
             ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
         }
     }

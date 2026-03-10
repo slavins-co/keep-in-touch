@@ -35,7 +35,7 @@
 - [ ] **#231** Birthday push notifications with toggle and per-person settings *(M — extends #141)*
 - [ ] **#134** Add CSV export option for spreadsheet use *(S — testers may want to review data)*
 - [ ] **#37** Separate overdue tiers (Recently Due vs Long Overdue) *(S-M — UX improvement)*
-- [ ] **#232** Pull-to-refresh re-sync contact info from iOS Contacts *(S — currently only recalcs statuses)*
+- [x] **#232** Pull-to-refresh re-sync contact info from iOS Contacts *(S — PR #255)*
 
 ### Tier 4 — Deferred to v0.4+
 
@@ -48,6 +48,30 @@ Calendar integration (#234), WhatsApp (#233), Dynamic Type (#202), architecture 
 - [ ] **#68** App Store submission checklist
 - [ ] **#69** TestFlight beta validation plan
 - [ ] **#70** Validate core loop retention during beta
+
+---
+
+## Completed — Session 2026-03-10b (Issue #246: Foreground Notifications)
+
+- [x] **#246** Notifications silently suppressed when app is in foreground (PR #257)
+  - Added `userNotificationCenter(_:willPresent:withCompletionHandler:)` to AppDelegate
+  - Calls completion with `[.banner, .sound, .badge]` — applies to all notification types
+  - 304 unit tests passing
+- [x] Code review: PASS
+- [x] Security review: PASS
+
+---
+
+## Completed — Session 2026-03-10 (Issues #248, #249, #232)
+
+- [x] **#232** Pull-to-refresh re-sync contact info from iOS Contacts (PR #255, merged)
+- [x] **#249** Fix blank import screen on first file selection (PR #251, merged)
+- [x] **#248** Extract notifications section into NotificationSettingsView sub-screen (PR #256)
+  - New `NotificationSettingsView` with 4 sections: Connection Reminders, Weekly Digest, Birthday Reminders, Privacy
+  - SettingsView simplified to single NavigationLink
+  - Post-review fixes: accessibility annotations on Reminder Time/Digest Day/Digest Time buttons, restored "Alert Time" sheet title
+- [x] Code review: PASS
+- [x] Security review: PASS
 
 ---
 

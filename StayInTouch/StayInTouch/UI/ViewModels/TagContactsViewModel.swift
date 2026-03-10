@@ -22,6 +22,10 @@ final class TagContactsViewModel: ObservableObject {
         load()
     }
 
+    convenience init(tag: Tag, dependencies: AppDependencies) {
+        self.init(tag: tag, personRepository: dependencies.personRepository)
+    }
+
     func load() {
         allPeople = personRepository.fetchTracked(includePaused: true)
             .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }

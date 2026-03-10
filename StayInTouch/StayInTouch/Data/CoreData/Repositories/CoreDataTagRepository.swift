@@ -36,28 +36,46 @@ final class CoreDataTagRepository: TagRepository {
     }
 
     func save(_ tag: Tag) throws {
-        try context.performAndWait {
-            let entity = fetchEntity(id: tag.id) ?? TagEntity(context: context)
-            entity.apply(tag)
-            try context.save()
+        do {
+            try context.performAndWait {
+                let entity = fetchEntity(id: tag.id) ?? TagEntity(context: context)
+                entity.apply(tag)
+                try context.save()
+            }
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.saveFailed(entity: "Tag", underlying: error)
         }
     }
 
     func batchSave(_ tags: [Tag]) throws {
-        try context.performAndWait {
-            for tag in tags {
-                let entity = fetchEntity(id: tag.id) ?? TagEntity(context: context)
-                entity.apply(tag)
+        do {
+            try context.performAndWait {
+                for tag in tags {
+                    let entity = fetchEntity(id: tag.id) ?? TagEntity(context: context)
+                    entity.apply(tag)
+                }
+                try context.save()
             }
-            try context.save()
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.saveFailed(entity: "Tag", underlying: error)
         }
     }
 
     func delete(id: UUID) throws {
-        try context.performAndWait {
-            guard let entity = fetchEntity(id: id) else { return }
-            context.delete(entity)
-            try context.save()
+        do {
+            try context.performAndWait {
+                guard let entity = fetchEntity(id: id) else { return }
+                context.delete(entity)
+                try context.save()
+            }
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.deleteFailed(entity: "Tag", id: id, underlying: error)
         }
     }
 

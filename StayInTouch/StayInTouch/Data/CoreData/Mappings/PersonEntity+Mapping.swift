@@ -10,12 +10,12 @@ import CoreData
 extension PersonEntity {
     func toDomain() -> Person {
         Person(
-            id: id ?? UUID(),
+            id: requiredField(id, entity: "PersonEntity", field: "id", fallback: UUID()),
             cnIdentifier: cnIdentifier,
-            displayName: displayName ?? "",
-            initials: initials ?? "",
-            avatarColor: avatarColor ?? "",
-            groupId: groupId ?? UUID(),
+            displayName: requiredField(displayName, entity: "PersonEntity", field: "displayName", fallback: ""),
+            initials: requiredField(initials, entity: "PersonEntity", field: "initials", fallback: ""),
+            avatarColor: requiredField(avatarColor, entity: "PersonEntity", field: "avatarColor", fallback: ""),
+            groupId: requiredField(groupId, entity: "PersonEntity", field: "groupId", fallback: UUID()),
             tagIds: decodeTagIds(tagIds),
             lastTouchAt: lastTouchAt,
             lastTouchMethod: lastTouchMethod.flatMap(TouchMethod.init(rawValue:)),
@@ -32,8 +32,8 @@ extension PersonEntity {
             contactUnavailable: contactUnavailable,
             isDemoData: isDemoData,
             groupAddedAt: groupAddedAt,
-            createdAt: createdAt ?? Date(),
-            modifiedAt: modifiedAt ?? Date(),
+            createdAt: requiredField(createdAt, entity: "PersonEntity", field: "createdAt", fallback: Date()),
+            modifiedAt: requiredField(modifiedAt, entity: "PersonEntity", field: "modifiedAt", fallback: Date()),
             sortOrder: Int(sortOrder)
         )
     }
@@ -64,6 +64,15 @@ extension PersonEntity {
         createdAt = person.createdAt
         modifiedAt = person.modifiedAt
         sortOrder = Int64(person.sortOrder)
+    }
+
+    /// Returns `value` if non-nil; otherwise logs a data-corruption warning and returns the fallback.
+    private func requiredField<T>(_ value: T?, entity: String, field: String, fallback: @autoclosure () -> T) -> T {
+        guard let value else {
+            AppLogger.logWarning("\(entity) has nil required field '\(field)' — possible data corruption", category: AppLogger.coreData)
+            return fallback()
+        }
+        return value
     }
 
     private func decodeTagIds(_ value: Any?) -> [UUID] {

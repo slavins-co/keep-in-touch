@@ -22,6 +22,7 @@ struct KeepInTouchApp: App {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, coreDataStack.viewContext)
+                .environment(\.dependencies, AppDependencies(context: coreDataStack.viewContext))
                 .onAppear {
                     if coreDataStack.migrationFailed {
                         showMigrationAlert = true

@@ -127,28 +127,46 @@ final class CoreDataPersonRepository: PersonRepository {
     }
 
     func save(_ person: Person) throws {
-        try context.performAndWait {
-            let entity = fetchEntity(id: person.id) ?? PersonEntity(context: context)
-            entity.apply(person)
-            try context.save()
+        do {
+            try context.performAndWait {
+                let entity = fetchEntity(id: person.id) ?? PersonEntity(context: context)
+                entity.apply(person)
+                try context.save()
+            }
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.saveFailed(entity: "Person", underlying: error)
         }
     }
 
     func batchSave(_ persons: [Person]) throws {
-        try context.performAndWait {
-            for person in persons {
-                let entity = fetchEntity(id: person.id) ?? PersonEntity(context: context)
-                entity.apply(person)
+        do {
+            try context.performAndWait {
+                for person in persons {
+                    let entity = fetchEntity(id: person.id) ?? PersonEntity(context: context)
+                    entity.apply(person)
+                }
+                try context.save()
             }
-            try context.save()
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.saveFailed(entity: "Person", underlying: error)
         }
     }
 
     func delete(id: UUID) throws {
-        try context.performAndWait {
-            guard let entity = fetchEntity(id: id) else { return }
-            context.delete(entity)
-            try context.save()
+        do {
+            try context.performAndWait {
+                guard let entity = fetchEntity(id: id) else { return }
+                context.delete(entity)
+                try context.save()
+            }
+        } catch let error as RepositoryError {
+            throw error
+        } catch {
+            throw RepositoryError.deleteFailed(entity: "Person", id: id, underlying: error)
         }
     }
 
