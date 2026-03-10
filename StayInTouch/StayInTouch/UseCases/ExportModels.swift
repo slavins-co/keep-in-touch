@@ -108,7 +108,8 @@ struct ExportPerson: Codable {
 
 // MARK: - Import Structs
 
-struct ImportPreview {
+struct ImportPreview: Identifiable {
+    let id = UUID()
     let newPeople: [ExportPerson]
     let updatedPeople: [ExportPerson]
     let skippedCount: Int

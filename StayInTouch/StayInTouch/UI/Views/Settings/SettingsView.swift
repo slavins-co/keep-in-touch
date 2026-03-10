@@ -29,7 +29,6 @@ struct SettingsView: View {
     @State private var importBannerTask: Task<Void, Never>?
     @State private var showFilePicker = false
     @State private var importPreview: ImportPreview?
-    @State private var showImportPreview = false
     @State private var showImportSuccessAlert = false
     @State private var showImportErrorAlert = false
     @State private var importResultMessage = ""
@@ -190,7 +189,6 @@ struct SettingsView: View {
                 Task {
                     if let preview = await viewModel.parseImportFile(url: url) {
                         importPreview = preview
-                        showImportPreview = true
                     } else {
                         importResultMessage = "Could not read the file. Make sure it is a valid Keep In Touch export."
                         showImportErrorAlert = true
@@ -201,42 +199,40 @@ struct SettingsView: View {
                 showImportErrorAlert = true
             }
         }
-        .sheet(isPresented: $showImportPreview) {
-            if let preview = importPreview {
-                ImportPreviewView(
-                    preview: preview,
-                    onImport: { resolvedPreview in
-                        showImportPreview = false
-                        Task {
-                            let (result, matchSummary) = await viewModel.performFileImport(resolvedPreview)
+        .sheet(item: $importPreview) { preview in
+            ImportPreviewView(
+                preview: preview,
+                onImport: { resolvedPreview in
+                    importPreview = nil
+                    Task {
+                        let (result, matchSummary) = await viewModel.performFileImport(resolvedPreview)
 
-                            if let matchSummary {
-                                postImportResult = result
-                                postImportMatchSummary = matchSummary
-                                showPostImportMatch = true
-                            } else {
-                                var parts: [String] = []
-                                if result.totalPeople > 0 {
-                                    parts.append("\(result.totalPeople) contact\(result.totalPeople == 1 ? "" : "s")")
-                                }
-                                if result.groupsCreated > 0 {
-                                    parts.append("\(result.groupsCreated) frequenc\(result.groupsCreated == 1 ? "y" : "ies")")
-                                }
-                                if result.tagsCreated > 0 {
-                                    parts.append("\(result.tagsCreated) group\(result.tagsCreated == 1 ? "" : "s")")
-                                }
-                                importResultMessage = parts.isEmpty
-                                    ? "Nothing was imported."
-                                    : "Imported \(parts.joined(separator: ", ")) successfully."
-                                showImportSuccessAlert = true
+                        if let matchSummary {
+                            postImportResult = result
+                            postImportMatchSummary = matchSummary
+                            showPostImportMatch = true
+                        } else {
+                            var parts: [String] = []
+                            if result.totalPeople > 0 {
+                                parts.append("\(result.totalPeople) contact\(result.totalPeople == 1 ? "" : "s")")
                             }
+                            if result.groupsCreated > 0 {
+                                parts.append("\(result.groupsCreated) frequenc\(result.groupsCreated == 1 ? "y" : "ies")")
+                            }
+                            if result.tagsCreated > 0 {
+                                parts.append("\(result.tagsCreated) group\(result.tagsCreated == 1 ? "" : "s")")
+                            }
+                            importResultMessage = parts.isEmpty
+                                ? "Nothing was imported."
+                                : "Imported \(parts.joined(separator: ", ")) successfully."
+                            showImportSuccessAlert = true
                         }
-                    },
-                    onCancel: {
-                        showImportPreview = false
                     }
-                )
-            }
+                },
+                onCancel: {
+                    importPreview = nil
+                }
+            )
         }
         .sheet(isPresented: $showPostImportMatch) {
             if let result = postImportResult, let matchSummary = postImportMatchSummary {
