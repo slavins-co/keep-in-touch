@@ -286,17 +286,17 @@ final class NotificationSchedulerTests: XCTestCase {
                        "Digest should be suppressed for a single person when daily breach notifications are also enabled")
     }
 
-    func testWeeklyDigest_scheduledForSinglePersonWhenDailyDisabled() async {
-        // Single person + daily notifications disabled → only the digest covers them, do not suppress
-        mockSettingsRepo.settings = makeSettingsWithNotifications(notificationsEnabled: false, digestEnabled: true)
+    func testWeeklyDigest_suppressedWhenEmpty() async {
+        // No overdue people → digest is not scheduled regardless of settings
+        mockSettingsRepo.settings = makeSettingsWithNotifications(digestEnabled: true)
         seedWeeklyGroup()
-        mockPersonRepo.people = [makeOverduePerson()]
+        mockPersonRepo.people = []
 
         await sut.scheduleAll()
 
         let identifiers = mockNotificationCenter.addedRequests.map(\.identifier)
-        XCTAssertTrue(identifiers.contains(NotificationIdentifier.weeklyDigest),
-                      "Digest should still fire for a single person when daily notifications are disabled")
+        XCTAssertFalse(identifiers.contains(NotificationIdentifier.weeklyDigest),
+                       "Digest should not be scheduled when there are no overdue people")
     }
 
     // MARK: - Custom Breach Time
