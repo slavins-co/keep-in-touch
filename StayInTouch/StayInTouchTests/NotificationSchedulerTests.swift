@@ -776,4 +776,39 @@ final class NotificationSchedulerTests: XCTestCase {
         XCTAssertEqual(grouped.count, 1, "One grouped notification for Alice+Bob")
         XCTAssertEqual(individual.count, 1, "One individual notification for Carol")
     }
+
+    func testBirthday_grouped_hasNoCategoryIdentifier() async throws {
+        // Grouped birthday notifications must not have a categoryIdentifier, because
+        // the BIRTHDAY_REMINDER category includes a "Log Connection" action that
+        // requires a personId — which grouped notifications don't have.
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let alice = makePersonWithBirthday(name: "Alice", birthday: Birthday(month: 6, day: 10, year: nil))
+        let bob = makePersonWithBirthday(name: "Bob", birthday: Birthday(month: 6, day: 10, year: nil))
+        mockPersonRepo.people = [alice, bob]
+
+        await sut.scheduleAll()
+
+        let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix)
+        })
+        XCTAssertTrue(request.content.categoryIdentifier.isEmpty,
+                      "Grouped birthday notification must not have a categoryIdentifier (no personId to log against)")
+    }
+
+    func testBirthday_single_hasCategoryIdentifier() async throws {
+        // Single-person birthday notifications retain the category (Log Connection is meaningful)
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday(name: "Alice")]
+
+        await sut.scheduleAll()
+
+        let request = try XCTUnwrap(mockNotificationCenter.addedRequests.first {
+            $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix) &&
+            !$0.identifier.hasPrefix(NotificationIdentifier.birthdayGroupedPrefix)
+        })
+        XCTAssertEqual(request.content.categoryIdentifier, NotificationIdentifier.categoryBirthday,
+                       "Single-person birthday notification should retain categoryIdentifier for Log Connection action")
+    }
 }

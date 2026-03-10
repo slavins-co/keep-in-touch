@@ -450,7 +450,10 @@ private extension NotificationScheduler {
         content.body = groupedBirthdayBody(for: people, hideNames: hideNames)
         content.sound = .default
         content.threadIdentifier = "birthday"
-        content.categoryIdentifier = NotificationIdentifier.categoryBirthday
+        // No categoryIdentifier: grouped notifications have no single personId, so
+        // attaching the BIRTHDAY_REMINDER category (which includes a "Log Connection"
+        // action) would silently do nothing when tapped. Leave unset so no action
+        // button appears.
         content.userInfo = ["type": "home", "category": "birthday"]
 
         var dateComponents = DateComponents()
