@@ -81,7 +81,8 @@ final class OnboardingViewModel: ObservableObject {
         self.settingsRepository = settingsRepository ?? CoreDataAppSettingsRepository(context: context)
         self.contactImportService = ContactImportService(
             personRepository: personRepo,
-            touchEventRepository: touchRepo
+            touchEventRepository: touchRepo,
+            coreDataStack: coreDataStack
         )
 
         loadSettingsAndGroups()

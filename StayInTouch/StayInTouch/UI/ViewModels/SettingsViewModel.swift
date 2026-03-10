@@ -34,6 +34,7 @@ final class SettingsViewModel: ObservableObject {
     private let contactImportService: ContactImportService
 
     init(
+        coreDataStack: CoreDataStack = .shared,
         settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
         groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
         tagRepository: TagRepository = CoreDataTagRepository(context: CoreDataStack.shared.viewContext),
@@ -60,7 +61,8 @@ final class SettingsViewModel: ObservableObject {
         )
         self.contactImportService = ContactImportService(
             personRepository: personRepository,
-            touchEventRepository: touchEventRepository
+            touchEventRepository: touchEventRepository,
+            coreDataStack: coreDataStack
         )
 
         self.settings = settingsRepository.fetch() ?? AppSettingsDefaults.defaultSettings()
