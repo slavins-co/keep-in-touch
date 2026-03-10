@@ -33,6 +33,20 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertEqual(filtered.first?.displayName, "Sarah Chen")
     }
 
+    func testRefreshFromContacts_setsIsRefreshingFalseAfterCompletion() async {
+        let vm = HomeViewModel(
+            personRepository: InMemoryPersonRepository(people: []),
+            groupRepository: InMemoryGroupRepository(groups: []),
+            tagRepository: InMemoryTagRepository(tags: []),
+            settingsRepository: InMemorySettingsRepository()
+        )
+        XCTAssertFalse(vm.isRefreshing, "isRefreshing should start false")
+
+        await vm.refreshFromContacts()
+
+        XCTAssertFalse(vm.isRefreshing, "isRefreshing should be false after refresh completes")
+    }
+
     func testFilterByGroup() {
         let groupA = UUID()
         let groupB = UUID()

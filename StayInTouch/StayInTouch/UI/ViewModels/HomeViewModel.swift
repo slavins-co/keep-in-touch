@@ -77,38 +77,10 @@ final class HomeViewModel: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
 
-        let summaries = await Task.detached {
-            do {
-                return try ContactsFetcher.fetchAll()
-            } catch {
-                AppLogger.logError(error, category: AppLogger.viewModel, context: "HomeViewModel.refreshFromContacts")
-                return []
-            }
-        }.value
-        let byId = Dictionary(uniqueKeysWithValues: summaries.map { ($0.identifier, $0) })
-
-        let backgroundContext = CoreDataStack.shared.newBackgroundContext()
-
-        await backgroundContext.perform {
-            let repo = CoreDataPersonRepository(context: backgroundContext)
-            let people = repo.fetchTracked(includePaused: true)
-            var updated: [Person] = []
-            for person in people {
-                guard let cnId = person.cnIdentifier, let summary = byId[cnId] else { continue }
-                var p = person
-                p.displayName = summary.displayName
-                p.initials = summary.initials
-                p.modifiedAt = Date()
-                updated.append(p)
-            }
-            if !updated.isEmpty {
-                do {
-                    try repo.batchSave(updated)
-                } catch {
-                    AppLogger.logError(error, category: AppLogger.viewModel, context: "HomeViewModel.refreshFromContacts")
-                }
-            }
-        }
+        // Delegate to the shared sync service so pull-to-refresh stays in sync
+        // with foreground sync: display name, initials, birthday, and
+        // contactUnavailable are all handled in one place.
+        await ContactsSyncService.syncExistingContacts()
 
         // Force viewContext to pick up background changes before reloading
         CoreDataStack.shared.viewContext.refreshAllObjects()
