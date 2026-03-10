@@ -221,10 +221,16 @@ final class OnboardingViewModel: ObservableObject {
         let now = Date()
 
         let backgroundContext = coreDataStack.newBackgroundContext()
-        let repo = CoreDataPersonRepository(context: backgroundContext)
-        let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
+
+        // Capture @MainActor properties before entering the Sendable closure
+        let groupSelections = contactGroupSelections
+        let lastTouchSelections = contactLastTouchSelections
 
         await backgroundContext.perform {
+            // Create repositories inside the closure to avoid capturing non-Sendable types
+            let repo = CoreDataPersonRepository(context: backgroundContext)
+            let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
+
             let existingCount = repo.fetchAll().count
             var sortOrder = existingCount
 
@@ -232,8 +238,8 @@ final class OnboardingViewModel: ObservableObject {
             var touchEventsToSave: [TouchEvent] = []
 
             for contact in selected {
-                let groupId = self.contactGroupSelections[contact.identifier] ?? defaultGroupId
-                let lastTouchOption = self.contactLastTouchSelections[contact.identifier] ?? .cantRemember
+                let groupId = groupSelections[contact.identifier] ?? defaultGroupId
+                let lastTouchOption = lastTouchSelections[contact.identifier] ?? .cantRemember
                 let seedDate = lastTouchOption.approximateDate(from: now)
 
                 let personId = UUID()
@@ -290,7 +296,7 @@ final class OnboardingViewModel: ObservableObject {
                 try repo.batchSave(personsToSave)
             } catch {
                 AppLogger.logError(error, category: AppLogger.viewModel, context: "OnboardingViewModel.importContacts")
-                ErrorToastManager.shared.show(.saveFailed("Onboarding"))
+                Task { @MainActor in ErrorToastManager.shared.show(.saveFailed("Onboarding")) }
             }
         }
     }
@@ -336,9 +342,9 @@ final class OnboardingViewModel: ObservableObject {
         self.settings = settings
 
         let backgroundContext = coreDataStack.newBackgroundContext()
-        let seeder = DemoDataSeeder(context: backgroundContext)
         backgroundContext.perform {
-            seeder.seedIfNeeded()
+            // Create seeder inside closure to avoid capturing non-Sendable type
+            DemoDataSeeder(context: backgroundContext).seedIfNeeded()
         }
     }
 
