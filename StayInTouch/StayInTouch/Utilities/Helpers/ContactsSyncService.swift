@@ -37,6 +37,10 @@ enum ContactsSyncService {
                     if updated.contactUnavailable {
                         updated.contactUnavailable = false
                     }
+                    // Sync birthday from CNContacts when not manually set
+                    if updated.birthday == nil, let contactBirthday = summary.birthday {
+                        updated.birthday = contactBirthday
+                    }
                 } else {
                     // Contact no longer found — mark unavailable
                     if !updated.contactUnavailable {

@@ -28,10 +28,17 @@ struct ContactCard: View {
             )
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(person.displayName)
-                    .font(DS.Typography.contactCardName)
-                    .foregroundStyle(DS.Colors.primaryText)
-                    .lineLimit(1)
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(person.displayName)
+                        .font(DS.Typography.contactCardName)
+                        .foregroundStyle(DS.Colors.primaryText)
+                        .lineLimit(1)
+                    if person.birthday?.isToday == true {
+                        Image(systemName: "birthday.cake")
+                            .font(.caption)
+                            .foregroundStyle(Color.pink)
+                    }
+                }
 
                 metadataRow
             }
@@ -112,6 +119,10 @@ struct ContactCard: View {
 
     private var accessibilityDescription: String {
         var parts: [String] = ["Contact \(person.displayName)"]
+
+        if person.birthday?.isToday == true {
+            parts.append("birthday today")
+        }
 
         if person.isPaused {
             parts.append("paused")

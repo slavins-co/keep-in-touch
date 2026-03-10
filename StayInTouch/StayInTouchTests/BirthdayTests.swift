@@ -77,4 +77,24 @@ final class BirthdayTests: XCTestCase {
         XCTAssertNil(Birthday.from(jsonString: ""))
         XCTAssertNil(Birthday.from(jsonString: "{}"))
     }
+
+    func testIsToday_returnsTrue_whenMonthAndDayMatchToday() {
+        let today = Calendar.current.dateComponents([.month, .day], from: Date())
+        let birthday = Birthday(month: today.month!, day: today.day!, year: nil)
+        XCTAssertTrue(birthday.isToday)
+    }
+
+    func testIsToday_returnsFalse_whenMonthDiffers() {
+        let today = Calendar.current.dateComponents([.month, .day], from: Date())
+        let differentMonth = today.month! % 12 + 1  // wraps Dec→Jan, never equals today.month
+        let birthday = Birthday(month: differentMonth, day: today.day!, year: nil)
+        XCTAssertFalse(birthday.isToday)
+    }
+
+    func testIsToday_returnsFalse_whenDayDiffers() {
+        let today = Calendar.current.dateComponents([.month, .day], from: Date())
+        let differentDay = today.day! % 28 + 1  // wraps within safe day range, never equals today.day
+        let birthday = Birthday(month: today.month!, day: differentDay, year: nil)
+        XCTAssertFalse(birthday.isToday)
+    }
 }
