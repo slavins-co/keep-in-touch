@@ -6,7 +6,7 @@
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey.svg)](LICENSE)
 
-**Version:** 0.3.2 (Build 10) | **Status:** Pre-release Beta
+**Version:** 0.3.4 (Build 10) | **Status:** Pre-release Beta
 
 ---
 
@@ -23,9 +23,9 @@ Never lose track of the people who matter. Keep In Touch helps you maintain frie
 
 ## Current Status
 
-V0.3.2 is a complete UX redesign — tab bar navigation (Home, Contacts, Settings), redesigned home screen with status summary cards and floating search, full-screen contact detail with timeline history, a new A-Z Contacts tab, and a centralized design system with adaptive dark/light tokens. Half-height picker sheets, portrait lock, and restored random avatar colors round out the polish.
+V0.3.4 completes a two-release quality sprint — V0.3.3 brought birthday push notifications, notification privacy mode, multiple groups per contact, "Link to Contact" recovery, and a Fresh Start prompt, while growing test coverage from 62 → 288 tests. V0.3.4 adds grouped birthday alerts, pull-to-refresh contact sync, a dedicated Notifications settings screen, foreground notification delivery, and a new `AppDependencies` DI container that wires all 8 ViewModels — closing the sprint with 309 tests and full Swift 6 concurrency compliance.
 
-**Up next:** TestFlight launch and accessibility refinements. See [open issues](https://github.com/slavins-co/keep-in-touch/issues) and [release history](https://github.com/slavins-co/keep-in-touch/releases) for details.
+**Up next:** App Store submission. See [open issues](https://github.com/slavins-co/keep-in-touch/issues) and [release history](https://github.com/slavins-co/keep-in-touch/releases) for details.
 
 ---
 
@@ -41,7 +41,13 @@ V0.3.2 is a complete UX redesign — tab bar navigation (Home, Contacts, Setting
 - Custom due dates per contact (overrides group frequency)
 - Contact photos from iOS Contacts with colorful initials fallback
 - Birthday display from address book with manual override
+- Birthday push notifications with per-person toggle and grouped alerts
+- Notification privacy mode (hide contact names on lock screen)
+- Foreground notification delivery (in-app banner)
 - Snooze and pause tracking per contact
+- Multiple groups per contact displayed on contact cards
+- "Link to Contact" recovery for contacts unavailable in address book
+- Fresh Start auto-prompt for inactive or overwhelmed users
 - "Next Time" notes for conversation context
 - Local notifications with quick-log actions
 - Half-height picker sheets for dates, times, frequency, and groups
@@ -70,7 +76,7 @@ No external dependencies beyond [TelemetryDeck](https://telemetrydeck.com) for a
 
 ## Getting Started
 
-**TestFlight:** Preparing for submission — see [#69](https://github.com/slavins-co/keep-in-touch/issues/69).
+**TestFlight:** v0.3.4 (Build 10) is pending Apple review. Join via [TestFlight](https://testflight.apple.com/join/2rr93aKX).
 
 **Developers:** Clone the repo, open `StayInTouch/StayInTouch.xcodeproj` in Xcode 15+, and run. Grant Contacts and Notifications permissions when prompted.
 
