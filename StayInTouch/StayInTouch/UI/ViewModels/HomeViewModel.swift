@@ -64,6 +64,7 @@ final class HomeViewModel: ObservableObject {
         allPeople = personRepository.fetchTracked(includePaused: true)
 
         applyFilters()
+        refreshToken = UUID()
     }
 
     func updateSearchText(_ text: String) {
@@ -202,7 +203,6 @@ final class HomeViewModel: ObservableObject {
         promptStore.recordDismissal()
         freshStartReason = nil
         load()
-        refreshToken = UUID()
         NotificationCenter.default.post(name: .personDidChange, object: nil)
     }
 
