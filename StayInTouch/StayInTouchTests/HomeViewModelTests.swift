@@ -47,6 +47,18 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertFalse(vm.isRefreshing, "isRefreshing should be false after refresh completes")
     }
 
+    func testLoadUpdatesRefreshToken() {
+        let vm = HomeViewModel(
+            personRepository: InMemoryPersonRepository(people: []),
+            groupRepository: InMemoryGroupRepository(groups: []),
+            tagRepository: InMemoryTagRepository(tags: []),
+            settingsRepository: InMemorySettingsRepository()
+        )
+        let oldToken = vm.refreshToken
+        vm.load()
+        XCTAssertNotEqual(vm.refreshToken, oldToken, "load() must update refreshToken to force LazyVStack rebuild")
+    }
+
     func testFilterByGroup() {
         let groupA = UUID()
         let groupB = UUID()
