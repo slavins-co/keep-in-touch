@@ -6,7 +6,7 @@
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey.svg)](LICENSE)
 
-**Version:** 0.3.4 (Build 10) | **Status:** Pre-release Beta
+**Version:** 0.3.5 (Build 11) | **Status:** Pre-release Beta
 
 ---
 
@@ -23,7 +23,7 @@ Never lose track of the people who matter. Keep In Touch helps you maintain frie
 
 ## Current Status
 
-V0.3.4 completes a two-release quality sprint — V0.3.3 brought birthday push notifications, notification privacy mode, multiple groups per contact, "Link to Contact" recovery, and a Fresh Start prompt, while growing test coverage from 62 → 288 tests. V0.3.4 adds grouped birthday alerts, pull-to-refresh contact sync, a dedicated Notifications settings screen, foreground notification delivery, and a new `AppDependencies` DI container that wires all 8 ViewModels — closing the sprint with 309 tests and full Swift 6 concurrency compliance.
+V0.3.5 is a patch release fixing stale status indicator colors after bulk updates. V0.3.4 completed a two-release quality sprint with grouped birthday alerts, pull-to-refresh contact sync, a dedicated Notifications settings screen, foreground notification delivery, and a new `AppDependencies` DI container — closing with 309 tests and full Swift 6 concurrency compliance.
 
 **Up next:** App Store submission. See [open issues](https://github.com/slavins-co/keep-in-touch/issues) and [release history](https://github.com/slavins-co/keep-in-touch/releases) for details.
 
@@ -76,7 +76,7 @@ No external dependencies beyond [TelemetryDeck](https://telemetrydeck.com) for a
 
 ## Getting Started
 
-**TestFlight:** v0.3.4 (Build 10) is pending Apple review. Join via [TestFlight](https://testflight.apple.com/join/2rr93aKX).
+**TestFlight:** v0.3.5 (Build 11) available. Join via [TestFlight](https://testflight.apple.com/join/2rr93aKX).
 
 **Developers:** Clone the repo, open `StayInTouch/StayInTouch.xcodeproj` in Xcode 15+, and run. Grant Contacts and Notifications permissions when prompted.
 
