@@ -1,5 +1,5 @@
 //
-//  TagEditorSheet.swift
+//  GroupEditorSheet.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/3/26.
@@ -7,32 +7,32 @@
 
 import SwiftUI
 
-struct TagEditorSheet: View {
+struct GroupEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    let tag: Tag?
+    let group: Group?
     let existingNames: [String]
-    let onSave: (Tag) -> Void
+    let onSave: (Group) -> Void
     let onCancel: () -> Void
     let defaultSortOrder: Int
 
     @State private var name: String
     @State private var color: Color
 
-    init(tag: Tag?, existingNames: [String], defaultSortOrder: Int, onSave: @escaping (Tag) -> Void, onCancel: @escaping () -> Void) {
-        self.tag = tag
+    init(group: Group?, existingNames: [String], defaultSortOrder: Int, onSave: @escaping (Group) -> Void, onCancel: @escaping () -> Void) {
+        self.group = group
         self.existingNames = existingNames
         self.defaultSortOrder = defaultSortOrder
         self.onSave = onSave
         self.onCancel = onCancel
-        _name = State(initialValue: tag?.name ?? "")
-        _color = State(initialValue: tag.map { Color(hex: $0.colorHex) } ?? .blue)
+        _name = State(initialValue: group?.name ?? "")
+        _color = State(initialValue: group.map { Color(hex: $0.colorHex) } ?? .blue)
     }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Cadence Name") {
+                Section("Group Name") {
                     TextField("Colleague", text: $name)
                 }
 
@@ -41,7 +41,7 @@ struct TagEditorSheet: View {
                         .labelsHidden()
                 }
             }
-            .navigationTitle(tag == nil ? "New Cadence" : "Edit Cadence")
+            .navigationTitle(group == nil ? "New Group" : "Edit Group")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -60,8 +60,8 @@ struct TagEditorSheet: View {
     private var isValid: Bool {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= 50 else { return false }
-        if let tag {
-            if trimmed.caseInsensitiveCompare(tag.name) != .orderedSame {
+        if let group {
+            if trimmed.caseInsensitiveCompare(group.name) != .orderedSame {
                 if existingNames.contains(where: { $0.caseInsensitiveCompare(trimmed) == .orderedSame }) {
                     return false
                 }
@@ -75,12 +75,12 @@ struct TagEditorSheet: View {
     private func handleSave() {
         let now = Date()
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let saved = Tag(
-            id: tag?.id ?? UUID(),
+        let saved = Group(
+            id: group?.id ?? UUID(),
             name: trimmed,
             colorHex: color.toHex(),
-            sortOrder: tag?.sortOrder ?? defaultSortOrder,
-            createdAt: tag?.createdAt ?? now,
+            sortOrder: group?.sortOrder ?? defaultSortOrder,
+            createdAt: group?.createdAt ?? now,
             modifiedAt: now
         )
         onSave(saved)

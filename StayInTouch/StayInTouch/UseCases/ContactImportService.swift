@@ -98,7 +98,7 @@ struct ContactImportService {
                     initials: summary.initials,
                     avatarColor: AvatarColors.randomHex(),
                     cadenceId: cadenceId,
-                    tagIds: [],
+                    groupIds: [],
                     lastTouchAt: seedDate,
                     lastTouchMethod: seedDate != nil ? .other : nil,
                     lastTouchNotes: nil,

@@ -1,5 +1,5 @@
 //
-//  TagManagerSheet.swift
+//  GroupManagerSheet.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
@@ -7,28 +7,28 @@
 
 import SwiftUI
 
-struct TagManagerSheet: View {
+struct GroupManagerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    let tags: [Tag]
+    let groups: [Group]
     let selectedIds: Set<UUID>
-    let onAdd: (Tag) -> Void
-    let onRemove: (Tag) -> Void
+    let onAdd: (Group) -> Void
+    let onRemove: (Group) -> Void
 
     var body: some View {
         NavigationStack {
-            List(tags, id: \.id) { tag in
+            List(groups, id: \.id) { group in
                 Button {
-                    if selectedIds.contains(tag.id) {
-                        onRemove(tag)
+                    if selectedIds.contains(group.id) {
+                        onRemove(group)
                     } else {
-                        onAdd(tag)
+                        onAdd(group)
                     }
                 } label: {
                     HStack {
-                        TagPill(tag: tag)
+                        GroupPill(group: group)
                         Spacer()
-                        if selectedIds.contains(tag.id) {
+                        if selectedIds.contains(group.id) {
                             Image(systemName: "checkmark")
                                 .foregroundStyle(DS.Colors.accent)
                         }

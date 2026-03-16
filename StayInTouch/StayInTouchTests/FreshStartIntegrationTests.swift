@@ -34,7 +34,7 @@ final class FreshStartIntegrationTests: XCTestCase {
             initials: String(name.prefix(2)),
             avatarColor: "#FF6B6B",
             cadenceId: cadenceId,
-            tagIds: [],
+            groupIds: [],
             lastTouchAt: lastTouch,
             lastTouchMethod: nil,
             lastTouchNotes: nil,
@@ -94,7 +94,7 @@ final class FreshStartIntegrationTests: XCTestCase {
         return HomeViewModel(
             personRepository: StubPersonRepository(people: people),
             cadenceRepository: StubCadenceRepository(groups: [g]),
-            tagRepository: StubTagRepository(tags: []),
+            groupRepository: StubGroupRepository(groups: []),
             settingsRepository: StubSettingsRepository(),
             promptStore: promptStore ?? makePromptStore()
         )
@@ -297,11 +297,11 @@ private struct StubPersonRepository: PersonRepository {
     func fetchTracked(includePaused: Bool) -> [Person] {
         people.filter { $0.isTracked && (includePaused || !$0.isPaused) }
     }
-    func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
+    func fetchByCadence(id: UUID, includePaused: Bool) -> [Person] {
         fetchTracked(includePaused: includePaused).filter { $0.cadenceId == id }
     }
-    func fetchByTag(id: UUID, includePaused: Bool) -> [Person] {
-        fetchTracked(includePaused: includePaused).filter { $0.tagIds.contains(id) }
+    func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
+        fetchTracked(includePaused: includePaused).filter { $0.groupIds.contains(id) }
     }
     func searchByName(_ query: String, includePaused: Bool) -> [Person] {
         fetchTracked(includePaused: includePaused).filter { $0.displayName.localizedCaseInsensitiveContains(query) }
@@ -322,12 +322,12 @@ private struct StubCadenceRepository: CadenceRepository {
     func delete(id: UUID) throws {}
 }
 
-private struct StubTagRepository: TagRepository {
-    let tags: [Tag]
-    func fetch(id: UUID) -> Tag? { tags.first { $0.id == id } }
-    func fetchAll() -> [Tag] { tags }
-    func save(_ tag: Tag) throws {}
-    func batchSave(_ tags: [Tag]) throws {}
+private struct StubGroupRepository: GroupRepository {
+    let groups: [Group]
+    func fetch(id: UUID) -> Group? { groups.first { $0.id == id } }
+    func fetchAll() -> [Group] { groups }
+    func save(_ group: Group) throws {}
+    func batchSave(_ groups: [Group]) throws {}
     func delete(id: UUID) throws {}
 }
 

@@ -16,33 +16,33 @@ final class DefaultDataSeeder {
 
     func seedIfNeeded() throws {
         try context.performAndWait {
-            let (groupCount, tagCount, settingsCount) = try seedCounts()
+            let (cadenceCount, groupCount, settingsCount) = try seedCounts()
+            if cadenceCount == 0 { seedDefaultCadences() }
             if groupCount == 0 { seedDefaultGroups() }
-            if tagCount == 0 { seedDefaultTags() }
             if settingsCount == 0 { seedAppSettings() }
-            if groupCount == 0 || tagCount == 0 || settingsCount == 0 {
+            if cadenceCount == 0 || groupCount == 0 || settingsCount == 0 {
                 try context.save()
             }
         }
     }
 
     private func seedCounts() throws -> (Int, Int, Int) {
-        let groupRequest: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
+        let cadenceRequest: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
+        cadenceRequest.fetchLimit = 1
+        let cadenceCount = try context.count(for: cadenceRequest)
+
+        let groupRequest: NSFetchRequest<TagEntity> = TagEntity.fetchRequest()
         groupRequest.fetchLimit = 1
         let groupCount = try context.count(for: groupRequest)
-
-        let tagRequest: NSFetchRequest<TagEntity> = TagEntity.fetchRequest()
-        tagRequest.fetchLimit = 1
-        let tagCount = try context.count(for: tagRequest)
 
         let settingsRequest: NSFetchRequest<AppSettingsEntity> = AppSettingsEntity.fetchRequest()
         settingsRequest.fetchLimit = 1
         let settingsCount = try context.count(for: settingsRequest)
 
-        return (groupCount, tagCount, settingsCount)
+        return (cadenceCount, groupCount, settingsCount)
     }
 
-    private func seedDefaultGroups() {
+    private func seedDefaultCadences() {
         let now = Date()
         let defaults: [(name: String, frequencyDays: Int, warningDays: Int, colorHex: String?)] = [
             ("Weekly", 7, 2, nil),
@@ -65,7 +65,7 @@ final class DefaultDataSeeder {
         }
     }
 
-    private func seedDefaultTags() {
+    private func seedDefaultGroups() {
         let now = Date()
         let defaults: [(name: String, colorHex: String)] = [
             ("Work", "#0A84FF"),

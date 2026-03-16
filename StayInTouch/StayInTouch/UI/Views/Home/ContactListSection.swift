@@ -12,8 +12,8 @@ struct ContactListSection: View {
     let people: [Person]
     let isCollapsed: Bool
     let onToggle: () -> Void
-    let groupsById: [UUID: Cadence]
-    let tagsById: [UUID: Tag]
+    let cadencesById: [UUID: Cadence]
+    let groupsById: [UUID: Group]
     let statusForPerson: (Person) -> ContactStatus
     let daysOverdueForPerson: (Person) -> Int
     let timeAgoForPerson: (Person) -> String
@@ -25,8 +25,8 @@ struct ContactListSection: View {
         Section {
             if !isCollapsed {
                 ForEach(Array(people.enumerated()), id: \.element.id) { index, person in
-                    let frequencyName = groupsById[person.cadenceId]?.name ?? "Frequency"
-                    let personTags = person.tagIds.compactMap { tagsById[$0] }
+                    let frequencyName = cadencesById[person.cadenceId]?.name ?? "Frequency"
+                    let personGroups = person.groupIds.compactMap { groupsById[$0] }
                     Button {
                         selectPerson(person)
                     } label: {
@@ -37,7 +37,7 @@ struct ContactListSection: View {
                             daysOverdue: daysOverdueForPerson(person),
                             timeAgo: timeAgoForPerson(person),
                             lastMethod: person.lastTouchMethod,
-                            tags: personTags
+                            groups: personGroups
                         )
                     }
                     .buttonStyle(.plain)

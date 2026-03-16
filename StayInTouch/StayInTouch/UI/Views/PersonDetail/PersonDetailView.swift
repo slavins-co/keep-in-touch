@@ -223,11 +223,11 @@ struct PersonDetailView: View {
                 viewModel.updateTouch(touch, method: method, notes: notes, timeOfDay: timeOfDay); activeSheet = nil
             }, onDelete: { viewModel.deleteTouch(touch); activeSheet = nil })
         case .changeCadence:
-            CadencePickerSheet(groups: viewModel.groups, selectedId: viewModel.person.cadenceId,
+            CadencePickerSheet(groups: viewModel.cadences, selectedId: viewModel.person.cadenceId,
                              onSelect: { viewModel.changeCadence(to: $0) }).presentationDetents([.medium])
-        case .manageTags:
-            TagManagerSheet(tags: viewModel.tags, selectedIds: Set(viewModel.person.tagIds),
-                            onAdd: { viewModel.addTag($0) }, onRemove: { viewModel.removeTag($0) }).presentationDetents([.medium])
+        case .manageGroups:
+            GroupManagerSheet(groups: viewModel.groups, selectedIds: Set(viewModel.person.groupIds),
+                            onAdd: { viewModel.addGroup($0) }, onRemove: { viewModel.removeGroup($0) }).presentationDetents([.medium])
         case .resumeDatePicker:
             datePickerSheet("Last Connection", selection: $pickedResumeDate) { viewModel.resumeAndUpdateLastTouch(date: pickedResumeDate) }
         case .reminderTimePicker:
@@ -286,7 +286,7 @@ struct PersonDetailView: View {
     private func handleSettingsAction(_ action: PersonSettingsAction) {
         switch action {
         case .changeCadence: activeSheet = .changeCadence
-        case .manageTags: activeSheet = .manageTags
+        case .manageGroups: activeSheet = .manageGroups
         case .resumePrompt: activeAlert = .resumePrompt
         case .removeConfirm: activeAlert = .removeConfirm
         case .reminderTimePicker: activeSheet = .reminderTimePicker

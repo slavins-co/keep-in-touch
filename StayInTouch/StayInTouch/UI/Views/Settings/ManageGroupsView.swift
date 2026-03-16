@@ -1,5 +1,5 @@
 //
-//  ManageTagsView.swift
+//  ManageGroupsView.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/3/26.
@@ -7,24 +7,24 @@
 
 import SwiftUI
 
-struct ManageTagsView: View {
-    @StateObject private var viewModel = ManageTagsViewModel()
+struct ManageGroupsView: View {
+    @StateObject private var viewModel = ManageGroupsViewModel()
 
-    @State private var showNewTag = false
-    @State private var editingTag: Tag?
-    @State private var deleteTarget: Tag?
+    @State private var showNewGroup = false
+    @State private var editingGroup: Group?
+    @State private var deleteTarget: Group?
     @State private var showDeleteConfirm = false
 
     var body: some View {
         List {
-            ForEach(viewModel.tags, id: \.id) { tag in
+            ForEach(viewModel.groups, id: \.id) { group in
                 NavigationLink {
-                    TagContactsView(tag: tag)
+                    GroupContactsView(group: group)
                 } label: {
                     VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                        TagPill(tag: tag)
+                        GroupPill(group: group)
 
-                        Text("\(viewModel.countsByTag[tag.id, default: 0]) contacts")
+                        Text("\(viewModel.countsByGroup[group.id, default: 0]) contacts")
                             .font(DS.Typography.metadata)
                             .foregroundStyle(DS.Colors.secondaryText)
                     }
@@ -32,7 +32,7 @@ struct ManageTagsView: View {
                 }
                 .swipeActions(edge: .trailing) {
                     Button(role: .destructive) {
-                        deleteTarget = tag
+                        deleteTarget = group
                         showDeleteConfirm = true
                     } label: {
                         Label("Delete", systemImage: "trash")
@@ -40,7 +40,7 @@ struct ManageTagsView: View {
                 }
                 .swipeActions(edge: .trailing) {
                     Button {
-                        editingTag = tag
+                        editingGroup = group
                     } label: {
                         Label("Edit", systemImage: "pencil")
                     }
@@ -53,47 +53,47 @@ struct ManageTagsView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    showNewTag = true
+                    showNewGroup = true
                 } label: {
                     Image(systemName: "plus.circle.fill")
                 }
             }
         }
-        .sheet(item: $editingTag) { tag in
-            TagEditorSheet(
-                tag: tag,
-                existingNames: viewModel.tags.map { $0.name },
-                defaultSortOrder: viewModel.tags.count,
-                onSave: { tag in
-                    viewModel.save(tag)
+        .sheet(item: $editingGroup) { group in
+            GroupEditorSheet(
+                group: group,
+                existingNames: viewModel.groups.map { $0.name },
+                defaultSortOrder: viewModel.groups.count,
+                onSave: { group in
+                    viewModel.save(group)
                 },
                 onCancel: {}
             )
         }
-        .sheet(isPresented: $showNewTag) {
-            TagEditorSheet(
-                tag: nil,
-                existingNames: viewModel.tags.map { $0.name },
-                defaultSortOrder: viewModel.tags.count,
-                onSave: { tag in
-                    viewModel.save(tag)
-                    showNewTag = false
+        .sheet(isPresented: $showNewGroup) {
+            GroupEditorSheet(
+                group: nil,
+                existingNames: viewModel.groups.map { $0.name },
+                defaultSortOrder: viewModel.groups.count,
+                onSave: { group in
+                    viewModel.save(group)
+                    showNewGroup = false
                 },
-                onCancel: { showNewTag = false }
+                onCancel: { showNewGroup = false }
             )
         }
-        .alert("Delete Cadence?", isPresented: $showDeleteConfirm) {
+        .alert("Delete Group?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
                 if let target = deleteTarget {
                     Haptics.medium()
-                    viewModel.delete(tag: target)
+                    viewModel.delete(group: target)
                 }
                 deleteTarget = nil
             }
             Button("Cancel", role: .cancel) { deleteTarget = nil }
         } message: {
-            if let target = deleteTarget, viewModel.countsByTag[target.id, default: 0] > 0 {
-                Text("\(viewModel.countsByTag[target.id, default: 0]) contacts will lose this group.")
+            if let target = deleteTarget, viewModel.countsByGroup[target.id, default: 0] > 0 {
+                Text("\(viewModel.countsByGroup[target.id, default: 0]) contacts will lose this group.")
             } else {
                 Text("This action cannot be undone.")
             }

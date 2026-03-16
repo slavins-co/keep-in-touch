@@ -11,7 +11,7 @@ enum PersonDetailSheet: Identifiable {
     case logTouch
     case editTouch(TouchEvent)
     case changeCadence
-    case manageTags
+    case manageGroups
     case resumeDatePicker
     case reminderTimePicker
     case snoozeDatePicker
@@ -23,7 +23,7 @@ enum PersonDetailSheet: Identifiable {
         case .logTouch: return "logTouch"
         case .editTouch(let t): return "editTouch-\(t.id)"
         case .changeCadence: return "changeCadence"
-        case .manageTags: return "manageTags"
+        case .manageGroups: return "manageGroups"
         case .resumeDatePicker: return "resumeDatePicker"
         case .reminderTimePicker: return "reminderTimePicker"
         case .snoozeDatePicker: return "snoozeDatePicker"
@@ -53,7 +53,7 @@ enum PersonDetailAlert: Identifiable {
 
 enum PersonSettingsAction {
     case changeCadence
-    case manageTags
+    case manageGroups
     case resumePrompt
     case removeConfirm
     case reminderTimePicker

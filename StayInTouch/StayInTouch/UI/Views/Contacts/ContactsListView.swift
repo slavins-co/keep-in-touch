@@ -96,8 +96,8 @@ struct ContactsListView: View {
 
     private var contactsList: some View {
         let calculator = FrequencyCalculator()
+        let cadencesById = Dictionary(uniqueKeysWithValues: viewModel.cadences.map { ($0.id, $0) })
         let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
-        let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
 
         return ScrollViewReader { proxy in
             ScrollView {
@@ -105,19 +105,19 @@ struct ContactsListView: View {
                     ForEach(sections, id: \.letter) { section in
                         Section {
                             ForEach(Array(section.people.enumerated()), id: \.element.id) { index, person in
-                                let frequencyName = groupsById[person.cadenceId]?.name ?? "Frequency"
-                                let personTags = person.tagIds.compactMap { tagsById[$0] }
+                                let frequencyName = cadencesById[person.cadenceId]?.name ?? "Frequency"
+                                let personGroups = person.groupIds.compactMap { groupsById[$0] }
                                 Button {
                                     selectPerson(person)
                                 } label: {
                                     ContactCard(
                                         person: person,
                                         frequencyName: frequencyName,
-                                        status: calculator.status(for: person, in: viewModel.groups),
-                                        daysOverdue: calculator.daysOverdue(for: person, in: viewModel.groups),
+                                        status: calculator.status(for: person, in: viewModel.cadences),
+                                        daysOverdue: calculator.daysOverdue(for: person, in: viewModel.cadences),
                                         timeAgo: timeAgoText(for: person, calculator: calculator),
                                         lastMethod: person.lastTouchMethod,
-                                        tags: personTags
+                                        groups: personGroups
                                     )
                                 }
                                 .buttonStyle(.plain)

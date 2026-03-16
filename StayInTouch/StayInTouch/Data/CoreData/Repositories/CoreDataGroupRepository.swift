@@ -1,5 +1,5 @@
 //
-//  CoreDataTagRepository.swift
+//  CoreDataGroupRepository.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
@@ -7,15 +7,15 @@
 
 import CoreData
 
-final class CoreDataTagRepository: TagRepository {
+final class CoreDataGroupRepository: GroupRepository {
     private let context: NSManagedObjectContext
 
     init(context: NSManagedObjectContext) {
         self.context = context
     }
 
-    func fetch(id: UUID) -> Tag? {
-        var result: Tag?
+    func fetch(id: UUID) -> Group? {
+        var result: Group?
         context.performAndWait {
             let request: NSFetchRequest<TagEntity> = TagEntity.fetchRequest()
             request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
@@ -25,8 +25,8 @@ final class CoreDataTagRepository: TagRepository {
         return result
     }
 
-    func fetchAll() -> [Tag] {
-        var results: [Tag] = []
+    func fetchAll() -> [Group] {
+        var results: [Group] = []
         context.performAndWait {
             let request: NSFetchRequest<TagEntity> = TagEntity.fetchRequest()
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
@@ -35,11 +35,11 @@ final class CoreDataTagRepository: TagRepository {
         return results
     }
 
-    func save(_ tag: Tag) throws {
+    func save(_ group: Group) throws {
         do {
             try context.performAndWait {
-                let entity = fetchEntity(id: tag.id) ?? TagEntity(context: context)
-                entity.apply(tag)
+                let entity = fetchEntity(id: group.id) ?? TagEntity(context: context)
+                entity.apply(group)
                 try context.save()
             }
         } catch let error as RepositoryError {
@@ -49,12 +49,12 @@ final class CoreDataTagRepository: TagRepository {
         }
     }
 
-    func batchSave(_ tags: [Tag]) throws {
+    func batchSave(_ groups: [Group]) throws {
         do {
             try context.performAndWait {
-                for tag in tags {
-                    let entity = fetchEntity(id: tag.id) ?? TagEntity(context: context)
-                    entity.apply(tag)
+                for group in groups {
+                    let entity = fetchEntity(id: group.id) ?? TagEntity(context: context)
+                    entity.apply(group)
                 }
                 try context.save()
             }

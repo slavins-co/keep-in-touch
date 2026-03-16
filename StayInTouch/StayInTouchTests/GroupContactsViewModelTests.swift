@@ -1,5 +1,5 @@
 //
-//  TagContactsViewModelTests.swift
+//  GroupContactsViewModelTests.swift
 //  KeepInTouchTests
 //
 //  Created by Claude on 3/6/26.
@@ -9,32 +9,32 @@ import XCTest
 @testable import StayInTouch
 
 @MainActor
-final class TagContactsViewModelTests: XCTestCase {
+final class GroupContactsViewModelTests: XCTestCase {
     private var personRepo: MockPersonRepository!
-    private var tag: Tag!
-    private var otherTagId: UUID!
+    private var group: Group!
+    private var otherGroupId: UUID!
     private var cadenceId: UUID!
-    private var sut: TagContactsViewModel!
+    private var sut: GroupContactsViewModel!
 
     override func setUp() {
         super.setUp()
         personRepo = MockPersonRepository()
-        tag = TestFactory.makeTag(id: UUID(), name: "Work")
-        otherTagId = UUID()
+        group = TestFactory.makeGroup(id: UUID(), name: "Work")
+        otherGroupId = UUID()
         cadenceId = UUID()
     }
 
     /// Helper: create the SUT after configuring personRepo.people.
     /// The init calls load(), so people must be set first.
     private func makeSUT() {
-        sut = TagContactsViewModel(tag: tag, personRepository: personRepo)
+        sut = GroupContactsViewModel(group: group, personRepository: personRepo)
     }
 
     // MARK: - Load
 
     func testLoadSplitsPeopleByTag() {
-        let tagged = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
-        let untagged = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, tagIds: [])
+        let tagged = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
+        let untagged = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, groupIds: [])
         personRepo.people = [tagged, untagged]
 
         makeSUT()
@@ -46,9 +46,9 @@ final class TagContactsViewModelTests: XCTestCase {
     }
 
     func testLoadSortsByName() {
-        let charlie = TestFactory.makePerson(name: "Charlie", cadenceId: cadenceId, tagIds: [tag.id])
-        let alice = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
-        let bob = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, tagIds: [])
+        let charlie = TestFactory.makePerson(name: "Charlie", cadenceId: cadenceId, groupIds: [group.id])
+        let alice = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
+        let bob = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, groupIds: [])
         personRepo.people = [charlie, alice, bob]
 
         makeSUT()
@@ -60,32 +60,32 @@ final class TagContactsViewModelTests: XCTestCase {
     // MARK: - Remove Tag
 
     func testRemoveTagRemovesTagIdFromPerson() throws {
-        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id, otherTagId])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id, otherGroupId])
         personRepo.people = [person]
 
         makeSUT()
 
         let taggedPerson = try XCTUnwrap(sut.people.first)
-        sut.removeTag(from: taggedPerson)
+        sut.removeGroup(from: taggedPerson)
 
         let saved = try XCTUnwrap(personRepo.savedPersons.last)
-        XCTAssertEqual(saved.tagIds, [otherTagId])
+        XCTAssertEqual(saved.groupIds, [otherGroupId])
     }
 
     func testRemoveTagSavesToRepo() throws {
-        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
         personRepo.people = [person]
 
         makeSUT()
 
         let taggedPerson = try XCTUnwrap(sut.people.first)
-        sut.removeTag(from: taggedPerson)
+        sut.removeGroup(from: taggedPerson)
 
-        XCTAssertFalse(personRepo.savedPersons.isEmpty, "removeTag should save the updated person to the repository")
+        XCTAssertFalse(personRepo.savedPersons.isEmpty, "removeGroup should save the updated person to the repository")
     }
 
     func testRemoveTagPostsNotification() throws {
-        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
         personRepo.people = [person]
 
         makeSUT()
@@ -94,13 +94,13 @@ final class TagContactsViewModelTests: XCTestCase {
 
         let expectation = expectation(forNotification: .personDidChange, object: nil)
 
-        sut.removeTag(from: taggedPerson)
+        sut.removeGroup(from: taggedPerson)
 
         wait(for: [expectation], timeout: 1.0)
     }
 
     func testRemoveTagReloadsLists() throws {
-        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
         personRepo.people = [person]
 
         makeSUT()
@@ -109,7 +109,7 @@ final class TagContactsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.available.count, 0)
 
         let taggedPerson = try XCTUnwrap(sut.people.first)
-        sut.removeTag(from: taggedPerson)
+        sut.removeGroup(from: taggedPerson)
 
         XCTAssertEqual(sut.people.count, 0, "Person should no longer be in the people list after tag removal")
         XCTAssertEqual(sut.available.count, 1, "Person should move to the available list after tag removal")
@@ -119,33 +119,33 @@ final class TagContactsViewModelTests: XCTestCase {
     // MARK: - Add Tag
 
     func testAddTagAppendsTagId() throws {
-        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [])
         personRepo.people = [person]
 
         makeSUT()
 
-        sut.addTag(to: [person.id])
+        sut.addGroup(to: [person.id])
 
         let saved = try XCTUnwrap(personRepo.savedPersons.last)
-        XCTAssertTrue(saved.tagIds.contains(tag.id), "addTag should append the tag ID to the person's tagIds")
+        XCTAssertTrue(saved.groupIds.contains(group.id), "addGroup should append the tag ID to the person's tagIds")
     }
 
     func testAddTagSkipsDuplicate() throws {
-        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
         personRepo.people = [person]
 
         makeSUT()
 
-        sut.addTag(to: [person.id])
+        sut.addGroup(to: [person.id])
 
         let saved = try XCTUnwrap(personRepo.savedPersons.last)
-        let matchCount = saved.tagIds.filter { $0 == tag.id }.count
-        XCTAssertEqual(matchCount, 1, "Tag ID should appear exactly once even when addTag is called on a person who already has it")
+        let matchCount = saved.groupIds.filter { $0 == group.id }.count
+        XCTAssertEqual(matchCount, 1, "Group ID should appear exactly once even when addGroup is called on a person who already has it")
     }
 
     func testAddTagSavesEachPerson() {
-        let alice = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [])
-        let bob = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, tagIds: [])
+        let alice = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [])
+        let bob = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, groupIds: [])
         personRepo.people = [alice, bob]
 
         makeSUT()
@@ -153,13 +153,13 @@ final class TagContactsViewModelTests: XCTestCase {
         // savedPersons is empty after init (load doesn't call save)
         XCTAssertTrue(personRepo.savedPersons.isEmpty, "Precondition: no saves from init")
 
-        sut.addTag(to: [alice.id, bob.id])
+        sut.addGroup(to: [alice.id, bob.id])
 
-        XCTAssertEqual(personRepo.savedPersons.count, 2, "addTag should save each person individually")
+        XCTAssertEqual(personRepo.savedPersons.count, 2, "addGroup should save each person individually")
     }
 
     func testAddTagIgnoresUnknownIds() {
-        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [])
         personRepo.people = [person]
 
         makeSUT()
@@ -167,9 +167,9 @@ final class TagContactsViewModelTests: XCTestCase {
         let unknownId = UUID()
         let saveCountBefore = personRepo.savedPersons.count
 
-        sut.addTag(to: [unknownId])
+        sut.addGroup(to: [unknownId])
 
         XCTAssertEqual(personRepo.savedPersons.count, saveCountBefore,
-                       "addTag should not save anything when given unknown person IDs")
+                       "addGroup should not save anything when given unknown person IDs")
     }
 }

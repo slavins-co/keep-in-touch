@@ -101,7 +101,7 @@ final class ManageCadencesViewModel: ObservableObject {
     }
 
     func movePeople(from group: Cadence, to defaultGroup: Cadence) {
-        let people = personRepository.fetchByGroup(id: group.id, includePaused: true)
+        let people = personRepository.fetchByCadence(id: group.id, includePaused: true)
         guard !people.isEmpty else { return }
         let now = Date()
         let updatedPeople = people.map { person -> Person in

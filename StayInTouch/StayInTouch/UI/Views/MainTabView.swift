@@ -112,7 +112,7 @@ struct MainTabView: View {
         case .home:
             deepLinkRouter.selectedTab = 0
             viewModel.selectedCadenceId = nil
-            viewModel.selectedTagId = nil
+            viewModel.selectedGroupId = nil
             viewModel.applyFilters()
         }
     }

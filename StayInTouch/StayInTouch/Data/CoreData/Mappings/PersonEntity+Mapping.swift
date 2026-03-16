@@ -16,7 +16,7 @@ extension PersonEntity {
             initials: requiredField(initials, entity: "PersonEntity", field: "initials", fallback: ""),
             avatarColor: requiredField(avatarColor, entity: "PersonEntity", field: "avatarColor", fallback: ""),
             cadenceId: requiredField(groupId, entity: "PersonEntity", field: "groupId", fallback: UUID()),
-            tagIds: decodeTagIds(tagIds),
+            groupIds: decodeTagIds(tagIds),
             lastTouchAt: lastTouchAt,
             lastTouchMethod: lastTouchMethod.flatMap(TouchMethod.init(rawValue:)),
             lastTouchNotes: lastTouchNotes,
@@ -45,7 +45,7 @@ extension PersonEntity {
         initials = person.initials
         avatarColor = person.avatarColor
         groupId = person.cadenceId
-        tagIds = person.tagIds as NSArray
+        tagIds = person.groupIds as NSArray
         lastTouchAt = person.lastTouchAt
         lastTouchMethod = person.lastTouchMethod?.rawValue
         lastTouchNotes = person.lastTouchNotes

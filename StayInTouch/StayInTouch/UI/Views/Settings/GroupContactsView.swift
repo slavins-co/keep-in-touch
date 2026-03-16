@@ -1,5 +1,5 @@
 //
-//  TagContactsView.swift
+//  GroupContactsView.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/3/26.
@@ -7,15 +7,15 @@
 
 import SwiftUI
 
-struct TagContactsView: View {
-    let tag: Tag
+struct GroupContactsView: View {
+    let group: Group
 
-    @StateObject private var viewModel: TagContactsViewModel
+    @StateObject private var viewModel: GroupContactsViewModel
     @State private var showAddContacts = false
 
-    init(tag: Tag) {
-        self.tag = tag
-        _viewModel = StateObject(wrappedValue: TagContactsViewModel(tag: tag))
+    init(group: Group) {
+        self.group = group
+        _viewModel = StateObject(wrappedValue: GroupContactsViewModel(group: group))
     }
 
     var body: some View {
@@ -30,7 +30,7 @@ struct TagContactsView: View {
                         .font(DS.Typography.contactName)
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
-                                viewModel.removeTag(from: person)
+                                viewModel.removeGroup(from: person)
                             } label: {
                                 Label("Remove", systemImage: "tag.slash")
                             }
@@ -38,17 +38,17 @@ struct TagContactsView: View {
                 }
             }
         }
-        .navigationTitle(tag.name)
+        .navigationTitle(group.name)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Add") { showAddContacts = true }
             }
         }
         .sheet(isPresented: $showAddContacts) {
-            AddContactsToTagView(
+            AddContactsToGroupView(
                 available: viewModel.available,
                 onSave: { ids in
-                    viewModel.addTag(to: ids)
+                    viewModel.addGroup(to: ids)
                     showAddContacts = false
                 },
                 onCancel: { showAddContacts = false }

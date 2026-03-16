@@ -31,18 +31,18 @@ struct ExportCadence: Codable {
     }
 }
 
-struct ExportTag: Codable {
+struct ExportGroup: Codable {
     let id: UUID
     let name: String
     let colorHex: String
     let sortOrder: Int
 
-    static func from(_ tag: Tag) -> ExportTag {
-        ExportTag(
-            id: tag.id,
-            name: tag.name,
-            colorHex: tag.colorHex,
-            sortOrder: tag.sortOrder
+    static func from(_ group: Group) -> ExportGroup {
+        ExportGroup(
+            id: group.id,
+            name: group.name,
+            colorHex: group.colorHex,
+            sortOrder: group.sortOrder
         )
     }
 }
@@ -51,7 +51,7 @@ struct ExportData: Codable {
     let version: Int
     let exportedAt: Date
     let groups: [ExportCadence]
-    let tags: [ExportTag]
+    let tags: [ExportGroup]
     let people: [ExportPerson]
 }
 
@@ -93,7 +93,7 @@ struct ExportPerson: Codable {
             displayName: person.displayName,
             cadenceId: person.cadenceId,
             groupName: groupName,
-            tagIds: person.tagIds,
+            tagIds: person.groupIds,
             tagNames: tagNames,
             lastTouchAt: person.lastTouchAt,
             isPaused: person.isPaused,
@@ -117,7 +117,7 @@ struct ImportPreview: Identifiable {
     /// Number of touch events that are genuinely new (not already in the database)
     let newTouchEventCount: Int
     let newGroups: [ExportCadence]
-    let newTags: [ExportTag]
+    let newTags: [ExportGroup]
     let groupIdMap: [UUID: UUID]
     let tagIdMap: [UUID: UUID]
     /// Maps export person UUID → existing tracked Person UUID (auto-matched via address book or name)

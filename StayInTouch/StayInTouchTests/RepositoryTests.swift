@@ -40,9 +40,9 @@ final class RepositoryTests: XCTestCase {
         XCTAssertEqual(repo.fetchAll().count, 0)
     }
 
-    func testTagRepositoryCrud() throws {
-        let repo = CoreDataTagRepository(context: context)
-        let tag = Tag(
+    func testGroupRepositoryCrud() throws {
+        let repo = CoreDataGroupRepository(context: context)
+        let group = Group(
             id: UUID(),
             name: "Work",
             colorHex: "#0A84FF",
@@ -51,11 +51,11 @@ final class RepositoryTests: XCTestCase {
             modifiedAt: Date()
         )
 
-        try repo.save(tag)
+        try repo.save(group)
         XCTAssertEqual(repo.fetchAll().count, 1)
-        XCTAssertEqual(repo.fetch(id: tag.id)?.name, "Work")
+        XCTAssertEqual(repo.fetch(id: group.id)?.name, "Work")
 
-        try repo.delete(id: tag.id)
+        try repo.delete(id: group.id)
         XCTAssertEqual(repo.fetchAll().count, 0)
     }
 
@@ -69,7 +69,7 @@ final class RepositoryTests: XCTestCase {
             initials: "AD",
             avatarColor: "#FF6B6B",
             cadenceId: cadenceId,
-            tagIds: [],
+            groupIds: [],
             lastTouchAt: nil,
             lastTouchMethod: nil,
             lastTouchNotes: nil,

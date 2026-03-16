@@ -12,7 +12,7 @@ import XCTest
 final class SettingsViewModelTests: XCTestCase {
     private var settingsRepo: MockSettingsRepository!
     private var groupRepo: MockCadenceRepository!
-    private var tagRepo: MockTagRepository!
+    private var groupRepo: MockGroupRepository!
     private var personRepo: MockPersonRepository!
     private var touchEventRepo: MockTouchEventRepository!
     private var sut: SettingsViewModel!
@@ -22,14 +22,14 @@ final class SettingsViewModelTests: XCTestCase {
         settingsRepo = MockSettingsRepository()
         settingsRepo.settings = TestFactory.makeSettings()
         groupRepo = MockCadenceRepository()
-        tagRepo = MockTagRepository()
+        groupRepo = MockGroupRepository()
         personRepo = MockPersonRepository()
         touchEventRepo = MockTouchEventRepository()
 
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -45,7 +45,7 @@ final class SettingsViewModelTests: XCTestCase {
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -81,12 +81,12 @@ final class SettingsViewModelTests: XCTestCase {
         let cadenceId = UUID()
         let tagId = UUID()
         groupRepo.groups = [TestFactory.makeGroup(id: cadenceId, name: "Weekly")]
-        tagRepo.tags = [TestFactory.makeTag(id: tagId, name: "Work")]
-        personRepo.people = [TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tagId])]
+        groupRepo.groups = [TestFactory.makeGroup(id: tagId, name: "Work")]
+        personRepo.people = [TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [tagId])]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -112,7 +112,7 @@ final class SettingsViewModelTests: XCTestCase {
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -135,7 +135,7 @@ final class SettingsViewModelTests: XCTestCase {
                 displayName: "Alice",
                 cadenceId: nil,
                 groupName: nil,
-                tagIds: [],
+                groupIds: [],
                 tagNames: [],
                 lastTouchAt: nil,
                 isPaused: false,
@@ -169,13 +169,13 @@ final class SettingsViewModelTests: XCTestCase {
             version: 2,
             exportedAt: Date(),
             groups: [ExportCadence(id: cadenceId, name: "Custom Frequency", frequencyDays: 21, warningDays: 3, colorHex: nil, sortOrder: 0, isDefault: false)],
-            tags: [ExportTag(id: tagId, name: "Custom Cadence", colorHex: "#FF0000", sortOrder: 0)],
+            tags: [ExportGroup(id: tagId, name: "Custom Cadence", colorHex: "#FF0000", sortOrder: 0)],
             people: [ExportPerson(
                 id: UUID(),
                 displayName: "Bob",
                 cadenceId: cadenceId,
                 groupName: "Custom Frequency",
-                tagIds: [tagId],
+                groupIds: [tagId],
                 tagNames: ["Custom Cadence"],
                 lastTouchAt: nil,
                 isPaused: false,
@@ -211,7 +211,7 @@ final class SettingsViewModelTests: XCTestCase {
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -227,7 +227,7 @@ final class SettingsViewModelTests: XCTestCase {
                 displayName: "Charlie",
                 cadenceId: importedGroupId,
                 groupName: "weekly",
-                tagIds: [],
+                groupIds: [],
                 tagNames: [],
                 lastTouchAt: nil,
                 isPaused: false,
@@ -326,9 +326,9 @@ final class SettingsViewModelTests: XCTestCase {
             TestFactory.makeGroup(name: "Monthly"),
             TestFactory.makeGroup(name: "Quarterly")
         ]
-        tagRepo.tags = [
-            TestFactory.makeTag(name: "Work"),
-            TestFactory.makeTag(name: "Family")
+        groupRepo.groups = [
+            TestFactory.makeGroup(name: "Work"),
+            TestFactory.makeGroup(name: "Family")
         ]
         personRepo.people = [
             TestFactory.makePerson(name: "Active"),
@@ -337,8 +337,8 @@ final class SettingsViewModelTests: XCTestCase {
 
         sut.load()
 
-        XCTAssertEqual(sut.groupsCount, 3)
-        XCTAssertEqual(sut.tagsCount, 2)
+        XCTAssertEqual(sut.cadencesCount, 3)
+        XCTAssertEqual(sut.groupsCount, 2)
         XCTAssertEqual(sut.pausedCount, 1)
     }
 
@@ -351,7 +351,7 @@ final class SettingsViewModelTests: XCTestCase {
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -367,7 +367,7 @@ final class SettingsViewModelTests: XCTestCase {
                 displayName: "Alice Smith",
                 cadenceId: nil,
                 groupName: nil,
-                tagIds: [],
+                groupIds: [],
                 tagNames: [],
                 lastTouchAt: nil,
                 isPaused: false,
@@ -404,7 +404,7 @@ final class SettingsViewModelTests: XCTestCase {
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -419,7 +419,7 @@ final class SettingsViewModelTests: XCTestCase {
                 displayName: "John Smith",
                 cadenceId: nil,
                 groupName: nil,
-                tagIds: [],
+                groupIds: [],
                 tagNames: [],
                 lastTouchAt: nil,
                 isPaused: false,
@@ -452,7 +452,7 @@ final class SettingsViewModelTests: XCTestCase {
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -467,7 +467,7 @@ final class SettingsViewModelTests: XCTestCase {
                 displayName: "Bob",
                 cadenceId: nil,
                 groupName: nil,
-                tagIds: [],
+                groupIds: [],
                 tagNames: [],
                 lastTouchAt: nil,
                 isPaused: false,
@@ -519,7 +519,7 @@ final class SettingsViewModelTests: XCTestCase {
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -535,7 +535,7 @@ final class SettingsViewModelTests: XCTestCase {
                 displayName: "Alice Smith",
                 cadenceId: nil,
                 groupName: nil,
-                tagIds: [],
+                groupIds: [],
                 tagNames: [],
                 lastTouchAt: touchDate,
                 isPaused: false,
@@ -575,7 +575,7 @@ final class SettingsViewModelTests: XCTestCase {
                 displayName: "Eve",
                 cadenceId: nil,
                 groupName: nil,
-                tagIds: [],
+                groupIds: [],
                 tagNames: [],
                 lastTouchAt: Date(),
                 isPaused: false,

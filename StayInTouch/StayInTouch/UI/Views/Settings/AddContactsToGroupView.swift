@@ -1,5 +1,5 @@
 //
-//  AddContactsToTagView.swift
+//  AddContactsToGroupView.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/3/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AddContactsToTagView: View {
+struct AddContactsToGroupView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.editMode) private var editMode
 

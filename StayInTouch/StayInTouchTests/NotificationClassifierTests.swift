@@ -113,7 +113,7 @@ final class NotificationClassifierTests: XCTestCase {
             initials: "T",
             avatarColor: "#FF6B6B",
             cadenceId: cadenceId,
-            tagIds: [],
+            groupIds: [],
             lastTouchAt: lastTouch,
             lastTouchMethod: .text,
             lastTouchNotes: nil,

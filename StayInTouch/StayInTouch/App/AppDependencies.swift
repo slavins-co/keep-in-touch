@@ -15,14 +15,14 @@ import SwiftUI
 struct AppDependencies {
     let personRepository: PersonRepository
     let cadenceRepository: CadenceRepository
-    let tagRepository: TagRepository
+    let groupRepository: GroupRepository
     let touchEventRepository: TouchEventRepository
     let settingsRepository: AppSettingsRepository
 
     init(context: NSManagedObjectContext) {
         self.personRepository = CoreDataPersonRepository(context: context)
         self.cadenceRepository = CoreDataCadenceRepository(context: context)
-        self.tagRepository = CoreDataTagRepository(context: context)
+        self.groupRepository = CoreDataGroupRepository(context: context)
         self.touchEventRepository = CoreDataTouchEventRepository(context: context)
         self.settingsRepository = CoreDataAppSettingsRepository(context: context)
     }

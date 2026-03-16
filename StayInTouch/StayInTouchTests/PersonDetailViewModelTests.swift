@@ -12,7 +12,7 @@ import XCTest
 final class PersonDetailViewModelTests: XCTestCase {
     private var personRepo: MockPersonRepository!
     private var groupRepo: MockCadenceRepository!
-    private var tagRepo: MockTagRepository!
+    private var groupRepo: MockGroupRepository!
     private var touchRepo: MockTouchEventRepository!
     private var group: Cadence!
     private var person: Person!
@@ -28,14 +28,14 @@ final class PersonDetailViewModelTests: XCTestCase {
         personRepo.people = [person]
         groupRepo = MockCadenceRepository()
         groupRepo.groups = [group]
-        tagRepo = MockTagRepository()
+        groupRepo = MockGroupRepository()
         touchRepo = MockTouchEventRepository()
 
         sut = PersonDetailViewModel(
             person: person,
             personRepository: personRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             touchRepository: touchRepo
         )
     }
@@ -43,16 +43,16 @@ final class PersonDetailViewModelTests: XCTestCase {
     // MARK: - Load
 
     func testLoadPopulatesGroupsTagsEvents() {
-        let tag = TestFactory.makeTag()
-        tagRepo.tags = [tag]
+        let group = TestFactory.makeGroup()
+        groupRepo.groups = [group]
         let touch = TestFactory.makeTouchEvent(personId: person.id)
         touchRepo.events = [touch]
 
         sut.load()
 
+        XCTAssertEqual(sut.cadences.count, 1)
         XCTAssertEqual(sut.groups.count, 1)
-        XCTAssertEqual(sut.tags.count, 1)
-        XCTAssertEqual(sut.availableTags.count, 1)
+        XCTAssertEqual(sut.availableGroups.count, 1)
         XCTAssertEqual(sut.touchEvents.count, 1)
     }
 
@@ -84,7 +84,7 @@ final class PersonDetailViewModelTests: XCTestCase {
             person: snoozedPerson,
             personRepository: personRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             touchRepository: touchRepo
         )
 
@@ -214,7 +214,7 @@ final class PersonDetailViewModelTests: XCTestCase {
             person: freshPerson,
             personRepository: personRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             touchRepository: touchRepo
         )
 
@@ -269,42 +269,42 @@ final class PersonDetailViewModelTests: XCTestCase {
     // MARK: - Tags
 
     func testAddTagAppendsToTagIds() {
-        let tag = TestFactory.makeTag()
-        tagRepo.tags = [tag]
+        let group = TestFactory.makeGroup()
+        groupRepo.groups = [group]
         sut.load()
 
-        sut.addTag(tag)
+        sut.addGroup(group)
 
-        XCTAssertTrue(sut.person.tagIds.contains(tag.id))
+        XCTAssertTrue(sut.person.groupIds.contains(group.id))
     }
 
     func testAddDuplicateTagIsNoOp() {
-        let tag = TestFactory.makeTag()
-        tagRepo.tags = [tag]
+        let group = TestFactory.makeGroup()
+        groupRepo.groups = [group]
         sut.load()
 
-        sut.addTag(tag)
-        sut.addTag(tag)
+        sut.addGroup(group)
+        sut.addGroup(group)
 
-        XCTAssertEqual(sut.person.tagIds.filter { $0 == tag.id }.count, 1)
+        XCTAssertEqual(sut.person.groupIds.filter { $0 == group.id }.count, 1)
     }
 
     func testRemoveTagRemovesFromTagIds() {
-        let tag = TestFactory.makeTag()
-        tagRepo.tags = [tag]
-        person.tagIds = [tag.id]
+        let group = TestFactory.makeGroup()
+        groupRepo.groups = [group]
+        person.groupIds = [group.id]
         personRepo.people = [person]
         sut = PersonDetailViewModel(
             person: person,
             personRepository: personRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             touchRepository: touchRepo
         )
 
-        sut.removeTag(tag)
+        sut.removeGroup(group)
 
-        XCTAssertFalse(sut.person.tagIds.contains(tag.id))
+        XCTAssertFalse(sut.person.groupIds.contains(group.id))
     }
 
     // MARK: - Pause / Mute
@@ -350,7 +350,7 @@ final class PersonDetailViewModelTests: XCTestCase {
             person: pausedPerson,
             personRepository: personRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             touchRepository: touchRepo
         )
 
@@ -381,7 +381,7 @@ final class PersonDetailViewModelTests: XCTestCase {
             person: personWithBirthday,
             personRepository: personRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             touchRepository: touchRepo
         )
 
@@ -399,7 +399,7 @@ final class PersonDetailViewModelTests: XCTestCase {
             person: personWithBirthday,
             personRepository: personRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             touchRepository: touchRepo
         )
         vm.contactBirthday = contact
@@ -437,7 +437,7 @@ final class PersonDetailViewModelTests: XCTestCase {
             person: overduePerson,
             personRepository: personRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             touchRepository: touchRepo
         )
 

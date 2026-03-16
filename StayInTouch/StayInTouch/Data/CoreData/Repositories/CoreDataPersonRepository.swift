@@ -48,7 +48,7 @@ final class CoreDataPersonRepository: PersonRepository {
         return results
     }
 
-    func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
+    func fetchByCadence(id: UUID, includePaused: Bool) -> [Person] {
         var results: [Person] = []
         context.performAndWait {
             let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
@@ -63,9 +63,9 @@ final class CoreDataPersonRepository: PersonRepository {
         return results
     }
 
-    func fetchByTag(id: UUID, includePaused: Bool) -> [Person] {
+    func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
         let people = fetchTracked(includePaused: includePaused)
-        return people.filter { $0.tagIds.contains(id) }
+        return people.filter { $0.groupIds.contains(id) }
     }
 
     func searchByName(_ query: String, includePaused: Bool) -> [Person] {

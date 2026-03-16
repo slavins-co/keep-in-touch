@@ -20,11 +20,11 @@ final class MockPersonRepository: PersonRepository {
     func fetchTracked(includePaused: Bool) -> [Person] {
         people.filter { $0.isTracked && (includePaused || !$0.isPaused) }
     }
-    func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
+    func fetchByCadence(id: UUID, includePaused: Bool) -> [Person] {
         fetchTracked(includePaused: includePaused).filter { $0.cadenceId == id }
     }
-    func fetchByTag(id: UUID, includePaused: Bool) -> [Person] {
-        fetchTracked(includePaused: includePaused).filter { $0.tagIds.contains(id) }
+    func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
+        fetchTracked(includePaused: includePaused).filter { $0.groupIds.contains(id) }
     }
     func searchByName(_ query: String, includePaused: Bool) -> [Person] {
         fetchTracked(includePaused: includePaused).filter {
@@ -77,25 +77,25 @@ final class MockCadenceRepository: CadenceRepository {
     }
 }
 
-// MARK: - MockTagRepository
+// MARK: - MockGroupRepository
 
-final class MockTagRepository: TagRepository {
-    var tags: [Tag] = []
+final class MockGroupRepository: GroupRepository {
+    var groups: [Group] = []
 
-    func fetch(id: UUID) -> Tag? { tags.first { $0.id == id } }
-    func fetchAll() -> [Tag] { tags }
-    func save(_ tag: Tag) throws {
-        if let idx = tags.firstIndex(where: { $0.id == tag.id }) {
-            tags[idx] = tag
+    func fetch(id: UUID) -> Group? { groups.first { $0.id == id } }
+    func fetchAll() -> [Group] { groups }
+    func save(_ group: Group) throws {
+        if let idx = groups.firstIndex(where: { $0.id == group.id }) {
+            groups[idx] = group
         } else {
-            tags.append(tag)
+            groups.append(group)
         }
     }
-    func batchSave(_ tags: [Tag]) throws {
-        for tag in tags { try save(tag) }
+    func batchSave(_ groups: [Group]) throws {
+        for group in groups { try save(group) }
     }
     func delete(id: UUID) throws {
-        tags.removeAll { $0.id == id }
+        groups.removeAll { $0.id == id }
     }
 }
 
@@ -154,7 +154,7 @@ enum TestFactory {
         id: UUID = UUID(),
         name: String = "Test Person",
         cadenceId: UUID = UUID(),
-        tagIds: [UUID] = [],
+        groupIds: [UUID] = [],
         lastTouchAt: Date? = nil,
         lastTouchMethod: TouchMethod? = nil,
         lastTouchNotes: String? = nil,
@@ -173,7 +173,7 @@ enum TestFactory {
             initials: String(name.prefix(2)),
             avatarColor: "#FF6B6B",
             cadenceId: cadenceId,
-            tagIds: tagIds,
+            groupIds: tagIds,
             lastTouchAt: lastTouchAt,
             lastTouchMethod: lastTouchMethod,
             lastTouchNotes: lastTouchNotes,
@@ -214,11 +214,11 @@ enum TestFactory {
         )
     }
 
-    static func makeTag(
+    static func makeGroup(
         id: UUID = UUID(),
         name: String = "Work"
-    ) -> Tag {
-        Tag(
+    ) -> Group {
+        Group(
             id: id,
             name: name,
             colorHex: "#0A84FF",

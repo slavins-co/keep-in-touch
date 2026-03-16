@@ -67,13 +67,13 @@ struct PersonHeroSection: View {
                 .accessibilityHint("Opens birthday editor")
             }
 
-            if !personTags.isEmpty {
+            if !personGroups.isEmpty {
                 HStack(spacing: DS.Spacing.sm) {
-                    ForEach(personTags.prefix(3), id: \.id) { tag in
-                        TagPill(tag: tag)
+                    ForEach(personGroups.prefix(3), id: \.id) { group in
+                        GroupPill(group: group)
                     }
-                    if personTags.count > 3 {
-                        Text("+\(personTags.count - 3)")
+                    if personGroups.count > 3 {
+                        Text("+\(personGroups.count - 3)")
                             .font(DS.Typography.caption)
                             .foregroundStyle(DS.Colors.secondaryText)
                     }
@@ -154,8 +154,8 @@ struct PersonHeroSection: View {
 
     // MARK: - Computed Properties
 
-    private var personTags: [Tag] {
-        viewModel.tags.filter { viewModel.person.tagIds.contains($0.id) }
+    private var personGroups: [Group] {
+        viewModel.groups.filter { viewModel.person.groupIds.contains($0.id) }
     }
 
     private var currentStatus: ContactStatus {

@@ -12,7 +12,7 @@ import Contacts
 struct DataImportService {
     let personRepository: PersonRepository
     let cadenceRepository: CadenceRepository
-    let tagRepository: TagRepository
+    let groupRepository: GroupRepository
     let touchEventRepository: TouchEventRepository
     var backgroundContextProvider: (() -> NSManagedObjectContext)? = nil
 
@@ -34,7 +34,7 @@ struct DataImportService {
         // Try new format first, fall back to legacy [ExportPerson] array
         let importedPeople: [ExportPerson]
         let importedGroups: [ExportCadence]
-        let importedTags: [ExportTag]
+        let importedTags: [ExportGroup]
 
         if let exportData = try? decoder.decode(ExportData.self, from: data) {
             importedPeople = exportData.people
@@ -75,13 +75,13 @@ struct DataImportService {
         }
 
         // --- Tag merge: same logic ---
-        let existingTags = tagRepository.fetchAll()
+        let existingTags = groupRepository.fetchAll()
         let existingTagsByName = Dictionary(
             grouping: existingTags,
             by: { $0.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
         )
         var tagIdMap: [UUID: UUID] = [:]
-        var newTags: [ExportTag] = []
+        var newTags: [ExportGroup] = []
 
         for exportTag in importedTags {
             let normalized = exportTag.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
@@ -251,7 +251,7 @@ struct DataImportService {
             let peopleRepo = CoreDataPersonRepository(context: backgroundContext)
             let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
             let groupRepo = CoreDataCadenceRepository(context: backgroundContext)
-            let tagRepo = CoreDataTagRepository(context: backgroundContext)
+            let tagRepo = CoreDataGroupRepository(context: backgroundContext)
 
             let now = Date()
 
@@ -282,10 +282,10 @@ struct DataImportService {
 
             // 2. Create new tags from import (batch save)
             let existingTagCount = tagRepo.fetchAll().count
-            var tagsToSave: [Tag] = []
+            var tagsToSave: [Group] = []
             for (index, exportTag) in preview.newTags.enumerated() {
                 guard let newId = preview.tagIdMap[exportTag.id] else { continue }
-                tagsToSave.append(Tag(
+                tagsToSave.append(Group(
                     id: newId,
                     name: exportTag.name,
                     colorHex: exportTag.colorHex,
@@ -335,7 +335,7 @@ struct DataImportService {
                     initials: InitialsBuilder.initials(for: exportPerson.displayName),
                     avatarColor: AvatarColors.randomHex(),
                     cadenceId: mappedGroupId,
-                    tagIds: mappedTagIds,
+                    groupIds: mappedTagIds,
                     lastTouchAt: exportPerson.lastTouchAt,
                     lastTouchMethod: nil,
                     lastTouchNotes: nil,
@@ -374,7 +374,7 @@ struct DataImportService {
 
                 person.displayName = exportPerson.displayName
                 person.initials = InitialsBuilder.initials(for: exportPerson.displayName)
-                person.tagIds = exportPerson.tagIds.compactMap { preview.tagIdMap[$0] ?? $0 }
+                person.groupIds = exportPerson.tagIds.compactMap { preview.tagIdMap[$0] ?? $0 }
                 person.lastTouchAt = exportPerson.lastTouchAt
                 person.isPaused = exportPerson.isPaused
                 person.birthday = exportPerson.birthday.flatMap(Birthday.from(jsonString:))

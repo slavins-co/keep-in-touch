@@ -9,23 +9,23 @@ import XCTest
 @testable import StayInTouch
 
 final class DefaultDataSeederTests: XCTestCase {
-    func testSeedCreatesDefaultGroupsTagsAndSettings() throws {
+    func testSeedCreatesDefaultCadencesGroupsAndSettings() throws {
         let testStack = CoreDataTestStack()
         let context = testStack.container.viewContext
 
         let seeder = DefaultDataSeeder(context: context)
         try seeder.seedIfNeeded()
 
-        let groupRepo = CoreDataCadenceRepository(context: context)
-        let tagRepo = CoreDataTagRepository(context: context)
+        let cadenceRepo = CoreDataCadenceRepository(context: context)
+        let groupRepo = CoreDataGroupRepository(context: context)
         let settingsRepo = CoreDataAppSettingsRepository(context: context)
 
+        let cadences = cadenceRepo.fetchAll()
         let groups = groupRepo.fetchAll()
-        let tags = tagRepo.fetchAll()
         let settings = settingsRepo.fetch()
 
+        XCTAssertEqual(cadences.count, 4)
         XCTAssertEqual(groups.count, 4)
-        XCTAssertEqual(tags.count, 4)
         XCTAssertNotNil(settings)
         XCTAssertEqual(settings?.id, AppSettings.singletonId)
     }

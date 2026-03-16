@@ -25,7 +25,7 @@ final class DemoDataSeeder {
 
             let groups = CoreDataCadenceRepository(context: context).fetchAll()
             guard let defaultGroupId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id else { return }
-            let tags = CoreDataTagRepository(context: context).fetchAll()
+            let allGroups = CoreDataGroupRepository(context: context).fetchAll()
 
             let names = DemoDataSeeder.demoNames
             let now = Date()
@@ -33,9 +33,9 @@ final class DemoDataSeeder {
 
             for (index, name) in names.enumerated() {
                 let cadenceId = groups.indices.contains(index % max(1, groups.count)) ? groups[index % groups.count].id : defaultGroupId
-                var tagIds: [UUID] = []
-                if let tag = tags.randomElement() {
-                    tagIds.append(tag.id)
+                var groupIds: [UUID] = []
+                if let group = allGroups.randomElement() {
+                    groupIds.append(group.id)
                 }
 
                 let daysAgo = [0, 1, 3, 5, 8, 12, 20].randomElement() ?? 0
@@ -48,7 +48,7 @@ final class DemoDataSeeder {
                     initials: InitialsBuilder.initials(for: name),
                     avatarColor: AvatarColors.randomHex(),
                     cadenceId: cadenceId,
-                    tagIds: tagIds,
+                    groupIds: groupIds,
                     lastTouchAt: lastTouch,
                     lastTouchMethod: .text,
                     lastTouchNotes: nil,

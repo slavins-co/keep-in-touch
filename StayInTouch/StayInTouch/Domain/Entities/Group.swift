@@ -1,5 +1,5 @@
 //
-//  Tag.swift
+//  Group.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Tag: Identifiable, Equatable {
+struct Group: Identifiable, Equatable {
     let id: UUID
     var name: String
     var colorHex: String

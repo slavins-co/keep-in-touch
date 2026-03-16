@@ -41,9 +41,9 @@ struct HomeView: View {
                 viewModel.applyFilters()
             }
         }
-        .onChange(of: viewModel.selectedTagId) { _, newValue in
+        .onChange(of: viewModel.selectedGroupId) { _, newValue in
             if newValue != nil {
-                AnalyticsService.track("filter.applied", parameters: ["type": "tag"])
+                AnalyticsService.track("filter.applied", parameters: ["type": "group"])
             }
             withAnimation(.easeInOut(duration: 0.25)) {
                 viewModel.applyFilters()
@@ -160,7 +160,7 @@ struct HomeView: View {
     private var filters: some View {
         HStack(spacing: DS.Spacing.sm) {
             frequencyFilterButton
-            tagFilterButton
+            groupFilterButton
         }
         .padding(.horizontal)
         .padding(.bottom, DS.Spacing.md)
@@ -169,7 +169,7 @@ struct HomeView: View {
     private var frequencyFilterButton: some View {
         let isActive = viewModel.selectedCadenceId != nil
         let selectedName = viewModel.selectedCadenceId.flatMap { id in
-            viewModel.groups.first(where: { $0.id == id })?.name
+            viewModel.cadences.first(where: { $0.id == id })?.name
         }
         let displayText = selectedName ?? "Frequency: All"
 
@@ -179,27 +179,27 @@ struct HomeView: View {
             onClear: { viewModel.selectedCadenceId = nil }
         ) {
             Button("All Frequencies") { viewModel.selectedCadenceId = nil }
-            ForEach(viewModel.groups, id: \.id) { group in
-                Button(group.name) { viewModel.selectedCadenceId = group.id }
+            ForEach(viewModel.cadences, id: \.id) { cadence in
+                Button(cadence.name) { viewModel.selectedCadenceId = cadence.id }
             }
         }
     }
 
-    private var tagFilterButton: some View {
-        let isActive = viewModel.selectedTagId != nil
-        let selectedName = viewModel.selectedTagId.flatMap { id in
-            viewModel.tags.first(where: { $0.id == id })?.name
+    private var groupFilterButton: some View {
+        let isActive = viewModel.selectedGroupId != nil
+        let selectedName = viewModel.selectedGroupId.flatMap { id in
+            viewModel.groups.first(where: { $0.id == id })?.name
         }
-        let displayText = selectedName ?? "Cadence: All"
+        let displayText = selectedName ?? "Group: All"
 
         return filterButton(
             displayText: displayText,
             isActive: isActive,
-            onClear: { viewModel.selectedTagId = nil }
+            onClear: { viewModel.selectedGroupId = nil }
         ) {
-            Button("All Groups") { viewModel.selectedTagId = nil }
-            ForEach(viewModel.tags, id: \.id) { tag in
-                Button(tag.name) { viewModel.selectedTagId = tag.id }
+            Button("All Groups") { viewModel.selectedGroupId = nil }
+            ForEach(viewModel.groups, id: \.id) { group in
+                Button(group.name) { viewModel.selectedGroupId = group.id }
             }
         }
     }
@@ -311,8 +311,8 @@ struct HomeView: View {
 
     private var content: some View {
         let calculator = FrequencyCalculator()
+        let cadencesById = Dictionary(uniqueKeysWithValues: viewModel.cadences.map { ($0.id, $0) })
         let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
-        let tagsById = Dictionary(uniqueKeysWithValues: viewModel.tags.map { ($0.id, $0) })
 
         return ScrollView {
             LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
@@ -338,10 +338,10 @@ struct HomeView: View {
                         people: viewModel.overduePeople,
                         isCollapsed: collapsedSections.contains("overdue"),
                         onToggle: { toggleSection("overdue") },
+                        cadencesById: cadencesById,
                         groupsById: groupsById,
-                        tagsById: tagsById,
                         statusForPerson: { _ in .overdue },
-                        daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
+                        daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
                         selectPerson: selectPerson
                     )
@@ -351,10 +351,10 @@ struct HomeView: View {
                         people: viewModel.dueSoonPeople,
                         isCollapsed: collapsedSections.contains("due-soon"),
                         onToggle: { toggleSection("due-soon") },
+                        cadencesById: cadencesById,
                         groupsById: groupsById,
-                        tagsById: tagsById,
                         statusForPerson: { _ in .dueSoon },
-                        daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
+                        daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
                         selectPerson: selectPerson
                     )
@@ -364,10 +364,10 @@ struct HomeView: View {
                         people: viewModel.allGoodPeople,
                         isCollapsed: collapsedSections.contains("all-good"),
                         onToggle: { toggleSection("all-good") },
+                        cadencesById: cadencesById,
                         groupsById: groupsById,
-                        tagsById: tagsById,
                         statusForPerson: { _ in .onTrack },
-                        daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.groups) },
+                        daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
                         selectPerson: selectPerson
                     )

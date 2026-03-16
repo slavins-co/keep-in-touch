@@ -113,7 +113,7 @@ struct SettingsView: View {
             case .assigningGroups(let selected):
                 SettingsCadenceAssignmentView(
                     contacts: selected,
-                    groups: viewModel.allGroups,
+                    groups: viewModel.allCadences,
                     onImport: { assignments in
                         pendingImportStep = .seedingLastTouch(selected: selected, assignments: assignments)
                         contactImportStep = nil
@@ -246,20 +246,20 @@ struct SettingsView: View {
                         .foregroundStyle(DS.Colors.accent)
                     Text("Manage Frequencies")
                     Spacer()
-                    Text("\(viewModel.groupsCount)")
+                    Text("\(viewModel.cadencesCount)")
                         .foregroundStyle(DS.Colors.secondaryText)
                 }
             }
 
             NavigationLink {
-                ManageTagsView()
+                ManageGroupsView()
             } label: {
                 HStack {
                     Image(systemName: "person.3.fill")
                         .foregroundStyle(DS.Colors.accent)
                     Text("Manage Groups")
                     Spacer()
-                    Text("\(viewModel.tagsCount)")
+                    Text("\(viewModel.groupsCount)")
                         .foregroundStyle(DS.Colors.secondaryText)
                 }
             }

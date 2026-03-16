@@ -19,7 +19,7 @@ struct Person: Identifiable, Equatable, Hashable {
     var avatarColor: String
 
     var cadenceId: UUID
-    var tagIds: [UUID]
+    var groupIds: [UUID]
 
     var lastTouchAt: Date?
     var lastTouchMethod: TouchMethod?

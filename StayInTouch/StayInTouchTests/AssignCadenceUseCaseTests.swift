@@ -53,7 +53,7 @@ final class AssignCadenceUseCaseTests: XCTestCase {
             initials: "P",
             avatarColor: "#FF6B6B",
             cadenceId: cadenceId,
-            tagIds: [],
+            groupIds: [],
             lastTouchAt: nil,
             lastTouchMethod: nil,
             lastTouchNotes: nil,

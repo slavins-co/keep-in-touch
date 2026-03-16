@@ -222,20 +222,20 @@ struct PersonSettingsSection: View {
                 .foregroundStyle(DS.Colors.settingsItemLabel)
             Spacer()
             VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                if !personTags.isEmpty {
+                if !personGroups.isEmpty {
                     HStack(spacing: DS.Spacing.xs) {
-                        ForEach(personTags.prefix(2), id: \.id) { tag in
-                            TagPill(tag: tag)
+                        ForEach(personGroups.prefix(2), id: \.id) { group in
+                            GroupPill(group: group)
                         }
-                        if personTags.count > 2 {
-                            Text("+\(personTags.count - 2)")
+                        if personGroups.count > 2 {
+                            Text("+\(personGroups.count - 2)")
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(DS.Colors.secondaryText)
                         }
                     }
                 }
                 Button {
-                    onAction(.manageTags)
+                    onAction(.manageGroups)
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Text("Manage")
@@ -329,8 +329,8 @@ struct PersonSettingsSection: View {
 
     // MARK: - Helpers
 
-    private var personTags: [Tag] {
-        viewModel.tags.filter { viewModel.person.tagIds.contains($0.id) }
+    private var personGroups: [Group] {
+        viewModel.groups.filter { viewModel.person.groupIds.contains($0.id) }
     }
 
     private func snooze(days: Int) {

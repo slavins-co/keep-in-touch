@@ -10,22 +10,22 @@ import XCTest
 
 @MainActor
 final class HomeViewModelTests: XCTestCase {
-    func testFilterMatchesNameAndTag() {
+    func testFilterMatchesNameAndGroup() {
         let cadenceId = UUID()
-        let tagId = UUID()
+        let groupId = UUID()
 
         let people = [
-            makePerson(name: "Sarah Chen", cadenceId: cadenceId, tagIds: [tagId]),
-            makePerson(name: "Mike", cadenceId: cadenceId, tagIds: [])
+            makePerson(name: "Sarah Chen", cadenceId: cadenceId, groupIds: [groupId]),
+            makePerson(name: "Mike", cadenceId: cadenceId, groupIds: [])
         ]
-        let tags = [Tag(id: tagId, name: "Work", colorHex: "#0A84FF", sortOrder: 0, createdAt: Date(), modifiedAt: Date())]
+        let groups = [Group(id: groupId, name: "Work", colorHex: "#0A84FF", sortOrder: 0, createdAt: Date(), modifiedAt: Date())]
 
         let filtered = HomeViewModel.filterPeople(
             people: people,
-            groups: [makeGroup(id: cadenceId)],
-            tags: tags,
+            cadences: [makeCadence(id: cadenceId)],
+            groups: groups,
             selectedCadenceId: nil,
-            selectedTagId: nil,
+            selectedGroupId: nil,
             searchText: "work"
         )
 
@@ -36,8 +36,8 @@ final class HomeViewModelTests: XCTestCase {
     func testRefreshFromContacts_setsIsRefreshingFalseAfterCompletion() async {
         let vm = HomeViewModel(
             personRepository: InMemoryPersonRepository(people: []),
-            cadenceRepository: InMemoryCadenceRepository(groups: []),
-            tagRepository: InMemoryTagRepository(tags: []),
+            cadenceRepository: InMemoryCadenceRepository(cadences: []),
+            groupRepository: InMemoryGroupRepository(groups: []),
             settingsRepository: InMemorySettingsRepository()
         )
         XCTAssertFalse(vm.isRefreshing, "isRefreshing should start false")
@@ -50,8 +50,8 @@ final class HomeViewModelTests: XCTestCase {
     func testLoadUpdatesRefreshToken() {
         let vm = HomeViewModel(
             personRepository: InMemoryPersonRepository(people: []),
-            cadenceRepository: InMemoryCadenceRepository(groups: []),
-            tagRepository: InMemoryTagRepository(tags: []),
+            cadenceRepository: InMemoryCadenceRepository(cadences: []),
+            groupRepository: InMemoryGroupRepository(groups: []),
             settingsRepository: InMemorySettingsRepository()
         )
         let oldToken = vm.refreshToken
@@ -59,20 +59,20 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertNotEqual(vm.refreshToken, oldToken, "load() must update refreshToken to force LazyVStack rebuild")
     }
 
-    func testFilterByGroup() {
-        let groupA = UUID()
-        let groupB = UUID()
+    func testFilterByCadence() {
+        let cadenceA = UUID()
+        let cadenceB = UUID()
         let people = [
-            makePerson(name: "A", cadenceId: groupA, tagIds: []),
-            makePerson(name: "B", cadenceId: groupB, tagIds: [])
+            makePerson(name: "A", cadenceId: cadenceA, groupIds: []),
+            makePerson(name: "B", cadenceId: cadenceB, groupIds: [])
         ]
 
         let filtered = HomeViewModel.filterPeople(
             people: people,
-            groups: [makeGroup(id: groupA), makeGroup(id: groupB)],
-            tags: [],
-            selectedCadenceId: groupA,
-            selectedTagId: nil,
+            cadences: [makeCadence(id: cadenceA), makeCadence(id: cadenceB)],
+            groups: [],
+            selectedCadenceId: cadenceA,
+            selectedGroupId: nil,
             searchText: ""
         )
 
@@ -80,7 +80,7 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertEqual(filtered.first?.displayName, "A")
     }
 
-    private func makePerson(name: String, cadenceId: UUID, tagIds: [UUID]) -> Person {
+    private func makePerson(name: String, cadenceId: UUID, groupIds: [UUID]) -> Person {
         Person(
             id: UUID(),
             cnIdentifier: nil,
@@ -88,7 +88,7 @@ final class HomeViewModelTests: XCTestCase {
             initials: String(name.prefix(2)),
             avatarColor: "#FF6B6B",
             cadenceId: cadenceId,
-            tagIds: tagIds,
+            groupIds: groupIds,
             lastTouchAt: nil,
             lastTouchMethod: nil,
             lastTouchNotes: nil,
@@ -110,7 +110,7 @@ final class HomeViewModelTests: XCTestCase {
         )
     }
 
-    private func makeGroup(id: UUID) -> Cadence {
+    private func makeCadence(id: UUID) -> Cadence {
         Cadence(
             id: id,
             name: "Weekly",
@@ -131,11 +131,11 @@ final class HomeViewModelTests: XCTestCase {
         func fetchTracked(includePaused: Bool) -> [Person] {
             people.filter { $0.isTracked && (includePaused || !$0.isPaused) }
         }
-        func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
+        func fetchByCadence(id: UUID, includePaused: Bool) -> [Person] {
             fetchTracked(includePaused: includePaused).filter { $0.cadenceId == id }
         }
-        func fetchByTag(id: UUID, includePaused: Bool) -> [Person] {
-            fetchTracked(includePaused: includePaused).filter { $0.tagIds.contains(id) }
+        func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
+            fetchTracked(includePaused: includePaused).filter { $0.groupIds.contains(id) }
         }
         func searchByName(_ query: String, includePaused: Bool) -> [Person] {
             fetchTracked(includePaused: includePaused).filter { $0.displayName.localizedCaseInsensitiveContains(query) }
@@ -147,21 +147,21 @@ final class HomeViewModelTests: XCTestCase {
     }
 
     private struct InMemoryCadenceRepository: CadenceRepository {
-        let groups: [Cadence]
-        func fetch(id: UUID) -> Cadence? { groups.first { $0.id == id } }
-        func fetchAll() -> [Cadence] { groups }
-        func fetchDefaultGroups() -> [Cadence] { groups.filter { $0.isDefault } }
+        let cadences: [Cadence]
+        func fetch(id: UUID) -> Cadence? { cadences.first { $0.id == id } }
+        func fetchAll() -> [Cadence] { cadences }
+        func fetchDefaultGroups() -> [Cadence] { cadences.filter { $0.isDefault } }
         func save(_ group: Cadence) throws {}
         func batchSave(_ groups: [Cadence]) throws {}
         func delete(id: UUID) throws {}
     }
 
-    private struct InMemoryTagRepository: TagRepository {
-        let tags: [Tag]
-        func fetch(id: UUID) -> Tag? { tags.first { $0.id == id } }
-        func fetchAll() -> [Tag] { tags }
-        func save(_ tag: Tag) throws {}
-        func batchSave(_ tags: [Tag]) throws {}
+    private struct InMemoryGroupRepository: GroupRepository {
+        let groups: [Group]
+        func fetch(id: UUID) -> Group? { groups.first { $0.id == id } }
+        func fetchAll() -> [Group] { groups }
+        func save(_ group: Group) throws {}
+        func batchSave(_ groups: [Group]) throws {}
         func delete(id: UUID) throws {}
     }
 

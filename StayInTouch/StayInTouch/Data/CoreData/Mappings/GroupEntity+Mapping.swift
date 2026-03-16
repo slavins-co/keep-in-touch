@@ -1,5 +1,5 @@
 //
-//  TagEntity+Mapping.swift
+//  GroupEntity+Mapping.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
@@ -8,8 +8,8 @@
 import CoreData
 
 extension TagEntity {
-    func toDomain() -> Tag {
-        Tag(
+    func toDomain() -> Group {
+        Group(
             id: requiredField(id, entity: "TagEntity", field: "id", fallback: UUID()),
             name: requiredField(name, entity: "TagEntity", field: "name", fallback: ""),
             colorHex: requiredField(colorHex, entity: "TagEntity", field: "colorHex", fallback: ""),
@@ -28,12 +28,12 @@ extension TagEntity {
         return value
     }
 
-    func apply(_ tag: Tag) {
-        id = tag.id
-        name = tag.name
-        colorHex = tag.colorHex
-        sortOrder = Int64(tag.sortOrder)
-        createdAt = tag.createdAt
-        modifiedAt = tag.modifiedAt
+    func apply(_ group: Group) {
+        id = group.id
+        name = group.name
+        colorHex = group.colorHex
+        sortOrder = Int64(group.sortOrder)
+        createdAt = group.createdAt
+        modifiedAt = group.modifiedAt
     }
 }

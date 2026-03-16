@@ -11,11 +11,11 @@ import Foundation
 final class HomeViewModel: ObservableObject {
     @Published var searchText = ""
     @Published var selectedCadenceId: UUID?
-    @Published var selectedTagId: UUID?
+    @Published var selectedGroupId: UUID?
 
     @Published private(set) var allPeople: [Person] = []
-    @Published private(set) var groups: [Cadence] = []
-    @Published private(set) var tags: [Tag] = []
+    @Published private(set) var cadences: [Cadence] = []
+    @Published private(set) var groups: [Group] = []
     @Published private(set) var settings: AppSettings?
 
     @Published private(set) var overduePeople: [Person] = []
@@ -28,7 +28,7 @@ final class HomeViewModel: ObservableObject {
 
     private let personRepository: PersonRepository
     private let cadenceRepository: CadenceRepository
-    private let tagRepository: TagRepository
+    private let groupRepository: GroupRepository
     private let settingsRepository: AppSettingsRepository
     private var promptStore: FreshStartPromptStore
     private var searchTask: Task<Void, Never>?
@@ -36,13 +36,13 @@ final class HomeViewModel: ObservableObject {
     init(
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
         cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
-        tagRepository: TagRepository = CoreDataTagRepository(context: CoreDataStack.shared.viewContext),
+        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
         settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
         promptStore: FreshStartPromptStore = FreshStartPromptStore()
     ) {
         self.personRepository = personRepository
         self.cadenceRepository = cadenceRepository
-        self.tagRepository = tagRepository
+        self.groupRepository = groupRepository
         self.settingsRepository = settingsRepository
         self.promptStore = promptStore
         load()
@@ -52,15 +52,15 @@ final class HomeViewModel: ObservableObject {
         self.init(
             personRepository: dependencies.personRepository,
             cadenceRepository: dependencies.cadenceRepository,
-            tagRepository: dependencies.tagRepository,
+            groupRepository: dependencies.groupRepository,
             settingsRepository: dependencies.settingsRepository
         )
     }
 
     func load() {
         settings = settingsRepository.fetch()
-        groups = cadenceRepository.fetchAll()
-        tags = tagRepository.fetchAll()
+        cadences = cadenceRepository.fetchAll()
+        groups = groupRepository.fetchAll()
         allPeople = personRepository.fetchTracked(includePaused: true)
 
         applyFilters()
@@ -100,10 +100,10 @@ final class HomeViewModel: ObservableObject {
     func applyFilters() {
         let filtered = Self.filterPeople(
             people: allPeople,
+            cadences: cadences,
             groups: groups,
-            tags: tags,
             selectedCadenceId: selectedCadenceId,
-            selectedTagId: selectedTagId,
+            selectedGroupId: selectedGroupId,
             searchText: searchText
         )
 
@@ -130,11 +130,11 @@ final class HomeViewModel: ObservableObject {
             appVersion: ""
         )
 
-        let overdue = service.overduePeople(filtered, groups: groups)
-        let dueSoon = service.dueSoonPeople(filtered, groups: groups, settings: currentSettings)
+        let overdue = service.overduePeople(filtered, groups: cadences)
+        let dueSoon = service.dueSoonPeople(filtered, groups: cadences, settings: currentSettings)
         let allGood = filtered.filter { person in
             guard !person.isPaused else { return false }
-            let status = FrequencyCalculator().status(for: person, in: groups)
+            let status = FrequencyCalculator().status(for: person, in: cadences)
             return status == .onTrack
         }
         let allGoodByRecency = allGood.sorted {
@@ -150,27 +150,27 @@ final class HomeViewModel: ObservableObject {
 
     static func filterPeople(
         people: [Person],
-        groups: [Cadence],
-        tags: [Tag],
+        cadences: [Cadence],
+        groups: [Group],
         selectedCadenceId: UUID?,
-        selectedTagId: UUID?,
+        selectedGroupId: UUID?,
         searchText: String
     ) -> [Person] {
         let searchLower = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let tagNameById = Dictionary(uniqueKeysWithValues: tags.map { ($0.id, $0.name.lowercased()) })
+        let groupNameById = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0.name.lowercased()) })
 
         return people.filter { person in
             if let cadenceId = selectedCadenceId, person.cadenceId != cadenceId { return false }
-            if let tagId = selectedTagId, !person.tagIds.contains(tagId) { return false }
+            if let groupId = selectedGroupId, !person.groupIds.contains(groupId) { return false }
 
             if searchLower.isEmpty { return true }
 
             let nameMatch = person.displayName.lowercased().contains(searchLower)
-            let tagMatch = person.tagIds
-                .compactMap { tagNameById[$0] }
+            let groupMatch = person.groupIds
+                .compactMap { groupNameById[$0] }
                 .contains { $0.contains(searchLower) }
 
-            return nameMatch || tagMatch
+            return nameMatch || groupMatch
         }
     }
 

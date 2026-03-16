@@ -547,13 +547,13 @@ struct StatusIndicator: View {
     }
 }
 
-struct TagPill: View {
+struct GroupPill: View {
     let name: String
     let colorHex: String
 
-    init(tag: Tag) {
-        self.name = tag.name
-        self.colorHex = tag.colorHex
+    init(group: Group) {
+        self.name = group.name
+        self.colorHex = group.colorHex
     }
 
     init(name: String, colorHex: String) {
@@ -569,7 +569,7 @@ struct TagPill: View {
             .padding(.vertical, 2)
             .background(Color(hex: colorHex).opacity(0.12))
             .clipShape(Capsule())
-            .accessibilityLabel("Tag: \(name)")
+            .accessibilityLabel("Group: \(name)")
     }
 }
 

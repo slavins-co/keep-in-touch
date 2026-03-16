@@ -55,7 +55,7 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     func testFetchByTagFiltersCorrectly() throws {
         let cadenceId = UUID()
         let tagId = UUID()
-        let tagged = makePerson(name: "Tagged", cadenceId: cadenceId, isPaused: false, isTracked: true, tagIds: [tagId])
+        let tagged = makePerson(name: "Tagged", cadenceId: cadenceId, isPaused: false, isTracked: true, groupIds: [tagId])
         let untagged = makePerson(name: "Untagged", cadenceId: cadenceId, isPaused: false, isTracked: true)
 
         try repo.save(tagged)
@@ -183,7 +183,7 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
         cadenceId: UUID,
         isPaused: Bool,
         isTracked: Bool,
-        tagIds: [UUID] = [],
+        groupIds: [UUID] = [],
         lastTouchAt: Date? = nil
     ) -> Person {
         Person(
@@ -193,7 +193,7 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
             initials: String(name.prefix(2)),
             avatarColor: "#FF6B6B",
             cadenceId: cadenceId,
-            tagIds: tagIds,
+            groupIds: tagIds,
             lastTouchAt: lastTouchAt,
             lastTouchMethod: nil,
             lastTouchNotes: nil,

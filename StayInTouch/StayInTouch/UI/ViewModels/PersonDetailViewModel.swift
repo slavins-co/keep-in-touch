@@ -11,9 +11,9 @@ import Foundation
 final class PersonDetailViewModel: ObservableObject {
     @Published private(set) var person: Person
     @Published private(set) var group: Cadence?
-    @Published private(set) var groups: [Cadence] = []
-    @Published private(set) var tags: [Tag] = []
-    @Published private(set) var availableTags: [Tag] = []
+    @Published private(set) var cadences: [Cadence] = []
+    @Published private(set) var groups: [Group] = []
+    @Published private(set) var availableGroups: [Group] = []
     @Published private(set) var touchEvents: [TouchEvent] = []
     @Published private(set) var phone: String?
     @Published private(set) var email: String?
@@ -27,20 +27,20 @@ final class PersonDetailViewModel: ObservableObject {
 
     private let personRepository: PersonRepository
     private let cadenceRepository: CadenceRepository
-    private let tagRepository: TagRepository
+    private let groupRepository: GroupRepository
     private let touchRepository: TouchEventRepository
 
     init(
         person: Person,
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
         cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
-        tagRepository: TagRepository = CoreDataTagRepository(context: CoreDataStack.shared.viewContext),
+        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
         touchRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext)
     ) {
         self.person = person
         self.personRepository = personRepository
         self.cadenceRepository = cadenceRepository
-        self.tagRepository = tagRepository
+        self.groupRepository = groupRepository
         self.touchRepository = touchRepository
         load()
         AnalyticsService.track("person.viewed")
@@ -51,7 +51,7 @@ final class PersonDetailViewModel: ObservableObject {
             person: person,
             personRepository: dependencies.personRepository,
             cadenceRepository: dependencies.cadenceRepository,
-            tagRepository: dependencies.tagRepository,
+            groupRepository: dependencies.groupRepository,
             touchRepository: dependencies.touchEventRepository
         )
     }
@@ -60,10 +60,10 @@ final class PersonDetailViewModel: ObservableObject {
         if let refreshed = personRepository.fetch(id: person.id) {
             person = refreshed
         }
-        groups = cadenceRepository.fetchAll()
+        cadences = cadenceRepository.fetchAll()
         group = cadenceRepository.fetch(id: person.cadenceId)
-        tags = tagRepository.fetchAll()
-        availableTags = tags.filter { !person.tagIds.contains($0.id) }
+        groups = groupRepository.fetchAll()
+        availableGroups = groups.filter { !person.groupIds.contains($0.id) }
         touchEvents = fetchSortedEvents()
     }
 
@@ -243,21 +243,21 @@ final class PersonDetailViewModel: ObservableObject {
         touchEvents = fetchSortedEvents()
     }
 
-    func addTag(_ tag: Tag) {
-        guard !person.tagIds.contains(tag.id) else { return }
+    func addGroup(_ group: Group) {
+        guard !person.groupIds.contains(group.id) else { return }
         var updated = person
-        updated.tagIds.append(tag.id)
+        updated.groupIds.append(group.id)
         updated.modifiedAt = Date()
         savePerson(updated)
-        availableTags = tags.filter { !updated.tagIds.contains($0.id) }
+        availableGroups = groups.filter { !updated.groupIds.contains($0.id) }
     }
 
-    func removeTag(_ tag: Tag) {
+    func removeGroup(_ group: Group) {
         var updated = person
-        updated.tagIds.removeAll { $0 == tag.id }
+        updated.groupIds.removeAll { $0 == group.id }
         updated.modifiedAt = Date()
         savePerson(updated)
-        availableTags = tags.filter { !updated.tagIds.contains($0.id) }
+        availableGroups = groups.filter { !updated.groupIds.contains($0.id) }
     }
 
     func logTouch(method: TouchMethod, notes: String?, date: Date, timeOfDay: TimeOfDay? = nil) {

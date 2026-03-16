@@ -14,7 +14,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
     private var context: NSManagedObjectContext!
     private var personRepo: CoreDataPersonRepository!
     private var groupRepo: CoreDataCadenceRepository!
-    private var tagRepo: CoreDataTagRepository!
+    private var groupRepo: CoreDataGroupRepository!
     private var touchRepo: CoreDataTouchEventRepository!
     private var sut: DataImportService!
 
@@ -24,12 +24,12 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         context = stack.container.newBackgroundContext()
         personRepo = CoreDataPersonRepository(context: context)
         groupRepo = CoreDataCadenceRepository(context: context)
-        tagRepo = CoreDataTagRepository(context: context)
+        groupRepo = CoreDataGroupRepository(context: context)
         touchRepo = CoreDataTouchEventRepository(context: context)
         sut = DataImportService(
             personRepository: personRepo,
             cadenceRepository: groupRepo,
-            tagRepository: tagRepo,
+            groupRepository: groupRepo,
             touchEventRepository: touchRepo,
             backgroundContextProvider: { [unowned self] in self.context }
         )
@@ -38,7 +38,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
     override func tearDown() {
         sut = nil
         touchRepo = nil
-        tagRepo = nil
+        groupRepo = nil
         groupRepo = nil
         personRepo = nil
         context = nil
@@ -78,7 +78,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         id: UUID = UUID(),
         name: String,
         cadenceId: UUID?,
-        tagIds: [UUID] = [],
+        groupIds: [UUID] = [],
         lastTouchAt: Date? = nil,
         isPaused: Bool = false,
         touchEvents: [ExportTouchEvent]? = nil
@@ -89,7 +89,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
             displayName: name,
             cadenceId: cadenceId,
             groupName: nil,
-            tagIds: tagIds,
+            groupIds: tagIds,
             tagNames: [],
             lastTouchAt: lastTouchAt,
             isPaused: isPaused,
@@ -139,10 +139,10 @@ final class DataImportServiceIntegrationTests: XCTestCase {
                 ExportCadence(id: groupB, name: "Monthly", frequencyDays: 30, warningDays: 5, colorHex: nil, sortOrder: 1, isDefault: false)
             ],
             tags: [
-                ExportTag(id: tagId, name: "Family", colorHex: "#00FF00", sortOrder: 0)
+                ExportGroup(id: tagId, name: "Family", colorHex: "#00FF00", sortOrder: 0)
             ],
             people: [
-                makeExportPerson(name: "Alice", cadenceId: groupA, tagIds: [tagId], touchEvents: events1),
+                makeExportPerson(name: "Alice", cadenceId: groupA, groupIds: [tagId], touchEvents: events1),
                 makeExportPerson(name: "Bob", cadenceId: groupB, touchEvents: events2),
                 makeExportPerson(name: "Carol", cadenceId: groupA, touchEvents: events3)
             ]
@@ -172,7 +172,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         XCTAssertTrue(allGroups.contains(where: { $0.name == "Close Friends" }))
         XCTAssertTrue(allGroups.contains(where: { $0.name == "Monthly" }))
 
-        let allTags = tagRepo.fetchAll()
+        let allTags = groupRepo.fetchAll()
         XCTAssertEqual(allTags.count, 1)
         XCTAssertEqual(allTags.first?.name, "Family")
 

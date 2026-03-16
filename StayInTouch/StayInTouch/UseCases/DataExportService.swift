@@ -2,7 +2,7 @@
 //  DataExportService.swift
 //  KeepInTouch
 //
-//  Handles JSON export of contacts, groups, tags, and touch events.
+//  Handles JSON export of contacts, cadences, groups, and touch events.
 //
 
 import Foundation
@@ -10,22 +10,22 @@ import Foundation
 struct DataExportService {
     let personRepository: PersonRepository
     let cadenceRepository: CadenceRepository
-    let tagRepository: TagRepository
+    let groupRepository: GroupRepository
     let touchEventRepository: TouchEventRepository
 
     func exportContacts() -> URL? {
         let people = personRepository.fetchAll()
-        let groups = cadenceRepository.fetchAll()
-        let tags = tagRepository.fetchAll()
+        let cadences = cadenceRepository.fetchAll()
+        let groups = groupRepository.fetchAll()
 
+        let cadenceNameById = Dictionary(uniqueKeysWithValues: cadences.map { ($0.id, $0.name) })
         let groupNameById = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0.name) })
-        let tagNameById = Dictionary(uniqueKeysWithValues: tags.map { ($0.id, $0.name) })
 
         let exportPeople = people.map { person in
             ExportPerson.from(
                 person,
-                groupName: groupNameById[person.cadenceId],
-                tagNames: person.tagIds.compactMap { tagNameById[$0] },
+                groupName: cadenceNameById[person.cadenceId],
+                tagNames: person.groupIds.compactMap { groupNameById[$0] },
                 touchEvents: touchEventRepository.fetchAll(for: person.id)
             )
         }
@@ -33,8 +33,8 @@ struct DataExportService {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
-            groups: groups.map { ExportCadence.from($0) },
-            tags: tags.map { ExportTag.from($0) },
+            groups: cadences.map { ExportCadence.from($0) },
+            tags: groups.map { ExportGroup.from($0) },
             people: exportPeople
         )
 

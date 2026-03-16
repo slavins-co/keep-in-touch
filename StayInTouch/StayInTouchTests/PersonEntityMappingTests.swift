@@ -20,12 +20,12 @@ final class PersonEntityMappingTests: XCTestCase {
     func testDecodeTagIdsAcceptsMixedTypes() {
         let entity = PersonEntity(context: context)
         let uuid = UUID()
-        entity.tagIds = [uuid, uuid.uuidString] as NSArray
+        entity.groupIds = [uuid, uuid.uuidString] as NSArray
 
         let domain = entity.toDomain()
-        XCTAssertEqual(domain.tagIds.count, 2)
-        XCTAssertTrue(domain.tagIds.contains(uuid))
-        XCTAssertTrue(domain.tagIds.contains(UUID(uuidString: uuid.uuidString)!))
+        XCTAssertEqual(domain.groupIds.count, 2)
+        XCTAssertTrue(domain.groupIds.contains(uuid))
+        XCTAssertTrue(domain.groupIds.contains(UUID(uuidString: uuid.uuidString)!))
     }
 
     // MARK: - Nil required field fallbacks (#214)

@@ -1,5 +1,5 @@
 //
-//  TagContactsViewModel.swift
+//  GroupContactsViewModel.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/3/26.
@@ -8,57 +8,57 @@
 import Foundation
 
 @MainActor
-final class TagContactsViewModel: ObservableObject {
+final class GroupContactsViewModel: ObservableObject {
     @Published private(set) var people: [Person] = []
     @Published private(set) var available: [Person] = []
 
-    private let tag: Tag
+    private let group: Group
     private let personRepository: PersonRepository
     private var allPeople: [Person] = []
 
-    init(tag: Tag, personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext)) {
-        self.tag = tag
+    init(group: Group, personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext)) {
+        self.group = group
         self.personRepository = personRepository
         load()
     }
 
-    convenience init(tag: Tag, dependencies: AppDependencies) {
-        self.init(tag: tag, personRepository: dependencies.personRepository)
+    convenience init(group: Group, dependencies: AppDependencies) {
+        self.init(group: group, personRepository: dependencies.personRepository)
     }
 
     func load() {
         allPeople = personRepository.fetchTracked(includePaused: true)
             .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
-        people = allPeople.filter { $0.tagIds.contains(tag.id) }
-        available = allPeople.filter { !$0.tagIds.contains(tag.id) }
+        people = allPeople.filter { $0.groupIds.contains(group.id) }
+        available = allPeople.filter { !$0.groupIds.contains(group.id) }
     }
 
-    func removeTag(from person: Person) {
+    func removeGroup(from person: Person) {
         var updated = person
-        updated.tagIds = updated.tagIds.filter { $0 != tag.id }
+        updated.groupIds = updated.groupIds.filter { $0 != group.id }
         updated.modifiedAt = Date()
         do {
             try personRepository.save(updated)
         } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "TagContactsViewModel.removeTag")
-            ErrorToastManager.shared.show(.saveFailed("TagContacts"))
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "GroupContactsViewModel.removeGroup")
+            ErrorToastManager.shared.show(.saveFailed("GroupContacts"))
         }
         NotificationCenter.default.post(name: .personDidChange, object: updated.id)
         load()
     }
 
-    func addTag(to personIds: [UUID]) {
+    func addGroup(to personIds: [UUID]) {
         for person in allPeople where personIds.contains(person.id) {
             var updated = person
-            if !updated.tagIds.contains(tag.id) {
-                updated.tagIds.append(tag.id)
+            if !updated.groupIds.contains(group.id) {
+                updated.groupIds.append(group.id)
             }
             updated.modifiedAt = Date()
             do {
                 try personRepository.save(updated)
             } catch {
-                AppLogger.logError(error, category: AppLogger.viewModel, context: "TagContactsViewModel.addTag")
-                ErrorToastManager.shared.show(.saveFailed("TagContacts"))
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "GroupContactsViewModel.addGroup")
+                ErrorToastManager.shared.show(.saveFailed("GroupContacts"))
             }
             NotificationCenter.default.post(name: .personDidChange, object: updated.id)
         }
