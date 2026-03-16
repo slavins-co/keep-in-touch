@@ -193,7 +193,7 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
             initials: String(name.prefix(2)),
             avatarColor: "#FF6B6B",
             cadenceId: cadenceId,
-            groupIds: tagIds,
+            groupIds: groupIds,
             lastTouchAt: lastTouchAt,
             lastTouchMethod: nil,
             lastTouchNotes: nil,

@@ -98,11 +98,11 @@ struct PostImportMatchView: View {
             if importResult.totalPeople > 0 {
                 Label("\(importResult.totalPeople) contact\(importResult.totalPeople == 1 ? "" : "s")", systemImage: "person.fill")
             }
-            if importResult.groupsCreated > 0 {
-                Label("\(importResult.groupsCreated) frequenc\(importResult.groupsCreated == 1 ? "y" : "ies")", systemImage: "clock.badge.checkmark.fill")
+            if importResult.cadencesCreated > 0 {
+                Label("\(importResult.cadencesCreated) frequenc\(importResult.cadencesCreated == 1 ? "y" : "ies")", systemImage: "clock.badge.checkmark.fill")
             }
-            if importResult.tagsCreated > 0 {
-                Label("\(importResult.tagsCreated) group\(importResult.tagsCreated == 1 ? "" : "s")", systemImage: "person.3.fill")
+            if importResult.groupsCreated > 0 {
+                Label("\(importResult.groupsCreated) group\(importResult.groupsCreated == 1 ? "" : "s")", systemImage: "person.3.fill")
             }
         }
     }

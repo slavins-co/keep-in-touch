@@ -177,11 +177,11 @@ struct SettingsView: View {
                             if result.totalPeople > 0 {
                                 parts.append("\(result.totalPeople) contact\(result.totalPeople == 1 ? "" : "s")")
                             }
-                            if result.groupsCreated > 0 {
-                                parts.append("\(result.groupsCreated) frequenc\(result.groupsCreated == 1 ? "y" : "ies")")
+                            if result.cadencesCreated > 0 {
+                                parts.append("\(result.cadencesCreated) frequenc\(result.cadencesCreated == 1 ? "y" : "ies")")
                             }
-                            if result.tagsCreated > 0 {
-                                parts.append("\(result.tagsCreated) group\(result.tagsCreated == 1 ? "" : "s")")
+                            if result.groupsCreated > 0 {
+                                parts.append("\(result.groupsCreated) group\(result.groupsCreated == 1 ? "" : "s")")
                             }
                             importResultMessage = parts.isEmpty
                                 ? "Nothing was imported."

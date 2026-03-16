@@ -33,29 +33,55 @@ struct DataImportService {
 
         // Try new format first, fall back to legacy [ExportPerson] array
         let importedPeople: [ExportPerson]
-        let importedGroups: [ExportCadence]
-        let importedTags: [ExportGroup]
+        let importedCadences: [ExportCadence]
+        let importedGroups: [ExportGroup]
 
         if let exportData = try? decoder.decode(ExportData.self, from: data) {
             importedPeople = exportData.people
+            importedCadences = exportData.cadences
             importedGroups = exportData.groups
-            importedTags = exportData.tags
         } else if let legacyPeople = try? decoder.decode([ExportPerson].self, from: data) {
             importedPeople = legacyPeople
+            importedCadences = []
             importedGroups = []
-            importedTags = []
         } else {
             return nil
         }
 
         // --- Cadence merge: match by normalized name, skip duplicates ---
-        let existingGroups = cadenceRepository.fetchAll()
+        let existingCadences = cadenceRepository.fetchAll()
+        let existingCadencesByName = Dictionary(
+            grouping: existingCadences,
+            by: { $0.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
+        )
+        var cadenceIdMap: [UUID: UUID] = [:]
+        var newCadences: [ExportCadence] = []
+
+        for exportCadence in importedCadences {
+            let normalized = exportCadence.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            if let existing = existingCadencesByName[normalized]?.first {
+                cadenceIdMap[exportCadence.id] = existing.id
+            } else {
+                let newId = UUID()
+                cadenceIdMap[exportCadence.id] = newId
+                newCadences.append(exportCadence)
+            }
+        }
+        // Pass through any existing cadence IDs not in the export's cadence list
+        for cadence in existingCadences {
+            if cadenceIdMap[cadence.id] == nil {
+                cadenceIdMap[cadence.id] = cadence.id
+            }
+        }
+
+        // --- Group merge: same logic ---
+        let existingGroups = groupRepository.fetchAll()
         let existingGroupsByName = Dictionary(
             grouping: existingGroups,
             by: { $0.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
         )
         var groupIdMap: [UUID: UUID] = [:]
-        var newGroups: [ExportCadence] = []
+        var newGroups: [ExportGroup] = []
 
         for exportGroup in importedGroups {
             let normalized = exportGroup.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
@@ -67,35 +93,9 @@ struct DataImportService {
                 newGroups.append(exportGroup)
             }
         }
-        // Pass through any existing group IDs not in the export's group list
         for group in existingGroups {
             if groupIdMap[group.id] == nil {
                 groupIdMap[group.id] = group.id
-            }
-        }
-
-        // --- Tag merge: same logic ---
-        let existingTags = groupRepository.fetchAll()
-        let existingTagsByName = Dictionary(
-            grouping: existingTags,
-            by: { $0.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
-        )
-        var tagIdMap: [UUID: UUID] = [:]
-        var newTags: [ExportGroup] = []
-
-        for exportTag in importedTags {
-            let normalized = exportTag.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-            if let existing = existingTagsByName[normalized]?.first {
-                tagIdMap[exportTag.id] = existing.id
-            } else {
-                let newId = UUID()
-                tagIdMap[exportTag.id] = newId
-                newTags.append(exportTag)
-            }
-        }
-        for tag in existingTags {
-            if tagIdMap[tag.id] == nil {
-                tagIdMap[tag.id] = tag.id
             }
         }
 
@@ -234,10 +234,10 @@ struct DataImportService {
             skippedCount: skipped,
             touchEventCount: touchEventCount,
             newTouchEventCount: newTouchEventCount,
+            newCadences: newCadences,
             newGroups: newGroups,
-            newTags: newTags,
+            cadenceIdMap: cadenceIdMap,
             groupIdMap: groupIdMap,
-            tagIdMap: tagIdMap,
             remappedIds: remappedIds,
             ambiguousPeople: ambiguousPeople
         )
@@ -255,18 +255,40 @@ struct DataImportService {
 
             let now = Date()
 
-            // 1. Create new groups from import (batch save)
-            let existingGroupCount = groupRepo.fetchAll().count
-            var groupsToSave: [Cadence] = []
+            // 1. Create new cadences from import (batch save)
+            let existingCadenceCount = groupRepo.fetchAll().count
+            var cadencesToSave: [Cadence] = []
+            for (index, exportCadence) in preview.newCadences.enumerated() {
+                guard let newId = preview.cadenceIdMap[exportCadence.id] else { continue }
+                cadencesToSave.append(Cadence(
+                    id: newId,
+                    name: exportCadence.name,
+                    frequencyDays: exportCadence.frequencyDays,
+                    warningDays: exportCadence.warningDays,
+                    colorHex: exportCadence.colorHex,
+                    isDefault: false,
+                    sortOrder: existingCadenceCount + index,
+                    createdAt: now,
+                    modifiedAt: now
+                ))
+            }
+            if !cadencesToSave.isEmpty {
+                do {
+                    try groupRepo.batchSave(cadencesToSave)
+                } catch {
+                    AppLogger.logError(error, category: AppLogger.viewModel, context: "DataImportService.executeImport.cadences")
+                }
+            }
+
+            // 2. Create new groups from import (batch save)
+            let existingGroupCount = tagRepo.fetchAll().count
+            var groupsToSave: [Group] = []
             for (index, exportGroup) in preview.newGroups.enumerated() {
                 guard let newId = preview.groupIdMap[exportGroup.id] else { continue }
-                groupsToSave.append(Cadence(
+                groupsToSave.append(Group(
                     id: newId,
                     name: exportGroup.name,
-                    frequencyDays: exportGroup.frequencyDays,
-                    warningDays: exportGroup.warningDays,
                     colorHex: exportGroup.colorHex,
-                    isDefault: false,
                     sortOrder: existingGroupCount + index,
                     createdAt: now,
                     modifiedAt: now
@@ -274,38 +296,16 @@ struct DataImportService {
             }
             if !groupsToSave.isEmpty {
                 do {
-                    try groupRepo.batchSave(groupsToSave)
+                    try tagRepo.batchSave(groupsToSave)
                 } catch {
                     AppLogger.logError(error, category: AppLogger.viewModel, context: "DataImportService.executeImport.groups")
                 }
             }
 
-            // 2. Create new tags from import (batch save)
-            let existingTagCount = tagRepo.fetchAll().count
-            var tagsToSave: [Group] = []
-            for (index, exportTag) in preview.newTags.enumerated() {
-                guard let newId = preview.tagIdMap[exportTag.id] else { continue }
-                tagsToSave.append(Group(
-                    id: newId,
-                    name: exportTag.name,
-                    colorHex: exportTag.colorHex,
-                    sortOrder: existingTagCount + index,
-                    createdAt: now,
-                    modifiedAt: now
-                ))
-            }
-            if !tagsToSave.isEmpty {
-                do {
-                    try tagRepo.batchSave(tagsToSave)
-                } catch {
-                    AppLogger.logError(error, category: AppLogger.viewModel, context: "DataImportService.executeImport.tags")
-                }
-            }
-
-            // 3. Refresh valid group/tag IDs after creation
-            let allGroups = groupRepo.fetchAll()
-            let defaultGroupId = allGroups.first(where: { $0.isDefault })?.id ?? allGroups.first?.id ?? UUID()
-            let validGroupIds = Set(allGroups.map { $0.id })
+            // 3. Refresh valid cadence/group IDs after creation
+            let allCadences = groupRepo.fetchAll()
+            let defaultCadenceId = allCadences.first(where: { $0.isDefault })?.id ?? allCadences.first?.id ?? UUID()
+            let validCadenceIds = Set(allCadences.map { $0.id })
 
             // Only match by internal UUID — never trust cnIdentifier from external files
             let existingById = Dictionary(uniqueKeysWithValues: peopleRepo.fetchAll().map { ($0.id, $0) })
@@ -316,17 +316,17 @@ struct DataImportService {
             var personsToSave: [Person] = []
             var importedIdMap: [UUID: UUID] = [:]
 
-            // 4. New people — remap cadenceId and tagIds
+            // 4. New people — remap cadenceId and groupIds
             for exportPerson in preview.newPeople {
                 let newId = UUID()
                 importedIdMap[exportPerson.id] = newId
 
-                let mappedGroupId = exportPerson.cadenceId
-                    .flatMap { preview.groupIdMap[$0] }
-                    .flatMap { validGroupIds.contains($0) ? $0 : nil }
-                    ?? defaultGroupId
+                let mappedCadenceId = exportPerson.cadenceId
+                    .flatMap { preview.cadenceIdMap[$0] }
+                    .flatMap { validCadenceIds.contains($0) ? $0 : nil }
+                    ?? defaultCadenceId
 
-                let mappedTagIds = exportPerson.tagIds.compactMap { preview.tagIdMap[$0] ?? $0 }
+                let mappedGroupIds = exportPerson.groupIds.compactMap { preview.groupIdMap[$0] ?? $0 }
 
                 var person = Person(
                     id: newId,
@@ -334,8 +334,8 @@ struct DataImportService {
                     displayName: exportPerson.displayName,
                     initials: InitialsBuilder.initials(for: exportPerson.displayName),
                     avatarColor: AvatarColors.randomHex(),
-                    cadenceId: mappedGroupId,
-                    groupIds: mappedTagIds,
+                    cadenceId: mappedCadenceId,
+                    groupIds: mappedGroupIds,
                     lastTouchAt: exportPerson.lastTouchAt,
                     lastTouchMethod: nil,
                     lastTouchNotes: nil,
@@ -355,7 +355,7 @@ struct DataImportService {
                     modifiedAt: now,
                     sortOrder: sortOrder
                 )
-                person = assignGroup.assign(person: person, to: mappedGroupId)
+                person = assignGroup.assign(person: person, to: mappedCadenceId)
                 personsToSave.append(person)
                 importedNewPeople.append((id: newId, displayName: exportPerson.displayName))
                 sortOrder += 1
@@ -374,7 +374,7 @@ struct DataImportService {
 
                 person.displayName = exportPerson.displayName
                 person.initials = InitialsBuilder.initials(for: exportPerson.displayName)
-                person.groupIds = exportPerson.tagIds.compactMap { preview.tagIdMap[$0] ?? $0 }
+                person.groupIds = exportPerson.groupIds.compactMap { preview.groupIdMap[$0] ?? $0 }
                 person.lastTouchAt = exportPerson.lastTouchAt
                 person.isPaused = exportPerson.isPaused
                 person.birthday = exportPerson.birthday.flatMap(Birthday.from(jsonString:))
@@ -383,11 +383,11 @@ struct DataImportService {
                 }
                 person.modifiedAt = now
 
-                if let newGroupId = exportPerson.cadenceId
-                    .flatMap({ preview.groupIdMap[$0] }),
-                   validGroupIds.contains(newGroupId),
-                   newGroupId != person.cadenceId {
-                    person = assignGroup.assign(person: person, to: newGroupId)
+                if let newCadenceId = exportPerson.cadenceId
+                    .flatMap({ preview.cadenceIdMap[$0] }),
+                   validCadenceIds.contains(newCadenceId),
+                   newCadenceId != person.cadenceId {
+                    person = assignGroup.assign(person: person, to: newCadenceId)
                 }
                 personsToSave.append(person)
             }
@@ -479,8 +479,8 @@ struct DataImportService {
         return ImportResult(
             importedPeople: importedNewPeople,
             totalPeople: preview.totalPeople,
-            groupsCreated: preview.newGroups.count,
-            tagsCreated: preview.newTags.count
+            cadencesCreated: preview.newCadences.count,
+            groupsCreated: preview.newGroups.count
         )
     }
 

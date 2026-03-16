@@ -88,9 +88,9 @@ final class DataImportServiceIntegrationTests: XCTestCase {
             id: id,
             displayName: name,
             cadenceId: cadenceId,
-            groupName: nil,
-            groupIds: tagIds,
-            tagNames: [],
+            cadenceName: nil,
+            groupIds: groupIds,
+            groupNames: [],
             lastTouchAt: lastTouchAt,
             isPaused: isPaused,
             createdAt: now,
@@ -134,11 +134,11 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: now,
-            groups: [
+            cadences: [
                 ExportCadence(id: groupA, name: "Close Friends", frequencyDays: 3, warningDays: 1, colorHex: "#FF0000", sortOrder: 0, isDefault: false),
                 ExportCadence(id: groupB, name: "Monthly", frequencyDays: 30, warningDays: 5, colorHex: nil, sortOrder: 1, isDefault: false)
             ],
-            tags: [
+            groups: [
                 ExportGroup(id: tagId, name: "Family", colorHex: "#00FF00", sortOrder: 0)
             ],
             people: [
@@ -153,15 +153,15 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let previewValue = try XCTUnwrap(preview)
 
         XCTAssertEqual(previewValue.newPeople.count, 3)
-        XCTAssertEqual(previewValue.newGroups.count, 2)
-        XCTAssertEqual(previewValue.newTags.count, 1)
+        XCTAssertEqual(previewValue.newCadences.count, 2)
+        XCTAssertEqual(previewValue.newGroups.count, 1)
         XCTAssertEqual(previewValue.newTouchEventCount, 5)
 
         let result = await sut.executeImport(previewValue)
 
         XCTAssertEqual(result.totalPeople, 3)
-        XCTAssertEqual(result.groupsCreated, 2)
-        XCTAssertEqual(result.tagsCreated, 1)
+        XCTAssertEqual(result.cadencesCreated, 2)
+        XCTAssertEqual(result.groupsCreated, 1)
 
         // Verify persistence via real repos
         let allPeople = personRepo.fetchAll()
@@ -195,8 +195,8 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
+            cadences: [],
             groups: [],
-            tags: [],
             people: [
                 makeExportPerson(id: personId, name: "Alice Updated", cadenceId: cadenceId)
             ]
@@ -230,8 +230,8 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
+            cadences: [],
             groups: [],
-            tags: [],
             people: [
                 makeExportPerson(id: UUID(), name: "Sarah Chen", cadenceId: cadenceId)
             ]
@@ -271,8 +271,8 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
+            cadences: [],
             groups: [],
-            tags: [],
             people: [
                 makeExportPerson(
                     id: personId,
@@ -338,8 +338,8 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
+            cadences: [],
             groups: [],
-            tags: [],
             people: [
                 makeExportPerson(name: "John Smith", cadenceId: cadenceId)
             ]
@@ -367,10 +367,10 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
-            groups: [
+            cadences: [
                 ExportCadence(id: exportGroupId, name: "weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, sortOrder: 0, isDefault: false)
             ],
-            tags: [],
+            groups: [],
             people: [
                 makeExportPerson(name: "Eve", cadenceId: exportGroupId)
             ]
@@ -380,8 +380,8 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let previewOpt = await sut.parseImportFile(url: url)
         let preview = try XCTUnwrap(previewOpt)
 
-        XCTAssertTrue(preview.newGroups.isEmpty, "Cadence should merge by name (case-insensitive)")
-        XCTAssertEqual(preview.groupIdMap[exportGroupId], defaultGroup.id, "Should map to existing group")
+        XCTAssertTrue(preview.newCadences.isEmpty, "Cadence should merge by name (case-insensitive)")
+        XCTAssertEqual(preview.cadenceIdMap[exportGroupId], defaultGroup.id, "Should map to existing cadence")
 
         _ = await sut.executeImport(preview)
 
@@ -402,8 +402,8 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
+            cadences: [],
             groups: [],
-            tags: [],
             people: [
                 makeExportPerson(
                     name: "Fiona",
@@ -441,8 +441,8 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
+            cadences: [],
             groups: [],
-            tags: [],
             people: [
                 makeExportPerson(name: "   ", cadenceId: nil),   // whitespace-only
                 makeExportPerson(name: "Valid Person", cadenceId: nil)

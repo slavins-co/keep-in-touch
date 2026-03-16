@@ -57,7 +57,7 @@ final class SettingsViewModelTests: XCTestCase {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let decoded = try decoder.decode(ExportData.self, from: data)
-        XCTAssertEqual(decoded.version, 2)
+        XCTAssertEqual(decoded.version, 3)
         XCTAssertEqual(decoded.people.count, 2)
 
         try? FileManager.default.removeItem(at: url!)
@@ -72,7 +72,7 @@ final class SettingsViewModelTests: XCTestCase {
         decoder.dateDecodingStrategy = .iso8601
         let decoded = try decoder.decode(ExportData.self, from: data)
         XCTAssertTrue(decoded.people.isEmpty)
-        XCTAssertEqual(decoded.version, 2)
+        XCTAssertEqual(decoded.version, 3)
 
         try? FileManager.default.removeItem(at: url!)
     }
@@ -97,11 +97,11 @@ final class SettingsViewModelTests: XCTestCase {
         decoder.dateDecodingStrategy = .iso8601
         let decoded = try decoder.decode(ExportData.self, from: data)
 
+        XCTAssertEqual(decoded.cadences.count, 1)
+        XCTAssertEqual(decoded.cadences.first?.name, "Weekly")
+        XCTAssertEqual(decoded.cadences.first?.frequencyDays, 7)
         XCTAssertEqual(decoded.groups.count, 1)
-        XCTAssertEqual(decoded.groups.first?.name, "Weekly")
-        XCTAssertEqual(decoded.groups.first?.frequencyDays, 7)
-        XCTAssertEqual(decoded.tags.count, 1)
-        XCTAssertEqual(decoded.tags.first?.name, "Work")
+        XCTAssertEqual(decoded.groups.first?.name, "Work")
         XCTAssertEqual(decoded.people.count, 1)
 
         try? FileManager.default.removeItem(at: url)
@@ -134,9 +134,9 @@ final class SettingsViewModelTests: XCTestCase {
                 id: UUID(),
                 displayName: "Alice",
                 cadenceId: nil,
-                groupName: nil,
+                cadenceName: nil,
                 groupIds: [],
-                tagNames: [],
+                groupNames: [],
                 lastTouchAt: nil,
                 isPaused: false,
                 createdAt: Date(),
@@ -156,8 +156,8 @@ final class SettingsViewModelTests: XCTestCase {
 
         XCTAssertNotNil(preview)
         XCTAssertEqual(preview?.newPeople.count, 1)
+        XCTAssertTrue(preview?.newCadences.isEmpty ?? false)
         XCTAssertTrue(preview?.newGroups.isEmpty ?? false)
-        XCTAssertTrue(preview?.newTags.isEmpty ?? false)
 
         try? FileManager.default.removeItem(at: url)
     }
@@ -168,15 +168,15 @@ final class SettingsViewModelTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
-            groups: [ExportCadence(id: cadenceId, name: "Custom Frequency", frequencyDays: 21, warningDays: 3, colorHex: nil, sortOrder: 0, isDefault: false)],
-            tags: [ExportGroup(id: tagId, name: "Custom Cadence", colorHex: "#FF0000", sortOrder: 0)],
+            cadences: [ExportCadence(id: cadenceId, name: "Custom Frequency", frequencyDays: 21, warningDays: 3, colorHex: nil, sortOrder: 0, isDefault: false)],
+            groups: [ExportGroup(id: tagId, name: "Custom Cadence", colorHex: "#FF0000", sortOrder: 0)],
             people: [ExportPerson(
                 id: UUID(),
                 displayName: "Bob",
                 cadenceId: cadenceId,
-                groupName: "Custom Frequency",
+                cadenceName: "Custom Frequency",
                 groupIds: [tagId],
-                tagNames: ["Custom Cadence"],
+                groupNames: ["Custom Cadence"],
                 lastTouchAt: nil,
                 isPaused: false,
                 createdAt: Date(),
@@ -196,10 +196,10 @@ final class SettingsViewModelTests: XCTestCase {
 
         XCTAssertNotNil(preview)
         XCTAssertEqual(preview?.newPeople.count, 1)
+        XCTAssertEqual(preview?.newCadences.count, 1)
+        XCTAssertEqual(preview?.newCadences.first?.name, "Custom Frequency")
         XCTAssertEqual(preview?.newGroups.count, 1)
-        XCTAssertEqual(preview?.newGroups.first?.name, "Custom Frequency")
-        XCTAssertEqual(preview?.newTags.count, 1)
-        XCTAssertEqual(preview?.newTags.first?.name, "Custom Cadence")
+        XCTAssertEqual(preview?.newGroups.first?.name, "Custom Cadence")
 
         try? FileManager.default.removeItem(at: url)
     }
@@ -220,15 +220,15 @@ final class SettingsViewModelTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
-            groups: [ExportCadence(id: importedGroupId, name: "weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, sortOrder: 0, isDefault: true)],
-            tags: [],
+            cadences: [ExportCadence(id: importedGroupId, name: "weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, sortOrder: 0, isDefault: true)],
+            groups: [],
             people: [ExportPerson(
                 id: UUID(),
                 displayName: "Charlie",
                 cadenceId: importedGroupId,
-                groupName: "weekly",
+                cadenceName: "weekly",
                 groupIds: [],
-                tagNames: [],
+                groupNames: [],
                 lastTouchAt: nil,
                 isPaused: false,
                 createdAt: Date(),
@@ -248,9 +248,9 @@ final class SettingsViewModelTests: XCTestCase {
 
         XCTAssertNotNil(preview)
         // "weekly" matches existing "Weekly" — no new group created
-        XCTAssertTrue(preview?.newGroups.isEmpty ?? false)
-        // The imported group ID should map to existing group
-        XCTAssertEqual(preview?.groupIdMap[importedGroupId], existingGroupId)
+        XCTAssertTrue(preview?.newCadences.isEmpty ?? false)
+        // The imported cadence ID should map to existing cadence
+        XCTAssertEqual(preview?.cadenceIdMap[importedGroupId], existingGroupId)
 
         try? FileManager.default.removeItem(at: url)
     }
@@ -360,15 +360,15 @@ final class SettingsViewModelTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
+            cadences: [],
             groups: [],
-            tags: [],
             people: [ExportPerson(
                 id: UUID(), // Different UUID
                 displayName: "Alice Smith",
                 cadenceId: nil,
-                groupName: nil,
+                cadenceName: nil,
                 groupIds: [],
-                tagNames: [],
+                groupNames: [],
                 lastTouchAt: nil,
                 isPaused: false,
                 createdAt: Date(),
@@ -412,15 +412,15 @@ final class SettingsViewModelTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
+            cadences: [],
             groups: [],
-            tags: [],
             people: [ExportPerson(
                 id: UUID(),
                 displayName: "John Smith",
                 cadenceId: nil,
-                groupName: nil,
+                cadenceName: nil,
                 groupIds: [],
-                tagNames: [],
+                groupNames: [],
                 lastTouchAt: nil,
                 isPaused: false,
                 createdAt: Date(),
@@ -460,15 +460,15 @@ final class SettingsViewModelTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
+            cadences: [],
             groups: [],
-            tags: [],
             people: [ExportPerson(
                 id: existingId, // Same UUID
                 displayName: "Bob",
                 cadenceId: nil,
-                groupName: nil,
+                cadenceName: nil,
                 groupIds: [],
-                tagNames: [],
+                groupNames: [],
                 lastTouchAt: nil,
                 isPaused: false,
                 createdAt: Date(),
@@ -528,15 +528,15 @@ final class SettingsViewModelTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
+            cadences: [],
             groups: [],
-            tags: [],
             people: [ExportPerson(
                 id: UUID(),
                 displayName: "Alice Smith",
                 cadenceId: nil,
-                groupName: nil,
+                cadenceName: nil,
                 groupIds: [],
-                tagNames: [],
+                groupNames: [],
                 lastTouchAt: touchDate,
                 isPaused: false,
                 createdAt: Date(),
@@ -568,15 +568,15 @@ final class SettingsViewModelTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
+            cadences: [],
             groups: [],
-            tags: [],
             people: [ExportPerson(
                 id: UUID(),
                 displayName: "Eve",
                 cadenceId: nil,
-                groupName: nil,
+                cadenceName: nil,
                 groupIds: [],
-                tagNames: [],
+                groupNames: [],
                 lastTouchAt: Date(),
                 isPaused: false,
                 createdAt: Date(),

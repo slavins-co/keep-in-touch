@@ -24,17 +24,17 @@ struct DataExportService {
         let exportPeople = people.map { person in
             ExportPerson.from(
                 person,
-                groupName: cadenceNameById[person.cadenceId],
-                tagNames: person.groupIds.compactMap { groupNameById[$0] },
+                cadenceName: cadenceNameById[person.cadenceId],
+                groupNames: person.groupIds.compactMap { groupNameById[$0] },
                 touchEvents: touchEventRepository.fetchAll(for: person.id)
             )
         }
 
         let exportData = ExportData(
-            version: 2,
+            version: 3,
             exportedAt: Date(),
-            groups: cadences.map { ExportCadence.from($0) },
-            tags: groups.map { ExportGroup.from($0) },
+            cadences: cadences.map { ExportCadence.from($0) },
+            groups: groups.map { ExportGroup.from($0) },
             people: exportPeople
         )
 

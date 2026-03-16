@@ -34,9 +34,9 @@ struct ImportPreviewView: View {
             List {
                 summarySection
 
-                if !preview.newGroups.isEmpty {
-                    Section("New Frequencies (\(preview.newGroups.count))") {
-                        ForEach(preview.newGroups, id: \.id) { group in
+                if !preview.newCadences.isEmpty {
+                    Section("New Frequencies (\(preview.newCadences.count))") {
+                        ForEach(preview.newCadences, id: \.id) { group in
                             Label {
                                 HStack {
                                     Text(group.name)
@@ -52,9 +52,9 @@ struct ImportPreviewView: View {
                     }
                 }
 
-                if !preview.newTags.isEmpty {
-                    Section("New Groups (\(preview.newTags.count))") {
-                        ForEach(preview.newTags, id: \.id) { tag in
+                if !preview.newGroups.isEmpty {
+                    Section("New Groups (\(preview.newGroups.count))") {
+                        ForEach(preview.newGroups, id: \.id) { tag in
                             Label(tag.name, systemImage: "person.3")
                         }
                     }
@@ -112,12 +112,12 @@ struct ImportPreviewView: View {
                 Label("\(preview.ambiguousPeople.count) contact\(preview.ambiguousPeople.count == 1 ? "" : "s") need\(preview.ambiguousPeople.count == 1 ? "s" : "") your selection", systemImage: "questionmark.circle.fill")
                     .foregroundStyle(DS.Colors.statusDueSoon)
             }
-            if !preview.newGroups.isEmpty {
-                Label("\(preview.newGroups.count) new frequenc\(preview.newGroups.count == 1 ? "y" : "ies") will be created", systemImage: "clock.badge.checkmark.fill")
+            if !preview.newCadences.isEmpty {
+                Label("\(preview.newCadences.count) new frequenc\(preview.newCadences.count == 1 ? "y" : "ies") will be created", systemImage: "clock.badge.checkmark.fill")
                     .foregroundStyle(DS.Colors.accent)
             }
-            if !preview.newTags.isEmpty {
-                Label("\(preview.newTags.count) new group\(preview.newTags.count == 1 ? "" : "s") will be created", systemImage: "person.3.fill")
+            if !preview.newGroups.isEmpty {
+                Label("\(preview.newGroups.count) new group\(preview.newGroups.count == 1 ? "" : "s") will be created", systemImage: "person.3.fill")
                     .foregroundStyle(DS.Colors.accent)
             }
             if preview.touchEventCount > 0 {
