@@ -256,18 +256,18 @@ final class SettingsViewModel: ObservableObject {
 
     // MARK: - Data Export (delegates to DataExportService)
 
-    func exportContacts(format: ExportFormat = .json) -> URL? {
-        let url: URL?
+    func exportContacts(format: ExportFormat = .json) -> [URL] {
+        let urls: [URL]
         switch format {
         case .json:
-            url = exportService.exportJSON()
+            urls = [exportService.exportJSON()].compactMap { $0 }
         case .csv:
-            url = exportService.exportCSV()
+            urls = exportService.exportCSV()
         }
-        if url != nil {
+        if !urls.isEmpty {
             AnalyticsService.track("data.exported", parameters: ["format": format.rawValue])
         }
-        return url
+        return urls
     }
 
     // MARK: - Data Import (delegates to DataImportService)

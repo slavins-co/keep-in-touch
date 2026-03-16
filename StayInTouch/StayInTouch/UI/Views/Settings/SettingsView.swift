@@ -53,8 +53,10 @@ struct SettingsView: View {
         .tint(DS.Colors.accent)
         .navigationTitle("Settings")
         .sheet(item: $shareItem) { item in
-            ShareSheet(items: [item.url]) {
-                try? FileManager.default.removeItem(at: item.url)
+            ShareSheet(items: item.urls) {
+                for url in item.urls {
+                    try? FileManager.default.removeItem(at: url)
+                }
             }
         }
         .alert("No New Contacts", isPresented: $showNoNewContactsAlert) {
@@ -329,13 +331,15 @@ struct SettingsView: View {
             }
             .confirmationDialog("Export Format", isPresented: $showExportFormatPicker) {
                 Button("JSON (backup & re-import)") {
-                    if let url = viewModel.exportContacts(format: .json) {
-                        shareItem = ShareItem(url: url)
+                    let urls = viewModel.exportContacts(format: .json)
+                    if !urls.isEmpty {
+                        shareItem = ShareItem(urls: urls)
                     }
                 }
                 Button("CSV (spreadsheets)") {
-                    if let url = viewModel.exportContacts(format: .csv) {
-                        shareItem = ShareItem(url: url)
+                    let urls = viewModel.exportContacts(format: .csv)
+                    if !urls.isEmpty {
+                        shareItem = ShareItem(urls: urls)
                     }
                 }
             } message: {
@@ -448,7 +452,7 @@ struct SettingsView: View {
 
 private struct ShareItem: Identifiable {
     let id = UUID()
-    let url: URL
+    let urls: [URL]
 }
 
 private enum ContactImportStep: Identifiable {
