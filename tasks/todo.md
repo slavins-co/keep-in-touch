@@ -33,13 +33,13 @@
 - [ ] **#34** Swipe-to-log on home screen *(M-L — highest UX priority but gesture complexity)*
 - [x] **#230** Deduplicate breach + digest notifications for single person *(S — PR #259)*
 - [ ] **#231** Birthday push notifications with toggle and per-person settings *(M — extends #141)*
-- [ ] **#134** Add CSV export option for spreadsheet use *(S — testers may want to review data)*
+- [x] **#134** Add CSV export option for spreadsheet use *(S — PR #265)*
 - [ ] **#37** Separate overdue tiers (Recently Due vs Long Overdue) *(S-M — UX improvement)*
 - [x] **#232** Pull-to-refresh re-sync contact info from iOS Contacts *(S — PR #255)*
 
 ### Tier 4 — Deferred to v0.4+
 
-Calendar integration (#234), WhatsApp (#233), Dynamic Type (#202), architecture refactors (#203), VoiceOver picker/editor sheets (#197), full VoiceOver audit (#39), widget (#60), Siri Shortcuts (#80), iCloud sync (#79), iPad layout (#78), localization (#77), stats page (#138), tutorial (#10), UX direction (#45), design polish (#41, #42, #44).
+Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architecture refactors (#203), ~~VoiceOver picker/editor sheets (#197)~~, full VoiceOver audit (#39), widget (#60), Siri Shortcuts (#80), iCloud sync (#79), iPad layout (#78), localization (#77), stats page (#138), tutorial (#10), UX direction (#45), design polish (#41, #42, #44).
 
 > **Note:** #34, #37, #231 are CLOSED on GitHub (closed as won't implement in v0.3.x). #214, #215, #216, #168 completed in v0.3.4 work.
 
@@ -271,7 +271,7 @@ Calendar integration (#234), WhatsApp (#233), Dynamic Type (#202), architecture 
 - [x] Clean build, 278+ unit tests passing, app icon, error handling, safe migration, deleted contact handling
 
 ### Before App Store (not TestFlight blockers)
-- [ ] Full accessibility audit (VoiceOver, Dynamic Type) — #39, #197, #202
+- [ ] Full accessibility audit (VoiceOver, Dynamic Type) — #39, #197, ~~#202~~
 - [ ] **#49** Create and host privacy policy URL
 - [ ] App Store screenshots (use demo mode)
 - [ ] Edge-case testing (timezone changes, large contact lists)
