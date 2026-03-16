@@ -45,7 +45,7 @@ final class CoreDataGroupRepository: GroupRepository {
         } catch let error as RepositoryError {
             throw error
         } catch {
-            throw RepositoryError.saveFailed(entity: "Tag", underlying: error)
+            throw RepositoryError.saveFailed(entity: "Group", underlying: error)
         }
     }
 
@@ -61,7 +61,7 @@ final class CoreDataGroupRepository: GroupRepository {
         } catch let error as RepositoryError {
             throw error
         } catch {
-            throw RepositoryError.saveFailed(entity: "Tag", underlying: error)
+            throw RepositoryError.saveFailed(entity: "Group", underlying: error)
         }
     }
 
@@ -75,7 +75,7 @@ final class CoreDataGroupRepository: GroupRepository {
         } catch let error as RepositoryError {
             throw error
         } catch {
-            throw RepositoryError.deleteFailed(entity: "Tag", id: id, underlying: error)
+            throw RepositoryError.deleteFailed(entity: "Group", id: id, underlying: error)
         }
     }
 
