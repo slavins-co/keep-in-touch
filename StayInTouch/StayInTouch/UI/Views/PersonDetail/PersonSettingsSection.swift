@@ -245,6 +245,8 @@ struct PersonSettingsSection: View {
                             .foregroundStyle(DS.Colors.settingsChevron)
                     }
                 }
+                .accessibilityLabel("Manage groups")
+                .accessibilityHint("Opens group manager")
             }
         }
         .frame(minHeight: 48)
