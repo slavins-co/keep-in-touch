@@ -45,14 +45,14 @@ struct ManageCadencesView: View {
                     .padding(.vertical, DS.Spacing.xs)
                 }
                 .swipeActions(edge: .trailing) {
-                    if !group.isDefault {
-                        Button(role: .destructive) {
-                            deleteTarget = group
-                            showDeleteConfirm = true
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
+                    Button(role: .destructive) {
+                        guard !group.isDefault else { return }
+                        deleteTarget = group
+                        showDeleteConfirm = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
                     }
+                    .disabled(group.isDefault)
                 }
                 .swipeActions(edge: .trailing) {
                     Button {
@@ -107,9 +107,9 @@ struct ManageCadencesView: View {
             Button("Delete", role: .destructive) {
                 guard let target = deleteTarget else { return }
                 Haptics.medium()
-                let defaultGroup = viewModel.defaultGroup()
-                if let defaultGroup, viewModel.countsByGroup[target.id, default: 0] > 0 {
-                    viewModel.movePeople(from: target, to: defaultGroup)
+                let defaultCadence = viewModel.defaultCadence()
+                if let defaultCadence, viewModel.countsByGroup[target.id, default: 0] > 0 {
+                    viewModel.movePeople(from: target, to: defaultCadence)
                 }
                 viewModel.delete(group: target)
                 deleteTarget = nil

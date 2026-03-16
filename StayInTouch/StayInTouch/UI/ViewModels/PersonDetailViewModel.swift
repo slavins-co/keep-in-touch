@@ -10,7 +10,7 @@ import Foundation
 @MainActor
 final class PersonDetailViewModel: ObservableObject {
     @Published private(set) var person: Person
-    @Published private(set) var group: Cadence?
+    @Published private(set) var cadence: Cadence?
     @Published private(set) var cadences: [Cadence] = []
     @Published private(set) var groups: [Group] = []
     @Published private(set) var availableGroups: [Group] = []
@@ -61,7 +61,7 @@ final class PersonDetailViewModel: ObservableObject {
             person = refreshed
         }
         cadences = cadenceRepository.fetchAll()
-        group = cadenceRepository.fetch(id: person.cadenceId)
+        cadence = cadenceRepository.fetch(id: person.cadenceId)
         groups = groupRepository.fetchAll()
         availableGroups = groups.filter { !person.groupIds.contains($0.id) }
         touchEvents = fetchSortedEvents()
@@ -141,7 +141,7 @@ final class PersonDetailViewModel: ObservableObject {
     func changeCadence(to cadenceId: UUID) {
         let updated = AssignCadenceUseCase().assign(person: person, to: cadenceId)
         savePerson(updated)
-        group = cadenceRepository.fetch(id: cadenceId)
+        cadence = cadenceRepository.fetch(id: cadenceId)
     }
 
     func togglePause() {

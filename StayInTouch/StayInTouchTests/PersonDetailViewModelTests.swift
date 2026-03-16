@@ -198,7 +198,7 @@ final class PersonDetailViewModelTests: XCTestCase {
         sut.changeCadence(to: newGroup.id)
 
         XCTAssertEqual(sut.person.cadenceId, newGroup.id)
-        XCTAssertEqual(sut.group?.id, newGroup.id)
+        XCTAssertEqual(sut.cadence?.id, newGroup.id)
     }
 
     func testChangeGroupSetsGroupAddedAt() {

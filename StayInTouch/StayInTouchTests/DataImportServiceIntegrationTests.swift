@@ -361,7 +361,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
     // MARK: - Test 8: Cadence Merging
 
     func testGroupMerging_deduplicatesByName() async throws {
-        let defaultGroup = try seedDefaultGroup(name: "Weekly")
+        let defaultCadence = try seedDefaultGroup(name: "Weekly")
 
         let exportGroupId = UUID()
         let exportData = ExportData(
@@ -381,14 +381,14 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let preview = try XCTUnwrap(previewOpt)
 
         XCTAssertTrue(preview.newCadences.isEmpty, "Cadence should merge by name (case-insensitive)")
-        XCTAssertEqual(preview.cadenceIdMap[exportGroupId], defaultGroup.id, "Should map to existing cadence")
+        XCTAssertEqual(preview.cadenceIdMap[exportGroupId], defaultCadence.id, "Should map to existing cadence")
 
         _ = await sut.executeImport(preview)
 
         XCTAssertEqual(cadenceRepo.fetchAll().count, 1, "No duplicate group")
 
         let importedPerson = personRepo.fetchAll().first
-        XCTAssertEqual(importedPerson?.cadenceId, defaultGroup.id, "Person should be assigned to existing group")
+        XCTAssertEqual(importedPerson?.cadenceId, defaultCadence.id, "Person should be assigned to existing group")
     }
 
     // MARK: - Test 9: Denormalized Fields

@@ -35,7 +35,7 @@ final class CoreDataCadenceRepository: CadenceRepository {
         return results
     }
 
-    func fetchDefaultGroups() -> [Cadence] {
+    func fetchDefaultCadences() -> [Cadence] {
         var results: [Cadence] = []
         context.performAndWait {
             let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
@@ -46,11 +46,11 @@ final class CoreDataCadenceRepository: CadenceRepository {
         return results
     }
 
-    func save(_ group: Cadence) throws {
+    func save(_ cadence: Cadence) throws {
         do {
             try context.performAndWait {
-                let entity = fetchEntity(id: group.id) ?? GroupEntity(context: context)
-                entity.apply(group)
+                let entity = fetchEntity(id: cadence.id) ?? GroupEntity(context: context)
+                entity.apply(cadence)
                 try context.save()
             }
         } catch let error as RepositoryError {
@@ -60,12 +60,12 @@ final class CoreDataCadenceRepository: CadenceRepository {
         }
     }
 
-    func batchSave(_ groups: [Cadence]) throws {
+    func batchSave(_ cadences: [Cadence]) throws {
         do {
             try context.performAndWait {
-                for group in groups {
-                    let entity = fetchEntity(id: group.id) ?? GroupEntity(context: context)
-                    entity.apply(group)
+                for cadence in cadences {
+                    let entity = fetchEntity(id: cadence.id) ?? GroupEntity(context: context)
+                    entity.apply(cadence)
                 }
                 try context.save()
             }

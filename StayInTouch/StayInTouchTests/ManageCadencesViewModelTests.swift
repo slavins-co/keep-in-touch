@@ -14,7 +14,7 @@ final class ManageCadencesViewModelTests: XCTestCase {
     private var personRepo: MockPersonRepository!
     private var sut: ManageCadencesViewModel!
 
-    private var defaultGroup: Cadence!
+    private var defaultCadence: Cadence!
     private var customGroup: Cadence!
 
     override func setUp() {
@@ -22,10 +22,10 @@ final class ManageCadencesViewModelTests: XCTestCase {
         cadenceRepo = MockCadenceRepository()
         personRepo = MockPersonRepository()
 
-        defaultGroup = TestFactory.makeCadence(id: UUID(), name: "Weekly", isDefault: true)
+        defaultCadence = TestFactory.makeCadence(id: UUID(), name: "Weekly", isDefault: true)
         customGroup = TestFactory.makeCadence(id: UUID(), name: "Monthly", frequencyDays: 30, isDefault: false)
 
-        cadenceRepo.groups = [defaultGroup, customGroup]
+        cadenceRepo.groups = [defaultCadence, customGroup]
 
         sut = ManageCadencesViewModel(
             cadenceRepository: cadenceRepo,
@@ -43,7 +43,7 @@ final class ManageCadencesViewModelTests: XCTestCase {
         sut.delete(group: customGroup)
 
         let savedPeople = personRepo.savedPersons
-        let reassigned = savedPeople.filter { $0.cadenceId == defaultGroup.id }
+        let reassigned = savedPeople.filter { $0.cadenceId == defaultCadence.id }
         XCTAssertEqual(reassigned.count, 2, "Both people should be reassigned to the default group")
     }
 
@@ -63,7 +63,7 @@ final class ManageCadencesViewModelTests: XCTestCase {
 
         XCTAssertEqual(personRepo.batchSaveCallCount, 1,
                        "Should use single batchSave instead of individual saves")
-        let reassigned = personRepo.savedPersons.filter { $0.cadenceId == defaultGroup.id }
+        let reassigned = personRepo.savedPersons.filter { $0.cadenceId == defaultCadence.id }
         XCTAssertEqual(reassigned.count, 2,
                        "Both people should be reassigned via batch save")
     }

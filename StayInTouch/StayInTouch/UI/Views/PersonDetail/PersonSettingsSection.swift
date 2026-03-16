@@ -64,7 +64,7 @@ struct PersonSettingsSection: View {
                     settingsRowBirthdayNotifications
                 }
                 settingsDivider
-                settingsRowGroupsTags
+                settingsRowCadencesGroups
             }
 
             settingsSectionHeader("TRACKING & NOTIFICATIONS")
@@ -91,7 +91,7 @@ struct PersonSettingsSection: View {
                     .font(DS.Typography.settingsRowLabel)
                     .foregroundStyle(DS.Colors.settingsItemLabel)
                 Spacer()
-                Text(viewModel.group?.name ?? "Not set")
+                Text(viewModel.cadence?.name ?? "Not set")
                     .font(DS.Typography.settingsRowLabel)
                     .foregroundStyle(DS.Colors.settingsItemValue)
                 Image(systemName: "chevron.right")
@@ -214,7 +214,7 @@ struct PersonSettingsSection: View {
         .frame(minHeight: 48)
     }
 
-    private var settingsRowGroupsTags: some View {
+    private var settingsRowCadencesGroups: some View {
         HStack(spacing: DS.Spacing.md) {
             settingsIcon("person.2")
             Text("Groups")

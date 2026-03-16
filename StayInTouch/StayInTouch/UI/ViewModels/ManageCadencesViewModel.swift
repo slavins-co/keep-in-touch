@@ -64,7 +64,7 @@ final class ManageCadencesViewModel: ObservableObject {
                     ErrorToastManager.shared.show(AppError(message: error.userMessage))
                 } catch {
                     AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.save.clearDefault (unexpected)")
-                    ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
+                    ErrorToastManager.shared.show(.saveFailed("ManageCadences"))
                 }
             }
             updated.isDefault = true
@@ -77,7 +77,7 @@ final class ManageCadencesViewModel: ObservableObject {
             ErrorToastManager.shared.show(AppError(message: error.userMessage))
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.save (unexpected)")
-            ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
+            ErrorToastManager.shared.show(.saveFailed("ManageCadences"))
         }
         load()
     }
@@ -95,18 +95,18 @@ final class ManageCadencesViewModel: ObservableObject {
             ErrorToastManager.shared.show(AppError(message: error.userMessage))
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.delete (unexpected)")
-            ErrorToastManager.shared.show(.deleteFailed("ManageGroups"))
+            ErrorToastManager.shared.show(.deleteFailed("ManageCadences"))
         }
         load()
     }
 
-    func movePeople(from group: Cadence, to defaultGroup: Cadence) {
+    func movePeople(from group: Cadence, to defaultCadence: Cadence) {
         let people = personRepository.fetchByCadence(id: group.id, includePaused: true)
         guard !people.isEmpty else { return }
         let now = Date()
         let updatedPeople = people.map { person -> Person in
             var updated = person
-            updated.cadenceId = defaultGroup.id
+            updated.cadenceId = defaultCadence.id
             updated.cadenceAddedAt = now
             updated.modifiedAt = now
             return updated
@@ -118,11 +118,11 @@ final class ManageCadencesViewModel: ObservableObject {
             ErrorToastManager.shared.show(AppError(message: error.userMessage))
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.movePeople (unexpected)")
-            ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
+            ErrorToastManager.shared.show(.saveFailed("ManageCadences"))
         }
     }
 
-    func defaultGroup() -> Cadence? {
+    func defaultCadence() -> Cadence? {
         groups.first(where: { $0.isDefault })
     }
 }

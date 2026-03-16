@@ -159,50 +159,50 @@ struct PersonHeroSection: View {
     }
 
     private var currentStatus: ContactStatus {
-        guard let group = viewModel.group else { return .onTrack }
-        return FrequencyCalculator().status(for: viewModel.person, in: [group])
+        guard let cadence = viewModel.cadence else { return .onTrack }
+        return FrequencyCalculator().status(for: viewModel.person, in: [cadence])
     }
 
     private var daysOverdue: Int {
-        guard let group = viewModel.group else { return 0 }
-        return FrequencyCalculator().daysOverdue(for: viewModel.person, in: [group])
+        guard let cadence = viewModel.cadence else { return 0 }
+        return FrequencyCalculator().daysOverdue(for: viewModel.person, in: [cadence])
     }
 
     private var daysUntilDue: Int {
-        guard let group = viewModel.group else { return 0 }
+        guard let cadence = viewModel.cadence else { return 0 }
         let calculator = FrequencyCalculator()
-        guard let dueDate = calculator.effectiveDueDate(for: viewModel.person, in: [group]) else { return 0 }
+        guard let dueDate = calculator.effectiveDueDate(for: viewModel.person, in: [cadence]) else { return 0 }
         let cal = Calendar.current
         return max(0, cal.dateComponents([.day], from: cal.startOfDay(for: Date()), to: cal.startOfDay(for: dueDate)).day ?? 0)
     }
 
     private func statusLabel() -> String {
-        let groupName = viewModel.group?.name ?? "Frequency"
+        let cadenceName = viewModel.cadence?.name ?? "Frequency"
 
         if viewModel.person.isPaused {
-            return "\(groupName) \u{00B7} Paused"
+            return "\(cadenceName) \u{00B7} Paused"
         }
 
         if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
             let formatted = Self.dueDateFormatter.string(from: snoozedUntil)
-            return "\(groupName) \u{00B7} Snoozed until \(formatted)"
+            return "\(cadenceName) \u{00B7} Snoozed until \(formatted)"
         }
 
         switch currentStatus {
         case .onTrack:
-            return "\(groupName) \u{00B7} All good"
+            return "\(cadenceName) \u{00B7} All good"
         case .dueSoon:
             let days = daysUntilDue
-            return days > 0 ? "\(groupName) \u{00B7} Due in \(days)d" : "\(groupName) \u{00B7} Check in soon"
+            return days > 0 ? "\(cadenceName) \u{00B7} Due in \(days)d" : "\(cadenceName) \u{00B7} Check in soon"
         case .overdue:
             let days = daysOverdue
             if days >= 14 {
                 let weeks = days / 7
-                return "\(groupName) \u{00B7} Overdue by \(weeks) week\(weeks == 1 ? "" : "s")"
+                return "\(cadenceName) \u{00B7} Overdue by \(weeks) week\(weeks == 1 ? "" : "s")"
             }
-            return "\(groupName) \u{00B7} Overdue by \(days) day\(days == 1 ? "" : "s")"
+            return "\(cadenceName) \u{00B7} Overdue by \(days) day\(days == 1 ? "" : "s")"
         case .unknown:
-            return "\(groupName) \u{00B7} No connections yet"
+            return "\(cadenceName) \u{00B7} No connections yet"
         }
     }
 

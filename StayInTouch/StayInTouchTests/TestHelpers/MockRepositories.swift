@@ -61,16 +61,16 @@ final class MockCadenceRepository: CadenceRepository {
 
     func fetch(id: UUID) -> Cadence? { groups.first { $0.id == id } }
     func fetchAll() -> [Cadence] { groups }
-    func fetchDefaultGroups() -> [Cadence] { groups.filter { $0.isDefault } }
-    func save(_ group: Cadence) throws {
-        if let idx = groups.firstIndex(where: { $0.id == group.id }) {
-            groups[idx] = group
+    func fetchDefaultCadences() -> [Cadence] { groups.filter { $0.isDefault } }
+    func save(_ cadence: Cadence) throws {
+        if let idx = groups.firstIndex(where: { $0.id == cadence.id }) {
+            groups[idx] = cadence
         } else {
-            groups.append(group)
+            groups.append(cadence)
         }
     }
-    func batchSave(_ groups: [Cadence]) throws {
-        for group in groups { try save(group) }
+    func batchSave(_ cadences: [Cadence]) throws {
+        for cadence in cadences { try save(cadence) }
     }
     func delete(id: UUID) throws {
         groups.removeAll { $0.id == id }

@@ -75,8 +75,8 @@ struct ContactImportService {
             let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
 
             let groups = groupRepo.fetchAll()
-            let defaultGroupId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id
-            guard let defaultGroupId else { return }
+            let defaultCadenceId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id
+            guard let defaultCadenceId else { return }
 
             let existing = peopleRepo.fetchTracked(includePaused: true)
             var sortOrder = existing.count
@@ -86,7 +86,7 @@ struct ContactImportService {
             var touchEventsToSave: [TouchEvent] = []
 
             for summary in summaries {
-                let cadenceId = groupAssignments[summary.identifier] ?? defaultGroupId
+                let cadenceId = groupAssignments[summary.identifier] ?? defaultCadenceId
                 let lastTouchOption = lastTouchSelections[summary.identifier] ?? .cantRemember
                 let seedDate = lastTouchOption.approximateDate(from: now)
 

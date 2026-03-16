@@ -53,13 +53,13 @@ final class CoreDataCadenceRepositoryTests: XCTestCase {
     }
 
     func testFetchDefaultGroupsFiltersCorrectly() throws {
-        let defaultGroup = TestFactory.makeCadence(name: "Weekly", isDefault: true)
+        let defaultCadence = TestFactory.makeCadence(name: "Weekly", isDefault: true)
         let customGroup = TestFactory.makeCadence(name: "Custom", isDefault: false)
 
-        try repo.save(defaultGroup)
+        try repo.save(defaultCadence)
         try repo.save(customGroup)
 
-        let defaults = repo.fetchDefaultGroups()
+        let defaults = repo.fetchDefaultCadences()
         XCTAssertEqual(defaults.count, 1)
         XCTAssertEqual(defaults.first?.name, "Weekly")
     }

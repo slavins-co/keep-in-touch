@@ -316,9 +316,9 @@ private struct StubCadenceRepository: CadenceRepository {
     let groups: [Cadence]
     func fetch(id: UUID) -> Cadence? { groups.first { $0.id == id } }
     func fetchAll() -> [Cadence] { groups }
-    func fetchDefaultGroups() -> [Cadence] { groups.filter { $0.isDefault } }
-    func save(_ group: Cadence) throws {}
-    func batchSave(_ groups: [Cadence]) throws {}
+    func fetchDefaultCadences() -> [Cadence] { groups.filter { $0.isDefault } }
+    func save(_ cadence: Cadence) throws {}
+    func batchSave(_ cadences: [Cadence]) throws {}
     func delete(id: UUID) throws {}
 }
 

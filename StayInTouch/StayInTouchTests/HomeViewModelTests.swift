@@ -150,9 +150,9 @@ final class HomeViewModelTests: XCTestCase {
         let cadences: [Cadence]
         func fetch(id: UUID) -> Cadence? { cadences.first { $0.id == id } }
         func fetchAll() -> [Cadence] { cadences }
-        func fetchDefaultGroups() -> [Cadence] { cadences.filter { $0.isDefault } }
-        func save(_ group: Cadence) throws {}
-        func batchSave(_ groups: [Cadence]) throws {}
+        func fetchDefaultCadences() -> [Cadence] { cadences.filter { $0.isDefault } }
+        func save(_ cadence: Cadence) throws {}
+        func batchSave(_ cadences: [Cadence]) throws {}
         func delete(id: UUID) throws {}
     }
 

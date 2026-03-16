@@ -46,9 +46,9 @@ struct ContactCard: View {
             Spacer(minLength: DS.Spacing.xs)
 
             HStack(spacing: DS.Spacing.sm) {
-                if let firstTag = groups.first {
+                if let firstGroup = groups.first {
                     HStack(spacing: DS.Spacing.xs) {
-                        Text(firstTag.name.uppercased())
+                        Text(firstGroup.name.uppercased())
                             .font(DS.Typography.groupBadgeLabel)
                             .foregroundStyle(DS.Colors.groupBadgeText)
                             .padding(.horizontal, 6)

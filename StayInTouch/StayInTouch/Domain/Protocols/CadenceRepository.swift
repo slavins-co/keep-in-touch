@@ -10,8 +10,8 @@ import Foundation
 protocol CadenceRepository {
     func fetch(id: UUID) -> Cadence?
     func fetchAll() -> [Cadence]
-    func fetchDefaultGroups() -> [Cadence]
-    func save(_ group: Cadence) throws
-    func batchSave(_ groups: [Cadence]) throws
+    func fetchDefaultCadences() -> [Cadence]
+    func save(_ cadence: Cadence) throws
+    func batchSave(_ cadences: [Cadence]) throws
     func delete(id: UUID) throws
 }

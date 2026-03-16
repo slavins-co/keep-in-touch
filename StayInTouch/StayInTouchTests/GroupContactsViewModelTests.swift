@@ -32,17 +32,17 @@ final class GroupContactsViewModelTests: XCTestCase {
 
     // MARK: - Load
 
-    func testLoadSplitsPeopleByTag() {
-        let tagged = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
-        let untagged = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, groupIds: [])
-        personRepo.people = [tagged, untagged]
+    func testLoadSplitsPeopleByGroup() {
+        let grouped = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
+        let ungrouped = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, groupIds: [])
+        personRepo.people = [grouped, ungrouped]
 
         makeSUT()
 
         XCTAssertEqual(sut.people.count, 1)
-        XCTAssertEqual(sut.people.first?.id, tagged.id)
+        XCTAssertEqual(sut.people.first?.id, grouped.id)
         XCTAssertEqual(sut.available.count, 1)
-        XCTAssertEqual(sut.available.first?.id, untagged.id)
+        XCTAssertEqual(sut.available.first?.id, ungrouped.id)
     }
 
     func testLoadSortsByName() {
@@ -57,49 +57,49 @@ final class GroupContactsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.available.map(\.displayName), ["Bob"])
     }
 
-    // MARK: - Remove Tag
+    // MARK: - Remove Group
 
-    func testRemoveTagRemovesTagIdFromPerson() throws {
+    func testRemoveGroupRemovesGroupIdFromPerson() throws {
         let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id, otherGroupId])
         personRepo.people = [person]
 
         makeSUT()
 
-        let taggedPerson = try XCTUnwrap(sut.people.first)
-        sut.removeGroup(from: taggedPerson)
+        let groupedPerson = try XCTUnwrap(sut.people.first)
+        sut.removeGroup(from: groupedPerson)
 
         let saved = try XCTUnwrap(personRepo.savedPersons.last)
         XCTAssertEqual(saved.groupIds, [otherGroupId])
     }
 
-    func testRemoveTagSavesToRepo() throws {
+    func testRemoveGroupSavesToRepo() throws {
         let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
         personRepo.people = [person]
 
         makeSUT()
 
-        let taggedPerson = try XCTUnwrap(sut.people.first)
-        sut.removeGroup(from: taggedPerson)
+        let groupedPerson = try XCTUnwrap(sut.people.first)
+        sut.removeGroup(from: groupedPerson)
 
         XCTAssertFalse(personRepo.savedPersons.isEmpty, "removeGroup should save the updated person to the repository")
     }
 
-    func testRemoveTagPostsNotification() throws {
+    func testRemoveGroupPostsNotification() throws {
         let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
         personRepo.people = [person]
 
         makeSUT()
 
-        let taggedPerson = try XCTUnwrap(sut.people.first)
+        let groupedPerson = try XCTUnwrap(sut.people.first)
 
         let expectation = expectation(forNotification: .personDidChange, object: nil)
 
-        sut.removeGroup(from: taggedPerson)
+        sut.removeGroup(from: groupedPerson)
 
         wait(for: [expectation], timeout: 1.0)
     }
 
-    func testRemoveTagReloadsLists() throws {
+    func testRemoveGroupReloadsLists() throws {
         let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
         personRepo.people = [person]
 
@@ -108,17 +108,17 @@ final class GroupContactsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.people.count, 1, "Person should start in the people list")
         XCTAssertEqual(sut.available.count, 0)
 
-        let taggedPerson = try XCTUnwrap(sut.people.first)
-        sut.removeGroup(from: taggedPerson)
+        let groupedPerson = try XCTUnwrap(sut.people.first)
+        sut.removeGroup(from: groupedPerson)
 
-        XCTAssertEqual(sut.people.count, 0, "Person should no longer be in the people list after tag removal")
-        XCTAssertEqual(sut.available.count, 1, "Person should move to the available list after tag removal")
+        XCTAssertEqual(sut.people.count, 0, "Person should no longer be in the people list after group removal")
+        XCTAssertEqual(sut.available.count, 1, "Person should move to the available list after group removal")
         XCTAssertEqual(sut.available.first?.id, person.id)
     }
 
-    // MARK: - Add Tag
+    // MARK: - Add Group
 
-    func testAddTagAppendsTagId() throws {
+    func testAddGroupAppendsGroupId() throws {
         let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [])
         personRepo.people = [person]
 
@@ -127,10 +127,10 @@ final class GroupContactsViewModelTests: XCTestCase {
         sut.addGroup(to: [person.id])
 
         let saved = try XCTUnwrap(personRepo.savedPersons.last)
-        XCTAssertTrue(saved.groupIds.contains(group.id), "addGroup should append the tag ID to the person's tagIds")
+        XCTAssertTrue(saved.groupIds.contains(group.id), "addGroup should append the group ID to the person's groupIds")
     }
 
-    func testAddTagSkipsDuplicate() throws {
+    func testAddGroupSkipsDuplicate() throws {
         let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
         personRepo.people = [person]
 
@@ -143,7 +143,7 @@ final class GroupContactsViewModelTests: XCTestCase {
         XCTAssertEqual(matchCount, 1, "Group ID should appear exactly once even when addGroup is called on a person who already has it")
     }
 
-    func testAddTagSavesEachPerson() {
+    func testAddGroupSavesEachPerson() {
         let alice = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [])
         let bob = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, groupIds: [])
         personRepo.people = [alice, bob]
@@ -158,7 +158,7 @@ final class GroupContactsViewModelTests: XCTestCase {
         XCTAssertEqual(personRepo.savedPersons.count, 2, "addGroup should save each person individually")
     }
 
-    func testAddTagIgnoresUnknownIds() {
+    func testAddGroupIgnoresUnknownIds() {
         let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [])
         personRepo.people = [person]
 

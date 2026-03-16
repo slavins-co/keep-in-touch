@@ -30,9 +30,9 @@ final class ManageGroupsViewModelTests: XCTestCase {
         )
     }
 
-    // MARK: - Cascade Delete: Group → People Tag Removal
+    // MARK: - Cascade Delete: Group → People Group Removal
 
-    func testDeleteTagRemovesTagIdFromAllPeople() {
+    func testDeleteGroupRemovesGroupIdFromAllPeople() {
         let cadenceId = UUID()
         let person1 = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
         let person2 = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, groupIds: [group.id, UUID()])
@@ -40,23 +40,23 @@ final class ManageGroupsViewModelTests: XCTestCase {
 
         sut.delete(group: group)
 
-        // Both people should have been saved with the tag removed
+        // Both people should have been saved with the group removed
         let savedPeople = personRepo.savedPersons
         XCTAssertEqual(savedPeople.count, 2, "Both people should be updated")
         for person in savedPeople {
             XCTAssertFalse(person.groupIds.contains(group.id),
-                           "\(person.displayName) should no longer have the deleted tag")
+                           "\(person.displayName) should no longer have the deleted group")
         }
     }
 
-    func testDeleteTagCallsRepositoryDelete() {
+    func testDeleteGroupCallsRepositoryDelete() {
         sut.delete(group: group)
 
         XCTAssertFalse(groupRepo.groups.contains(where: { $0.id == group.id }),
                        "Group should be removed from repository")
     }
 
-    func testDeleteTagUsesBatchSave() {
+    func testDeleteGroupUsesBatchSave() {
         let cadenceId = UUID()
         let person1 = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [group.id])
         let person2 = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, groupIds: [group.id])
@@ -70,17 +70,17 @@ final class ManageGroupsViewModelTests: XCTestCase {
                        "Both people should still be updated")
     }
 
-    func testDeleteTagRemovesFromPeopleBeforeDeleting() {
+    func testDeleteGroupRemovesFromPeopleBeforeDeleting() {
         // Verify order: removeGroupFromPeople runs before groupRepository.delete
-        // After delete, tag should be gone AND people should be cleaned
+        // After delete, group should be gone AND people should be cleaned
         let person = TestFactory.makePerson(name: "Alice", cadenceId: UUID(), groupIds: [group.id])
         personRepo.people = [person]
 
         sut.delete(group: group)
 
-        // Tag removed from repo
+        // Group removed from repo
         XCTAssertFalse(groupRepo.groups.contains(where: { $0.id == group.id }))
-        // Person's tagIds cleaned
+        // Person's groupIds cleaned
         let updatedPerson = personRepo.people.first { $0.id == person.id }
         XCTAssertNotNil(updatedPerson)
         XCTAssertFalse(updatedPerson!.groupIds.contains(group.id),

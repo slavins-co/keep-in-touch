@@ -250,13 +250,13 @@ struct DataImportService {
         await backgroundContext.perform {
             let peopleRepo = CoreDataPersonRepository(context: backgroundContext)
             let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
-            let groupRepo = CoreDataCadenceRepository(context: backgroundContext)
-            let tagRepo = CoreDataGroupRepository(context: backgroundContext)
+            let cadenceRepo = CoreDataCadenceRepository(context: backgroundContext)
+            let groupRepo = CoreDataGroupRepository(context: backgroundContext)
 
             let now = Date()
 
             // 1. Create new cadences from import (batch save)
-            let existingCadenceCount = groupRepo.fetchAll().count
+            let existingCadenceCount = cadenceRepo.fetchAll().count
             var cadencesToSave: [Cadence] = []
             for (index, exportCadence) in preview.newCadences.enumerated() {
                 guard let newId = preview.cadenceIdMap[exportCadence.id] else { continue }
@@ -274,14 +274,14 @@ struct DataImportService {
             }
             if !cadencesToSave.isEmpty {
                 do {
-                    try groupRepo.batchSave(cadencesToSave)
+                    try cadenceRepo.batchSave(cadencesToSave)
                 } catch {
                     AppLogger.logError(error, category: AppLogger.viewModel, context: "DataImportService.executeImport.cadences")
                 }
             }
 
             // 2. Create new groups from import (batch save)
-            let existingGroupCount = tagRepo.fetchAll().count
+            let existingGroupCount = groupRepo.fetchAll().count
             var groupsToSave: [Group] = []
             for (index, exportGroup) in preview.newGroups.enumerated() {
                 guard let newId = preview.groupIdMap[exportGroup.id] else { continue }
@@ -296,14 +296,14 @@ struct DataImportService {
             }
             if !groupsToSave.isEmpty {
                 do {
-                    try tagRepo.batchSave(groupsToSave)
+                    try groupRepo.batchSave(groupsToSave)
                 } catch {
                     AppLogger.logError(error, category: AppLogger.viewModel, context: "DataImportService.executeImport.groups")
                 }
             }
 
             // 3. Refresh valid cadence/group IDs after creation
-            let allCadences = groupRepo.fetchAll()
+            let allCadences = cadenceRepo.fetchAll()
             let defaultCadenceId = allCadences.first(where: { $0.isDefault })?.id ?? allCadences.first?.id ?? UUID()
             let validCadenceIds = Set(allCadences.map { $0.id })
 

@@ -35,7 +35,7 @@ struct HomeView: View {
         }
         .onChange(of: viewModel.selectedCadenceId) { _, newValue in
             if newValue != nil {
-                AnalyticsService.track("filter.applied", parameters: ["type": "group"])
+                AnalyticsService.track("filter.applied", parameters: ["type": "cadence"])
             }
             withAnimation(.easeInOut(duration: 0.25)) {
                 viewModel.applyFilters()

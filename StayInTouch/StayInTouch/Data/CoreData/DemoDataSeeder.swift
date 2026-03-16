@@ -24,7 +24,7 @@ final class DemoDataSeeder {
             }
 
             let groups = CoreDataCadenceRepository(context: context).fetchAll()
-            guard let defaultGroupId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id else { return }
+            guard let defaultCadenceId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id else { return }
             let allGroups = CoreDataGroupRepository(context: context).fetchAll()
 
             let names = DemoDataSeeder.demoNames
@@ -32,7 +32,7 @@ final class DemoDataSeeder {
             var sortOrder = existing.count
 
             for (index, name) in names.enumerated() {
-                let cadenceId = groups.indices.contains(index % max(1, groups.count)) ? groups[index % groups.count].id : defaultGroupId
+                let cadenceId = groups.indices.contains(index % max(1, groups.count)) ? groups[index % groups.count].id : defaultCadenceId
                 var groupIds: [UUID] = []
                 if let group = allGroups.randomElement() {
                     groupIds.append(group.id)

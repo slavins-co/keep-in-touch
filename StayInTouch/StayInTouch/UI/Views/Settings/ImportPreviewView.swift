@@ -54,8 +54,8 @@ struct ImportPreviewView: View {
 
                 if !preview.newGroups.isEmpty {
                     Section("New Groups (\(preview.newGroups.count))") {
-                        ForEach(preview.newGroups, id: \.id) { tag in
-                            Label(tag.name, systemImage: "person.3")
+                        ForEach(preview.newGroups, id: \.id) { group in
+                            Label(group.name, systemImage: "person.3")
                         }
                     }
                 }

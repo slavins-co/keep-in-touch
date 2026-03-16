@@ -250,10 +250,10 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     private func seedGroupSelectionsIfNeeded() {
-        guard let defaultGroupId = selectedCadenceId else { return }
+        guard let defaultCadenceId = selectedCadenceId else { return }
         for contactId in selectedContactIds {
             if contactGroupSelections[contactId] == nil {
-                contactGroupSelections[contactId] = defaultGroupId
+                contactGroupSelections[contactId] = defaultCadenceId
             }
         }
     }
