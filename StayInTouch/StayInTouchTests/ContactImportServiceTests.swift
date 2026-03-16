@@ -10,23 +10,23 @@ final class ContactImportServiceTests: XCTestCase {
 
     private var stack: CoreDataStack!
     private var personRepo: CoreDataPersonRepository!
-    private var groupRepo: CoreDataGroupRepository!
+    private var groupRepo: CoreDataCadenceRepository!
     private var touchRepo: CoreDataTouchEventRepository!
     private var sut: ContactImportService!
-    private var groupId: UUID!
+    private var cadenceId: UUID!
 
     override func setUp() {
         super.setUp()
         stack = CoreDataStack.make(inMemory: true, shouldSeedDefaults: false)
         let context = stack.viewContext
         personRepo = CoreDataPersonRepository(context: context)
-        groupRepo = CoreDataGroupRepository(context: context)
+        groupRepo = CoreDataCadenceRepository(context: context)
         touchRepo = CoreDataTouchEventRepository(context: context)
 
         // Seed a default group so importSelectedContacts can find one
-        groupId = UUID()
-        let group = Group(
-            id: groupId,
+        cadenceId = UUID()
+        let group = Cadence(
+            id: cadenceId,
             name: "Monthly",
             frequencyDays: 30,
             warningDays: 7,
@@ -69,7 +69,7 @@ final class ContactImportServiceTests: XCTestCase {
 
     func testImportSelectedContacts_assignsGroupFromGroupAssignments() async {
         let altGroupId = UUID()
-        let altGroup = Group(
+        let altGroup = Cadence(
             id: altGroupId,
             name: "Weekly",
             frequencyDays: 7,
@@ -87,7 +87,7 @@ final class ContactImportServiceTests: XCTestCase {
         await sut.importSelectedContacts([summary], groupAssignments: ["bob-456": altGroupId])
 
         let person = personRepo.fetchAll().first
-        XCTAssertEqual(person?.groupId, altGroupId, "Should use the provided group assignment, not the default")
+        XCTAssertEqual(person?.cadenceId, altGroupId, "Should use the provided group assignment, not the default")
     }
 
     func testImportSelectedContacts_seedsTouchEventWhenLastTouchProvided() async {

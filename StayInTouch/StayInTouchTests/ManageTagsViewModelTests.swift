@@ -33,9 +33,9 @@ final class ManageTagsViewModelTests: XCTestCase {
     // MARK: - Cascade Delete: Tag → People Tag Removal
 
     func testDeleteTagRemovesTagIdFromAllPeople() {
-        let groupId = UUID()
-        let person1 = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tag.id])
-        let person2 = TestFactory.makePerson(name: "Bob", groupId: groupId, tagIds: [tag.id, UUID()])
+        let cadenceId = UUID()
+        let person1 = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
+        let person2 = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, tagIds: [tag.id, UUID()])
         personRepo.people = [person1, person2]
 
         sut.delete(tag: tag)
@@ -57,9 +57,9 @@ final class ManageTagsViewModelTests: XCTestCase {
     }
 
     func testDeleteTagUsesBatchSave() {
-        let groupId = UUID()
-        let person1 = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tag.id])
-        let person2 = TestFactory.makePerson(name: "Bob", groupId: groupId, tagIds: [tag.id])
+        let cadenceId = UUID()
+        let person1 = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
+        let person2 = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, tagIds: [tag.id])
         personRepo.people = [person1, person2]
 
         sut.delete(tag: tag)
@@ -73,7 +73,7 @@ final class ManageTagsViewModelTests: XCTestCase {
     func testDeleteTagRemovesFromPeopleBeforeDeleting() {
         // Verify order: removeTagFromPeople runs before tagRepository.delete
         // After delete, tag should be gone AND people should be cleaned
-        let person = TestFactory.makePerson(name: "Alice", groupId: UUID(), tagIds: [tag.id])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: UUID(), tagIds: [tag.id])
         personRepo.people = [person]
 
         sut.delete(tag: tag)

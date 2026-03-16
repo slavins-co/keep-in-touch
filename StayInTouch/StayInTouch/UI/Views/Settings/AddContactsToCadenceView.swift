@@ -1,5 +1,5 @@
 //
-//  AddContactsToGroupView.swift
+//  AddContactsToCadenceView.swift
 //  KeepInTouch
 //
 //  Created by Codex on 3/3/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AddContactsToGroupView: View {
+struct AddContactsToCadenceView: View {
     @Environment(\.dismiss) private var dismiss
 
     let available: [Person]

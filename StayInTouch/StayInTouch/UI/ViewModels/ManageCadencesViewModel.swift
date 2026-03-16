@@ -1,5 +1,5 @@
 //
-//  ManageGroupsViewModel.swift
+//  ManageCadencesViewModel.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/3/26.
@@ -8,31 +8,31 @@
 import Foundation
 
 @MainActor
-final class ManageGroupsViewModel: ObservableObject {
-    @Published private(set) var groups: [Group] = []
+final class ManageCadencesViewModel: ObservableObject {
+    @Published private(set) var groups: [Cadence] = []
     @Published private(set) var countsByGroup: [UUID: Int] = [:]
 
-    private let groupRepository: GroupRepository
+    private let cadenceRepository: CadenceRepository
     private let personRepository: PersonRepository
 
     init(
-        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
+        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext)
     ) {
-        self.groupRepository = groupRepository
+        self.cadenceRepository = cadenceRepository
         self.personRepository = personRepository
         load()
     }
 
     convenience init(dependencies: AppDependencies) {
         self.init(
-            groupRepository: dependencies.groupRepository,
+            cadenceRepository: dependencies.cadenceRepository,
             personRepository: dependencies.personRepository
         )
     }
 
     func load() {
-        groups = groupRepository.fetchAll().sorted { lhs, rhs in
+        groups = cadenceRepository.fetchAll().sorted { lhs, rhs in
             if lhs.isDefault != rhs.isDefault { return lhs.isDefault }
             if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
             return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
@@ -41,29 +41,29 @@ final class ManageGroupsViewModel: ObservableObject {
         let people = personRepository.fetchTracked(includePaused: true)
         var counts: [UUID: Int] = [:]
         for person in people {
-            let groupId = person.groupId
-            counts[groupId, default: 0] += 1
+            let cadenceId = person.cadenceId
+            counts[cadenceId, default: 0] += 1
         }
         countsByGroup = counts
     }
 
-    func save(_ group: Group, makeDefault: Bool) {
+    func save(_ group: Cadence, makeDefault: Bool) {
         var updated = group
         updated.modifiedAt = Date()
 
         if makeDefault {
-            let all = groupRepository.fetchAll()
+            let all = cadenceRepository.fetchAll()
             for existing in all where existing.id != updated.id && existing.isDefault {
                 var cleared = existing
                 cleared.isDefault = false
                 cleared.modifiedAt = Date()
                 do {
-                    try groupRepository.save(cleared)
+                    try cadenceRepository.save(cleared)
                 } catch let error as RepositoryError {
-                    AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save.clearDefault")
+                    AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.save.clearDefault")
                     ErrorToastManager.shared.show(AppError(message: error.userMessage))
                 } catch {
-                    AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save.clearDefault (unexpected)")
+                    AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.save.clearDefault (unexpected)")
                     ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
                 }
             }
@@ -71,58 +71,58 @@ final class ManageGroupsViewModel: ObservableObject {
         }
 
         do {
-            try groupRepository.save(updated)
+            try cadenceRepository.save(updated)
         } catch let error as RepositoryError {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save")
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.save")
             ErrorToastManager.shared.show(AppError(message: error.userMessage))
         } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save (unexpected)")
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.save (unexpected)")
             ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
         }
         load()
     }
 
-    func delete(group: Group) {
+    func delete(group: Cadence) {
         // Enforce: reassign any remaining people to default group before deleting
         if let fallback = groups.first(where: { $0.isDefault && $0.id != group.id })
             ?? groups.first(where: { $0.id != group.id }) {
             movePeople(from: group, to: fallback)
         }
         do {
-            try groupRepository.delete(id: group.id)
+            try cadenceRepository.delete(id: group.id)
         } catch let error as RepositoryError {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.delete")
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.delete")
             ErrorToastManager.shared.show(AppError(message: error.userMessage))
         } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.delete (unexpected)")
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.delete (unexpected)")
             ErrorToastManager.shared.show(.deleteFailed("ManageGroups"))
         }
         load()
     }
 
-    func movePeople(from group: Group, to defaultGroup: Group) {
+    func movePeople(from group: Cadence, to defaultGroup: Cadence) {
         let people = personRepository.fetchByGroup(id: group.id, includePaused: true)
         guard !people.isEmpty else { return }
         let now = Date()
         let updatedPeople = people.map { person -> Person in
             var updated = person
-            updated.groupId = defaultGroup.id
-            updated.groupAddedAt = now
+            updated.cadenceId = defaultGroup.id
+            updated.cadenceAddedAt = now
             updated.modifiedAt = now
             return updated
         }
         do {
             try personRepository.batchSave(updatedPeople)
         } catch let error as RepositoryError {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.movePeople")
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.movePeople")
             ErrorToastManager.shared.show(AppError(message: error.userMessage))
         } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.movePeople (unexpected)")
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.movePeople (unexpected)")
             ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
         }
     }
 
-    func defaultGroup() -> Group? {
+    func defaultGroup() -> Cadence? {
         groups.first(where: { $0.isDefault })
     }
 }

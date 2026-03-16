@@ -222,9 +222,9 @@ struct PersonDetailView: View {
             EditTouchModal(touch: touch, onSave: { method, notes, timeOfDay in
                 viewModel.updateTouch(touch, method: method, notes: notes, timeOfDay: timeOfDay); activeSheet = nil
             }, onDelete: { viewModel.deleteTouch(touch); activeSheet = nil })
-        case .changeGroup:
-            GroupPickerSheet(groups: viewModel.groups, selectedId: viewModel.person.groupId,
-                             onSelect: { viewModel.changeGroup(to: $0) }).presentationDetents([.medium])
+        case .changeCadence:
+            CadencePickerSheet(groups: viewModel.groups, selectedId: viewModel.person.cadenceId,
+                             onSelect: { viewModel.changeCadence(to: $0) }).presentationDetents([.medium])
         case .manageTags:
             TagManagerSheet(tags: viewModel.tags, selectedIds: Set(viewModel.person.tagIds),
                             onAdd: { viewModel.addTag($0) }, onRemove: { viewModel.removeTag($0) }).presentationDetents([.medium])
@@ -285,7 +285,7 @@ struct PersonDetailView: View {
 
     private func handleSettingsAction(_ action: PersonSettingsAction) {
         switch action {
-        case .changeGroup: activeSheet = .changeGroup
+        case .changeCadence: activeSheet = .changeCadence
         case .manageTags: activeSheet = .manageTags
         case .resumePrompt: activeAlert = .resumePrompt
         case .removeConfirm: activeAlert = .removeConfirm

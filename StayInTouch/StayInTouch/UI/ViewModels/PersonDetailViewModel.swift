@@ -10,8 +10,8 @@ import Foundation
 @MainActor
 final class PersonDetailViewModel: ObservableObject {
     @Published private(set) var person: Person
-    @Published private(set) var group: Group?
-    @Published private(set) var groups: [Group] = []
+    @Published private(set) var group: Cadence?
+    @Published private(set) var groups: [Cadence] = []
     @Published private(set) var tags: [Tag] = []
     @Published private(set) var availableTags: [Tag] = []
     @Published private(set) var touchEvents: [TouchEvent] = []
@@ -26,20 +26,20 @@ final class PersonDetailViewModel: ObservableObject {
     var pendingPhoneAction: QuickActionType?
 
     private let personRepository: PersonRepository
-    private let groupRepository: GroupRepository
+    private let cadenceRepository: CadenceRepository
     private let tagRepository: TagRepository
     private let touchRepository: TouchEventRepository
 
     init(
         person: Person,
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
-        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
+        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
         tagRepository: TagRepository = CoreDataTagRepository(context: CoreDataStack.shared.viewContext),
         touchRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext)
     ) {
         self.person = person
         self.personRepository = personRepository
-        self.groupRepository = groupRepository
+        self.cadenceRepository = cadenceRepository
         self.tagRepository = tagRepository
         self.touchRepository = touchRepository
         load()
@@ -50,7 +50,7 @@ final class PersonDetailViewModel: ObservableObject {
         self.init(
             person: person,
             personRepository: dependencies.personRepository,
-            groupRepository: dependencies.groupRepository,
+            cadenceRepository: dependencies.cadenceRepository,
             tagRepository: dependencies.tagRepository,
             touchRepository: dependencies.touchEventRepository
         )
@@ -60,8 +60,8 @@ final class PersonDetailViewModel: ObservableObject {
         if let refreshed = personRepository.fetch(id: person.id) {
             person = refreshed
         }
-        groups = groupRepository.fetchAll()
-        group = groupRepository.fetch(id: person.groupId)
+        groups = cadenceRepository.fetchAll()
+        group = cadenceRepository.fetch(id: person.cadenceId)
         tags = tagRepository.fetchAll()
         availableTags = tags.filter { !person.tagIds.contains($0.id) }
         touchEvents = fetchSortedEvents()
@@ -138,10 +138,10 @@ final class PersonDetailViewModel: ObservableObject {
         savePerson(updated)
     }
 
-    func changeGroup(to groupId: UUID) {
-        let updated = AssignGroupUseCase().assign(person: person, to: groupId)
+    func changeCadence(to cadenceId: UUID) {
+        let updated = AssignCadenceUseCase().assign(person: person, to: cadenceId)
         savePerson(updated)
-        group = groupRepository.fetch(id: groupId)
+        group = cadenceRepository.fetch(id: cadenceId)
     }
 
     func togglePause() {

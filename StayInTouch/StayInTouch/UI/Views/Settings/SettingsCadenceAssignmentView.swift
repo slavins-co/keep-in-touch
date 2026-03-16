@@ -1,5 +1,5 @@
 //
-//  SettingsGroupAssignmentView.swift
+//  SettingsCadenceAssignmentView.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/15/26.
@@ -7,9 +7,9 @@
 
 import SwiftUI
 
-struct SettingsGroupAssignmentView: View {
+struct SettingsCadenceAssignmentView: View {
     let contacts: [ContactSummary]
-    let groups: [Group]
+    let groups: [Cadence]
     let onImport: ([String: UUID]) -> Void
     let onCancel: () -> Void
 

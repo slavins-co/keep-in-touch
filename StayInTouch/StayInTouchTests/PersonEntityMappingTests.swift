@@ -34,7 +34,7 @@ final class PersonEntityMappingTests: XCTestCase {
         let entity = PersonEntity(context: context)
         entity.id = nil
         entity.displayName = "Alice"
-        entity.groupId = UUID()
+        entity.cadenceId = UUID()
 
         let domain = entity.toDomain()
         XCTAssertNotNil(domain.id, "toDomain should produce a non-nil id even when entity.id is nil")
@@ -44,7 +44,7 @@ final class PersonEntityMappingTests: XCTestCase {
         let entity = PersonEntity(context: context)
         entity.id = UUID()
         entity.displayName = nil
-        entity.groupId = UUID()
+        entity.cadenceId = UUID()
 
         let domain = entity.toDomain()
         XCTAssertEqual(domain.displayName, "", "toDomain should fall back to empty string when displayName is nil")
@@ -54,9 +54,9 @@ final class PersonEntityMappingTests: XCTestCase {
         let entity = PersonEntity(context: context)
         entity.id = UUID()
         entity.displayName = "Bob"
-        entity.groupId = nil
+        entity.cadenceId = nil
 
         let domain = entity.toDomain()
-        XCTAssertNotNil(domain.groupId, "toDomain should produce a non-nil groupId even when entity.groupId is nil")
+        XCTAssertNotNil(domain.cadenceId, "toDomain should produce a non-nil cadenceId even when entity.cadenceId is nil")
     }
 }

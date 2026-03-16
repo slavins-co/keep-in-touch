@@ -1,5 +1,5 @@
 //
-//  GroupContactsViewModel.swift
+//  CadenceContactsViewModel.swift
 //  KeepInTouch
 //
 //  Created by Codex on 3/3/26.
@@ -8,42 +8,42 @@
 import Foundation
 
 @MainActor
-final class GroupContactsViewModel: ObservableObject {
+final class CadenceContactsViewModel: ObservableObject {
     @Published private(set) var people: [Person] = []
     @Published private(set) var available: [Person] = []
-    @Published private(set) var otherGroups: [Group] = []
+    @Published private(set) var otherGroups: [Cadence] = []
 
-    let group: Group
+    let group: Cadence
 
     private let personRepository: PersonRepository
-    private let groupRepository: GroupRepository
+    private let cadenceRepository: CadenceRepository
     private var allPeople: [Person] = []
 
     init(
-        group: Group,
+        group: Cadence,
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
-        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext)
+        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext)
     ) {
         self.group = group
         self.personRepository = personRepository
-        self.groupRepository = groupRepository
+        self.cadenceRepository = cadenceRepository
         load()
     }
 
-    convenience init(group: Group, dependencies: AppDependencies) {
+    convenience init(group: Cadence, dependencies: AppDependencies) {
         self.init(
             group: group,
             personRepository: dependencies.personRepository,
-            groupRepository: dependencies.groupRepository
+            cadenceRepository: dependencies.cadenceRepository
         )
     }
 
     func load() {
         allPeople = personRepository.fetchTracked(includePaused: true)
             .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
-        people = allPeople.filter { $0.groupId == group.id }
-        available = allPeople.filter { $0.groupId != group.id }
-        otherGroups = groupRepository.fetchAll()
+        people = allPeople.filter { $0.cadenceId == group.id }
+        available = allPeople.filter { $0.cadenceId != group.id }
+        otherGroups = cadenceRepository.fetchAll()
             .filter { $0.id != group.id }
             .sorted { lhs, rhs in
                 if lhs.isDefault != rhs.isDefault { return lhs.isDefault }
@@ -53,11 +53,11 @@ final class GroupContactsViewModel: ObservableObject {
     }
 
     func movePerson(_ person: Person, to destinationGroupId: UUID) {
-        let updated = AssignGroupUseCase().assign(person: person, to: destinationGroupId)
+        let updated = AssignCadenceUseCase().assign(person: person, to: destinationGroupId)
         do {
             try personRepository.save(updated)
         } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "GroupContactsViewModel.movePerson")
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "CadenceContactsViewModel.movePerson")
             ErrorToastManager.shared.show(.saveFailed("GroupContacts"))
         }
         NotificationCenter.default.post(name: .personDidChange, object: updated.id)
@@ -65,13 +65,13 @@ final class GroupContactsViewModel: ObservableObject {
     }
 
     func addPeople(_ personIds: [UUID]) {
-        let useCase = AssignGroupUseCase()
+        let useCase = AssignCadenceUseCase()
         for person in allPeople where personIds.contains(person.id) {
             let updated = useCase.assign(person: person, to: group.id)
             do {
                 try personRepository.save(updated)
             } catch {
-                AppLogger.logError(error, category: AppLogger.viewModel, context: "GroupContactsViewModel.addPeople")
+                AppLogger.logError(error, category: AppLogger.viewModel, context: "CadenceContactsViewModel.addPeople")
                 ErrorToastManager.shared.show(.saveFailed("GroupContacts"))
             }
             NotificationCenter.default.post(name: .personDidChange, object: updated.id)

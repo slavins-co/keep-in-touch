@@ -21,10 +21,10 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     }
 
     func testFetchTrackedExcludesPausedAndUntracked() throws {
-        let groupId = UUID()
-        let active = makePerson(name: "Active", groupId: groupId, isPaused: false, isTracked: true)
-        let paused = makePerson(name: "Paused", groupId: groupId, isPaused: true, isTracked: true)
-        let untracked = makePerson(name: "Untracked", groupId: groupId, isPaused: false, isTracked: false)
+        let cadenceId = UUID()
+        let active = makePerson(name: "Active", cadenceId: cadenceId, isPaused: false, isTracked: true)
+        let paused = makePerson(name: "Paused", cadenceId: cadenceId, isPaused: true, isTracked: true)
+        let untracked = makePerson(name: "Untracked", cadenceId: cadenceId, isPaused: false, isTracked: false)
 
         try repo.save(active)
         try repo.save(paused)
@@ -41,8 +41,8 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     func testFetchByGroupFiltersCorrectly() throws {
         let groupA = UUID()
         let groupB = UUID()
-        let personA = makePerson(name: "A", groupId: groupA, isPaused: false, isTracked: true)
-        let personB = makePerson(name: "B", groupId: groupB, isPaused: false, isTracked: true)
+        let personA = makePerson(name: "A", cadenceId: groupA, isPaused: false, isTracked: true)
+        let personB = makePerson(name: "B", cadenceId: groupB, isPaused: false, isTracked: true)
 
         try repo.save(personA)
         try repo.save(personB)
@@ -53,10 +53,10 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     }
 
     func testFetchByTagFiltersCorrectly() throws {
-        let groupId = UUID()
+        let cadenceId = UUID()
         let tagId = UUID()
-        let tagged = makePerson(name: "Tagged", groupId: groupId, isPaused: false, isTracked: true, tagIds: [tagId])
-        let untagged = makePerson(name: "Untagged", groupId: groupId, isPaused: false, isTracked: true)
+        let tagged = makePerson(name: "Tagged", cadenceId: cadenceId, isPaused: false, isTracked: true, tagIds: [tagId])
+        let untagged = makePerson(name: "Untagged", cadenceId: cadenceId, isPaused: false, isTracked: true)
 
         try repo.save(tagged)
         try repo.save(untagged)
@@ -67,8 +67,8 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     }
 
     func testSearchByNameIsCaseInsensitive() throws {
-        let groupId = UUID()
-        let person = makePerson(name: "Sarah Chen", groupId: groupId, isPaused: false, isTracked: true)
+        let cadenceId = UUID()
+        let person = makePerson(name: "Sarah Chen", cadenceId: cadenceId, isPaused: false, isTracked: true)
         try repo.save(person)
 
         let results = repo.searchByName("sarah", includePaused: false)
@@ -96,7 +96,7 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     }
 
     func testSearchByNameNoMatchReturnsEmpty() throws {
-        let person = makePerson(name: "Alice", groupId: UUID(), isPaused: false, isTracked: true)
+        let person = makePerson(name: "Alice", cadenceId: UUID(), isPaused: false, isTracked: true)
         try repo.save(person)
 
         XCTAssertTrue(repo.searchByName("zzz", includePaused: false).isEmpty)
@@ -105,11 +105,11 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     // MARK: - Edge Cases: Save / Delete
 
     func testSaveUpdatesExistingPerson() throws {
-        let groupId = UUID()
-        let person = makePerson(name: "Original", groupId: groupId, isPaused: false, isTracked: true)
+        let cadenceId = UUID()
+        let person = makePerson(name: "Original", cadenceId: cadenceId, isPaused: false, isTracked: true)
         try repo.save(person)
 
-        let updated = makePerson(id: person.id, name: "Updated", groupId: groupId, isPaused: false, isTracked: true)
+        let updated = makePerson(id: person.id, name: "Updated", cadenceId: cadenceId, isPaused: false, isTracked: true)
         try repo.save(updated)
 
         let all = repo.fetchAll()
@@ -122,11 +122,11 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     }
 
     func testBatchSaveMultiplePersons() throws {
-        let groupId = UUID()
+        let cadenceId = UUID()
         let people = [
-            makePerson(name: "Alice", groupId: groupId, isPaused: false, isTracked: true),
-            makePerson(name: "Bob", groupId: groupId, isPaused: false, isTracked: true),
-            makePerson(name: "Carol", groupId: groupId, isPaused: false, isTracked: true)
+            makePerson(name: "Alice", cadenceId: cadenceId, isPaused: false, isTracked: true),
+            makePerson(name: "Bob", cadenceId: cadenceId, isPaused: false, isTracked: true),
+            makePerson(name: "Carol", cadenceId: cadenceId, isPaused: false, isTracked: true)
         ]
 
         try repo.batchSave(people)
@@ -137,14 +137,14 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     // MARK: - Overdue
 
     func testFetchOverdueReturnsPeoplePastSLA() throws {
-        let groupId = UUID()
-        let groupRepo = CoreDataGroupRepository(context: context)
-        let group = TestFactory.makeGroup(id: groupId, name: "Weekly", frequencyDays: 7)
+        let cadenceId = UUID()
+        let groupRepo = CoreDataCadenceRepository(context: context)
+        let group = TestFactory.makeGroup(id: cadenceId, name: "Weekly", frequencyDays: 7)
         try groupRepo.save(group)
 
         let overduePerson = makePerson(
             name: "Overdue",
-            groupId: groupId,
+            cadenceId: cadenceId,
             isPaused: false,
             isTracked: true,
             lastTouchAt: Calendar.current.date(byAdding: .day, value: -10, to: Date())!
@@ -157,14 +157,14 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     }
 
     func testFetchOverdueExcludesPausedPeople() throws {
-        let groupId = UUID()
-        let groupRepo = CoreDataGroupRepository(context: context)
-        let group = TestFactory.makeGroup(id: groupId, name: "Weekly", frequencyDays: 7)
+        let cadenceId = UUID()
+        let groupRepo = CoreDataCadenceRepository(context: context)
+        let group = TestFactory.makeGroup(id: cadenceId, name: "Weekly", frequencyDays: 7)
         try groupRepo.save(group)
 
         let pausedOverdue = makePerson(
             name: "PausedOverdue",
-            groupId: groupId,
+            cadenceId: cadenceId,
             isPaused: true,
             isTracked: true,
             lastTouchAt: Calendar.current.date(byAdding: .day, value: -10, to: Date())!
@@ -180,7 +180,7 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     private func makePerson(
         id: UUID = UUID(),
         name: String,
-        groupId: UUID,
+        cadenceId: UUID,
         isPaused: Bool,
         isTracked: Bool,
         tagIds: [UUID] = [],
@@ -192,7 +192,7 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
             displayName: name,
             initials: String(name.prefix(2)),
             avatarColor: "#FF6B6B",
-            groupId: groupId,
+            cadenceId: cadenceId,
             tagIds: tagIds,
             lastTouchAt: lastTouchAt,
             lastTouchMethod: nil,
@@ -208,7 +208,7 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
             birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: false,
-            groupAddedAt: Date(),
+            cadenceAddedAt: Date(),
             createdAt: Date(),
             modifiedAt: Date(),
             sortOrder: 0

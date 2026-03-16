@@ -58,7 +58,7 @@ final class NotificationScheduler {
 
     private let settingsRepository: AppSettingsRepository
     private let personRepository: PersonRepository
-    private let groupRepository: GroupRepository
+    private let cadenceRepository: CadenceRepository
     private let notificationCenter: UserNotificationCenterProtocol
     private var settingsObserver: NSObjectProtocol?
     private var personObserver: NSObjectProtocol?
@@ -66,12 +66,12 @@ final class NotificationScheduler {
     init(
         settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
-        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
+        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
         notificationCenter: UserNotificationCenterProtocol = UNUserNotificationCenter.current()
     ) {
         self.settingsRepository = settingsRepository
         self.personRepository = personRepository
-        self.groupRepository = groupRepository
+        self.cadenceRepository = cadenceRepository
         self.notificationCenter = notificationCenter
     }
 
@@ -146,7 +146,7 @@ final class NotificationScheduler {
         }
 
         let now = Date()
-        let groups = groupRepository.fetchAll()
+        let groups = cadenceRepository.fetchAll()
         let people = personRepository.fetchTracked(includePaused: false)
         let classified = NotificationClassifier.classify(people: people, groups: groups, referenceDate: now)
 

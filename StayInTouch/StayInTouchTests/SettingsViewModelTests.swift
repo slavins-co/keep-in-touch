@@ -11,7 +11,7 @@ import XCTest
 @MainActor
 final class SettingsViewModelTests: XCTestCase {
     private var settingsRepo: MockSettingsRepository!
-    private var groupRepo: MockGroupRepository!
+    private var groupRepo: MockCadenceRepository!
     private var tagRepo: MockTagRepository!
     private var personRepo: MockPersonRepository!
     private var touchEventRepo: MockTouchEventRepository!
@@ -21,14 +21,14 @@ final class SettingsViewModelTests: XCTestCase {
         super.setUp()
         settingsRepo = MockSettingsRepository()
         settingsRepo.settings = TestFactory.makeSettings()
-        groupRepo = MockGroupRepository()
+        groupRepo = MockCadenceRepository()
         tagRepo = MockTagRepository()
         personRepo = MockPersonRepository()
         touchEventRepo = MockTouchEventRepository()
 
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
-            groupRepository: groupRepo,
+            cadenceRepository: groupRepo,
             tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
@@ -44,7 +44,7 @@ final class SettingsViewModelTests: XCTestCase {
         ]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
-            groupRepository: groupRepo,
+            cadenceRepository: groupRepo,
             tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
@@ -78,14 +78,14 @@ final class SettingsViewModelTests: XCTestCase {
     }
 
     func testExportIncludesGroupsAndTags() throws {
-        let groupId = UUID()
+        let cadenceId = UUID()
         let tagId = UUID()
-        groupRepo.groups = [TestFactory.makeGroup(id: groupId, name: "Weekly")]
+        groupRepo.groups = [TestFactory.makeGroup(id: cadenceId, name: "Weekly")]
         tagRepo.tags = [TestFactory.makeTag(id: tagId, name: "Work")]
-        personRepo.people = [TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tagId])]
+        personRepo.people = [TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tagId])]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
-            groupRepository: groupRepo,
+            cadenceRepository: groupRepo,
             tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
@@ -111,7 +111,7 @@ final class SettingsViewModelTests: XCTestCase {
         personRepo.people = [TestFactory.makePerson(name: "Alice", cnIdentifier: "some-cn-id")]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
-            groupRepository: groupRepo,
+            cadenceRepository: groupRepo,
             tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
@@ -133,7 +133,7 @@ final class SettingsViewModelTests: XCTestCase {
             ExportPerson(
                 id: UUID(),
                 displayName: "Alice",
-                groupId: nil,
+                cadenceId: nil,
                 groupName: nil,
                 tagIds: [],
                 tagNames: [],
@@ -163,20 +163,20 @@ final class SettingsViewModelTests: XCTestCase {
     }
 
     func testParseImportFileNewFormatWithGroups() async throws {
-        let groupId = UUID()
+        let cadenceId = UUID()
         let tagId = UUID()
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
-            groups: [ExportGroup(id: groupId, name: "Custom Frequency", frequencyDays: 21, warningDays: 3, colorHex: nil, sortOrder: 0, isDefault: false)],
-            tags: [ExportTag(id: tagId, name: "Custom Group", colorHex: "#FF0000", sortOrder: 0)],
+            groups: [ExportCadence(id: cadenceId, name: "Custom Frequency", frequencyDays: 21, warningDays: 3, colorHex: nil, sortOrder: 0, isDefault: false)],
+            tags: [ExportTag(id: tagId, name: "Custom Cadence", colorHex: "#FF0000", sortOrder: 0)],
             people: [ExportPerson(
                 id: UUID(),
                 displayName: "Bob",
-                groupId: groupId,
+                cadenceId: cadenceId,
                 groupName: "Custom Frequency",
                 tagIds: [tagId],
-                tagNames: ["Custom Group"],
+                tagNames: ["Custom Cadence"],
                 lastTouchAt: nil,
                 isPaused: false,
                 createdAt: Date(),
@@ -199,7 +199,7 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertEqual(preview?.newGroups.count, 1)
         XCTAssertEqual(preview?.newGroups.first?.name, "Custom Frequency")
         XCTAssertEqual(preview?.newTags.count, 1)
-        XCTAssertEqual(preview?.newTags.first?.name, "Custom Group")
+        XCTAssertEqual(preview?.newTags.first?.name, "Custom Cadence")
 
         try? FileManager.default.removeItem(at: url)
     }
@@ -210,7 +210,7 @@ final class SettingsViewModelTests: XCTestCase {
         groupRepo.groups = [TestFactory.makeGroup(id: existingGroupId, name: "Weekly")]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
-            groupRepository: groupRepo,
+            cadenceRepository: groupRepo,
             tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
@@ -220,12 +220,12 @@ final class SettingsViewModelTests: XCTestCase {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
-            groups: [ExportGroup(id: importedGroupId, name: "weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, sortOrder: 0, isDefault: true)],
+            groups: [ExportCadence(id: importedGroupId, name: "weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, sortOrder: 0, isDefault: true)],
             tags: [],
             people: [ExportPerson(
                 id: UUID(),
                 displayName: "Charlie",
-                groupId: importedGroupId,
+                cadenceId: importedGroupId,
                 groupName: "weekly",
                 tagIds: [],
                 tagNames: [],
@@ -350,7 +350,7 @@ final class SettingsViewModelTests: XCTestCase {
         personRepo.people = [TestFactory.makePerson(id: existingId, name: "Alice Smith")]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
-            groupRepository: groupRepo,
+            cadenceRepository: groupRepo,
             tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
@@ -365,7 +365,7 @@ final class SettingsViewModelTests: XCTestCase {
             people: [ExportPerson(
                 id: UUID(), // Different UUID
                 displayName: "Alice Smith",
-                groupId: nil,
+                cadenceId: nil,
                 groupName: nil,
                 tagIds: [],
                 tagNames: [],
@@ -403,7 +403,7 @@ final class SettingsViewModelTests: XCTestCase {
         ]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
-            groupRepository: groupRepo,
+            cadenceRepository: groupRepo,
             tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
@@ -417,7 +417,7 @@ final class SettingsViewModelTests: XCTestCase {
             people: [ExportPerson(
                 id: UUID(),
                 displayName: "John Smith",
-                groupId: nil,
+                cadenceId: nil,
                 groupName: nil,
                 tagIds: [],
                 tagNames: [],
@@ -451,7 +451,7 @@ final class SettingsViewModelTests: XCTestCase {
         personRepo.people = [TestFactory.makePerson(id: existingId, name: "Bob")]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
-            groupRepository: groupRepo,
+            cadenceRepository: groupRepo,
             tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
@@ -465,7 +465,7 @@ final class SettingsViewModelTests: XCTestCase {
             people: [ExportPerson(
                 id: existingId, // Same UUID
                 displayName: "Bob",
-                groupId: nil,
+                cadenceId: nil,
                 groupName: nil,
                 tagIds: [],
                 tagNames: [],
@@ -518,7 +518,7 @@ final class SettingsViewModelTests: XCTestCase {
 
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
-            groupRepository: groupRepo,
+            cadenceRepository: groupRepo,
             tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
@@ -533,7 +533,7 @@ final class SettingsViewModelTests: XCTestCase {
             people: [ExportPerson(
                 id: UUID(),
                 displayName: "Alice Smith",
-                groupId: nil,
+                cadenceId: nil,
                 groupName: nil,
                 tagIds: [],
                 tagNames: [],
@@ -573,7 +573,7 @@ final class SettingsViewModelTests: XCTestCase {
             people: [ExportPerson(
                 id: UUID(),
                 displayName: "Eve",
-                groupId: nil,
+                cadenceId: nil,
                 groupName: nil,
                 tagIds: [],
                 tagNames: [],

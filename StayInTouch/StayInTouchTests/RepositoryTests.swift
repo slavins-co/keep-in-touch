@@ -18,9 +18,9 @@ final class RepositoryTests: XCTestCase {
         context = testStack.container.viewContext
     }
 
-    func testGroupRepositoryCrud() throws {
-        let repo = CoreDataGroupRepository(context: context)
-        let group = Group(
+    func testCadenceRepositoryCrud() throws {
+        let repo = CoreDataCadenceRepository(context: context)
+        let group = Cadence(
             id: UUID(),
             name: "Weekly",
             frequencyDays: 7,
@@ -60,7 +60,7 @@ final class RepositoryTests: XCTestCase {
     }
 
     func testPersonRepositoryCrud() throws {
-        let groupId = UUID()
+        let cadenceId = UUID()
         let repo = CoreDataPersonRepository(context: context)
         let person = Person(
             id: UUID(),
@@ -68,7 +68,7 @@ final class RepositoryTests: XCTestCase {
             displayName: "Alex Doe",
             initials: "AD",
             avatarColor: "#FF6B6B",
-            groupId: groupId,
+            cadenceId: cadenceId,
             tagIds: [],
             lastTouchAt: nil,
             lastTouchMethod: nil,
@@ -84,7 +84,7 @@ final class RepositoryTests: XCTestCase {
             birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: false,
-            groupAddedAt: nil,
+            cadenceAddedAt: nil,
             createdAt: Date(),
             modifiedAt: Date(),
             sortOrder: 0

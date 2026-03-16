@@ -85,7 +85,7 @@ struct PersonSettingsSection: View {
     // MARK: - Settings Rows
 
     private var settingsRowFrequency: some View {
-        Button { onAction(.changeGroup) } label: {
+        Button { onAction(.changeCadence) } label: {
             HStack {
                 Text("Frequency")
                     .font(DS.Typography.settingsRowLabel)

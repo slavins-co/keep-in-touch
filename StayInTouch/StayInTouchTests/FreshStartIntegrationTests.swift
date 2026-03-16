@@ -15,7 +15,7 @@ final class FreshStartIntegrationTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private let groupId = UUID()
+    private let cadenceId = UUID()
 
     private func makePerson(
         name: String,
@@ -33,7 +33,7 @@ final class FreshStartIntegrationTests: XCTestCase {
             displayName: name,
             initials: String(name.prefix(2)),
             avatarColor: "#FF6B6B",
-            groupId: groupId,
+            cadenceId: cadenceId,
             tagIds: [],
             lastTouchAt: lastTouch,
             lastTouchMethod: nil,
@@ -49,16 +49,16 @@ final class FreshStartIntegrationTests: XCTestCase {
             birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: isDemoData,
-            groupAddedAt: Calendar.current.date(byAdding: .day, value: -60, to: now),
+            cadenceAddedAt: Calendar.current.date(byAdding: .day, value: -60, to: now),
             createdAt: now,
             modifiedAt: now,
             sortOrder: 0
         )
     }
 
-    private func makeGroup(frequencyDays: Int = 7) -> Group {
-        Group(
-            id: groupId,
+    private func makeGroup(frequencyDays: Int = 7) -> Cadence {
+        Cadence(
+            id: cadenceId,
             name: "Weekly",
             frequencyDays: frequencyDays,
             warningDays: 2,
@@ -87,13 +87,13 @@ final class FreshStartIntegrationTests: XCTestCase {
 
     private func makeViewModel(
         people: [Person],
-        group: Group? = nil,
+        group: Cadence? = nil,
         promptStore: FreshStartPromptStore? = nil
     ) -> HomeViewModel {
         let g = group ?? makeGroup()
         return HomeViewModel(
             personRepository: StubPersonRepository(people: people),
-            groupRepository: StubGroupRepository(groups: [g]),
+            cadenceRepository: StubCadenceRepository(groups: [g]),
             tagRepository: StubTagRepository(tags: []),
             settingsRepository: StubSettingsRepository(),
             promptStore: promptStore ?? makePromptStore()
@@ -298,7 +298,7 @@ private struct StubPersonRepository: PersonRepository {
         people.filter { $0.isTracked && (includePaused || !$0.isPaused) }
     }
     func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
-        fetchTracked(includePaused: includePaused).filter { $0.groupId == id }
+        fetchTracked(includePaused: includePaused).filter { $0.cadenceId == id }
     }
     func fetchByTag(id: UUID, includePaused: Bool) -> [Person] {
         fetchTracked(includePaused: includePaused).filter { $0.tagIds.contains(id) }
@@ -312,13 +312,13 @@ private struct StubPersonRepository: PersonRepository {
     func delete(id: UUID) throws {}
 }
 
-private struct StubGroupRepository: GroupRepository {
-    let groups: [Group]
-    func fetch(id: UUID) -> Group? { groups.first { $0.id == id } }
-    func fetchAll() -> [Group] { groups }
-    func fetchDefaultGroups() -> [Group] { groups.filter { $0.isDefault } }
-    func save(_ group: Group) throws {}
-    func batchSave(_ groups: [Group]) throws {}
+private struct StubCadenceRepository: CadenceRepository {
+    let groups: [Cadence]
+    func fetch(id: UUID) -> Cadence? { groups.first { $0.id == id } }
+    func fetchAll() -> [Cadence] { groups }
+    func fetchDefaultGroups() -> [Cadence] { groups.filter { $0.isDefault } }
+    func save(_ group: Cadence) throws {}
+    func batchSave(_ groups: [Cadence]) throws {}
     func delete(id: UUID) throws {}
 }
 

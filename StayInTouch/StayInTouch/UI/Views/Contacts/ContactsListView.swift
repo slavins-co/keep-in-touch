@@ -105,7 +105,7 @@ struct ContactsListView: View {
                     ForEach(sections, id: \.letter) { section in
                         Section {
                             ForEach(Array(section.people.enumerated()), id: \.element.id) { index, person in
-                                let frequencyName = groupsById[person.groupId]?.name ?? "Frequency"
+                                let frequencyName = groupsById[person.cadenceId]?.name ?? "Frequency"
                                 let personTags = person.tagIds.compactMap { tagsById[$0] }
                                 Button {
                                     selectPerson(person)

@@ -12,7 +12,7 @@ import Contacts
 @MainActor
 final class SettingsViewModel: ObservableObject {
     @Published private(set) var settings: AppSettings
-    @Published private(set) var allGroups: [Group] = []
+    @Published private(set) var allGroups: [Cadence] = []
     @Published private(set) var groupsCount: Int = 0
     @Published private(set) var tagsCount: Int = 0
     @Published private(set) var pausedCount: Int = 0
@@ -24,7 +24,7 @@ final class SettingsViewModel: ObservableObject {
     @Published private(set) var isImporting = false
 
     private let settingsRepository: AppSettingsRepository
-    private let groupRepository: GroupRepository
+    private let cadenceRepository: CadenceRepository
     private let tagRepository: TagRepository
     private let personRepository: PersonRepository
     private let touchEventRepository: TouchEventRepository
@@ -36,26 +36,26 @@ final class SettingsViewModel: ObservableObject {
     init(
         coreDataStack: CoreDataStack = .shared,
         settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
-        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
+        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
         tagRepository: TagRepository = CoreDataTagRepository(context: CoreDataStack.shared.viewContext),
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
         touchEventRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext)
     ) {
         self.settingsRepository = settingsRepository
-        self.groupRepository = groupRepository
+        self.cadenceRepository = cadenceRepository
         self.tagRepository = tagRepository
         self.personRepository = personRepository
         self.touchEventRepository = touchEventRepository
 
         self.exportService = DataExportService(
             personRepository: personRepository,
-            groupRepository: groupRepository,
+            cadenceRepository: cadenceRepository,
             tagRepository: tagRepository,
             touchEventRepository: touchEventRepository
         )
         self.importService = DataImportService(
             personRepository: personRepository,
-            groupRepository: groupRepository,
+            cadenceRepository: cadenceRepository,
             tagRepository: tagRepository,
             touchEventRepository: touchEventRepository
         )
@@ -72,7 +72,7 @@ final class SettingsViewModel: ObservableObject {
     convenience init(dependencies: AppDependencies) {
         self.init(
             settingsRepository: dependencies.settingsRepository,
-            groupRepository: dependencies.groupRepository,
+            cadenceRepository: dependencies.cadenceRepository,
             tagRepository: dependencies.tagRepository,
             personRepository: dependencies.personRepository,
             touchEventRepository: dependencies.touchEventRepository
@@ -83,7 +83,7 @@ final class SettingsViewModel: ObservableObject {
 
     func load() {
         settings = settingsRepository.fetch() ?? AppSettingsDefaults.defaultSettings()
-        allGroups = groupRepository.fetchAll()
+        allGroups = cadenceRepository.fetchAll()
         groupsCount = allGroups.count
         tagsCount = tagRepository.fetchAll().count
         pausedCount = personRepository.fetchTracked(includePaused: true).filter { $0.isPaused }.count

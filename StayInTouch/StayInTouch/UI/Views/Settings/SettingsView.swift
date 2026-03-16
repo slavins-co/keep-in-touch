@@ -111,7 +111,7 @@ struct SettingsView: View {
                     }
                 )
             case .assigningGroups(let selected):
-                SettingsGroupAssignmentView(
+                SettingsCadenceAssignmentView(
                     contacts: selected,
                     groups: viewModel.allGroups,
                     onImport: { assignments in
@@ -239,7 +239,7 @@ struct SettingsView: View {
     private var peopleSection: some View {
         Section("People") {
             NavigationLink {
-                ManageGroupsView()
+                ManageCadencesView()
             } label: {
                 HStack {
                     Image(systemName: "arrow.triangle.2.circlepath")

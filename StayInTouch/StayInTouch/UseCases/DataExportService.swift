@@ -9,13 +9,13 @@ import Foundation
 
 struct DataExportService {
     let personRepository: PersonRepository
-    let groupRepository: GroupRepository
+    let cadenceRepository: CadenceRepository
     let tagRepository: TagRepository
     let touchEventRepository: TouchEventRepository
 
     func exportContacts() -> URL? {
         let people = personRepository.fetchAll()
-        let groups = groupRepository.fetchAll()
+        let groups = cadenceRepository.fetchAll()
         let tags = tagRepository.fetchAll()
 
         let groupNameById = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0.name) })
@@ -24,7 +24,7 @@ struct DataExportService {
         let exportPeople = people.map { person in
             ExportPerson.from(
                 person,
-                groupName: groupNameById[person.groupId],
+                groupName: groupNameById[person.cadenceId],
                 tagNames: person.tagIds.compactMap { tagNameById[$0] },
                 touchEvents: touchEventRepository.fetchAll(for: person.id)
             )
@@ -33,7 +33,7 @@ struct DataExportService {
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
-            groups: groups.map { ExportGroup.from($0) },
+            groups: groups.map { ExportCadence.from($0) },
             tags: tags.map { ExportTag.from($0) },
             people: exportPeople
         )

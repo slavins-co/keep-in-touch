@@ -18,7 +18,7 @@ struct Person: Identifiable, Equatable, Hashable {
     var initials: String
     var avatarColor: String
 
-    var groupId: UUID
+    var cadenceId: UUID
     var tagIds: [UUID]
 
     var lastTouchAt: Date?
@@ -39,7 +39,7 @@ struct Person: Identifiable, Equatable, Hashable {
     var contactUnavailable: Bool
     var isDemoData: Bool
 
-    var groupAddedAt: Date?
+    var cadenceAddedAt: Date?
 
     var createdAt: Date
     var modifiedAt: Date

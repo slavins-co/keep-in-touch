@@ -1263,6 +1263,22 @@ struct DataImportService {
 
 ---
 
+### 2026-03-15 - 🏗️ Architecture - Plan Mode Triggers on Ambiguity, Not Just Code Size
+
+**What Happened:**
+Issue #134 (CSV export) was classified as M but plan mode was skipped. The issue description explicitly flagged design decisions ("one row per touch event vs one row per contact") that were resolved unilaterally without user input.
+
+**Root Cause:**
+Mentally downgraded complexity because the code changes were straightforward (~100 lines). But complexity includes requirement ambiguity, not just implementation size.
+
+**Solution:**
+Should have invoked `superpowers:writing-plans` per Phase 5, which would have surfaced column naming, row structure, and field selection for user approval before writing any code.
+
+**Prevention Rule:**
+When an issue description contains phrases like "design decision during implementation", "could be X or Y", or lists multiple approaches — that is a plan-mode trigger regardless of estimated code size. Ambiguity in requirements = plan mode, always.
+
+---
+
 **Maintenance Notes:**
 - Review this file at the start of each development session
 - Add new lessons immediately after corrections from user

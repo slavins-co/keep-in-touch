@@ -10,7 +10,7 @@ import XCTest
 
 final class PersonStatusServiceTests: XCTestCase {
     func testDueSoonUsesSettingsWindow() {
-        let groupId = UUID()
+        let cadenceId = UUID()
         let now = Date()
         let reference = Calendar.current.date(byAdding: .day, value: 26, to: now) ?? now
 
@@ -20,7 +20,7 @@ final class PersonStatusServiceTests: XCTestCase {
             displayName: "Alex",
             initials: "A",
             avatarColor: "#FF6B6B",
-            groupId: groupId,
+            cadenceId: cadenceId,
             tagIds: [],
             lastTouchAt: now,
             lastTouchMethod: nil,
@@ -36,14 +36,14 @@ final class PersonStatusServiceTests: XCTestCase {
             birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: false,
-            groupAddedAt: nil,
+            cadenceAddedAt: nil,
             createdAt: now,
             modifiedAt: now,
             sortOrder: 0
         )
 
-        let group = Group(
-            id: groupId,
+        let group = Cadence(
+            id: cadenceId,
             name: "Monthly",
             frequencyDays: 30,
             warningDays: 5,
@@ -82,7 +82,7 @@ final class PersonStatusServiceTests: XCTestCase {
     }
 
     func testOverdueTieBreakByLastTouchOlderFirst() {
-        let groupId = UUID()
+        let cadenceId = UUID()
         let now = Date()
         let reference = Calendar.current.date(byAdding: .day, value: 10, to: now) ?? now
 
@@ -92,7 +92,7 @@ final class PersonStatusServiceTests: XCTestCase {
             displayName: "Bob",
             initials: "B",
             avatarColor: "#FF6B6B",
-            groupId: groupId,
+            cadenceId: cadenceId,
             tagIds: [],
             lastTouchAt: Calendar.current.date(byAdding: .day, value: -10, to: reference),
             lastTouchMethod: nil,
@@ -108,7 +108,7 @@ final class PersonStatusServiceTests: XCTestCase {
             birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: false,
-            groupAddedAt: nil,
+            cadenceAddedAt: nil,
             createdAt: now,
             modifiedAt: now,
             sortOrder: 0
@@ -120,7 +120,7 @@ final class PersonStatusServiceTests: XCTestCase {
             displayName: "Alex",
             initials: "A",
             avatarColor: "#FF6B6B",
-            groupId: groupId,
+            cadenceId: cadenceId,
             tagIds: [],
             lastTouchAt: Calendar.current.date(byAdding: .day, value: -9, to: reference),
             lastTouchMethod: nil,
@@ -136,14 +136,14 @@ final class PersonStatusServiceTests: XCTestCase {
             birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: false,
-            groupAddedAt: nil,
+            cadenceAddedAt: nil,
             createdAt: now,
             modifiedAt: now,
             sortOrder: 0
         )
 
-        let group = Group(
-            id: groupId,
+        let group = Cadence(
+            id: cadenceId,
             name: "Weekly",
             frequencyDays: 7,
             warningDays: 2,

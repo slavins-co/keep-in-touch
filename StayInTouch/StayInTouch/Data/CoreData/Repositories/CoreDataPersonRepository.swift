@@ -98,7 +98,7 @@ final class CoreDataPersonRepository: PersonRepository {
             for group in groups {
                 guard let cutoff = calendar.date(byAdding: .day, value: -group.frequencyDays, to: referenceDate) else { continue }
 
-                // effectiveLastTouchDate = lastTouchAt ?? groupAddedAt
+                // effectiveLastTouchDate = lastTouchAt ?? cadenceAddedAt
                 // Overdue when effective date < cutoff
                 let touchBeforeCutoff = NSPredicate(format: "groupId == %@ AND lastTouchAt != nil AND lastTouchAt < %@",
                                                      group.id as CVarArg, cutoff as NSDate)

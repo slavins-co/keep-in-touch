@@ -1,5 +1,5 @@
 //
-//  GroupContactsViewModelTests.swift
+//  CadenceContactsViewModelTests.swift
 //  KeepInTouchTests
 //
 //  Created by Claude on 3/6/26.
@@ -9,18 +9,18 @@ import XCTest
 @testable import StayInTouch
 
 @MainActor
-final class GroupContactsViewModelTests: XCTestCase {
+final class CadenceContactsViewModelTests: XCTestCase {
     private var personRepo: MockPersonRepository!
-    private var groupRepo: MockGroupRepository!
-    private var sut: GroupContactsViewModel!
+    private var groupRepo: MockCadenceRepository!
+    private var sut: CadenceContactsViewModel!
 
-    private var currentGroup: Group!
-    private var otherGroup: Group!
+    private var currentGroup: Cadence!
+    private var otherGroup: Cadence!
 
     override func setUp() {
         super.setUp()
         personRepo = MockPersonRepository()
-        groupRepo = MockGroupRepository()
+        groupRepo = MockCadenceRepository()
 
         currentGroup = TestFactory.makeGroup(id: UUID(), name: "Weekly")
         otherGroup = TestFactory.makeGroup(id: UUID(), name: "Monthly", frequencyDays: 30, isDefault: false)
@@ -29,15 +29,15 @@ final class GroupContactsViewModelTests: XCTestCase {
 
         // Two people in currentGroup, one in otherGroup
         personRepo.people = [
-            TestFactory.makePerson(name: "Alice", groupId: currentGroup.id),
-            TestFactory.makePerson(name: "Bob", groupId: currentGroup.id),
-            TestFactory.makePerson(name: "Charlie", groupId: otherGroup.id)
+            TestFactory.makePerson(name: "Alice", cadenceId: currentGroup.id),
+            TestFactory.makePerson(name: "Bob", cadenceId: currentGroup.id),
+            TestFactory.makePerson(name: "Charlie", cadenceId: otherGroup.id)
         ]
 
-        sut = GroupContactsViewModel(
+        sut = CadenceContactsViewModel(
             group: currentGroup,
             personRepository: personRepo,
-            groupRepository: groupRepo
+            cadenceRepository: groupRepo
         )
     }
 
@@ -89,7 +89,7 @@ final class GroupContactsViewModelTests: XCTestCase {
         sut.movePerson(person, to: otherGroup.id)
 
         let lastSaved = try XCTUnwrap(personRepo.savedPersons.last)
-        XCTAssertEqual(lastSaved.groupId, otherGroup.id, "Moved person should have otherGroup's id")
+        XCTAssertEqual(lastSaved.cadenceId, otherGroup.id, "Moved person should have otherGroup's id")
     }
 
     func testMovePersonSetsGroupAddedAt() throws {
@@ -98,9 +98,9 @@ final class GroupContactsViewModelTests: XCTestCase {
         sut.movePerson(person, to: otherGroup.id)
 
         let lastSaved = try XCTUnwrap(personRepo.savedPersons.last)
-        let groupAddedAt = try XCTUnwrap(lastSaved.groupAddedAt)
-        XCTAssertTrue(abs(groupAddedAt.timeIntervalSinceNow) < 1,
-                      "groupAddedAt should be within the last second")
+        let cadenceAddedAt = try XCTUnwrap(lastSaved.cadenceAddedAt)
+        XCTAssertTrue(abs(cadenceAddedAt.timeIntervalSinceNow) < 1,
+                      "cadenceAddedAt should be within the last second")
     }
 
     func testMovePersonSavesToRepo() {
@@ -143,16 +143,16 @@ final class GroupContactsViewModelTests: XCTestCase {
 
         let newSaves = Array(personRepo.savedPersons.dropFirst(saveCountBefore))
         let lastSaved = try XCTUnwrap(newSaves.last)
-        XCTAssertEqual(lastSaved.groupId, currentGroup.id,
+        XCTAssertEqual(lastSaved.cadenceId, currentGroup.id,
                        "Added person should be assigned to currentGroup")
     }
 
     func testAddPeopleSavesEachPerson() {
         // Set up 2 people in otherGroup
-        let person1 = TestFactory.makePerson(name: "Dave", groupId: otherGroup.id)
-        let person2 = TestFactory.makePerson(name: "Eve", groupId: otherGroup.id)
+        let person1 = TestFactory.makePerson(name: "Dave", cadenceId: otherGroup.id)
+        let person2 = TestFactory.makePerson(name: "Eve", cadenceId: otherGroup.id)
         personRepo.people = [
-            TestFactory.makePerson(name: "Alice", groupId: currentGroup.id),
+            TestFactory.makePerson(name: "Alice", cadenceId: currentGroup.id),
             person1,
             person2
         ]

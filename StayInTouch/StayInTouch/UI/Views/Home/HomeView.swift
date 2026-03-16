@@ -33,7 +33,7 @@ struct HomeView: View {
                     floatingSearchBar
                 }
         }
-        .onChange(of: viewModel.selectedGroupId) { _, newValue in
+        .onChange(of: viewModel.selectedCadenceId) { _, newValue in
             if newValue != nil {
                 AnalyticsService.track("filter.applied", parameters: ["type": "group"])
             }
@@ -167,8 +167,8 @@ struct HomeView: View {
     }
 
     private var frequencyFilterButton: some View {
-        let isActive = viewModel.selectedGroupId != nil
-        let selectedName = viewModel.selectedGroupId.flatMap { id in
+        let isActive = viewModel.selectedCadenceId != nil
+        let selectedName = viewModel.selectedCadenceId.flatMap { id in
             viewModel.groups.first(where: { $0.id == id })?.name
         }
         let displayText = selectedName ?? "Frequency: All"
@@ -176,11 +176,11 @@ struct HomeView: View {
         return filterButton(
             displayText: displayText,
             isActive: isActive,
-            onClear: { viewModel.selectedGroupId = nil }
+            onClear: { viewModel.selectedCadenceId = nil }
         ) {
-            Button("All Frequencies") { viewModel.selectedGroupId = nil }
+            Button("All Frequencies") { viewModel.selectedCadenceId = nil }
             ForEach(viewModel.groups, id: \.id) { group in
-                Button(group.name) { viewModel.selectedGroupId = group.id }
+                Button(group.name) { viewModel.selectedCadenceId = group.id }
             }
         }
     }
@@ -190,7 +190,7 @@ struct HomeView: View {
         let selectedName = viewModel.selectedTagId.flatMap { id in
             viewModel.tags.first(where: { $0.id == id })?.name
         }
-        let displayText = selectedName ?? "Group: All"
+        let displayText = selectedName ?? "Cadence: All"
 
         return filterButton(
             displayText: displayText,

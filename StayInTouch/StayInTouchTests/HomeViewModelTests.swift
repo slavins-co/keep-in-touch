@@ -11,20 +11,20 @@ import XCTest
 @MainActor
 final class HomeViewModelTests: XCTestCase {
     func testFilterMatchesNameAndTag() {
-        let groupId = UUID()
+        let cadenceId = UUID()
         let tagId = UUID()
 
         let people = [
-            makePerson(name: "Sarah Chen", groupId: groupId, tagIds: [tagId]),
-            makePerson(name: "Mike", groupId: groupId, tagIds: [])
+            makePerson(name: "Sarah Chen", cadenceId: cadenceId, tagIds: [tagId]),
+            makePerson(name: "Mike", cadenceId: cadenceId, tagIds: [])
         ]
         let tags = [Tag(id: tagId, name: "Work", colorHex: "#0A84FF", sortOrder: 0, createdAt: Date(), modifiedAt: Date())]
 
         let filtered = HomeViewModel.filterPeople(
             people: people,
-            groups: [makeGroup(id: groupId)],
+            groups: [makeGroup(id: cadenceId)],
             tags: tags,
-            selectedGroupId: nil,
+            selectedCadenceId: nil,
             selectedTagId: nil,
             searchText: "work"
         )
@@ -36,7 +36,7 @@ final class HomeViewModelTests: XCTestCase {
     func testRefreshFromContacts_setsIsRefreshingFalseAfterCompletion() async {
         let vm = HomeViewModel(
             personRepository: InMemoryPersonRepository(people: []),
-            groupRepository: InMemoryGroupRepository(groups: []),
+            cadenceRepository: InMemoryCadenceRepository(groups: []),
             tagRepository: InMemoryTagRepository(tags: []),
             settingsRepository: InMemorySettingsRepository()
         )
@@ -50,7 +50,7 @@ final class HomeViewModelTests: XCTestCase {
     func testLoadUpdatesRefreshToken() {
         let vm = HomeViewModel(
             personRepository: InMemoryPersonRepository(people: []),
-            groupRepository: InMemoryGroupRepository(groups: []),
+            cadenceRepository: InMemoryCadenceRepository(groups: []),
             tagRepository: InMemoryTagRepository(tags: []),
             settingsRepository: InMemorySettingsRepository()
         )
@@ -63,15 +63,15 @@ final class HomeViewModelTests: XCTestCase {
         let groupA = UUID()
         let groupB = UUID()
         let people = [
-            makePerson(name: "A", groupId: groupA, tagIds: []),
-            makePerson(name: "B", groupId: groupB, tagIds: [])
+            makePerson(name: "A", cadenceId: groupA, tagIds: []),
+            makePerson(name: "B", cadenceId: groupB, tagIds: [])
         ]
 
         let filtered = HomeViewModel.filterPeople(
             people: people,
             groups: [makeGroup(id: groupA), makeGroup(id: groupB)],
             tags: [],
-            selectedGroupId: groupA,
+            selectedCadenceId: groupA,
             selectedTagId: nil,
             searchText: ""
         )
@@ -80,14 +80,14 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertEqual(filtered.first?.displayName, "A")
     }
 
-    private func makePerson(name: String, groupId: UUID, tagIds: [UUID]) -> Person {
+    private func makePerson(name: String, cadenceId: UUID, tagIds: [UUID]) -> Person {
         Person(
             id: UUID(),
             cnIdentifier: nil,
             displayName: name,
             initials: String(name.prefix(2)),
             avatarColor: "#FF6B6B",
-            groupId: groupId,
+            cadenceId: cadenceId,
             tagIds: tagIds,
             lastTouchAt: nil,
             lastTouchMethod: nil,
@@ -103,15 +103,15 @@ final class HomeViewModelTests: XCTestCase {
             birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: false,
-            groupAddedAt: Date(),
+            cadenceAddedAt: Date(),
             createdAt: Date(),
             modifiedAt: Date(),
             sortOrder: 0
         )
     }
 
-    private func makeGroup(id: UUID) -> Group {
-        Group(
+    private func makeGroup(id: UUID) -> Cadence {
+        Cadence(
             id: id,
             name: "Weekly",
             frequencyDays: 7,
@@ -132,7 +132,7 @@ final class HomeViewModelTests: XCTestCase {
             people.filter { $0.isTracked && (includePaused || !$0.isPaused) }
         }
         func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
-            fetchTracked(includePaused: includePaused).filter { $0.groupId == id }
+            fetchTracked(includePaused: includePaused).filter { $0.cadenceId == id }
         }
         func fetchByTag(id: UUID, includePaused: Bool) -> [Person] {
             fetchTracked(includePaused: includePaused).filter { $0.tagIds.contains(id) }
@@ -146,13 +146,13 @@ final class HomeViewModelTests: XCTestCase {
         func delete(id: UUID) throws {}
     }
 
-    private struct InMemoryGroupRepository: GroupRepository {
-        let groups: [Group]
-        func fetch(id: UUID) -> Group? { groups.first { $0.id == id } }
-        func fetchAll() -> [Group] { groups }
-        func fetchDefaultGroups() -> [Group] { groups.filter { $0.isDefault } }
-        func save(_ group: Group) throws {}
-        func batchSave(_ groups: [Group]) throws {}
+    private struct InMemoryCadenceRepository: CadenceRepository {
+        let groups: [Cadence]
+        func fetch(id: UUID) -> Cadence? { groups.first { $0.id == id } }
+        func fetchAll() -> [Cadence] { groups }
+        func fetchDefaultGroups() -> [Cadence] { groups.filter { $0.isDefault } }
+        func save(_ group: Cadence) throws {}
+        func batchSave(_ groups: [Cadence]) throws {}
         func delete(id: UUID) throws {}
     }
 

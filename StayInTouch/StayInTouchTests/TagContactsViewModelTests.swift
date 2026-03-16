@@ -13,7 +13,7 @@ final class TagContactsViewModelTests: XCTestCase {
     private var personRepo: MockPersonRepository!
     private var tag: Tag!
     private var otherTagId: UUID!
-    private var groupId: UUID!
+    private var cadenceId: UUID!
     private var sut: TagContactsViewModel!
 
     override func setUp() {
@@ -21,7 +21,7 @@ final class TagContactsViewModelTests: XCTestCase {
         personRepo = MockPersonRepository()
         tag = TestFactory.makeTag(id: UUID(), name: "Work")
         otherTagId = UUID()
-        groupId = UUID()
+        cadenceId = UUID()
     }
 
     /// Helper: create the SUT after configuring personRepo.people.
@@ -33,8 +33,8 @@ final class TagContactsViewModelTests: XCTestCase {
     // MARK: - Load
 
     func testLoadSplitsPeopleByTag() {
-        let tagged = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tag.id])
-        let untagged = TestFactory.makePerson(name: "Bob", groupId: groupId, tagIds: [])
+        let tagged = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
+        let untagged = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, tagIds: [])
         personRepo.people = [tagged, untagged]
 
         makeSUT()
@@ -46,9 +46,9 @@ final class TagContactsViewModelTests: XCTestCase {
     }
 
     func testLoadSortsByName() {
-        let charlie = TestFactory.makePerson(name: "Charlie", groupId: groupId, tagIds: [tag.id])
-        let alice = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tag.id])
-        let bob = TestFactory.makePerson(name: "Bob", groupId: groupId, tagIds: [])
+        let charlie = TestFactory.makePerson(name: "Charlie", cadenceId: cadenceId, tagIds: [tag.id])
+        let alice = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
+        let bob = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, tagIds: [])
         personRepo.people = [charlie, alice, bob]
 
         makeSUT()
@@ -60,7 +60,7 @@ final class TagContactsViewModelTests: XCTestCase {
     // MARK: - Remove Tag
 
     func testRemoveTagRemovesTagIdFromPerson() throws {
-        let person = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tag.id, otherTagId])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id, otherTagId])
         personRepo.people = [person]
 
         makeSUT()
@@ -73,7 +73,7 @@ final class TagContactsViewModelTests: XCTestCase {
     }
 
     func testRemoveTagSavesToRepo() throws {
-        let person = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tag.id])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
         personRepo.people = [person]
 
         makeSUT()
@@ -85,7 +85,7 @@ final class TagContactsViewModelTests: XCTestCase {
     }
 
     func testRemoveTagPostsNotification() throws {
-        let person = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tag.id])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
         personRepo.people = [person]
 
         makeSUT()
@@ -100,7 +100,7 @@ final class TagContactsViewModelTests: XCTestCase {
     }
 
     func testRemoveTagReloadsLists() throws {
-        let person = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tag.id])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
         personRepo.people = [person]
 
         makeSUT()
@@ -119,7 +119,7 @@ final class TagContactsViewModelTests: XCTestCase {
     // MARK: - Add Tag
 
     func testAddTagAppendsTagId() throws {
-        let person = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [])
         personRepo.people = [person]
 
         makeSUT()
@@ -131,7 +131,7 @@ final class TagContactsViewModelTests: XCTestCase {
     }
 
     func testAddTagSkipsDuplicate() throws {
-        let person = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [tag.id])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [tag.id])
         personRepo.people = [person]
 
         makeSUT()
@@ -144,8 +144,8 @@ final class TagContactsViewModelTests: XCTestCase {
     }
 
     func testAddTagSavesEachPerson() {
-        let alice = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [])
-        let bob = TestFactory.makePerson(name: "Bob", groupId: groupId, tagIds: [])
+        let alice = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [])
+        let bob = TestFactory.makePerson(name: "Bob", cadenceId: cadenceId, tagIds: [])
         personRepo.people = [alice, bob]
 
         makeSUT()
@@ -159,7 +159,7 @@ final class TagContactsViewModelTests: XCTestCase {
     }
 
     func testAddTagIgnoresUnknownIds() {
-        let person = TestFactory.makePerson(name: "Alice", groupId: groupId, tagIds: [])
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, tagIds: [])
         personRepo.people = [person]
 
         makeSUT()

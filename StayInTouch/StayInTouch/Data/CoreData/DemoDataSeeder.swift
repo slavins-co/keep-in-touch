@@ -23,7 +23,7 @@ final class DemoDataSeeder {
                 return
             }
 
-            let groups = CoreDataGroupRepository(context: context).fetchAll()
+            let groups = CoreDataCadenceRepository(context: context).fetchAll()
             guard let defaultGroupId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id else { return }
             let tags = CoreDataTagRepository(context: context).fetchAll()
 
@@ -32,7 +32,7 @@ final class DemoDataSeeder {
             var sortOrder = existing.count
 
             for (index, name) in names.enumerated() {
-                let groupId = groups.indices.contains(index % max(1, groups.count)) ? groups[index % groups.count].id : defaultGroupId
+                let cadenceId = groups.indices.contains(index % max(1, groups.count)) ? groups[index % groups.count].id : defaultGroupId
                 var tagIds: [UUID] = []
                 if let tag = tags.randomElement() {
                     tagIds.append(tag.id)
@@ -47,7 +47,7 @@ final class DemoDataSeeder {
                     displayName: name,
                     initials: InitialsBuilder.initials(for: name),
                     avatarColor: AvatarColors.randomHex(),
-                    groupId: groupId,
+                    cadenceId: cadenceId,
                     tagIds: tagIds,
                     lastTouchAt: lastTouch,
                     lastTouchMethod: .text,
@@ -63,13 +63,13 @@ final class DemoDataSeeder {
                     birthdayNotificationsEnabled: true,
                     contactUnavailable: false,
                     isDemoData: true,
-                    groupAddedAt: now,
+                    cadenceAddedAt: now,
                     createdAt: now,
                     modifiedAt: now,
                     sortOrder: sortOrder
                 )
 
-                let assigned = AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId)
+                let assigned = AssignCadenceUseCase(referenceDate: now).assign(person: person, to: cadenceId)
                 try? repo.save(assigned)
                 sortOrder += 1
             }

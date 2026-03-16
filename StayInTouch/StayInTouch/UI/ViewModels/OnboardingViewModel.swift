@@ -52,14 +52,14 @@ final class OnboardingViewModel: ObservableObject {
     @Published var searchText = ""
     @Published var useDemoData = false
 
-    @Published var groups: [Group] = []
-    @Published var selectedGroupId: UUID?
+    @Published var groups: [Cadence] = []
+    @Published var selectedCadenceId: UUID?
     @Published var contactGroupSelections: [String: UUID] = [:]
     @Published var contactLastTouchSelections: [String: LastTouchOption] = [:]
 
     private let coreDataStack: CoreDataStack
     private let personRepository: PersonRepository
-    private let groupRepository: GroupRepository
+    private let cadenceRepository: CadenceRepository
     private let settingsRepository: AppSettingsRepository
     private let contactImportService: ContactImportService
 
@@ -68,7 +68,7 @@ final class OnboardingViewModel: ObservableObject {
     init(
         coreDataStack: CoreDataStack = .shared,
         personRepository: PersonRepository? = nil,
-        groupRepository: GroupRepository? = nil,
+        cadenceRepository: CadenceRepository? = nil,
         touchEventRepository: TouchEventRepository? = nil,
         settingsRepository: AppSettingsRepository? = nil
     ) {
@@ -77,7 +77,7 @@ final class OnboardingViewModel: ObservableObject {
         let personRepo = personRepository ?? CoreDataPersonRepository(context: context)
         let touchRepo = touchEventRepository ?? CoreDataTouchEventRepository(context: context)
         self.personRepository = personRepo
-        self.groupRepository = groupRepository ?? CoreDataGroupRepository(context: context)
+        self.cadenceRepository = cadenceRepository ?? CoreDataCadenceRepository(context: context)
         self.settingsRepository = settingsRepository ?? CoreDataAppSettingsRepository(context: context)
         self.contactImportService = ContactImportService(
             personRepository: personRepo,
@@ -91,7 +91,7 @@ final class OnboardingViewModel: ObservableObject {
     convenience init(dependencies: AppDependencies) {
         self.init(
             personRepository: dependencies.personRepository,
-            groupRepository: dependencies.groupRepository,
+            cadenceRepository: dependencies.cadenceRepository,
             touchEventRepository: dependencies.touchEventRepository,
             settingsRepository: dependencies.settingsRepository
         )
@@ -217,8 +217,8 @@ final class OnboardingViewModel: ObservableObject {
 
     private func loadSettingsAndGroups() {
         settings = settingsRepository.fetch()
-        groups = groupRepository.fetchAll()
-        selectedGroupId = groups.first(where: { $0.name == "Monthly" })?.id ?? groups.first?.id
+        groups = cadenceRepository.fetchAll()
+        selectedCadenceId = groups.first(where: { $0.name == "Monthly" })?.id ?? groups.first?.id
         isOnboardingCompleted = settings?.onboardingCompleted ?? false
         isLoading = false
     }
@@ -250,7 +250,7 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     private func seedGroupSelectionsIfNeeded() {
-        guard let defaultGroupId = selectedGroupId else { return }
+        guard let defaultGroupId = selectedCadenceId else { return }
         for contactId in selectedContactIds {
             if contactGroupSelections[contactId] == nil {
                 contactGroupSelections[contactId] = defaultGroupId

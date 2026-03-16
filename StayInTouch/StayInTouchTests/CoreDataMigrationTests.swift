@@ -33,7 +33,7 @@ final class CoreDataMigrationTests: XCTestCase {
 
         let entityNames = model!.entities.map(\.name)
         XCTAssertTrue(entityNames.contains("Person"))
-        XCTAssertTrue(entityNames.contains("Group"))
+        XCTAssertTrue(entityNames.contains("Cadence"))
         XCTAssertTrue(entityNames.contains("Tag"))
         XCTAssertTrue(entityNames.contains("TouchEvent"))
         XCTAssertTrue(entityNames.contains("AppSettings"))
@@ -43,9 +43,9 @@ final class CoreDataMigrationTests: XCTestCase {
         let stack = CoreDataStack.make(inMemory: true, shouldSeedDefaults: false)
         let context = stack.viewContext
 
-        let groupEntity = NSEntityDescription.insertNewObject(forEntityName: "Group", into: context)
+        let groupEntity = NSEntityDescription.insertNewObject(forEntityName: "Cadence", into: context)
         groupEntity.setValue(UUID(), forKey: "id")
-        groupEntity.setValue("Test Group", forKey: "name")
+        groupEntity.setValue("Test Cadence", forKey: "name")
         groupEntity.setValue(Int64(7), forKey: "frequencyDays")
         groupEntity.setValue(Int64(2), forKey: "warningDays")
         groupEntity.setValue(false, forKey: "isDefault")
@@ -55,10 +55,10 @@ final class CoreDataMigrationTests: XCTestCase {
 
         try context.save()
 
-        let request = NSFetchRequest<NSManagedObject>(entityName: "Group")
+        let request = NSFetchRequest<NSManagedObject>(entityName: "Cadence")
         let results = try context.fetch(request)
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first?.value(forKey: "name") as? String, "Test Group")
+        XCTAssertEqual(results.first?.value(forKey: "name") as? String, "Test Cadence")
     }
 
     func testResetStoreClearsFlags() {

@@ -82,7 +82,7 @@ struct ManageTagsView: View {
                 onCancel: { showNewTag = false }
             )
         }
-        .alert("Delete Group?", isPresented: $showDeleteConfirm) {
+        .alert("Delete Cadence?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
                 if let target = deleteTarget {
                     Haptics.medium()

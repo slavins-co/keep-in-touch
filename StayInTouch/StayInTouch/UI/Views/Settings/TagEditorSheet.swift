@@ -32,7 +32,7 @@ struct TagEditorSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Group Name") {
+                Section("Cadence Name") {
                     TextField("Colleague", text: $name)
                 }
 
@@ -41,7 +41,7 @@ struct TagEditorSheet: View {
                         .labelsHidden()
                 }
             }
-            .navigationTitle(tag == nil ? "New Group" : "Edit Group")
+            .navigationTitle(tag == nil ? "New Cadence" : "Edit Cadence")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {

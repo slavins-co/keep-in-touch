@@ -1,5 +1,5 @@
 //
-//  CoreDataGroupRepository.swift
+//  CoreDataCadenceRepository.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
@@ -7,15 +7,15 @@
 
 import CoreData
 
-final class CoreDataGroupRepository: GroupRepository {
+final class CoreDataCadenceRepository: CadenceRepository {
     private let context: NSManagedObjectContext
 
     init(context: NSManagedObjectContext) {
         self.context = context
     }
 
-    func fetch(id: UUID) -> Group? {
-        var result: Group?
+    func fetch(id: UUID) -> Cadence? {
+        var result: Cadence?
         context.performAndWait {
             let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
             request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
@@ -25,8 +25,8 @@ final class CoreDataGroupRepository: GroupRepository {
         return result
     }
 
-    func fetchAll() -> [Group] {
-        var results: [Group] = []
+    func fetchAll() -> [Cadence] {
+        var results: [Cadence] = []
         context.performAndWait {
             let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
@@ -35,8 +35,8 @@ final class CoreDataGroupRepository: GroupRepository {
         return results
     }
 
-    func fetchDefaultGroups() -> [Group] {
-        var results: [Group] = []
+    func fetchDefaultGroups() -> [Cadence] {
+        var results: [Cadence] = []
         context.performAndWait {
             let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
             request.predicate = NSPredicate(format: "isDefault == YES")
@@ -46,7 +46,7 @@ final class CoreDataGroupRepository: GroupRepository {
         return results
     }
 
-    func save(_ group: Group) throws {
+    func save(_ group: Cadence) throws {
         do {
             try context.performAndWait {
                 let entity = fetchEntity(id: group.id) ?? GroupEntity(context: context)
@@ -56,11 +56,11 @@ final class CoreDataGroupRepository: GroupRepository {
         } catch let error as RepositoryError {
             throw error
         } catch {
-            throw RepositoryError.saveFailed(entity: "Group", underlying: error)
+            throw RepositoryError.saveFailed(entity: "Cadence", underlying: error)
         }
     }
 
-    func batchSave(_ groups: [Group]) throws {
+    func batchSave(_ groups: [Cadence]) throws {
         do {
             try context.performAndWait {
                 for group in groups {
@@ -72,7 +72,7 @@ final class CoreDataGroupRepository: GroupRepository {
         } catch let error as RepositoryError {
             throw error
         } catch {
-            throw RepositoryError.saveFailed(entity: "Group", underlying: error)
+            throw RepositoryError.saveFailed(entity: "Cadence", underlying: error)
         }
     }
 
@@ -86,7 +86,7 @@ final class CoreDataGroupRepository: GroupRepository {
         } catch let error as RepositoryError {
             throw error
         } catch {
-            throw RepositoryError.deleteFailed(entity: "Group", id: id, underlying: error)
+            throw RepositoryError.deleteFailed(entity: "Cadence", id: id, underlying: error)
         }
     }
 

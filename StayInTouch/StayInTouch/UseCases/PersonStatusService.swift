@@ -14,7 +14,7 @@ struct PersonStatusService {
         self.calculator = FrequencyCalculator(referenceDate: referenceDate)
     }
 
-    func overduePeople(_ people: [Person], groups: [Group]) -> [Person] {
+    func overduePeople(_ people: [Person], groups: [Cadence]) -> [Person] {
         let filtered = people.filter { !($0.isPaused) }
         let overdue = filtered.filter { calculator.status(for: $0, in: groups) == .overdue }
         return overdue.sorted { lhs, rhs in
@@ -32,7 +32,7 @@ struct PersonStatusService {
         }
     }
 
-    func dueSoonPeople(_ people: [Person], groups: [Group], settings: AppSettings) -> [Person] {
+    func dueSoonPeople(_ people: [Person], groups: [Cadence], settings: AppSettings) -> [Person] {
         let filtered = people.filter { !($0.isPaused) }
         let dueSoon = filtered.filter { person in
             guard calculator.status(for: person, in: groups) == .dueSoon else { return false }
@@ -55,7 +55,7 @@ struct PersonStatusService {
         }
     }
 
-    private func daysUntilDue(for person: Person, groups: [Group]) -> Int {
+    private func daysUntilDue(for person: Person, groups: [Cadence]) -> Int {
         guard let dueDate = calculator.effectiveDueDate(for: person, in: groups) else { return Int.max }
         let cal = Calendar.current
         return cal.dateComponents([.day], from: cal.startOfDay(for: calculator.referenceDate), to: cal.startOfDay(for: dueDate)).day ?? Int.max

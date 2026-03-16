@@ -1,5 +1,5 @@
 //
-//  AssignGroupUseCase.swift
+//  AssignCadenceUseCase.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
@@ -7,25 +7,25 @@
 
 import Foundation
 
-struct AssignGroupUseCase {
+struct AssignCadenceUseCase {
     let referenceDate: Date
 
     init(referenceDate: Date = Date()) {
         self.referenceDate = referenceDate
     }
 
-    func assign(person: Person, to groupId: UUID) -> Person {
-        if person.groupId == groupId {
-            guard person.groupAddedAt == nil else { return person }
+    func assign(person: Person, to cadenceId: UUID) -> Person {
+        if person.cadenceId == cadenceId {
+            guard person.cadenceAddedAt == nil else { return person }
             var updated = person
-            updated.groupAddedAt = referenceDate
+            updated.cadenceAddedAt = referenceDate
             updated.modifiedAt = referenceDate
             return updated
         }
 
         var updated = person
-        updated.groupId = groupId
-        updated.groupAddedAt = referenceDate
+        updated.cadenceId = cadenceId
+        updated.cadenceAddedAt = referenceDate
         updated.modifiedAt = referenceDate
         return updated
     }

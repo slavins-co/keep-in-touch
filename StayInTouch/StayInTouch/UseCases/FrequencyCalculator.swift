@@ -14,10 +14,10 @@ struct FrequencyCalculator {
         self.referenceDate = referenceDate
     }
 
-    func status(for person: Person, in groups: [Group]) -> ContactStatus {
+    func status(for person: Person, in groups: [Cadence]) -> ContactStatus {
         if person.isPaused { return .onTrack }
         if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return .onTrack }
-        guard let group = groups.first(where: { $0.id == person.groupId }) else {
+        guard let group = groups.first(where: { $0.id == person.cadenceId }) else {
             return .onTrack
         }
 
@@ -35,10 +35,10 @@ struct FrequencyCalculator {
         return .onTrack
     }
 
-    func daysOverdue(for person: Person, in groups: [Group]) -> Int {
+    func daysOverdue(for person: Person, in groups: [Cadence]) -> Int {
         if person.isPaused { return 0 }
         if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return 0 }
-        guard groups.first(where: { $0.id == person.groupId }) != nil else {
+        guard groups.first(where: { $0.id == person.cadenceId }) != nil else {
             return 0
         }
 
@@ -50,9 +50,9 @@ struct FrequencyCalculator {
         return max(0, -daysUntilDue)
     }
 
-    func effectiveDueDate(for person: Person, in groups: [Group]) -> Date? {
+    func effectiveDueDate(for person: Person, in groups: [Cadence]) -> Date? {
         let cal = Calendar.current
-        guard let group = groups.first(where: { $0.id == person.groupId }) else { return nil }
+        guard let group = groups.first(where: { $0.id == person.cadenceId }) else { return nil }
 
         let groupDueDate: Date?
         if let lastTouch = effectiveLastTouchDate(for: person) {
@@ -74,7 +74,7 @@ struct FrequencyCalculator {
 
     func effectiveLastTouchDate(for person: Person) -> Date? {
         if let lastTouch = person.lastTouchAt { return lastTouch }
-        return person.groupAddedAt
+        return person.cadenceAddedAt
     }
 
     func daysSinceLastTouch(for person: Person) -> Int? {

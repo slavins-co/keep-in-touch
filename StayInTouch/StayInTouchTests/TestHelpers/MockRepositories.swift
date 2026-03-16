@@ -21,7 +21,7 @@ final class MockPersonRepository: PersonRepository {
         people.filter { $0.isTracked && (includePaused || !$0.isPaused) }
     }
     func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
-        fetchTracked(includePaused: includePaused).filter { $0.groupId == id }
+        fetchTracked(includePaused: includePaused).filter { $0.cadenceId == id }
     }
     func fetchByTag(id: UUID, includePaused: Bool) -> [Person] {
         fetchTracked(includePaused: includePaused).filter { $0.tagIds.contains(id) }
@@ -54,22 +54,22 @@ final class MockPersonRepository: PersonRepository {
     }
 }
 
-// MARK: - MockGroupRepository
+// MARK: - MockCadenceRepository
 
-final class MockGroupRepository: GroupRepository {
-    var groups: [Group] = []
+final class MockCadenceRepository: CadenceRepository {
+    var groups: [Cadence] = []
 
-    func fetch(id: UUID) -> Group? { groups.first { $0.id == id } }
-    func fetchAll() -> [Group] { groups }
-    func fetchDefaultGroups() -> [Group] { groups.filter { $0.isDefault } }
-    func save(_ group: Group) throws {
+    func fetch(id: UUID) -> Cadence? { groups.first { $0.id == id } }
+    func fetchAll() -> [Cadence] { groups }
+    func fetchDefaultGroups() -> [Cadence] { groups.filter { $0.isDefault } }
+    func save(_ group: Cadence) throws {
         if let idx = groups.firstIndex(where: { $0.id == group.id }) {
             groups[idx] = group
         } else {
             groups.append(group)
         }
     }
-    func batchSave(_ groups: [Group]) throws {
+    func batchSave(_ groups: [Cadence]) throws {
         for group in groups { try save(group) }
     }
     func delete(id: UUID) throws {
@@ -153,7 +153,7 @@ enum TestFactory {
     static func makePerson(
         id: UUID = UUID(),
         name: String = "Test Person",
-        groupId: UUID = UUID(),
+        cadenceId: UUID = UUID(),
         tagIds: [UUID] = [],
         lastTouchAt: Date? = nil,
         lastTouchMethod: TouchMethod? = nil,
@@ -172,7 +172,7 @@ enum TestFactory {
             displayName: name,
             initials: String(name.prefix(2)),
             avatarColor: "#FF6B6B",
-            groupId: groupId,
+            cadenceId: cadenceId,
             tagIds: tagIds,
             lastTouchAt: lastTouchAt,
             lastTouchMethod: lastTouchMethod,
@@ -188,7 +188,7 @@ enum TestFactory {
             birthdayNotificationsEnabled: birthdayNotificationsEnabled,
             contactUnavailable: false,
             isDemoData: false,
-            groupAddedAt: Date(),
+            cadenceAddedAt: Date(),
             createdAt: Date(),
             modifiedAt: Date(),
             sortOrder: 0
@@ -200,8 +200,8 @@ enum TestFactory {
         name: String = "Weekly",
         frequencyDays: Int = 7,
         isDefault: Bool = true
-    ) -> Group {
-        Group(
+    ) -> Cadence {
+        Cadence(
             id: id,
             name: name,
             frequencyDays: frequencyDays,

@@ -10,11 +10,11 @@ import Foundation
 @MainActor
 final class HomeViewModel: ObservableObject {
     @Published var searchText = ""
-    @Published var selectedGroupId: UUID?
+    @Published var selectedCadenceId: UUID?
     @Published var selectedTagId: UUID?
 
     @Published private(set) var allPeople: [Person] = []
-    @Published private(set) var groups: [Group] = []
+    @Published private(set) var groups: [Cadence] = []
     @Published private(set) var tags: [Tag] = []
     @Published private(set) var settings: AppSettings?
 
@@ -27,7 +27,7 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var refreshToken = UUID()
 
     private let personRepository: PersonRepository
-    private let groupRepository: GroupRepository
+    private let cadenceRepository: CadenceRepository
     private let tagRepository: TagRepository
     private let settingsRepository: AppSettingsRepository
     private var promptStore: FreshStartPromptStore
@@ -35,13 +35,13 @@ final class HomeViewModel: ObservableObject {
 
     init(
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
-        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
+        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
         tagRepository: TagRepository = CoreDataTagRepository(context: CoreDataStack.shared.viewContext),
         settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
         promptStore: FreshStartPromptStore = FreshStartPromptStore()
     ) {
         self.personRepository = personRepository
-        self.groupRepository = groupRepository
+        self.cadenceRepository = cadenceRepository
         self.tagRepository = tagRepository
         self.settingsRepository = settingsRepository
         self.promptStore = promptStore
@@ -51,7 +51,7 @@ final class HomeViewModel: ObservableObject {
     convenience init(dependencies: AppDependencies) {
         self.init(
             personRepository: dependencies.personRepository,
-            groupRepository: dependencies.groupRepository,
+            cadenceRepository: dependencies.cadenceRepository,
             tagRepository: dependencies.tagRepository,
             settingsRepository: dependencies.settingsRepository
         )
@@ -59,7 +59,7 @@ final class HomeViewModel: ObservableObject {
 
     func load() {
         settings = settingsRepository.fetch()
-        groups = groupRepository.fetchAll()
+        groups = cadenceRepository.fetchAll()
         tags = tagRepository.fetchAll()
         allPeople = personRepository.fetchTracked(includePaused: true)
 
@@ -102,7 +102,7 @@ final class HomeViewModel: ObservableObject {
             people: allPeople,
             groups: groups,
             tags: tags,
-            selectedGroupId: selectedGroupId,
+            selectedCadenceId: selectedCadenceId,
             selectedTagId: selectedTagId,
             searchText: searchText
         )
@@ -150,9 +150,9 @@ final class HomeViewModel: ObservableObject {
 
     static func filterPeople(
         people: [Person],
-        groups: [Group],
+        groups: [Cadence],
         tags: [Tag],
-        selectedGroupId: UUID?,
+        selectedCadenceId: UUID?,
         selectedTagId: UUID?,
         searchText: String
     ) -> [Person] {
@@ -160,7 +160,7 @@ final class HomeViewModel: ObservableObject {
         let tagNameById = Dictionary(uniqueKeysWithValues: tags.map { ($0.id, $0.name.lowercased()) })
 
         return people.filter { person in
-            if let groupId = selectedGroupId, person.groupId != groupId { return false }
+            if let cadenceId = selectedCadenceId, person.cadenceId != cadenceId { return false }
             if let tagId = selectedTagId, !person.tagIds.contains(tagId) { return false }
 
             if searchLower.isEmpty { return true }

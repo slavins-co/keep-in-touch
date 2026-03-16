@@ -15,7 +15,7 @@ extension PersonEntity {
             displayName: requiredField(displayName, entity: "PersonEntity", field: "displayName", fallback: ""),
             initials: requiredField(initials, entity: "PersonEntity", field: "initials", fallback: ""),
             avatarColor: requiredField(avatarColor, entity: "PersonEntity", field: "avatarColor", fallback: ""),
-            groupId: requiredField(groupId, entity: "PersonEntity", field: "groupId", fallback: UUID()),
+            cadenceId: requiredField(groupId, entity: "PersonEntity", field: "groupId", fallback: UUID()),
             tagIds: decodeTagIds(tagIds),
             lastTouchAt: lastTouchAt,
             lastTouchMethod: lastTouchMethod.flatMap(TouchMethod.init(rawValue:)),
@@ -31,7 +31,7 @@ extension PersonEntity {
             birthdayNotificationsEnabled: birthdayNotificationsEnabled,
             contactUnavailable: contactUnavailable,
             isDemoData: isDemoData,
-            groupAddedAt: groupAddedAt,
+            cadenceAddedAt: groupAddedAt,
             createdAt: requiredField(createdAt, entity: "PersonEntity", field: "createdAt", fallback: Date()),
             modifiedAt: requiredField(modifiedAt, entity: "PersonEntity", field: "modifiedAt", fallback: Date()),
             sortOrder: Int(sortOrder)
@@ -44,7 +44,7 @@ extension PersonEntity {
         displayName = person.displayName
         initials = person.initials
         avatarColor = person.avatarColor
-        groupId = person.groupId
+        groupId = person.cadenceId
         tagIds = person.tagIds as NSArray
         lastTouchAt = person.lastTouchAt
         lastTouchMethod = person.lastTouchMethod?.rawValue
@@ -60,7 +60,7 @@ extension PersonEntity {
         birthdayNotificationsEnabled = person.birthdayNotificationsEnabled
         contactUnavailable = person.contactUnavailable
         isDemoData = person.isDemoData
-        groupAddedAt = person.groupAddedAt
+        groupAddedAt = person.cadenceAddedAt
         createdAt = person.createdAt
         modifiedAt = person.modifiedAt
         sortOrder = Int64(person.sortOrder)

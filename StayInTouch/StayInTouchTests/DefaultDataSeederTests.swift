@@ -16,7 +16,7 @@ final class DefaultDataSeederTests: XCTestCase {
         let seeder = DefaultDataSeeder(context: context)
         try seeder.seedIfNeeded()
 
-        let groupRepo = CoreDataGroupRepository(context: context)
+        let groupRepo = CoreDataCadenceRepository(context: context)
         let tagRepo = CoreDataTagRepository(context: context)
         let settingsRepo = CoreDataAppSettingsRepository(context: context)
 

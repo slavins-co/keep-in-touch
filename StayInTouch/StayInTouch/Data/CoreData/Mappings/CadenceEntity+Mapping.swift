@@ -1,5 +1,5 @@
 //
-//  GroupEntity+Mapping.swift
+//  CadenceEntity+Mapping.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
@@ -8,8 +8,8 @@
 import CoreData
 
 extension GroupEntity {
-    func toDomain() -> Group {
-        Group(
+    func toDomain() -> Cadence {
+        Cadence(
             id: requiredField(id, entity: "GroupEntity", field: "id", fallback: UUID()),
             name: requiredField(name, entity: "GroupEntity", field: "name", fallback: ""),
             frequencyDays: Int(frequencyDays),
@@ -31,15 +31,15 @@ extension GroupEntity {
         return value
     }
 
-    func apply(_ group: Group) {
-        id = group.id
-        name = group.name
-        frequencyDays = Int64(group.frequencyDays)
-        warningDays = Int64(group.warningDays)
-        colorHex = group.colorHex
-        isDefault = group.isDefault
-        sortOrder = Int64(group.sortOrder)
-        createdAt = group.createdAt
-        modifiedAt = group.modifiedAt
+    func apply(_ cadence: Cadence) {
+        id = cadence.id
+        name = cadence.name
+        frequencyDays = Int64(cadence.frequencyDays)
+        warningDays = Int64(cadence.warningDays)
+        colorHex = cadence.colorHex
+        isDefault = cadence.isDefault
+        sortOrder = Int64(cadence.sortOrder)
+        createdAt = cadence.createdAt
+        modifiedAt = cadence.modifiedAt
     }
 }

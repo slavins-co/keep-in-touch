@@ -1,5 +1,5 @@
 //
-//  CoreDataGroupRepositoryTests.swift
+//  CoreDataCadenceRepositoryTests.swift
 //  KeepInTouchTests
 //
 //  Created by Claude on 3/6/26.
@@ -9,15 +9,15 @@ import CoreData
 import XCTest
 @testable import StayInTouch
 
-final class CoreDataGroupRepositoryTests: XCTestCase {
+final class CoreDataCadenceRepositoryTests: XCTestCase {
     private var context: NSManagedObjectContext!
-    private var repo: CoreDataGroupRepository!
+    private var repo: CoreDataCadenceRepository!
 
     override func setUp() {
         super.setUp()
         let stack = CoreDataTestStack()
         context = stack.container.viewContext
-        repo = CoreDataGroupRepository(context: context)
+        repo = CoreDataCadenceRepository(context: context)
     }
 
     // MARK: - Fetch
@@ -32,13 +32,13 @@ final class CoreDataGroupRepositoryTests: XCTestCase {
 
     func testFetchAllReturnsSortedBySortOrder() throws {
         var groupB = TestFactory.makeGroup(name: "Beta", isDefault: false)
-        groupB = Group(id: groupB.id, name: groupB.name, frequencyDays: groupB.frequencyDays,
+        groupB = Cadence(id: groupB.id, name: groupB.name, frequencyDays: groupB.frequencyDays,
                        warningDays: groupB.warningDays, colorHex: groupB.colorHex,
                        isDefault: groupB.isDefault, sortOrder: 2,
                        createdAt: groupB.createdAt, modifiedAt: groupB.modifiedAt)
 
         var groupA = TestFactory.makeGroup(name: "Alpha", isDefault: false)
-        groupA = Group(id: groupA.id, name: groupA.name, frequencyDays: groupA.frequencyDays,
+        groupA = Cadence(id: groupA.id, name: groupA.name, frequencyDays: groupA.frequencyDays,
                        warningDays: groupA.warningDays, colorHex: groupA.colorHex,
                        isDefault: groupA.isDefault, sortOrder: 1,
                        createdAt: groupA.createdAt, modifiedAt: groupA.modifiedAt)
@@ -70,7 +70,7 @@ final class CoreDataGroupRepositoryTests: XCTestCase {
         let group = TestFactory.makeGroup(name: "Weekly")
         try repo.save(group)
 
-        let updated = Group(id: group.id, name: "Biweekly", frequencyDays: 14,
+        let updated = Cadence(id: group.id, name: "Biweekly", frequencyDays: 14,
                             warningDays: group.warningDays, colorHex: group.colorHex,
                             isDefault: group.isDefault, sortOrder: group.sortOrder,
                             createdAt: group.createdAt, modifiedAt: Date())

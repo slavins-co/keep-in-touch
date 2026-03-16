@@ -10,22 +10,22 @@ final class NotificationSchedulerTests: XCTestCase {
 
     private var mockNotificationCenter: MockUserNotificationCenter!
     private var mockPersonRepo: MockPersonRepository!
-    private var mockGroupRepo: MockGroupRepository!
+    private var mockGroupRepo: MockCadenceRepository!
     private var mockSettingsRepo: MockSettingsRepository!
     private var sut: NotificationScheduler!
 
-    private let groupId = UUID()
+    private let cadenceId = UUID()
 
     override func setUp() {
         super.setUp()
         mockNotificationCenter = MockUserNotificationCenter()
         mockPersonRepo = MockPersonRepository()
-        mockGroupRepo = MockGroupRepository()
+        mockGroupRepo = MockCadenceRepository()
         mockSettingsRepo = MockSettingsRepository()
         sut = NotificationScheduler(
             settingsRepository: mockSettingsRepo,
             personRepository: mockPersonRepo,
-            groupRepository: mockGroupRepo,
+            cadenceRepository: mockGroupRepo,
             notificationCenter: mockNotificationCenter
         )
     }
@@ -77,12 +77,12 @@ final class NotificationSchedulerTests: XCTestCase {
         let lastTouch = Calendar.current.date(byAdding: .day, value: -14, to: Date())!
         var person = TestFactory.makePerson(
             name: name,
-            groupId: groupId,
+            cadenceId: cadenceId,
             lastTouchAt: lastTouch,
             lastTouchMethod: .call
         )
         person.customBreachTime = customBreachTime
-        person.groupAddedAt = lastTouch
+        person.cadenceAddedAt = lastTouch
         return person
     }
 
@@ -90,11 +90,11 @@ final class NotificationSchedulerTests: XCTestCase {
         let lastTouch = Calendar.current.date(byAdding: .day, value: -6, to: Date())!
         var person = TestFactory.makePerson(
             name: name,
-            groupId: groupId,
+            cadenceId: cadenceId,
             lastTouchAt: lastTouch,
             lastTouchMethod: .text
         )
-        person.groupAddedAt = lastTouch
+        person.cadenceAddedAt = lastTouch
         return person
     }
 
@@ -102,16 +102,16 @@ final class NotificationSchedulerTests: XCTestCase {
         let lastTouch = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
         var person = TestFactory.makePerson(
             name: name,
-            groupId: groupId,
+            cadenceId: cadenceId,
             lastTouchAt: lastTouch,
             lastTouchMethod: .irl
         )
-        person.groupAddedAt = lastTouch
+        person.cadenceAddedAt = lastTouch
         return person
     }
 
     private func seedWeeklyGroup() {
-        mockGroupRepo.groups = [TestFactory.makeGroup(id: groupId, name: "Weekly", frequencyDays: 7)]
+        mockGroupRepo.groups = [TestFactory.makeGroup(id: cadenceId, name: "Weekly", frequencyDays: 7)]
     }
 
     // MARK: - Notifications Disabled
@@ -436,7 +436,7 @@ final class NotificationSchedulerTests: XCTestCase {
     ) -> Person {
         var person = TestFactory.makePerson(
             name: name,
-            groupId: groupId,
+            cadenceId: cadenceId,
             birthdayNotificationsEnabled: birthdayNotificationsEnabled
         )
         person.birthday = birthday
@@ -499,7 +499,7 @@ final class NotificationSchedulerTests: XCTestCase {
     func testBirthday_noBirthday_skips() async {
         mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
         seedWeeklyGroup()
-        var person = TestFactory.makePerson(name: "NoBday", groupId: groupId)
+        var person = TestFactory.makePerson(name: "NoBday", cadenceId: cadenceId)
         person.birthday = nil
         mockPersonRepo.people = [person]
 

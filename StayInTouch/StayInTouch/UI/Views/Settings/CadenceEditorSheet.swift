@@ -1,5 +1,5 @@
 //
-//  GroupEditorSheet.swift
+//  CadenceEditorSheet.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/3/26.
@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-struct GroupEditorSheet: View {
+struct CadenceEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    let group: Group?
+    let group: Cadence?
     let existingNames: [String]
-    let onSave: (Group, Bool) -> Void
+    let onSave: (Cadence, Bool) -> Void
     let onCancel: () -> Void
     let defaultSortOrder: Int
 
@@ -21,7 +21,7 @@ struct GroupEditorSheet: View {
     @State private var warningDays: Int
     @State private var isDefault: Bool
 
-    init(group: Group?, existingNames: [String], defaultSortOrder: Int, onSave: @escaping (Group, Bool) -> Void, onCancel: @escaping () -> Void) {
+    init(group: Cadence?, existingNames: [String], defaultSortOrder: Int, onSave: @escaping (Cadence, Bool) -> Void, onCancel: @escaping () -> Void) {
         self.group = group
         self.existingNames = existingNames
         self.defaultSortOrder = defaultSortOrder
@@ -93,7 +93,7 @@ struct GroupEditorSheet: View {
     private func handleSave() {
         let now = Date()
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let saved = Group(
+        let saved = Cadence(
             id: group?.id ?? UUID(),
             name: trimmed,
             frequencyDays: frequencyDays,

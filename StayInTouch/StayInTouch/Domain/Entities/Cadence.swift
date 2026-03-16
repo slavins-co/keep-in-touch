@@ -1,5 +1,5 @@
 //
-//  Group.swift
+//  Cadence.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Group: Identifiable, Equatable {
+struct Cadence: Identifiable, Equatable {
     let id: UUID
     var name: String
     var frequencyDays: Int

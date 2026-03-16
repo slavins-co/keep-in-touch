@@ -71,7 +71,7 @@ struct ContactImportService {
         let backgroundContext = coreDataStack.newBackgroundContext()
         await backgroundContext.perform {
             let peopleRepo = CoreDataPersonRepository(context: backgroundContext)
-            let groupRepo = CoreDataGroupRepository(context: backgroundContext)
+            let groupRepo = CoreDataCadenceRepository(context: backgroundContext)
             let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
 
             let groups = groupRepo.fetchAll()
@@ -86,7 +86,7 @@ struct ContactImportService {
             var touchEventsToSave: [TouchEvent] = []
 
             for summary in summaries {
-                let groupId = groupAssignments[summary.identifier] ?? defaultGroupId
+                let cadenceId = groupAssignments[summary.identifier] ?? defaultGroupId
                 let lastTouchOption = lastTouchSelections[summary.identifier] ?? .cantRemember
                 let seedDate = lastTouchOption.approximateDate(from: now)
 
@@ -97,7 +97,7 @@ struct ContactImportService {
                     displayName: summary.displayName,
                     initials: summary.initials,
                     avatarColor: AvatarColors.randomHex(),
-                    groupId: groupId,
+                    cadenceId: cadenceId,
                     tagIds: [],
                     lastTouchAt: seedDate,
                     lastTouchMethod: seedDate != nil ? .other : nil,
@@ -113,13 +113,13 @@ struct ContactImportService {
                     birthdayNotificationsEnabled: true,
                     contactUnavailable: false,
                     isDemoData: false,
-                    groupAddedAt: nil,
+                    cadenceAddedAt: nil,
                     createdAt: now,
                     modifiedAt: now,
                     sortOrder: sortOrder
                 )
 
-                personsToSave.append(AssignGroupUseCase(referenceDate: now).assign(person: person, to: groupId))
+                personsToSave.append(AssignCadenceUseCase(referenceDate: now).assign(person: person, to: cadenceId))
 
                 if let seedDate {
                     touchEventsToSave.append(TouchEvent(

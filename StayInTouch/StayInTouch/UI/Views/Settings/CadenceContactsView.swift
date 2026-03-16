@@ -1,5 +1,5 @@
 //
-//  GroupContactsView.swift
+//  CadenceContactsView.swift
 //  KeepInTouch
 //
 //  Created by Codex on 3/3/26.
@@ -7,16 +7,16 @@
 
 import SwiftUI
 
-struct GroupContactsView: View {
-    let group: Group
+struct CadenceContactsView: View {
+    let group: Cadence
 
-    @StateObject private var viewModel: GroupContactsViewModel
+    @StateObject private var viewModel: CadenceContactsViewModel
     @State private var showAddContacts = false
     @State private var removeTarget: Person?
 
-    init(group: Group) {
+    init(group: Cadence) {
         self.group = group
-        _viewModel = StateObject(wrappedValue: GroupContactsViewModel(group: group))
+        _viewModel = StateObject(wrappedValue: CadenceContactsViewModel(group: group))
     }
 
     var body: some View {
@@ -68,7 +68,7 @@ struct GroupContactsView: View {
             Button("Cancel", role: .cancel) { removeTarget = nil }
         }
         .sheet(isPresented: $showAddContacts) {
-            AddContactsToGroupView(
+            AddContactsToCadenceView(
                 available: viewModel.available,
                 onSave: { ids in
                     viewModel.addPeople(ids)

@@ -1,5 +1,5 @@
 //
-//  GroupAssignmentView.swift
+//  CadenceAssignmentView.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct GroupAssignmentView: View {
+struct CadenceAssignmentView: View {
     @ObservedObject var viewModel: OnboardingViewModel
 
     var body: some View {
@@ -52,7 +52,7 @@ struct GroupAssignmentView: View {
     }
 
     private func binding(for contactId: String) -> Binding<UUID> {
-        let fallback = viewModel.selectedGroupId ?? viewModel.groups.first?.id ?? UUID()
+        let fallback = viewModel.selectedCadenceId ?? viewModel.groups.first?.id ?? UUID()
         return Binding<UUID>(
             get: {
                 viewModel.contactGroupSelections[contactId] ?? fallback

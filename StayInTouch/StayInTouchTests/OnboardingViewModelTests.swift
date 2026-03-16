@@ -11,7 +11,7 @@ import XCTest
 @MainActor
 final class OnboardingViewModelTests: XCTestCase {
     private var personRepo: MockPersonRepository!
-    private var groupRepo: MockGroupRepository!
+    private var groupRepo: MockCadenceRepository!
     private var settingsRepo: MockSettingsRepository!
     private var monthlyGroupId: UUID!
     private var sut: OnboardingViewModel!
@@ -20,7 +20,7 @@ final class OnboardingViewModelTests: XCTestCase {
         super.setUp()
         monthlyGroupId = UUID()
         personRepo = MockPersonRepository()
-        groupRepo = MockGroupRepository()
+        groupRepo = MockCadenceRepository()
         groupRepo.groups = [
             TestFactory.makeGroup(id: monthlyGroupId, name: "Monthly", frequencyDays: 30),
             TestFactory.makeGroup(name: "Weekly", frequencyDays: 7)
@@ -30,7 +30,7 @@ final class OnboardingViewModelTests: XCTestCase {
 
         sut = OnboardingViewModel(
             personRepository: personRepo,
-            groupRepository: groupRepo,
+            cadenceRepository: groupRepo,
             settingsRepository: settingsRepo
         )
     }
@@ -120,10 +120,10 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertEqual(sut.filteredContacts.first?.displayName, "Alice")
     }
 
-    // MARK: - Group Selection
+    // MARK: - Cadence Selection
 
     func testSelectedGroupIdDefaultsToMonthly() {
-        XCTAssertEqual(sut.selectedGroupId, monthlyGroupId)
+        XCTAssertEqual(sut.selectedCadenceId, monthlyGroupId)
     }
 
     func testSelectedGroupIdFallsToFirstGroupWhenNoMonthly() {
@@ -136,11 +136,11 @@ final class OnboardingViewModelTests: XCTestCase {
 
         let vm = OnboardingViewModel(
             personRepository: personRepo,
-            groupRepository: groupRepo,
+            cadenceRepository: groupRepo,
             settingsRepository: settingsRepo
         )
 
-        XCTAssertEqual(vm.selectedGroupId, firstId)
+        XCTAssertEqual(vm.selectedCadenceId, firstId)
     }
 
     func testSeedGroupSelectionsUsesDefaultGroup() {

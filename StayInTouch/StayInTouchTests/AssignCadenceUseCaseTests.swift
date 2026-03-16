@@ -1,5 +1,5 @@
 //
-//  AssignGroupUseCaseTests.swift
+//  AssignCadenceUseCaseTests.swift
 //  KeepInTouchTests
 //
 //  Created by Codex on 2/2/26.
@@ -8,51 +8,51 @@
 import XCTest
 @testable import StayInTouch
 
-final class AssignGroupUseCaseTests: XCTestCase {
+final class AssignCadenceUseCaseTests: XCTestCase {
     func testAssignUpdatesGroupAndGroupAddedAt() {
         let now = Date()
-        let useCase = AssignGroupUseCase(referenceDate: now)
-        let original = makePerson(groupId: UUID(), groupAddedAt: nil)
+        let useCase = AssignCadenceUseCase(referenceDate: now)
+        let original = makePerson(cadenceId: UUID(), cadenceAddedAt: nil)
         let newGroupId = UUID()
 
         let updated = useCase.assign(person: original, to: newGroupId)
 
-        XCTAssertEqual(updated.groupId, newGroupId)
-        XCTAssertEqual(updated.groupAddedAt, now)
+        XCTAssertEqual(updated.cadenceId, newGroupId)
+        XCTAssertEqual(updated.cadenceAddedAt, now)
         XCTAssertEqual(updated.modifiedAt, now)
     }
 
     func testAssignSameGroupSetsGroupAddedAtIfMissing() {
         let now = Date()
-        let groupId = UUID()
-        let useCase = AssignGroupUseCase(referenceDate: now)
-        let original = makePerson(groupId: groupId, groupAddedAt: nil)
+        let cadenceId = UUID()
+        let useCase = AssignCadenceUseCase(referenceDate: now)
+        let original = makePerson(cadenceId: cadenceId, cadenceAddedAt: nil)
 
-        let updated = useCase.assign(person: original, to: groupId)
+        let updated = useCase.assign(person: original, to: cadenceId)
 
-        XCTAssertEqual(updated.groupAddedAt, now)
+        XCTAssertEqual(updated.cadenceAddedAt, now)
     }
 
     func testAssignSameGroupKeepsExistingGroupAddedAt() {
         let now = Date()
         let existing = Calendar.current.date(byAdding: .day, value: -1, to: now) ?? now
-        let groupId = UUID()
-        let useCase = AssignGroupUseCase(referenceDate: now)
-        let original = makePerson(groupId: groupId, groupAddedAt: existing)
+        let cadenceId = UUID()
+        let useCase = AssignCadenceUseCase(referenceDate: now)
+        let original = makePerson(cadenceId: cadenceId, cadenceAddedAt: existing)
 
-        let updated = useCase.assign(person: original, to: groupId)
+        let updated = useCase.assign(person: original, to: cadenceId)
 
-        XCTAssertEqual(updated.groupAddedAt, existing)
+        XCTAssertEqual(updated.cadenceAddedAt, existing)
     }
 
-    private func makePerson(groupId: UUID, groupAddedAt: Date?) -> Person {
+    private func makePerson(cadenceId: UUID, cadenceAddedAt: Date?) -> Person {
         Person(
             id: UUID(),
             cnIdentifier: nil,
             displayName: "Person",
             initials: "P",
             avatarColor: "#FF6B6B",
-            groupId: groupId,
+            cadenceId: cadenceId,
             tagIds: [],
             lastTouchAt: nil,
             lastTouchMethod: nil,
@@ -68,7 +68,7 @@ final class AssignGroupUseCaseTests: XCTestCase {
             birthdayNotificationsEnabled: true,
             contactUnavailable: false,
             isDemoData: false,
-            groupAddedAt: groupAddedAt,
+            cadenceAddedAt: cadenceAddedAt,
             createdAt: Date(),
             modifiedAt: Date(),
             sortOrder: 0

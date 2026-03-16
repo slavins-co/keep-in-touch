@@ -188,7 +188,7 @@ enum DS {
             dark: UIColor(Color(hex: "C084FC"))
         )
 
-        // MARK: Group Badge
+        // MARK: Cadence Badge
 
         static let groupBadgeBackground = adaptiveColor(
             light: UIColor.systemGray5,

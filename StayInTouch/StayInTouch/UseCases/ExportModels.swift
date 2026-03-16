@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - Export Structs
 
-struct ExportGroup: Codable {
+struct ExportCadence: Codable {
     let id: UUID
     let name: String
     let frequencyDays: Int
@@ -18,8 +18,8 @@ struct ExportGroup: Codable {
     let sortOrder: Int
     let isDefault: Bool
 
-    static func from(_ group: Group) -> ExportGroup {
-        ExportGroup(
+    static func from(_ group: Cadence) -> ExportCadence {
+        ExportCadence(
             id: group.id,
             name: group.name,
             frequencyDays: group.frequencyDays,
@@ -50,7 +50,7 @@ struct ExportTag: Codable {
 struct ExportData: Codable {
     let version: Int
     let exportedAt: Date
-    let groups: [ExportGroup]
+    let groups: [ExportCadence]
     let tags: [ExportTag]
     let people: [ExportPerson]
 }
@@ -74,7 +74,7 @@ struct ExportTouchEvent: Codable {
 struct ExportPerson: Codable {
     let id: UUID
     let displayName: String
-    let groupId: UUID?
+    let cadenceId: UUID?
     let groupName: String?
     let tagIds: [UUID]
     let tagNames: [String]
@@ -91,7 +91,7 @@ struct ExportPerson: Codable {
         return ExportPerson(
             id: person.id,
             displayName: person.displayName,
-            groupId: person.groupId,
+            cadenceId: person.cadenceId,
             groupName: groupName,
             tagIds: person.tagIds,
             tagNames: tagNames,
@@ -116,7 +116,7 @@ struct ImportPreview: Identifiable {
     let touchEventCount: Int
     /// Number of touch events that are genuinely new (not already in the database)
     let newTouchEventCount: Int
-    let newGroups: [ExportGroup]
+    let newGroups: [ExportCadence]
     let newTags: [ExportTag]
     let groupIdMap: [UUID: UUID]
     let tagIdMap: [UUID: UUID]

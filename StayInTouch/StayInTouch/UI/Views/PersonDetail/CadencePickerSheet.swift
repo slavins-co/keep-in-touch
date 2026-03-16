@@ -1,5 +1,5 @@
 //
-//  GroupPickerSheet.swift
+//  CadencePickerSheet.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/2/26.
@@ -7,10 +7,10 @@
 
 import SwiftUI
 
-struct GroupPickerSheet: View {
+struct CadencePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    let groups: [Group]
+    let groups: [Cadence]
     let selectedId: UUID
     let onSelect: (UUID) -> Void
 

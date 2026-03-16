@@ -1,5 +1,5 @@
 //
-//  ManageGroupsView.swift
+//  ManageCadencesView.swift
 //  KeepInTouch
 //
 //  Created by Codex on 2/3/26.
@@ -7,13 +7,13 @@
 
 import SwiftUI
 
-struct ManageGroupsView: View {
+struct ManageCadencesView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel = ManageGroupsViewModel()
+    @StateObject private var viewModel = ManageCadencesViewModel()
 
     @State private var showNewGroup = false
-    @State private var editingGroup: Group?
-    @State private var deleteTarget: Group?
+    @State private var editingGroup: Cadence?
+    @State private var deleteTarget: Cadence?
     @State private var showDeleteConfirm = false
     @State private var showCannotDeleteAlert = false
 
@@ -21,7 +21,7 @@ struct ManageGroupsView: View {
         List {
             ForEach(viewModel.groups, id: \.id) { group in
                 NavigationLink {
-                    GroupContactsView(group: group)
+                    CadenceContactsView(group: group)
                 } label: {
                     VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         HStack {
@@ -76,7 +76,7 @@ struct ManageGroupsView: View {
             }
         }
         .sheet(item: $editingGroup) { group in
-            GroupEditorSheet(
+            CadenceEditorSheet(
                 group: group,
                 existingNames: viewModel.groups.map { $0.name },
                 defaultSortOrder: viewModel.groups.count,
@@ -87,7 +87,7 @@ struct ManageGroupsView: View {
             )
         }
         .sheet(isPresented: $showNewGroup) {
-            GroupEditorSheet(
+            CadenceEditorSheet(
                 group: nil,
                 existingNames: viewModel.groups.map { $0.name },
                 defaultSortOrder: viewModel.groups.count,
