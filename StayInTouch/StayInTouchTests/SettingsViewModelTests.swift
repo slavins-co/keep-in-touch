@@ -127,6 +127,107 @@ final class SettingsViewModelTests: XCTestCase {
         try? FileManager.default.removeItem(at: url)
     }
 
+    // MARK: - CSV Export
+
+    func testExportCSVReturnsFileWithHeaderAndRows() throws {
+        let groupId = UUID()
+        groupRepo.groups = [TestFactory.makeGroup(id: groupId, name: "Weekly")]
+        personRepo.people = [
+            TestFactory.makePerson(name: "Alice", groupId: groupId),
+            TestFactory.makePerson(name: "Bob", groupId: groupId)
+        ]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let url = sut.exportContacts(format: .csv)
+        XCTAssertNotNil(url)
+        let csv = try String(contentsOf: url!, encoding: .utf8)
+        let lines = csv.components(separatedBy: "\r\n")
+        XCTAssertEqual(lines.first, "Name,Frequency,Groups,Last Touched,Last Touch Method,Paused,Notes,Touch Count")
+        XCTAssertEqual(lines.count, 3) // header + 2 rows
+        XCTAssertTrue(lines[1].contains("Alice"))
+        XCTAssertTrue(lines[2].contains("Bob"))
+
+        try? FileManager.default.removeItem(at: url!)
+    }
+
+    func testExportCSVEscapesCommasAndQuotes() throws {
+        personRepo.people = [TestFactory.makePerson(name: "Smith, John")]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let url = sut.exportContacts(format: .csv)!
+        let csv = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(csv.contains("\"Smith, John\""))
+
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testExportCSVEmptyContactsReturnsHeaderOnly() throws {
+        let url = sut.exportContacts(format: .csv)
+        XCTAssertNotNil(url)
+        let csv = try String(contentsOf: url!, encoding: .utf8)
+        let lines = csv.components(separatedBy: "\r\n")
+        XCTAssertEqual(lines.count, 1) // header only
+        XCTAssertTrue(lines[0].starts(with: "Name,"))
+
+        try? FileManager.default.removeItem(at: url!)
+    }
+
+    func testExportCSVIncludesTouchCount() throws {
+        let personId = UUID()
+        personRepo.people = [TestFactory.makePerson(id: personId, name: "Alice")]
+        touchEventRepo.events = [
+            TouchEvent(id: UUID(), personId: personId, at: Date(), method: .call, notes: nil, createdAt: Date(), modifiedAt: Date()),
+            TouchEvent(id: UUID(), personId: personId, at: Date(), method: .text, notes: nil, createdAt: Date(), modifiedAt: Date())
+        ]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let url = sut.exportContacts(format: .csv)!
+        let csv = try String(contentsOf: url, encoding: .utf8)
+        let dataRow = csv.components(separatedBy: "\r\n")[1]
+        XCTAssertTrue(dataRow.hasSuffix(",2"))
+
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    func testExportJSONFormatDefaultWorks() throws {
+        personRepo.people = [TestFactory.makePerson(name: "Alice")]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            groupRepository: groupRepo,
+            tagRepository: tagRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let url = sut.exportContacts(format: .json)
+        XCTAssertNotNil(url)
+        let data = try Data(contentsOf: url!)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(ExportData.self, from: data)
+        XCTAssertEqual(decoded.people.count, 1)
+
+        try? FileManager.default.removeItem(at: url!)
+    }
+
     func testParseImportFileLegacyFormat() async throws {
         // Create a legacy-format JSON ([ExportPerson] array)
         let legacyPeople = [

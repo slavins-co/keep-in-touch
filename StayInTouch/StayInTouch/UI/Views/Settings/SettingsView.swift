@@ -27,6 +27,7 @@ struct SettingsView: View {
     @State private var showImportSuccessAlert = false
     @State private var showImportErrorAlert = false
     @State private var importResultMessage = ""
+    @State private var showExportFormatPicker = false
     @State private var showResetFrequenciesConfirmation = false
     @State private var showPostImportMatch = false
     @State private var postImportResult: ImportResult?
@@ -322,11 +323,23 @@ struct SettingsView: View {
     private var dataSection: some View {
         Section("Data") {
             Button {
-                if let url = viewModel.exportContacts() {
-                    shareItem = ShareItem(url: url)
-                }
+                showExportFormatPicker = true
             } label: {
                 Label("Export Contacts", systemImage: "square.and.arrow.up")
+            }
+            .confirmationDialog("Export Format", isPresented: $showExportFormatPicker) {
+                Button("JSON (backup & re-import)") {
+                    if let url = viewModel.exportContacts(format: .json) {
+                        shareItem = ShareItem(url: url)
+                    }
+                }
+                Button("CSV (spreadsheets)") {
+                    if let url = viewModel.exportContacts(format: .csv) {
+                        shareItem = ShareItem(url: url)
+                    }
+                }
+            } message: {
+                Text("Choose a format for your export.")
             }
 
             Button {
