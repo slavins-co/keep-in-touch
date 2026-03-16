@@ -31,13 +31,13 @@ final class CoreDataCadenceRepositoryTests: XCTestCase {
     }
 
     func testFetchAllReturnsSortedBySortOrder() throws {
-        var groupB = TestFactory.makeGroup(name: "Beta", isDefault: false)
+        var groupB = TestFactory.makeCadence(name: "Beta", isDefault: false)
         groupB = Cadence(id: groupB.id, name: groupB.name, frequencyDays: groupB.frequencyDays,
                        warningDays: groupB.warningDays, colorHex: groupB.colorHex,
                        isDefault: groupB.isDefault, sortOrder: 2,
                        createdAt: groupB.createdAt, modifiedAt: groupB.modifiedAt)
 
-        var groupA = TestFactory.makeGroup(name: "Alpha", isDefault: false)
+        var groupA = TestFactory.makeCadence(name: "Alpha", isDefault: false)
         groupA = Cadence(id: groupA.id, name: groupA.name, frequencyDays: groupA.frequencyDays,
                        warningDays: groupA.warningDays, colorHex: groupA.colorHex,
                        isDefault: groupA.isDefault, sortOrder: 1,
@@ -53,8 +53,8 @@ final class CoreDataCadenceRepositoryTests: XCTestCase {
     }
 
     func testFetchDefaultGroupsFiltersCorrectly() throws {
-        let defaultGroup = TestFactory.makeGroup(name: "Weekly", isDefault: true)
-        let customGroup = TestFactory.makeGroup(name: "Custom", isDefault: false)
+        let defaultGroup = TestFactory.makeCadence(name: "Weekly", isDefault: true)
+        let customGroup = TestFactory.makeCadence(name: "Custom", isDefault: false)
 
         try repo.save(defaultGroup)
         try repo.save(customGroup)
@@ -67,7 +67,7 @@ final class CoreDataCadenceRepositoryTests: XCTestCase {
     // MARK: - Save / Upsert
 
     func testSaveUpdatesExistingGroup() throws {
-        let group = TestFactory.makeGroup(name: "Weekly")
+        let group = TestFactory.makeCadence(name: "Weekly")
         try repo.save(group)
 
         let updated = Cadence(id: group.id, name: "Biweekly", frequencyDays: 14,
@@ -84,9 +84,9 @@ final class CoreDataCadenceRepositoryTests: XCTestCase {
 
     func testBatchSaveMultipleGroups() throws {
         let groups = [
-            TestFactory.makeGroup(name: "Daily", frequencyDays: 1),
-            TestFactory.makeGroup(name: "Weekly", frequencyDays: 7),
-            TestFactory.makeGroup(name: "Monthly", frequencyDays: 30)
+            TestFactory.makeCadence(name: "Daily", frequencyDays: 1),
+            TestFactory.makeCadence(name: "Weekly", frequencyDays: 7),
+            TestFactory.makeCadence(name: "Monthly", frequencyDays: 30)
         ]
 
         try repo.batchSave(groups)

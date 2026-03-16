@@ -195,7 +195,7 @@ enum TestFactory {
         )
     }
 
-    static func makeGroup(
+    static func makeCadence(
         id: UUID = UUID(),
         name: String = "Weekly",
         frequencyDays: Int = 7,

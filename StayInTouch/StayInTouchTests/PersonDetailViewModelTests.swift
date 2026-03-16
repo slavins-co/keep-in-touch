@@ -11,7 +11,7 @@ import XCTest
 @MainActor
 final class PersonDetailViewModelTests: XCTestCase {
     private var personRepo: MockPersonRepository!
-    private var groupRepo: MockCadenceRepository!
+    private var cadenceRepo: MockCadenceRepository!
     private var groupRepo: MockGroupRepository!
     private var touchRepo: MockTouchEventRepository!
     private var group: Cadence!
@@ -21,20 +21,20 @@ final class PersonDetailViewModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
         let cadenceId = UUID()
-        group = TestFactory.makeGroup(id: cadenceId)
+        group = TestFactory.makeCadence(id: cadenceId)
         person = TestFactory.makePerson(cadenceId: cadenceId)
 
         personRepo = MockPersonRepository()
         personRepo.people = [person]
-        groupRepo = MockCadenceRepository()
-        groupRepo.groups = [group]
+        cadenceRepo = MockCadenceRepository()
+        cadenceRepo.groups = [group]
         groupRepo = MockGroupRepository()
         touchRepo = MockTouchEventRepository()
 
         sut = PersonDetailViewModel(
             person: person,
             personRepository: personRepo,
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
             touchRepository: touchRepo
         )
@@ -83,7 +83,7 @@ final class PersonDetailViewModelTests: XCTestCase {
         let vm = PersonDetailViewModel(
             person: snoozedPerson,
             personRepository: personRepo,
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
             touchRepository: touchRepo
         )
@@ -192,8 +192,8 @@ final class PersonDetailViewModelTests: XCTestCase {
     // MARK: - Cadence Assignment
 
     func testChangeGroupUpdatesPerson() {
-        let newGroup = TestFactory.makeGroup(name: "Monthly", frequencyDays: 30)
-        groupRepo.groups.append(newGroup)
+        let newGroup = TestFactory.makeCadence(name: "Monthly", frequencyDays: 30)
+        cadenceRepo.groups.append(newGroup)
 
         sut.changeCadence(to: newGroup.id)
 
@@ -202,8 +202,8 @@ final class PersonDetailViewModelTests: XCTestCase {
     }
 
     func testChangeGroupSetsGroupAddedAt() {
-        let newGroup = TestFactory.makeGroup(name: "Monthly", frequencyDays: 30)
-        groupRepo.groups.append(newGroup)
+        let newGroup = TestFactory.makeCadence(name: "Monthly", frequencyDays: 30)
+        cadenceRepo.groups.append(newGroup)
 
         // Create person without cadenceAddedAt
         var freshPerson = TestFactory.makePerson(cadenceId: group.id)
@@ -213,7 +213,7 @@ final class PersonDetailViewModelTests: XCTestCase {
         let vm = PersonDetailViewModel(
             person: freshPerson,
             personRepository: personRepo,
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
             touchRepository: touchRepo
         )
@@ -297,7 +297,7 @@ final class PersonDetailViewModelTests: XCTestCase {
         sut = PersonDetailViewModel(
             person: person,
             personRepository: personRepo,
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
             touchRepository: touchRepo
         )
@@ -349,7 +349,7 @@ final class PersonDetailViewModelTests: XCTestCase {
         let vm = PersonDetailViewModel(
             person: pausedPerson,
             personRepository: personRepo,
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
             touchRepository: touchRepo
         )
@@ -380,7 +380,7 @@ final class PersonDetailViewModelTests: XCTestCase {
         let vm = PersonDetailViewModel(
             person: personWithBirthday,
             personRepository: personRepo,
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
             touchRepository: touchRepo
         )
@@ -398,7 +398,7 @@ final class PersonDetailViewModelTests: XCTestCase {
         let vm = PersonDetailViewModel(
             person: personWithBirthday,
             personRepository: personRepo,
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
             touchRepository: touchRepo
         )
@@ -436,7 +436,7 @@ final class PersonDetailViewModelTests: XCTestCase {
         let vm = PersonDetailViewModel(
             person: overduePerson,
             personRepository: personRepo,
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
             touchRepository: touchRepo
         )

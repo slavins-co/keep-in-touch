@@ -13,7 +13,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
 
     private var context: NSManagedObjectContext!
     private var personRepo: CoreDataPersonRepository!
-    private var groupRepo: CoreDataCadenceRepository!
+    private var cadenceRepo: CoreDataCadenceRepository!
     private var groupRepo: CoreDataGroupRepository!
     private var touchRepo: CoreDataTouchEventRepository!
     private var sut: DataImportService!
@@ -23,12 +23,12 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let stack = CoreDataTestStack()
         context = stack.container.newBackgroundContext()
         personRepo = CoreDataPersonRepository(context: context)
-        groupRepo = CoreDataCadenceRepository(context: context)
+        cadenceRepo = CoreDataCadenceRepository(context: context)
         groupRepo = CoreDataGroupRepository(context: context)
         touchRepo = CoreDataTouchEventRepository(context: context)
         sut = DataImportService(
             personRepository: personRepo,
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
             touchEventRepository: touchRepo,
             backgroundContextProvider: { [unowned self] in self.context }
@@ -39,7 +39,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         sut = nil
         touchRepo = nil
         groupRepo = nil
-        groupRepo = nil
+        cadenceRepo = nil
         personRepo = nil
         context = nil
         super.tearDown()
@@ -69,8 +69,8 @@ final class DataImportServiceIntegrationTests: XCTestCase {
 
     @discardableResult
     private func seedDefaultGroup(id: UUID = UUID(), name: String = "Weekly") throws -> Cadence {
-        let group = TestFactory.makeGroup(id: id, name: name, frequencyDays: 7, isDefault: true)
-        try groupRepo.save(group)
+        let group = TestFactory.makeCadence(id: id, name: name, frequencyDays: 7, isDefault: true)
+        try cadenceRepo.save(group)
         return group
     }
 
@@ -167,7 +167,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let allPeople = personRepo.fetchAll()
         XCTAssertEqual(allPeople.count, 3, "All 3 people should be persisted")
 
-        let allGroups = groupRepo.fetchAll()
+        let allGroups = cadenceRepo.fetchAll()
         XCTAssertEqual(allGroups.count, 3, "Default + 2 imported groups")
         XCTAssertTrue(allGroups.contains(where: { $0.name == "Close Friends" }))
         XCTAssertTrue(allGroups.contains(where: { $0.name == "Monthly" }))
@@ -308,7 +308,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
 
         XCTAssertNil(preview, "Malformed JSON should return nil")
         XCTAssertTrue(personRepo.fetchAll().isEmpty, "No data should be persisted")
-        XCTAssertEqual(groupRepo.fetchAll().count, 0)
+        XCTAssertEqual(cadenceRepo.fetchAll().count, 0)
     }
 
     // MARK: - Test 6: Missing Required Fields
@@ -385,7 +385,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
 
         _ = await sut.executeImport(preview)
 
-        XCTAssertEqual(groupRepo.fetchAll().count, 1, "No duplicate group")
+        XCTAssertEqual(cadenceRepo.fetchAll().count, 1, "No duplicate group")
 
         let importedPerson = personRepo.fetchAll().first
         XCTAssertEqual(importedPerson?.cadenceId, defaultGroup.id, "Person should be assigned to existing group")

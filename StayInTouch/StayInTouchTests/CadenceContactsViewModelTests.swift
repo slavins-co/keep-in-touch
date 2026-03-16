@@ -11,7 +11,7 @@ import XCTest
 @MainActor
 final class CadenceContactsViewModelTests: XCTestCase {
     private var personRepo: MockPersonRepository!
-    private var groupRepo: MockCadenceRepository!
+    private var cadenceRepo: MockCadenceRepository!
     private var sut: CadenceContactsViewModel!
 
     private var currentGroup: Cadence!
@@ -20,12 +20,12 @@ final class CadenceContactsViewModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
         personRepo = MockPersonRepository()
-        groupRepo = MockCadenceRepository()
+        cadenceRepo = MockCadenceRepository()
 
-        currentGroup = TestFactory.makeGroup(id: UUID(), name: "Weekly")
-        otherGroup = TestFactory.makeGroup(id: UUID(), name: "Monthly", frequencyDays: 30, isDefault: false)
+        currentGroup = TestFactory.makeCadence(id: UUID(), name: "Weekly")
+        otherGroup = TestFactory.makeCadence(id: UUID(), name: "Monthly", frequencyDays: 30, isDefault: false)
 
-        groupRepo.groups = [currentGroup, otherGroup]
+        cadenceRepo.groups = [currentGroup, otherGroup]
 
         // Two people in currentGroup, one in otherGroup
         personRepo.people = [
@@ -37,7 +37,7 @@ final class CadenceContactsViewModelTests: XCTestCase {
         sut = CadenceContactsViewModel(
             group: currentGroup,
             personRepository: personRepo,
-            cadenceRepository: groupRepo
+            cadenceRepository: cadenceRepo
         )
     }
 
@@ -49,8 +49,8 @@ final class CadenceContactsViewModelTests: XCTestCase {
     }
 
     func testLoadPopulatesOtherGroups() {
-        let thirdGroup = TestFactory.makeGroup(id: UUID(), name: "Quarterly", frequencyDays: 90, isDefault: false)
-        groupRepo.groups = [currentGroup, otherGroup, thirdGroup]
+        let thirdGroup = TestFactory.makeCadence(id: UUID(), name: "Quarterly", frequencyDays: 90, isDefault: false)
+        cadenceRepo.groups = [currentGroup, otherGroup, thirdGroup]
 
         sut.load()
 
@@ -61,16 +61,16 @@ final class CadenceContactsViewModelTests: XCTestCase {
 
     func testOtherGroupsSortOrder() {
         // Create 3 other groups with varying isDefault and sortOrder
-        var nonDefaultHigh = TestFactory.makeGroup(id: UUID(), name: "NonDefaultHigh", isDefault: false)
+        var nonDefaultHigh = TestFactory.makeCadence(id: UUID(), name: "NonDefaultHigh", isDefault: false)
         nonDefaultHigh.sortOrder = 2
 
-        var defaultMiddle = TestFactory.makeGroup(id: UUID(), name: "DefaultMiddle")
+        var defaultMiddle = TestFactory.makeCadence(id: UUID(), name: "DefaultMiddle")
         defaultMiddle.sortOrder = 1
 
-        var nonDefaultLow = TestFactory.makeGroup(id: UUID(), name: "NonDefaultLow", isDefault: false)
+        var nonDefaultLow = TestFactory.makeCadence(id: UUID(), name: "NonDefaultLow", isDefault: false)
         nonDefaultLow.sortOrder = 0
 
-        groupRepo.groups = [currentGroup, nonDefaultHigh, defaultMiddle, nonDefaultLow]
+        cadenceRepo.groups = [currentGroup, nonDefaultHigh, defaultMiddle, nonDefaultLow]
 
         sut.load()
 

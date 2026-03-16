@@ -10,7 +10,7 @@ import XCTest
 
 @MainActor
 final class ManageCadencesViewModelTests: XCTestCase {
-    private var groupRepo: MockCadenceRepository!
+    private var cadenceRepo: MockCadenceRepository!
     private var personRepo: MockPersonRepository!
     private var sut: ManageCadencesViewModel!
 
@@ -19,16 +19,16 @@ final class ManageCadencesViewModelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        groupRepo = MockCadenceRepository()
+        cadenceRepo = MockCadenceRepository()
         personRepo = MockPersonRepository()
 
-        defaultGroup = TestFactory.makeGroup(id: UUID(), name: "Weekly", isDefault: true)
-        customGroup = TestFactory.makeGroup(id: UUID(), name: "Monthly", frequencyDays: 30, isDefault: false)
+        defaultGroup = TestFactory.makeCadence(id: UUID(), name: "Weekly", isDefault: true)
+        customGroup = TestFactory.makeCadence(id: UUID(), name: "Monthly", frequencyDays: 30, isDefault: false)
 
-        groupRepo.groups = [defaultGroup, customGroup]
+        cadenceRepo.groups = [defaultGroup, customGroup]
 
         sut = ManageCadencesViewModel(
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             personRepository: personRepo
         )
     }
@@ -50,7 +50,7 @@ final class ManageCadencesViewModelTests: XCTestCase {
     func testDeleteGroupCallsRepositoryDelete() {
         sut.delete(group: customGroup)
 
-        XCTAssertFalse(groupRepo.groups.contains(where: { $0.id == customGroup.id }),
+        XCTAssertFalse(cadenceRepo.groups.contains(where: { $0.id == customGroup.id }),
                        "Cadence should be removed from repository")
     }
 
@@ -74,7 +74,7 @@ final class ManageCadencesViewModelTests: XCTestCase {
         sut.delete(group: customGroup)
 
         XCTAssertTrue(personRepo.savedPersons.isEmpty, "No people should be saved when none exist in the group")
-        XCTAssertFalse(groupRepo.groups.contains(where: { $0.id == customGroup.id }),
+        XCTAssertFalse(cadenceRepo.groups.contains(where: { $0.id == customGroup.id }),
                        "Cadence should still be deleted")
     }
 }

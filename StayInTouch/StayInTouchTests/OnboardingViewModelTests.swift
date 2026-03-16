@@ -11,7 +11,7 @@ import XCTest
 @MainActor
 final class OnboardingViewModelTests: XCTestCase {
     private var personRepo: MockPersonRepository!
-    private var groupRepo: MockCadenceRepository!
+    private var cadenceRepo: MockCadenceRepository!
     private var settingsRepo: MockSettingsRepository!
     private var monthlyGroupId: UUID!
     private var sut: OnboardingViewModel!
@@ -20,17 +20,17 @@ final class OnboardingViewModelTests: XCTestCase {
         super.setUp()
         monthlyGroupId = UUID()
         personRepo = MockPersonRepository()
-        groupRepo = MockCadenceRepository()
-        groupRepo.groups = [
-            TestFactory.makeGroup(id: monthlyGroupId, name: "Monthly", frequencyDays: 30),
-            TestFactory.makeGroup(name: "Weekly", frequencyDays: 7)
+        cadenceRepo = MockCadenceRepository()
+        cadenceRepo.groups = [
+            TestFactory.makeCadence(id: monthlyGroupId, name: "Monthly", frequencyDays: 30),
+            TestFactory.makeCadence(name: "Weekly", frequencyDays: 7)
         ]
         settingsRepo = MockSettingsRepository()
         settingsRepo.settings = TestFactory.makeSettings()
 
         sut = OnboardingViewModel(
             personRepository: personRepo,
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             settingsRepository: settingsRepo
         )
     }
@@ -128,15 +128,15 @@ final class OnboardingViewModelTests: XCTestCase {
 
     func testSelectedGroupIdFallsToFirstGroupWhenNoMonthly() {
         let firstId = UUID()
-        groupRepo.groups = [
-            TestFactory.makeGroup(id: firstId, name: "Biweekly"),
-            TestFactory.makeGroup(name: "Quarterly")
+        cadenceRepo.groups = [
+            TestFactory.makeCadence(id: firstId, name: "Biweekly"),
+            TestFactory.makeCadence(name: "Quarterly")
         ]
         settingsRepo.settings = TestFactory.makeSettings()
 
         let vm = OnboardingViewModel(
             personRepository: personRepo,
-            cadenceRepository: groupRepo,
+            cadenceRepository: cadenceRepo,
             settingsRepository: settingsRepo
         )
 

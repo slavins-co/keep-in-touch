@@ -38,32 +38,32 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
         XCTAssertEqual(trackedIncludingPaused.count, 2)
     }
 
-    func testFetchByGroupFiltersCorrectly() throws {
-        let groupA = UUID()
-        let groupB = UUID()
-        let personA = makePerson(name: "A", cadenceId: groupA, isPaused: false, isTracked: true)
-        let personB = makePerson(name: "B", cadenceId: groupB, isPaused: false, isTracked: true)
+    func testFetchByCadenceFiltersCorrectly() throws {
+        let cadenceA = UUID()
+        let cadenceB = UUID()
+        let personA = makePerson(name: "A", cadenceId: cadenceA, isPaused: false, isTracked: true)
+        let personB = makePerson(name: "B", cadenceId: cadenceB, isPaused: false, isTracked: true)
 
         try repo.save(personA)
         try repo.save(personB)
 
-        let results = repo.fetchByGroup(id: groupA, includePaused: false)
+        let results = repo.fetchByCadence(id: cadenceA, includePaused: false)
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results.first?.displayName, "A")
     }
 
-    func testFetchByTagFiltersCorrectly() throws {
+    func testFetchByGroupFiltersCorrectly() throws {
         let cadenceId = UUID()
-        let tagId = UUID()
-        let tagged = makePerson(name: "Tagged", cadenceId: cadenceId, isPaused: false, isTracked: true, groupIds: [tagId])
-        let untagged = makePerson(name: "Untagged", cadenceId: cadenceId, isPaused: false, isTracked: true)
+        let groupId = UUID()
+        let grouped = makePerson(name: "Grouped", cadenceId: cadenceId, isPaused: false, isTracked: true, groupIds: [groupId])
+        let ungrouped = makePerson(name: "Ungrouped", cadenceId: cadenceId, isPaused: false, isTracked: true)
 
-        try repo.save(tagged)
-        try repo.save(untagged)
+        try repo.save(grouped)
+        try repo.save(ungrouped)
 
-        let results = repo.fetchByTag(id: tagId, includePaused: false)
+        let results = repo.fetchByGroup(id: groupId, includePaused: false)
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first?.displayName, "Tagged")
+        XCTAssertEqual(results.first?.displayName, "Grouped")
     }
 
     func testSearchByNameIsCaseInsensitive() throws {
@@ -91,8 +91,8 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
         XCTAssertTrue(repo.fetchTracked(includePaused: true).isEmpty)
     }
 
-    func testFetchByTagWithNoPeopleReturnsEmpty() {
-        XCTAssertTrue(repo.fetchByTag(id: UUID(), includePaused: false).isEmpty)
+    func testFetchByGroupWithNoPeopleReturnsEmpty() {
+        XCTAssertTrue(repo.fetchByGroup(id: UUID(), includePaused: false).isEmpty)
     }
 
     func testSearchByNameNoMatchReturnsEmpty() throws {
@@ -138,9 +138,9 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
 
     func testFetchOverdueReturnsPeoplePastSLA() throws {
         let cadenceId = UUID()
-        let groupRepo = CoreDataCadenceRepository(context: context)
-        let group = TestFactory.makeGroup(id: cadenceId, name: "Weekly", frequencyDays: 7)
-        try groupRepo.save(group)
+        let cadenceRepo = CoreDataCadenceRepository(context: context)
+        let group = TestFactory.makeCadence(id: cadenceId, name: "Weekly", frequencyDays: 7)
+        try cadenceRepo.save(group)
 
         let overduePerson = makePerson(
             name: "Overdue",
@@ -158,9 +158,9 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
 
     func testFetchOverdueExcludesPausedPeople() throws {
         let cadenceId = UUID()
-        let groupRepo = CoreDataCadenceRepository(context: context)
-        let group = TestFactory.makeGroup(id: cadenceId, name: "Weekly", frequencyDays: 7)
-        try groupRepo.save(group)
+        let cadenceRepo = CoreDataCadenceRepository(context: context)
+        let group = TestFactory.makeCadence(id: cadenceId, name: "Weekly", frequencyDays: 7)
+        try cadenceRepo.save(group)
 
         let pausedOverdue = makePerson(
             name: "PausedOverdue",

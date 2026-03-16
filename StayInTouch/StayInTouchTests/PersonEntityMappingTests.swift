@@ -20,7 +20,7 @@ final class PersonEntityMappingTests: XCTestCase {
     func testDecodeTagIdsAcceptsMixedTypes() {
         let entity = PersonEntity(context: context)
         let uuid = UUID()
-        entity.groupIds = [uuid, uuid.uuidString] as NSArray
+        entity.tagIds = [uuid, uuid.uuidString] as NSArray
 
         let domain = entity.toDomain()
         XCTAssertEqual(domain.groupIds.count, 2)
@@ -34,7 +34,7 @@ final class PersonEntityMappingTests: XCTestCase {
         let entity = PersonEntity(context: context)
         entity.id = nil
         entity.displayName = "Alice"
-        entity.cadenceId = UUID()
+        entity.groupId = UUID()
 
         let domain = entity.toDomain()
         XCTAssertNotNil(domain.id, "toDomain should produce a non-nil id even when entity.id is nil")
@@ -44,7 +44,7 @@ final class PersonEntityMappingTests: XCTestCase {
         let entity = PersonEntity(context: context)
         entity.id = UUID()
         entity.displayName = nil
-        entity.cadenceId = UUID()
+        entity.groupId = UUID()
 
         let domain = entity.toDomain()
         XCTAssertEqual(domain.displayName, "", "toDomain should fall back to empty string when displayName is nil")
@@ -54,9 +54,9 @@ final class PersonEntityMappingTests: XCTestCase {
         let entity = PersonEntity(context: context)
         entity.id = UUID()
         entity.displayName = "Bob"
-        entity.cadenceId = nil
+        entity.groupId = nil
 
         let domain = entity.toDomain()
-        XCTAssertNotNil(domain.cadenceId, "toDomain should produce a non-nil cadenceId even when entity.cadenceId is nil")
+        XCTAssertNotNil(domain.cadenceId, "toDomain should produce a non-nil cadenceId even when entity.groupId is nil")
     }
 }

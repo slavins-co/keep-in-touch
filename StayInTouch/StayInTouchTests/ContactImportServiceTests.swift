@@ -10,7 +10,7 @@ final class ContactImportServiceTests: XCTestCase {
 
     private var stack: CoreDataStack!
     private var personRepo: CoreDataPersonRepository!
-    private var groupRepo: CoreDataCadenceRepository!
+    private var cadenceRepo: CoreDataCadenceRepository!
     private var touchRepo: CoreDataTouchEventRepository!
     private var sut: ContactImportService!
     private var cadenceId: UUID!
@@ -20,7 +20,7 @@ final class ContactImportServiceTests: XCTestCase {
         stack = CoreDataStack.make(inMemory: true, shouldSeedDefaults: false)
         let context = stack.viewContext
         personRepo = CoreDataPersonRepository(context: context)
-        groupRepo = CoreDataCadenceRepository(context: context)
+        cadenceRepo = CoreDataCadenceRepository(context: context)
         touchRepo = CoreDataTouchEventRepository(context: context)
 
         // Seed a default group so importSelectedContacts can find one
@@ -36,7 +36,7 @@ final class ContactImportServiceTests: XCTestCase {
             createdAt: Date(),
             modifiedAt: Date()
         )
-        try? groupRepo.save(group)
+        try? cadenceRepo.save(group)
 
         sut = ContactImportService(
             personRepository: personRepo,
@@ -48,7 +48,7 @@ final class ContactImportServiceTests: XCTestCase {
     override func tearDown() {
         sut = nil
         touchRepo = nil
-        groupRepo = nil
+        cadenceRepo = nil
         personRepo = nil
         stack = nil
         super.tearDown()
@@ -80,7 +80,7 @@ final class ContactImportServiceTests: XCTestCase {
             createdAt: Date(),
             modifiedAt: Date()
         )
-        try? groupRepo.save(altGroup)
+        try? cadenceRepo.save(altGroup)
 
         let summary = ContactSummary(identifier: "bob-456", displayName: "Bob Jones", initials: "BJ")
 

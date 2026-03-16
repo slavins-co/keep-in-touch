@@ -111,7 +111,7 @@ final class NotificationSchedulerTests: XCTestCase {
     }
 
     private func seedWeeklyGroup() {
-        mockGroupRepo.groups = [TestFactory.makeGroup(id: cadenceId, name: "Weekly", frequencyDays: 7)]
+        mockGroupRepo.groups = [TestFactory.makeCadence(id: cadenceId, name: "Weekly", frequencyDays: 7)]
     }
 
     // MARK: - Notifications Disabled
