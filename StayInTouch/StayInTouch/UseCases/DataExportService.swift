@@ -7,11 +7,6 @@
 
 import Foundation
 
-enum ExportFormat: String, CaseIterable {
-    case json
-    case csv
-}
-
 struct DataExportService {
     let personRepository: PersonRepository
     let cadenceRepository: CadenceRepository
