@@ -132,16 +132,16 @@ final class SettingsViewModelTests: XCTestCase {
     // MARK: - CSV Export
 
     func testExportCSVReturnsTwoFilesWithHeaderAndRows() throws {
-        let groupId = UUID()
-        groupRepo.groups = [TestFactory.makeGroup(id: groupId, name: "Weekly")]
+        let cadenceId = UUID()
+        cadenceRepo.cadences = [TestFactory.makeCadence(id: cadenceId, name: "Weekly")]
         personRepo.people = [
-            TestFactory.makePerson(name: "Alice", groupId: groupId),
-            TestFactory.makePerson(name: "Bob", groupId: groupId)
+            TestFactory.makePerson(name: "Alice", cadenceId: cadenceId),
+            TestFactory.makePerson(name: "Bob", cadenceId: cadenceId)
         ]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
-            tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -151,7 +151,7 @@ final class SettingsViewModelTests: XCTestCase {
 
         let contactsCSV = try String(contentsOf: urls[0], encoding: .utf8)
         let lines = contactsCSV.components(separatedBy: "\r\n")
-        XCTAssertEqual(lines.first, "Name,Frequency,Groups,Status,Birthday,Last Touched,Last Touch Method,Paused,Notes,Touch Count")
+        XCTAssertEqual(lines.first, "Name,Cadence,Groups,Status,Birthday,Last Touched,Last Touch Method,Paused,Notes,Touch Count")
         XCTAssertEqual(lines.count, 3) // header + 2 rows
         XCTAssertTrue(lines[1].contains("Alice"))
         XCTAssertTrue(lines[2].contains("Bob"))
@@ -163,8 +163,8 @@ final class SettingsViewModelTests: XCTestCase {
         personRepo.people = [TestFactory.makePerson(name: "Smith, John")]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
-            tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -197,13 +197,13 @@ final class SettingsViewModelTests: XCTestCase {
         let date2 = Date().addingTimeInterval(-86400)
         personRepo.people = [TestFactory.makePerson(id: personId, name: "Alice")]
         touchEventRepo.events = [
-            TouchEvent(id: UUID(), personId: personId, at: date1, method: .call, notes: "First", createdAt: Date(), modifiedAt: Date()),
-            TouchEvent(id: UUID(), personId: personId, at: date2, method: .text, notes: nil, createdAt: Date(), modifiedAt: Date())
+            TouchEvent(id: UUID(), personId: personId, at: date1, method: .call, notes: "First", timeOfDay: nil, createdAt: Date(), modifiedAt: Date()),
+            TouchEvent(id: UUID(), personId: personId, at: date2, method: .text, notes: nil, timeOfDay: nil, createdAt: Date(), modifiedAt: Date())
         ]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
-            tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -226,16 +226,16 @@ final class SettingsViewModelTests: XCTestCase {
     }
 
     func testExportCSVIncludesStatusColumn() throws {
-        let groupId = UUID()
-        // Group with 7-day frequency, 2-day warning
-        groupRepo.groups = [TestFactory.makeGroup(id: groupId, name: "Weekly", frequencyDays: 7)]
+        let cadenceId = UUID()
+        // Cadence with 7-day frequency, 2-day warning
+        cadenceRepo.cadences = [TestFactory.makeCadence(id: cadenceId, name: "Weekly", frequencyDays: 7)]
         // Person last touched 30 days ago — should be overdue
-        let person = TestFactory.makePerson(name: "Alice", groupId: groupId, lastTouchAt: Date().addingTimeInterval(-30 * 86400))
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, lastTouchAt: Date().addingTimeInterval(-30 * 86400))
         personRepo.people = [person]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
-            tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -253,8 +253,8 @@ final class SettingsViewModelTests: XCTestCase {
         personRepo.people = [person]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
-            tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
@@ -271,8 +271,8 @@ final class SettingsViewModelTests: XCTestCase {
         personRepo.people = [TestFactory.makePerson(name: "Alice")]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
-            tagRepository: tagRepo,
             personRepository: personRepo,
             touchEventRepository: touchEventRepo
         )
