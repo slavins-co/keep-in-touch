@@ -34,8 +34,8 @@ struct GroupManagerSheet: View {
                         }
                     }
                 }
-                .accessibilityLabel("\(tag.name)\(selectedIds.contains(tag.id) ? ", selected" : "")")
-                .accessibilityHint(selectedIds.contains(tag.id) ? "Removes from \(tag.name)" : "Adds to \(tag.name)")
+                .accessibilityLabel("\(group.name)\(selectedIds.contains(group.id) ? ", selected" : "")")
+                .accessibilityHint(selectedIds.contains(group.id) ? "Removes from \(group.name)" : "Adds to \(group.name)")
             }
             .navigationTitle("Manage Groups")
             .toolbar {

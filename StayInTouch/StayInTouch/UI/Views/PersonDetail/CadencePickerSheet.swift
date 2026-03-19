@@ -31,8 +31,8 @@ struct CadencePickerSheet: View {
                         }
                     }
                 }
-                .accessibilityLabel("\(group.name)\(group.id == selectedId ? ", selected" : "")")
-                .accessibilityHint("Changes frequency to \(group.name)")
+                .accessibilityLabel("\(cadence.name)\(cadence.id == selectedId ? ", selected" : "")")
+                .accessibilityHint("Changes frequency to \(cadence.name)")
             }
             .navigationTitle("Change Frequency")
             .toolbar {
