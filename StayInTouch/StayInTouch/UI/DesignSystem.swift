@@ -387,27 +387,26 @@ enum DS {
         static let caption = Font.caption
         static let captionBold = Font.caption.weight(.medium)
 
-        // Font sizes cannot use UIColor trait-based adaptation, so this accepts `scheme:`.
-        // DESIGN: Light/dark structural difference — summary card numbers: 28px light / 24px dark
+        // DESIGN: Light/dark structural difference — summary card: .title light / .title2 dark
         static func summaryNumber(scheme: ColorScheme) -> Font {
-            Font.system(size: scheme == .dark ? 24 : 28, weight: .bold)
+            scheme == .dark ? Font.title2.weight(.bold) : Font.title.weight(.bold)
         }
-        static let summaryLabel = Font.system(size: 11, weight: .bold)
-        static let sectionHeaderMono = Font.system(size: 11, weight: .bold, design: .monospaced)
-        static let tabLabel = Font.system(size: 10, weight: .bold)
-        static let sheetHeroName = Font.system(size: 24, weight: .bold)
-        static let timelineTitle = Font.system(size: 14, weight: .bold)
-        static let timelineMono = Font.system(size: 12, weight: .regular, design: .monospaced)
-        static let timelineNotes = Font.system(size: 14, weight: .regular)
+        static let summaryLabel = Font.caption2.weight(.bold)
+        static let sectionHeaderMono = Font.system(.caption2, design: .monospaced).weight(.bold)
+        static let tabLabel = Font.caption2.weight(.bold)
+        static let sheetHeroName = Font.title2.weight(.bold)
+        static let timelineTitle = Font.subheadline.weight(.bold)
+        static let timelineMono = Font.system(.caption, design: .monospaced)
+        static let timelineNotes = Font.subheadline
         static let homeTitle = Font.title.weight(.bold)
         static let homeSubtitle = Font.subheadline.weight(.medium)
         static let filterLabel = Font.footnote.weight(.semibold)
         static let filterChevron = Font.caption2.weight(.semibold)
-        static let contactCardName = Font.system(size: 15, weight: .bold)
-        static let contactCardMeta = Font.system(size: 13, weight: .medium)
-        static let groupBadgeLabel = Font.system(size: 10, weight: .bold)
-        static let detailStatusLine = Font.system(size: 15, weight: .semibold)
-        static let ctaButton = Font.system(size: 16, weight: .bold)
+        static let contactCardName = Font.subheadline.weight(.bold)
+        static let contactCardMeta = Font.footnote.weight(.medium)
+        static let groupBadgeLabel = Font.caption2.weight(.bold)
+        static let detailStatusLine = Font.subheadline.weight(.semibold)
+        static let ctaButton = Font.callout.weight(.bold)
 
         // Tokens for #177 (notes, timeline, settings)
         static let notesLabel = Font.caption2.weight(.bold)
@@ -416,7 +415,7 @@ enum DS {
         static let settingsRowLabel = Font.body
         static let settingsSectionLabel = Font.caption.weight(.semibold)
 
-        // Tokens for #179 (onboarding)
+        // Decorative icon — fixed size, not text content (Apple HIG: decorative elements exempt from Dynamic Type)
         static let onboardingIcon = Font.system(size: 56)
     }
 
