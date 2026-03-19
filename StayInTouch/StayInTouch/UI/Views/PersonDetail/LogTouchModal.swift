@@ -42,6 +42,8 @@ struct LogTouchModal: View {
                         }
                         .buttonStyle(.plain)
                         .foregroundColor(selectedMethod == touchMethod ? DS.Colors.accent : DS.Colors.secondaryText)
+                        .accessibilityLabel("\(touchMethod.rawValue)\(selectedMethod == touchMethod ? ", selected" : "")")
+                        .accessibilityHint("Sets connection type to \(touchMethod.rawValue)")
                     }
                 }
 
