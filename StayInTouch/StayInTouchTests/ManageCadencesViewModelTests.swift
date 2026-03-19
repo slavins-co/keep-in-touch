@@ -25,7 +25,7 @@ final class ManageCadencesViewModelTests: XCTestCase {
         defaultCadence = TestFactory.makeCadence(id: UUID(), name: "Weekly", isDefault: true)
         customGroup = TestFactory.makeCadence(id: UUID(), name: "Monthly", frequencyDays: 30, isDefault: false)
 
-        cadenceRepo.groups = [defaultCadence, customGroup]
+        cadenceRepo.cadences = [defaultCadence, customGroup]
 
         sut = ManageCadencesViewModel(
             cadenceRepository: cadenceRepo,
@@ -40,7 +40,7 @@ final class ManageCadencesViewModelTests: XCTestCase {
         let person2 = TestFactory.makePerson(name: "Bob", cadenceId: customGroup.id)
         personRepo.people = [person1, person2]
 
-        sut.delete(group: customGroup)
+        sut.delete(cadence: customGroup)
 
         let savedPeople = personRepo.savedPersons
         let reassigned = savedPeople.filter { $0.cadenceId == defaultCadence.id }
@@ -48,9 +48,9 @@ final class ManageCadencesViewModelTests: XCTestCase {
     }
 
     func testDeleteGroupCallsRepositoryDelete() {
-        sut.delete(group: customGroup)
+        sut.delete(cadence: customGroup)
 
-        XCTAssertFalse(cadenceRepo.groups.contains(where: { $0.id == customGroup.id }),
+        XCTAssertFalse(cadenceRepo.cadences.contains(where: { $0.id == customGroup.id }),
                        "Cadence should be removed from repository")
     }
 
@@ -59,7 +59,7 @@ final class ManageCadencesViewModelTests: XCTestCase {
         let person2 = TestFactory.makePerson(name: "Bob", cadenceId: customGroup.id)
         personRepo.people = [person1, person2]
 
-        sut.delete(group: customGroup)
+        sut.delete(cadence: customGroup)
 
         XCTAssertEqual(personRepo.batchSaveCallCount, 1,
                        "Should use single batchSave instead of individual saves")
@@ -71,10 +71,10 @@ final class ManageCadencesViewModelTests: XCTestCase {
     func testDeleteGroupWithNoPeopleJustDeletes() {
         personRepo.people = []
 
-        sut.delete(group: customGroup)
+        sut.delete(cadence: customGroup)
 
         XCTAssertTrue(personRepo.savedPersons.isEmpty, "No people should be saved when none exist in the group")
-        XCTAssertFalse(cadenceRepo.groups.contains(where: { $0.id == customGroup.id }),
+        XCTAssertFalse(cadenceRepo.cadences.contains(where: { $0.id == customGroup.id }),
                        "Cadence should still be deleted")
     }
 }

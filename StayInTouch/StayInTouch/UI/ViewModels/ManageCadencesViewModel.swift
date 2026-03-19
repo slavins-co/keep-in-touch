@@ -9,8 +9,8 @@ import Foundation
 
 @MainActor
 final class ManageCadencesViewModel: ObservableObject {
-    @Published private(set) var groups: [Cadence] = []
-    @Published private(set) var countsByGroup: [UUID: Int] = [:]
+    @Published private(set) var cadences: [Cadence] = []
+    @Published private(set) var countsByCadence: [UUID: Int] = [:]
 
     private let cadenceRepository: CadenceRepository
     private let personRepository: PersonRepository
@@ -32,7 +32,7 @@ final class ManageCadencesViewModel: ObservableObject {
     }
 
     func load() {
-        groups = cadenceRepository.fetchAll().sorted { lhs, rhs in
+        cadences = cadenceRepository.fetchAll().sorted { lhs, rhs in
             if lhs.isDefault != rhs.isDefault { return lhs.isDefault }
             if lhs.sortOrder != rhs.sortOrder { return lhs.sortOrder < rhs.sortOrder }
             return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
@@ -44,11 +44,11 @@ final class ManageCadencesViewModel: ObservableObject {
             let cadenceId = person.cadenceId
             counts[cadenceId, default: 0] += 1
         }
-        countsByGroup = counts
+        countsByCadence = counts
     }
 
-    func save(_ group: Cadence, makeDefault: Bool) {
-        var updated = group
+    func save(_ cadence: Cadence, makeDefault: Bool) {
+        var updated = cadence
         updated.modifiedAt = Date()
 
         if makeDefault {
@@ -82,14 +82,14 @@ final class ManageCadencesViewModel: ObservableObject {
         load()
     }
 
-    func delete(group: Cadence) {
-        // Enforce: reassign any remaining people to default group before deleting
-        if let fallback = groups.first(where: { $0.isDefault && $0.id != group.id })
-            ?? groups.first(where: { $0.id != group.id }) {
-            movePeople(from: group, to: fallback)
+    func delete(cadence: Cadence) {
+        // Enforce: reassign any remaining people to default cadence before deleting
+        if let fallback = cadences.first(where: { $0.isDefault && $0.id != cadence.id })
+            ?? cadences.first(where: { $0.id != cadence.id }) {
+            movePeople(from: cadence, to: fallback)
         }
         do {
-            try cadenceRepository.delete(id: group.id)
+            try cadenceRepository.delete(id: cadence.id)
         } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.delete")
             ErrorToastManager.shared.show(AppError(message: error.userMessage))
@@ -100,8 +100,8 @@ final class ManageCadencesViewModel: ObservableObject {
         load()
     }
 
-    func movePeople(from group: Cadence, to defaultCadence: Cadence) {
-        let people = personRepository.fetchByCadence(id: group.id, includePaused: true)
+    func movePeople(from cadence: Cadence, to defaultCadence: Cadence) {
+        let people = personRepository.fetchByCadence(id: cadence.id, includePaused: true)
         guard !people.isEmpty else { return }
         let now = Date()
         let updatedPeople = people.map { person -> Person in
@@ -123,6 +123,6 @@ final class ManageCadencesViewModel: ObservableObject {
     }
 
     func defaultCadence() -> Cadence? {
-        groups.first(where: { $0.isDefault })
+        cadences.first(where: { $0.isDefault })
     }
 }

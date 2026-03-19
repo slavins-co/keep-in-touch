@@ -68,10 +68,10 @@ final class DataImportServiceIntegrationTests: XCTestCase {
     }
 
     @discardableResult
-    private func seedDefaultGroup(id: UUID = UUID(), name: String = "Weekly") throws -> Cadence {
-        let group = TestFactory.makeCadence(id: id, name: name, frequencyDays: 7, isDefault: true)
-        try cadenceRepo.save(group)
-        return group
+    private func seedDefaultCadence(id: UUID = UUID(), name: String = "Weekly") throws -> Cadence {
+        let cadence = TestFactory.makeCadence(id: id, name: name, frequencyDays: 7, isDefault: true)
+        try cadenceRepo.save(cadence)
+        return cadence
     }
 
     private func makeExportPerson(
@@ -112,10 +112,10 @@ final class DataImportServiceIntegrationTests: XCTestCase {
     // MARK: - Test 1: Happy Path
 
     func testHappyPath_importsAllEntities() async throws {
-        try seedDefaultGroup()
+        try seedDefaultCadence()
 
-        let groupA = UUID()
-        let groupB = UUID()
+        let cadenceA = UUID()
+        let cadenceB = UUID()
         let tagId = UUID()
         let now = Date()
 
@@ -135,16 +135,16 @@ final class DataImportServiceIntegrationTests: XCTestCase {
             version: 2,
             exportedAt: now,
             cadences: [
-                ExportCadence(id: groupA, name: "Close Friends", frequencyDays: 3, warningDays: 1, colorHex: "#FF0000", sortOrder: 0, isDefault: false),
-                ExportCadence(id: groupB, name: "Monthly", frequencyDays: 30, warningDays: 5, colorHex: nil, sortOrder: 1, isDefault: false)
+                ExportCadence(id: cadenceA, name: "Close Friends", frequencyDays: 3, warningDays: 1, colorHex: "#FF0000", sortOrder: 0, isDefault: false),
+                ExportCadence(id: cadenceB, name: "Monthly", frequencyDays: 30, warningDays: 5, colorHex: nil, sortOrder: 1, isDefault: false)
             ],
             groups: [
                 ExportGroup(id: tagId, name: "Family", colorHex: "#00FF00", sortOrder: 0)
             ],
             people: [
-                makeExportPerson(name: "Alice", cadenceId: groupA, groupIds: [tagId], touchEvents: events1),
-                makeExportPerson(name: "Bob", cadenceId: groupB, touchEvents: events2),
-                makeExportPerson(name: "Carol", cadenceId: groupA, touchEvents: events3)
+                makeExportPerson(name: "Alice", cadenceId: cadenceA, groupIds: [tagId], touchEvents: events1),
+                makeExportPerson(name: "Bob", cadenceId: cadenceB, touchEvents: events2),
+                makeExportPerson(name: "Carol", cadenceId: cadenceA, touchEvents: events3)
             ]
         )
 
@@ -167,10 +167,10 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let allPeople = personRepo.fetchAll()
         XCTAssertEqual(allPeople.count, 3, "All 3 people should be persisted")
 
-        let allGroups = cadenceRepo.fetchAll()
-        XCTAssertEqual(allGroups.count, 3, "Default + 2 imported groups")
-        XCTAssertTrue(allGroups.contains(where: { $0.name == "Close Friends" }))
-        XCTAssertTrue(allGroups.contains(where: { $0.name == "Monthly" }))
+        let allCadences = cadenceRepo.fetchAll()
+        XCTAssertEqual(allCadences.count, 3, "Default + 2 imported cadences")
+        XCTAssertTrue(allCadences.contains(where: { $0.name == "Close Friends" }))
+        XCTAssertTrue(allCadences.contains(where: { $0.name == "Monthly" }))
 
         let allTags = groupRepo.fetchAll()
         XCTAssertEqual(allTags.count, 1)
@@ -187,7 +187,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
     // MARK: - Test 2: UUID Duplicate
 
     func testDuplicateUUID_updatesNotDuplicates() async throws {
-        let cadenceId = try seedDefaultGroup().id
+        let cadenceId = try seedDefaultCadence().id
         let personId = UUID()
         let existingPerson = TestFactory.makePerson(id: personId, name: "Alice", cadenceId: cadenceId)
         try personRepo.save(existingPerson)
@@ -221,7 +221,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
     // MARK: - Test 3: Name-Only Match
 
     func testNameOnlyMatch_updatesExistingPerson() async throws {
-        let cadenceId = try seedDefaultGroup().id
+        let cadenceId = try seedDefaultCadence().id
         let existingId = UUID()
         let existingPerson = TestFactory.makePerson(id: existingId, name: "Sarah Chen", cadenceId: cadenceId)
         try personRepo.save(existingPerson)
@@ -253,7 +253,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
     // MARK: - Test 4: Touch Event Dedup
 
     func testTouchEventDedup_skipsExistingEvents() async throws {
-        let cadenceId = try seedDefaultGroup().id
+        let cadenceId = try seedDefaultCadence().id
         let personId = UUID()
         let person = TestFactory.makePerson(id: personId, name: "Dave", cadenceId: cadenceId)
         try personRepo.save(person)
@@ -327,7 +327,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
     // MARK: - Test 7: Ambiguous Names
 
     func testAmbiguousNames_createsNewPerson() async throws {
-        let cadenceId = try seedDefaultGroup().id
+        let cadenceId = try seedDefaultCadence().id
 
         // Two tracked people with the same name
         try personRepo.save(TestFactory.makePerson(name: "John Smith", cadenceId: cadenceId))
@@ -360,19 +360,19 @@ final class DataImportServiceIntegrationTests: XCTestCase {
 
     // MARK: - Test 8: Cadence Merging
 
-    func testGroupMerging_deduplicatesByName() async throws {
-        let defaultCadence = try seedDefaultGroup(name: "Weekly")
+    func testCadenceMerging_deduplicatesByName() async throws {
+        let defaultCadence = try seedDefaultCadence(name: "Weekly")
 
-        let exportGroupId = UUID()
+        let exportCadenceId = UUID()
         let exportData = ExportData(
             version: 2,
             exportedAt: Date(),
             cadences: [
-                ExportCadence(id: exportGroupId, name: "weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, sortOrder: 0, isDefault: false)
+                ExportCadence(id: exportCadenceId, name: "weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, sortOrder: 0, isDefault: false)
             ],
             groups: [],
             people: [
-                makeExportPerson(name: "Eve", cadenceId: exportGroupId)
+                makeExportPerson(name: "Eve", cadenceId: exportCadenceId)
             ]
         )
 
@@ -381,20 +381,20 @@ final class DataImportServiceIntegrationTests: XCTestCase {
         let preview = try XCTUnwrap(previewOpt)
 
         XCTAssertTrue(preview.newCadences.isEmpty, "Cadence should merge by name (case-insensitive)")
-        XCTAssertEqual(preview.cadenceIdMap[exportGroupId], defaultCadence.id, "Should map to existing cadence")
+        XCTAssertEqual(preview.cadenceIdMap[exportCadenceId], defaultCadence.id, "Should map to existing cadence")
 
         _ = await sut.executeImport(preview)
 
-        XCTAssertEqual(cadenceRepo.fetchAll().count, 1, "No duplicate group")
+        XCTAssertEqual(cadenceRepo.fetchAll().count, 1, "No duplicate cadence")
 
         let importedPerson = personRepo.fetchAll().first
-        XCTAssertEqual(importedPerson?.cadenceId, defaultCadence.id, "Person should be assigned to existing group")
+        XCTAssertEqual(importedPerson?.cadenceId, defaultCadence.id, "Person should be assigned to existing cadence")
     }
 
     // MARK: - Test 9: Denormalized Fields
 
     func testDenormalizedFields_updatedFromImportedEvents() async throws {
-        try seedDefaultGroup()
+        try seedDefaultCadence()
 
         let fiveDaysAgo = Date().addingTimeInterval(-86400 * 5)
         let oneDayAgo = Date().addingTimeInterval(-86400 * 1)
@@ -436,7 +436,7 @@ final class DataImportServiceIntegrationTests: XCTestCase {
     // MARK: - Test 10: Empty Display Name
 
     func testEmptyDisplayName_skipped() async throws {
-        try seedDefaultGroup()
+        try seedDefaultCadence()
 
         let exportData = ExportData(
             version: 2,

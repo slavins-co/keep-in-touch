@@ -10,22 +10,22 @@ import SwiftUI
 struct CadencePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    let groups: [Cadence]
+    let cadences: [Cadence]
     let selectedId: UUID
     let onSelect: (UUID) -> Void
 
     var body: some View {
         NavigationStack {
-            List(groups, id: \.id) { group in
+            List(cadences, id: \.id) { cadence in
                 Button {
-                    onSelect(group.id)
+                    onSelect(cadence.id)
                     dismiss()
                 } label: {
                     HStack {
-                        Text(group.name)
+                        Text(cadence.name)
                             .font(DS.Typography.contactName)
                         Spacer()
-                        if group.id == selectedId {
+                        if cadence.id == selectedId {
                             Image(systemName: "checkmark")
                                 .foregroundStyle(DS.Colors.accent)
                         }

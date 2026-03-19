@@ -21,7 +21,7 @@ final class OnboardingViewModelTests: XCTestCase {
         monthlyGroupId = UUID()
         personRepo = MockPersonRepository()
         cadenceRepo = MockCadenceRepository()
-        cadenceRepo.groups = [
+        cadenceRepo.cadences = [
             TestFactory.makeCadence(id: monthlyGroupId, name: "Monthly", frequencyDays: 30),
             TestFactory.makeCadence(name: "Weekly", frequencyDays: 7)
         ]
@@ -128,7 +128,7 @@ final class OnboardingViewModelTests: XCTestCase {
 
     func testSelectedGroupIdFallsToFirstGroupWhenNoMonthly() {
         let firstId = UUID()
-        cadenceRepo.groups = [
+        cadenceRepo.cadences = [
             TestFactory.makeCadence(id: firstId, name: "Biweekly"),
             TestFactory.makeCadence(name: "Quarterly")
         ]
@@ -181,7 +181,7 @@ final class OnboardingViewModelTests: XCTestCase {
     }
 
     func testGroupsPopulatedAfterInit() {
-        XCTAssertEqual(sut.groups.count, 2)
+        XCTAssertEqual(sut.cadences.count, 2)
     }
 
     // MARK: - Back Navigation

@@ -52,7 +52,7 @@ final class OnboardingViewModel: ObservableObject {
     @Published var searchText = ""
     @Published var useDemoData = false
 
-    @Published var groups: [Cadence] = []
+    @Published var cadences: [Cadence] = []
     @Published var selectedCadenceId: UUID?
     @Published var contactGroupSelections: [String: UUID] = [:]
     @Published var contactLastTouchSelections: [String: LastTouchOption] = [:]
@@ -217,8 +217,8 @@ final class OnboardingViewModel: ObservableObject {
 
     private func loadSettingsAndGroups() {
         settings = settingsRepository.fetch()
-        groups = cadenceRepository.fetchAll()
-        selectedCadenceId = groups.first(where: { $0.name == "Monthly" })?.id ?? groups.first?.id
+        cadences = cadenceRepository.fetchAll()
+        selectedCadenceId = cadences.first(where: { $0.name == "Monthly" })?.id ?? cadences.first?.id
         isOnboardingCompleted = settings?.onboardingCompleted ?? false
         isLoading = false
     }

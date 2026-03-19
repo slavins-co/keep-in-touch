@@ -130,8 +130,8 @@ final class HomeViewModel: ObservableObject {
             appVersion: ""
         )
 
-        let overdue = service.overduePeople(filtered, groups: cadences)
-        let dueSoon = service.dueSoonPeople(filtered, groups: cadences, settings: currentSettings)
+        let overdue = service.overduePeople(filtered, cadences: cadences)
+        let dueSoon = service.dueSoonPeople(filtered, cadences: cadences, settings: currentSettings)
         let allGood = filtered.filter { person in
             guard !person.isPaused else { return false }
             let status = FrequencyCalculator().status(for: person, in: cadences)

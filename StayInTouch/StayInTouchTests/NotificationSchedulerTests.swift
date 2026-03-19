@@ -10,7 +10,7 @@ final class NotificationSchedulerTests: XCTestCase {
 
     private var mockNotificationCenter: MockUserNotificationCenter!
     private var mockPersonRepo: MockPersonRepository!
-    private var mockGroupRepo: MockCadenceRepository!
+    private var mockCadenceRepo: MockCadenceRepository!
     private var mockSettingsRepo: MockSettingsRepository!
     private var sut: NotificationScheduler!
 
@@ -20,12 +20,12 @@ final class NotificationSchedulerTests: XCTestCase {
         super.setUp()
         mockNotificationCenter = MockUserNotificationCenter()
         mockPersonRepo = MockPersonRepository()
-        mockGroupRepo = MockCadenceRepository()
+        mockCadenceRepo = MockCadenceRepository()
         mockSettingsRepo = MockSettingsRepository()
         sut = NotificationScheduler(
             settingsRepository: mockSettingsRepo,
             personRepository: mockPersonRepo,
-            cadenceRepository: mockGroupRepo,
+            cadenceRepository: mockCadenceRepo,
             notificationCenter: mockNotificationCenter
         )
     }
@@ -34,7 +34,7 @@ final class NotificationSchedulerTests: XCTestCase {
         sut = nil
         mockNotificationCenter = nil
         mockPersonRepo = nil
-        mockGroupRepo = nil
+        mockCadenceRepo = nil
         mockSettingsRepo = nil
         super.tearDown()
     }
@@ -111,7 +111,7 @@ final class NotificationSchedulerTests: XCTestCase {
     }
 
     private func seedWeeklyGroup() {
-        mockGroupRepo.groups = [TestFactory.makeCadence(id: cadenceId, name: "Weekly", frequencyDays: 7)]
+        mockCadenceRepo.cadences = [TestFactory.makeCadence(id: cadenceId, name: "Weekly", frequencyDays: 7)]
     }
 
     // MARK: - Notifications Disabled

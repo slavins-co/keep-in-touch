@@ -14,14 +14,14 @@ struct FrequencyCalculator {
         self.referenceDate = referenceDate
     }
 
-    func status(for person: Person, in groups: [Cadence]) -> ContactStatus {
+    func status(for person: Person, in cadences: [Cadence]) -> ContactStatus {
         if person.isPaused { return .onTrack }
         if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return .onTrack }
-        guard let group = groups.first(where: { $0.id == person.cadenceId }) else {
+        guard let cadence = cadences.first(where: { $0.id == person.cadenceId }) else {
             return .onTrack
         }
 
-        guard let dueDate = effectiveDueDate(for: person, in: groups) else {
+        guard let dueDate = effectiveDueDate(for: person, in: cadences) else {
             return .unknown
         }
 
@@ -29,20 +29,20 @@ struct FrequencyCalculator {
         if daysUntilDue <= 0 {
             return .overdue
         }
-        if daysUntilDue <= group.warningDays {
+        if daysUntilDue <= cadence.warningDays {
             return .dueSoon
         }
         return .onTrack
     }
 
-    func daysOverdue(for person: Person, in groups: [Cadence]) -> Int {
+    func daysOverdue(for person: Person, in cadences: [Cadence]) -> Int {
         if person.isPaused { return 0 }
         if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return 0 }
-        guard groups.first(where: { $0.id == person.cadenceId }) != nil else {
+        guard cadences.first(where: { $0.id == person.cadenceId }) != nil else {
             return 0
         }
 
-        guard let dueDate = effectiveDueDate(for: person, in: groups) else {
+        guard let dueDate = effectiveDueDate(for: person, in: cadences) else {
             return 0
         }
 
@@ -50,24 +50,24 @@ struct FrequencyCalculator {
         return max(0, -daysUntilDue)
     }
 
-    func effectiveDueDate(for person: Person, in groups: [Cadence]) -> Date? {
+    func effectiveDueDate(for person: Person, in cadences: [Cadence]) -> Date? {
         let cal = Calendar.current
-        guard let group = groups.first(where: { $0.id == person.cadenceId }) else { return nil }
+        guard let cadence = cadences.first(where: { $0.id == person.cadenceId }) else { return nil }
 
-        let groupDueDate: Date?
+        let cadenceDueDate: Date?
         if let lastTouch = effectiveLastTouchDate(for: person) {
-            groupDueDate = cal.date(byAdding: .day, value: group.frequencyDays, to: cal.startOfDay(for: lastTouch))
+            cadenceDueDate = cal.date(byAdding: .day, value: cadence.frequencyDays, to: cal.startOfDay(for: lastTouch))
         } else {
-            groupDueDate = nil
+            cadenceDueDate = nil
         }
 
         let customDue = person.customDueDate.map { cal.startOfDay(for: $0) }
 
-        // Custom due date fully replaces group frequency when set.
-        // It does not combine with group — it IS the due date.
-        switch (groupDueDate, customDue) {
+        // Custom due date fully replaces cadence frequency when set.
+        // It does not combine with cadence — it IS the due date.
+        switch (cadenceDueDate, customDue) {
         case (_, let c?): return c
-        case (let g?, nil): return g
+        case (let d?, nil): return d
         case (nil, nil): return nil
         }
     }

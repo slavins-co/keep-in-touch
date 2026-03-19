@@ -31,20 +31,20 @@ final class CoreDataCadenceRepositoryTests: XCTestCase {
     }
 
     func testFetchAllReturnsSortedBySortOrder() throws {
-        var groupB = TestFactory.makeCadence(name: "Beta", isDefault: false)
-        groupB = Cadence(id: groupB.id, name: groupB.name, frequencyDays: groupB.frequencyDays,
-                       warningDays: groupB.warningDays, colorHex: groupB.colorHex,
-                       isDefault: groupB.isDefault, sortOrder: 2,
-                       createdAt: groupB.createdAt, modifiedAt: groupB.modifiedAt)
+        var cadenceB = TestFactory.makeCadence(name: "Beta", isDefault: false)
+        cadenceB = Cadence(id: cadenceB.id, name: cadenceB.name, frequencyDays: cadenceB.frequencyDays,
+                       warningDays: cadenceB.warningDays, colorHex: cadenceB.colorHex,
+                       isDefault: cadenceB.isDefault, sortOrder: 2,
+                       createdAt: cadenceB.createdAt, modifiedAt: cadenceB.modifiedAt)
 
-        var groupA = TestFactory.makeCadence(name: "Alpha", isDefault: false)
-        groupA = Cadence(id: groupA.id, name: groupA.name, frequencyDays: groupA.frequencyDays,
-                       warningDays: groupA.warningDays, colorHex: groupA.colorHex,
-                       isDefault: groupA.isDefault, sortOrder: 1,
-                       createdAt: groupA.createdAt, modifiedAt: groupA.modifiedAt)
+        var cadenceA = TestFactory.makeCadence(name: "Alpha", isDefault: false)
+        cadenceA = Cadence(id: cadenceA.id, name: cadenceA.name, frequencyDays: cadenceA.frequencyDays,
+                       warningDays: cadenceA.warningDays, colorHex: cadenceA.colorHex,
+                       isDefault: cadenceA.isDefault, sortOrder: 1,
+                       createdAt: cadenceA.createdAt, modifiedAt: cadenceA.modifiedAt)
 
-        try repo.save(groupB)
-        try repo.save(groupA)
+        try repo.save(cadenceB)
+        try repo.save(cadenceA)
 
         let all = repo.fetchAll()
         XCTAssertEqual(all.count, 2)
@@ -52,12 +52,12 @@ final class CoreDataCadenceRepositoryTests: XCTestCase {
         XCTAssertEqual(all[1].name, "Beta")
     }
 
-    func testFetchDefaultGroupsFiltersCorrectly() throws {
+    func testFetchDefaultCadencesFiltersCorrectly() throws {
         let defaultCadence = TestFactory.makeCadence(name: "Weekly", isDefault: true)
-        let customGroup = TestFactory.makeCadence(name: "Custom", isDefault: false)
+        let customCadence = TestFactory.makeCadence(name: "Custom", isDefault: false)
 
         try repo.save(defaultCadence)
-        try repo.save(customGroup)
+        try repo.save(customCadence)
 
         let defaults = repo.fetchDefaultCadences()
         XCTAssertEqual(defaults.count, 1)
@@ -66,14 +66,14 @@ final class CoreDataCadenceRepositoryTests: XCTestCase {
 
     // MARK: - Save / Upsert
 
-    func testSaveUpdatesExistingGroup() throws {
-        let group = TestFactory.makeCadence(name: "Weekly")
-        try repo.save(group)
+    func testSaveUpdatesExistingCadence() throws {
+        let cadence = TestFactory.makeCadence(name: "Weekly")
+        try repo.save(cadence)
 
-        let updated = Cadence(id: group.id, name: "Biweekly", frequencyDays: 14,
-                            warningDays: group.warningDays, colorHex: group.colorHex,
-                            isDefault: group.isDefault, sortOrder: group.sortOrder,
-                            createdAt: group.createdAt, modifiedAt: Date())
+        let updated = Cadence(id: cadence.id, name: "Biweekly", frequencyDays: 14,
+                            warningDays: cadence.warningDays, colorHex: cadence.colorHex,
+                            isDefault: cadence.isDefault, sortOrder: cadence.sortOrder,
+                            createdAt: cadence.createdAt, modifiedAt: Date())
         try repo.save(updated)
 
         let all = repo.fetchAll()
@@ -82,14 +82,14 @@ final class CoreDataCadenceRepositoryTests: XCTestCase {
         XCTAssertEqual(all.first?.frequencyDays, 14)
     }
 
-    func testBatchSaveMultipleGroups() throws {
-        let groups = [
+    func testBatchSaveMultipleCadences() throws {
+        let cadences = [
             TestFactory.makeCadence(name: "Daily", frequencyDays: 1),
             TestFactory.makeCadence(name: "Weekly", frequencyDays: 7),
             TestFactory.makeCadence(name: "Monthly", frequencyDays: 30)
         ]
 
-        try repo.batchSave(groups)
+        try repo.batchSave(cadences)
 
         XCTAssertEqual(repo.fetchAll().count, 3)
     }

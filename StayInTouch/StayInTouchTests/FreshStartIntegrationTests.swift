@@ -56,7 +56,7 @@ final class FreshStartIntegrationTests: XCTestCase {
         )
     }
 
-    private func makeGroup(frequencyDays: Int = 7) -> Cadence {
+    private func makeCadence(frequencyDays: Int = 7) -> Cadence {
         Cadence(
             id: cadenceId,
             name: "Weekly",
@@ -87,13 +87,13 @@ final class FreshStartIntegrationTests: XCTestCase {
 
     private func makeViewModel(
         people: [Person],
-        group: Cadence? = nil,
+        cadence: Cadence? = nil,
         promptStore: FreshStartPromptStore? = nil
     ) -> HomeViewModel {
-        let g = group ?? makeGroup()
+        let g = cadence ?? makeCadence()
         return HomeViewModel(
             personRepository: StubPersonRepository(people: people),
-            cadenceRepository: StubCadenceRepository(groups: [g]),
+            cadenceRepository: StubCadenceRepository(cadences: [g]),
             groupRepository: StubGroupRepository(groups: []),
             settingsRepository: StubSettingsRepository(),
             promptStore: promptStore ?? makePromptStore()
@@ -313,10 +313,10 @@ private struct StubPersonRepository: PersonRepository {
 }
 
 private struct StubCadenceRepository: CadenceRepository {
-    let groups: [Cadence]
-    func fetch(id: UUID) -> Cadence? { groups.first { $0.id == id } }
-    func fetchAll() -> [Cadence] { groups }
-    func fetchDefaultCadences() -> [Cadence] { groups.filter { $0.isDefault } }
+    let cadences: [Cadence]
+    func fetch(id: UUID) -> Cadence? { cadences.first { $0.id == id } }
+    func fetchAll() -> [Cadence] { cadences }
+    func fetchDefaultCadences() -> [Cadence] { cadences.filter { $0.isDefault } }
     func save(_ cadence: Cadence) throws {}
     func batchSave(_ cadences: [Cadence]) throws {}
     func delete(id: UUID) throws {}

@@ -223,7 +223,7 @@ struct PersonDetailView: View {
                 viewModel.updateTouch(touch, method: method, notes: notes, timeOfDay: timeOfDay); activeSheet = nil
             }, onDelete: { viewModel.deleteTouch(touch); activeSheet = nil })
         case .changeCadence:
-            CadencePickerSheet(groups: viewModel.cadences, selectedId: viewModel.person.cadenceId,
+            CadencePickerSheet(cadences: viewModel.cadences, selectedId: viewModel.person.cadenceId,
                              onSelect: { viewModel.changeCadence(to: $0) }).presentationDetents([.medium])
         case .manageGroups:
             GroupManagerSheet(groups: viewModel.groups, selectedIds: Set(viewModel.person.groupIds),

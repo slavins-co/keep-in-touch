@@ -23,9 +23,9 @@ final class ContactImportServiceTests: XCTestCase {
         cadenceRepo = CoreDataCadenceRepository(context: context)
         touchRepo = CoreDataTouchEventRepository(context: context)
 
-        // Seed a default group so importSelectedContacts can find one
+        // Seed a default cadence so importSelectedContacts can find one
         cadenceId = UUID()
-        let group = Cadence(
+        let cadence = Cadence(
             id: cadenceId,
             name: "Monthly",
             frequencyDays: 30,
@@ -36,7 +36,7 @@ final class ContactImportServiceTests: XCTestCase {
             createdAt: Date(),
             modifiedAt: Date()
         )
-        try? cadenceRepo.save(group)
+        try? cadenceRepo.save(cadence)
 
         sut = ContactImportService(
             personRepository: personRepo,
@@ -68,9 +68,9 @@ final class ContactImportServiceTests: XCTestCase {
     }
 
     func testImportSelectedContacts_assignsGroupFromGroupAssignments() async {
-        let altGroupId = UUID()
-        let altGroup = Cadence(
-            id: altGroupId,
+        let altCadenceId = UUID()
+        let altCadence = Cadence(
+            id: altCadenceId,
             name: "Weekly",
             frequencyDays: 7,
             warningDays: 2,
@@ -80,14 +80,14 @@ final class ContactImportServiceTests: XCTestCase {
             createdAt: Date(),
             modifiedAt: Date()
         )
-        try? cadenceRepo.save(altGroup)
+        try? cadenceRepo.save(altCadence)
 
         let summary = ContactSummary(identifier: "bob-456", displayName: "Bob Jones", initials: "BJ")
 
-        await sut.importSelectedContacts([summary], groupAssignments: ["bob-456": altGroupId])
+        await sut.importSelectedContacts([summary], groupAssignments: ["bob-456": altCadenceId])
 
         let person = personRepo.fetchAll().first
-        XCTAssertEqual(person?.cadenceId, altGroupId, "Should use the provided group assignment, not the default")
+        XCTAssertEqual(person?.cadenceId, altCadenceId, "Should use the provided cadence assignment, not the default")
     }
 
     func testImportSelectedContacts_seedsTouchEventWhenLastTouchProvided() async {

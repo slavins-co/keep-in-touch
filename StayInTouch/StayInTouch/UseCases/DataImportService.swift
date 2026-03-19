@@ -311,7 +311,7 @@ struct DataImportService {
             let existingById = Dictionary(uniqueKeysWithValues: peopleRepo.fetchAll().map { ($0.id, $0) })
             let existingCount = peopleRepo.fetchTracked(includePaused: true).count
             var sortOrder = existingCount
-            let assignGroup = AssignCadenceUseCase(referenceDate: now)
+            let assignCadence = AssignCadenceUseCase(referenceDate: now)
 
             var personsToSave: [Person] = []
             var importedIdMap: [UUID: UUID] = [:]
@@ -355,7 +355,7 @@ struct DataImportService {
                     modifiedAt: now,
                     sortOrder: sortOrder
                 )
-                person = assignGroup.assign(person: person, to: mappedCadenceId)
+                person = assignCadence.assign(person: person, to: mappedCadenceId)
                 personsToSave.append(person)
                 importedNewPeople.append((id: newId, displayName: exportPerson.displayName))
                 sortOrder += 1
@@ -387,7 +387,7 @@ struct DataImportService {
                     .flatMap({ preview.cadenceIdMap[$0] }),
                    validCadenceIds.contains(newCadenceId),
                    newCadenceId != person.cadenceId {
-                    person = assignGroup.assign(person: person, to: newCadenceId)
+                    person = assignCadence.assign(person: person, to: newCadenceId)
                 }
                 personsToSave.append(person)
             }

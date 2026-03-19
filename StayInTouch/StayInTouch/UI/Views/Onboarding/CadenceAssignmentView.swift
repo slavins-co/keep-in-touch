@@ -28,8 +28,8 @@ struct CadenceAssignmentView: View {
                         .font(DS.Typography.contactName)
 
                     Picker("Frequency", selection: binding(for: contact.identifier)) {
-                        ForEach(viewModel.groups, id: \.id) { group in
-                            Text(group.name).tag(group.id)
+                        ForEach(viewModel.cadences, id: \.id) { cadence in
+                            Text(cadence.name).tag(cadence.id)
                         }
                     }
                     .pickerStyle(.menu)
@@ -52,7 +52,7 @@ struct CadenceAssignmentView: View {
     }
 
     private func binding(for contactId: String) -> Binding<UUID> {
-        let fallback = viewModel.selectedCadenceId ?? viewModel.groups.first?.id ?? UUID()
+        let fallback = viewModel.selectedCadenceId ?? viewModel.cadences.first?.id ?? UUID()
         return Binding<UUID>(
             get: {
                 viewModel.contactGroupSelections[contactId] ?? fallback

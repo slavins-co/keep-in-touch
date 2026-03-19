@@ -80,7 +80,7 @@ final class SettingsViewModelTests: XCTestCase {
     func testExportIncludesGroupsAndTags() throws {
         let cadenceId = UUID()
         let tagId = UUID()
-        cadenceRepo.groups = [TestFactory.makeCadence(id: cadenceId, name: "Weekly")]
+        cadenceRepo.cadences = [TestFactory.makeCadence(id: cadenceId, name: "Weekly")]
         groupRepo.groups = [TestFactory.makeGroup(id: tagId, name: "Work")]
         personRepo.people = [TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [tagId])]
         sut = SettingsViewModel(
@@ -207,7 +207,7 @@ final class SettingsViewModelTests: XCTestCase {
     func testImportMergesGroupsByName() async throws {
         // Set up existing group "Weekly"
         let existingGroupId = UUID()
-        cadenceRepo.groups = [TestFactory.makeCadence(id: existingGroupId, name: "Weekly")]
+        cadenceRepo.cadences = [TestFactory.makeCadence(id: existingGroupId, name: "Weekly")]
         sut = SettingsViewModel(
             settingsRepository: settingsRepo,
             cadenceRepository: cadenceRepo,
@@ -321,7 +321,7 @@ final class SettingsViewModelTests: XCTestCase {
     // MARK: - Load Counts
 
     func testLoadRefreshesGroupTagPausedCounts() {
-        cadenceRepo.groups = [
+        cadenceRepo.cadences = [
             TestFactory.makeCadence(name: "Weekly"),
             TestFactory.makeCadence(name: "Monthly"),
             TestFactory.makeCadence(name: "Quarterly")

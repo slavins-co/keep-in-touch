@@ -11,26 +11,26 @@ import XCTest
 final class NotificationClassifierTests: XCTestCase {
     func testMutedPeopleAreExcluded() {
         let cadenceId = UUID()
-        let group = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let cadence = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
         let reference = Date()
 
         let muted = makePerson(cadenceId: cadenceId, daysAgo: 10, muted: true)
         let overdue = makePerson(cadenceId: cadenceId, daysAgo: 10)
 
-        let result = NotificationClassifier.classify(people: [muted, overdue], groups: [group], referenceDate: reference)
+        let result = NotificationClassifier.classify(people: [muted, overdue], cadences: [cadence], referenceDate: reference)
         XCTAssertEqual(result.overdue.count, 1)
         XCTAssertFalse(result.overdue.contains(where: { $0.id == muted.id }))
     }
 
     func testCustomTimeRemovedFromGroupedLists() {
         let cadenceId = UUID()
-        let group = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let cadence = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
         let reference = Date()
 
         var custom = makePerson(cadenceId: cadenceId, daysAgo: 10)
         custom.customBreachTime = LocalTime(hour: 9, minute: 0)
 
-        let result = NotificationClassifier.classify(people: [custom], groups: [group], referenceDate: reference)
+        let result = NotificationClassifier.classify(people: [custom], cadences: [cadence], referenceDate: reference)
         XCTAssertEqual(result.customOverrides.count, 1)
         XCTAssertTrue(result.overdue.isEmpty)
         XCTAssertTrue(result.allNonCustom.isEmpty)
@@ -40,7 +40,7 @@ final class NotificationClassifierTests: XCTestCase {
 
     func testDueTodayCountedInAllOverdue() {
         let cadenceId = UUID()
-        let group = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let cadence = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
         let reference = Date()
 
         // Exactly at frequency boundary — dueToday, should be in allOverdue
@@ -50,21 +50,21 @@ final class NotificationClassifierTests: XCTestCase {
         person.lastTouchAt = lastTouch
         person.cadenceAddedAt = lastTouch
 
-        let result = NotificationClassifier.classify(people: [person], groups: [group], referenceDate: reference)
+        let result = NotificationClassifier.classify(people: [person], cadences: [cadence], referenceDate: reference)
         XCTAssertEqual(result.dueToday.count, 1)
         XCTAssertEqual(result.allOverdue.count, 1, "dueToday people should be counted in allOverdue for badge")
     }
 
     func testCustomBreachTimeDueSoonInAllDueSoon() {
         let cadenceId = UUID()
-        let group = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let cadence = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
         let reference = Date()
 
         // 6 days ago = within warning window (7-2=5, so 6 >= 5) → dueSoon
         var person = makePerson(cadenceId: cadenceId, daysAgo: 6)
         person.customBreachTime = LocalTime(hour: 9, minute: 0)
 
-        let result = NotificationClassifier.classify(people: [person], groups: [group], referenceDate: reference)
+        let result = NotificationClassifier.classify(people: [person], cadences: [cadence], referenceDate: reference)
         XCTAssertEqual(result.customOverrides.count, 1)
         XCTAssertTrue(result.dueSoon.isEmpty, "Custom breach time people excluded from grouped dueSoon")
         XCTAssertEqual(result.allDueSoon.count, 1, "Custom breach time people should still be in allDueSoon for badge")
@@ -72,12 +72,12 @@ final class NotificationClassifierTests: XCTestCase {
 
     func testUnknownLastTouchIsExcluded() {
         let cadenceId = UUID()
-        let group = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let cadence = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
         var person = makePerson(cadenceId: cadenceId, daysAgo: nil)
         person.lastTouchAt = nil
         person.cadenceAddedAt = nil
 
-        let result = NotificationClassifier.classify(people: [person], groups: [group], referenceDate: Date())
+        let result = NotificationClassifier.classify(people: [person], cadences: [cadence], referenceDate: Date())
         XCTAssertTrue(result.allForDigest.isEmpty)
     }
 
@@ -93,13 +93,13 @@ final class NotificationClassifierTests: XCTestCase {
         let referenceDate = cal.date(byAdding: .day, value: 7, to: cal.date(bySettingHour: 8, minute: 0, second: 0, of: now)!)!
 
         let cadenceId = UUID()
-        let group = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
+        let cadence = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
 
         var person = makePerson(cadenceId: cadenceId, daysAgo: nil)
         person.lastTouchAt = touchDate
         person.cadenceAddedAt = touchDate
 
-        let result = NotificationClassifier.classify(people: [person], groups: [group], referenceDate: referenceDate)
+        let result = NotificationClassifier.classify(people: [person], cadences: [cadence], referenceDate: referenceDate)
         XCTAssertEqual(result.dueToday.count, 1, "7 calendar days should classify as dueToday even if fewer than 7×24 hours elapsed")
     }
 

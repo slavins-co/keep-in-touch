@@ -10,7 +10,7 @@ import SwiftUI
 struct CadenceEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    let group: Cadence?
+    let cadence: Cadence?
     let existingNames: [String]
     let onSave: (Cadence, Bool) -> Void
     let onCancel: () -> Void
@@ -21,16 +21,16 @@ struct CadenceEditorSheet: View {
     @State private var warningDays: Int
     @State private var isDefault: Bool
 
-    init(group: Cadence?, existingNames: [String], defaultSortOrder: Int, onSave: @escaping (Cadence, Bool) -> Void, onCancel: @escaping () -> Void) {
-        self.group = group
+    init(cadence: Cadence?, existingNames: [String], defaultSortOrder: Int, onSave: @escaping (Cadence, Bool) -> Void, onCancel: @escaping () -> Void) {
+        self.cadence = cadence
         self.existingNames = existingNames
         self.defaultSortOrder = defaultSortOrder
         self.onSave = onSave
         self.onCancel = onCancel
-        _name = State(initialValue: group?.name ?? "")
-        _frequencyDays = State(initialValue: group?.frequencyDays ?? 30)
-        _warningDays = State(initialValue: group?.warningDays ?? 3)
-        _isDefault = State(initialValue: group?.isDefault ?? false)
+        _name = State(initialValue: cadence?.name ?? "")
+        _frequencyDays = State(initialValue: cadence?.frequencyDays ?? 30)
+        _warningDays = State(initialValue: cadence?.warningDays ?? 3)
+        _isDefault = State(initialValue: cadence?.isDefault ?? false)
     }
 
     var body: some View {
@@ -59,7 +59,7 @@ struct CadenceEditorSheet: View {
                     Toggle("Set as default", isOn: $isDefault)
                 }
             }
-            .navigationTitle(group == nil ? "New Frequency" : "Edit Frequency")
+            .navigationTitle(cadence == nil ? "New Frequency" : "Edit Frequency")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -78,8 +78,8 @@ struct CadenceEditorSheet: View {
     private var isValid: Bool {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed.count <= 50 else { return false }
-        if let group {
-            if trimmed.caseInsensitiveCompare(group.name) != .orderedSame {
+        if let cadence {
+            if trimmed.caseInsensitiveCompare(cadence.name) != .orderedSame {
                 if existingNames.contains(where: { $0.caseInsensitiveCompare(trimmed) == .orderedSame }) {
                     return false
                 }
@@ -94,14 +94,14 @@ struct CadenceEditorSheet: View {
         let now = Date()
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let saved = Cadence(
-            id: group?.id ?? UUID(),
+            id: cadence?.id ?? UUID(),
             name: trimmed,
             frequencyDays: frequencyDays,
             warningDays: warningDays,
-            colorHex: group?.colorHex,
-            isDefault: group?.isDefault ?? false,
-            sortOrder: group?.sortOrder ?? defaultSortOrder,
-            createdAt: group?.createdAt ?? now,
+            colorHex: cadence?.colorHex,
+            isDefault: cadence?.isDefault ?? false,
+            sortOrder: cadence?.sortOrder ?? defaultSortOrder,
+            createdAt: cadence?.createdAt ?? now,
             modifiedAt: now
         )
         onSave(saved, isDefault)

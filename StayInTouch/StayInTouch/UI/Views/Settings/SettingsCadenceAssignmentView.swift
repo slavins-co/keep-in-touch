@@ -9,7 +9,7 @@ import SwiftUI
 
 struct SettingsCadenceAssignmentView: View {
     let contacts: [ContactSummary]
-    let groups: [Cadence]
+    let cadences: [Cadence]
     let onImport: ([String: UUID]) -> Void
     let onCancel: () -> Void
 
@@ -31,8 +31,8 @@ struct SettingsCadenceAssignmentView: View {
                             .font(DS.Typography.contactName)
 
                         Picker("Frequency", selection: binding(for: contact.identifier)) {
-                            ForEach(groups, id: \.id) { group in
-                                Text(group.name).tag(group.id)
+                            ForEach(cadences, id: \.id) { cadence in
+                                Text(cadence.name).tag(cadence.id)
                             }
                         }
                         .pickerStyle(.menu)
@@ -52,7 +52,7 @@ struct SettingsCadenceAssignmentView: View {
                 }
             }
             .onAppear {
-                let defaultId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id ?? UUID()
+                let defaultId = cadences.first(where: { $0.isDefault })?.id ?? cadences.first?.id ?? UUID()
                 for contact in contacts where assignments[contact.identifier] == nil {
                     assignments[contact.identifier] = defaultId
                 }
@@ -61,7 +61,7 @@ struct SettingsCadenceAssignmentView: View {
     }
 
     private func binding(for contactId: String) -> Binding<UUID> {
-        let fallback = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id ?? UUID()
+        let fallback = cadences.first(where: { $0.isDefault })?.id ?? cadences.first?.id ?? UUID()
         return Binding<UUID>(
             get: { assignments[contactId] ?? fallback },
             set: { assignments[contactId] = $0 }

@@ -57,23 +57,23 @@ final class MockPersonRepository: PersonRepository {
 // MARK: - MockCadenceRepository
 
 final class MockCadenceRepository: CadenceRepository {
-    var groups: [Cadence] = []
+    var cadences: [Cadence] = []
 
-    func fetch(id: UUID) -> Cadence? { groups.first { $0.id == id } }
-    func fetchAll() -> [Cadence] { groups }
-    func fetchDefaultCadences() -> [Cadence] { groups.filter { $0.isDefault } }
+    func fetch(id: UUID) -> Cadence? { cadences.first { $0.id == id } }
+    func fetchAll() -> [Cadence] { cadences }
+    func fetchDefaultCadences() -> [Cadence] { cadences.filter { $0.isDefault } }
     func save(_ cadence: Cadence) throws {
-        if let idx = groups.firstIndex(where: { $0.id == cadence.id }) {
-            groups[idx] = cadence
+        if let idx = cadences.firstIndex(where: { $0.id == cadence.id }) {
+            cadences[idx] = cadence
         } else {
-            groups.append(cadence)
+            cadences.append(cadence)
         }
     }
     func batchSave(_ cadences: [Cadence]) throws {
         for cadence in cadences { try save(cadence) }
     }
     func delete(id: UUID) throws {
-        groups.removeAll { $0.id == id }
+        cadences.removeAll { $0.id == id }
     }
 }
 

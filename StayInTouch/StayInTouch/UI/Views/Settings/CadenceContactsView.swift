@@ -8,15 +8,15 @@
 import SwiftUI
 
 struct CadenceContactsView: View {
-    let group: Cadence
+    let cadence: Cadence
 
     @StateObject private var viewModel: CadenceContactsViewModel
     @State private var showAddContacts = false
     @State private var removeTarget: Person?
 
-    init(group: Cadence) {
-        self.group = group
-        _viewModel = StateObject(wrappedValue: CadenceContactsViewModel(group: group))
+    init(cadence: Cadence) {
+        self.cadence = cadence
+        _viewModel = StateObject(wrappedValue: CadenceContactsViewModel(cadence: cadence))
     }
 
     var body: some View {
@@ -31,9 +31,9 @@ struct CadenceContactsView: View {
                         .font(DS.Typography.contactName)
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
-                                if group.isDefault {
+                                if cadence.isDefault {
                                     removeTarget = person
-                                } else if let defaultId = viewModel.otherGroups.first(where: { $0.isDefault })?.id {
+                                } else if let defaultId = viewModel.otherCadences.first(where: { $0.isDefault })?.id {
                                     viewModel.movePerson(person, to: defaultId)
                                 }
                             } label: {
@@ -43,7 +43,7 @@ struct CadenceContactsView: View {
                 }
             }
         }
-        .navigationTitle(group.name)
+        .navigationTitle(cadence.name)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Add") { showAddContacts = true }
@@ -57,7 +57,7 @@ struct CadenceContactsView: View {
             ),
             titleVisibility: .visible
         ) {
-            ForEach(viewModel.otherGroups, id: \.id) { destination in
+            ForEach(viewModel.otherCadences, id: \.id) { destination in
                 Button(destination.name) {
                     if let person = removeTarget {
                         viewModel.movePerson(person, to: destination.id)

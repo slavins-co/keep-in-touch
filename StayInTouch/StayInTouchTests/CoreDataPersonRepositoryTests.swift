@@ -139,8 +139,8 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     func testFetchOverdueReturnsPeoplePastSLA() throws {
         let cadenceId = UUID()
         let cadenceRepo = CoreDataCadenceRepository(context: context)
-        let group = TestFactory.makeCadence(id: cadenceId, name: "Weekly", frequencyDays: 7)
-        try cadenceRepo.save(group)
+        let cadence = TestFactory.makeCadence(id: cadenceId, name: "Weekly", frequencyDays: 7)
+        try cadenceRepo.save(cadence)
 
         let overduePerson = makePerson(
             name: "Overdue",
@@ -159,8 +159,8 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
     func testFetchOverdueExcludesPausedPeople() throws {
         let cadenceId = UUID()
         let cadenceRepo = CoreDataCadenceRepository(context: context)
-        let group = TestFactory.makeCadence(id: cadenceId, name: "Weekly", frequencyDays: 7)
-        try cadenceRepo.save(group)
+        let cadence = TestFactory.makeCadence(id: cadenceId, name: "Weekly", frequencyDays: 7)
+        try cadenceRepo.save(cadence)
 
         let pausedOverdue = makePerson(
             name: "PausedOverdue",

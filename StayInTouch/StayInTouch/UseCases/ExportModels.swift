@@ -18,15 +18,15 @@ struct ExportCadence: Codable {
     let sortOrder: Int
     let isDefault: Bool
 
-    static func from(_ group: Cadence) -> ExportCadence {
+    static func from(_ cadence: Cadence) -> ExportCadence {
         ExportCadence(
-            id: group.id,
-            name: group.name,
-            frequencyDays: group.frequencyDays,
-            warningDays: group.warningDays,
-            colorHex: group.colorHex,
-            sortOrder: group.sortOrder,
-            isDefault: group.isDefault
+            id: cadence.id,
+            name: cadence.name,
+            frequencyDays: cadence.frequencyDays,
+            warningDays: cadence.warningDays,
+            colorHex: cadence.colorHex,
+            sortOrder: cadence.sortOrder,
+            isDefault: cadence.isDefault
         )
     }
 }

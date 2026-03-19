@@ -25,7 +25,7 @@ struct CustomNotification {
 }
 
 enum NotificationClassifier {
-    static func classify(people: [Person], groups: [Cadence], referenceDate: Date) -> NotificationClassification {
+    static func classify(people: [Person], cadences: [Cadence], referenceDate: Date) -> NotificationClassification {
         var dueToday: [Person] = []
         var overdue: [Person] = []
         var dueSoon: [Person] = []
@@ -39,8 +39,8 @@ enum NotificationClassifier {
         let cal = Calendar.current
 
         for person in people where !person.isPaused && !person.notificationsMuted && !(person.snoozedUntil.map { $0 > referenceDate } ?? false) {
-            guard let group = groups.first(where: { $0.id == person.cadenceId }) else { continue }
-            guard let dueDate = calc.effectiveDueDate(for: person, in: groups) else { continue }
+            guard let cadence = cadences.first(where: { $0.id == person.cadenceId }) else { continue }
+            guard let dueDate = calc.effectiveDueDate(for: person, in: cadences) else { continue }
 
             let daysUntilDue = cal.dateComponents([.day], from: cal.startOfDay(for: referenceDate), to: cal.startOfDay(for: dueDate)).day ?? 0
             let type: DailyNotificationType?
@@ -48,7 +48,7 @@ enum NotificationClassifier {
                 type = .overdue
             } else if daysUntilDue == 0 {
                 type = .dueToday
-            } else if daysUntilDue <= group.warningDays {
+            } else if daysUntilDue <= cadence.warningDays {
                 type = .dueSoon
             } else {
                 type = nil

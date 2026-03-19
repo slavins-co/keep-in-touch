@@ -146,9 +146,9 @@ final class NotificationScheduler {
         }
 
         let now = Date()
-        let groups = cadenceRepository.fetchAll()
+        let cadences = cadenceRepository.fetchAll()
         let people = personRepository.fetchTracked(includePaused: false)
-        let classified = NotificationClassifier.classify(people: people, groups: groups, referenceDate: now)
+        let classified = NotificationClassifier.classify(people: people, cadences: cadences, referenceDate: now)
 
         let badgeCount: Int
         if settings.badgeCountShowDueSoon {

@@ -113,7 +113,7 @@ struct SettingsView: View {
             case .assigningGroups(let selected):
                 SettingsCadenceAssignmentView(
                     contacts: selected,
-                    groups: viewModel.allCadences,
+                    cadences: viewModel.allCadences,
                     onImport: { assignments in
                         pendingImportStep = .seedingLastTouch(selected: selected, assignments: assignments)
                         contactImportStep = nil

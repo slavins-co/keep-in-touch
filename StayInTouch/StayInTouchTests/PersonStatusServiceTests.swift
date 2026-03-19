@@ -42,7 +42,7 @@ final class PersonStatusServiceTests: XCTestCase {
             sortOrder: 0
         )
 
-        let group = Cadence(
+        let cadence = Cadence(
             id: cadenceId,
             name: "Monthly",
             frequencyDays: 30,
@@ -77,7 +77,7 @@ final class PersonStatusServiceTests: XCTestCase {
         )
 
         let service = PersonStatusService(referenceDate: reference)
-        let dueSoon = service.dueSoonPeople([person], groups: [group], settings: settings)
+        let dueSoon = service.dueSoonPeople([person], cadences: [cadence], settings: settings)
         XCTAssertTrue(dueSoon.isEmpty)
     }
 
@@ -142,7 +142,7 @@ final class PersonStatusServiceTests: XCTestCase {
             sortOrder: 0
         )
 
-        let group = Cadence(
+        let cadence = Cadence(
             id: cadenceId,
             name: "Weekly",
             frequencyDays: 7,
@@ -155,7 +155,7 @@ final class PersonStatusServiceTests: XCTestCase {
         )
 
         let service = PersonStatusService(referenceDate: reference)
-        let overdue = service.overduePeople([newer, older], groups: [group])
+        let overdue = service.overduePeople([newer, older], cadences: [cadence])
         XCTAssertEqual(overdue.first?.displayName, "Bob")
     }
 }

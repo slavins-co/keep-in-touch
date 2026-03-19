@@ -25,7 +25,7 @@ final class CadenceContactsViewModelTests: XCTestCase {
         currentGroup = TestFactory.makeCadence(id: UUID(), name: "Weekly")
         otherGroup = TestFactory.makeCadence(id: UUID(), name: "Monthly", frequencyDays: 30, isDefault: false)
 
-        cadenceRepo.groups = [currentGroup, otherGroup]
+        cadenceRepo.cadences = [currentGroup, otherGroup]
 
         // Two people in currentGroup, one in otherGroup
         personRepo.people = [
@@ -35,7 +35,7 @@ final class CadenceContactsViewModelTests: XCTestCase {
         ]
 
         sut = CadenceContactsViewModel(
-            group: currentGroup,
+            cadence: currentGroup,
             personRepository: personRepo,
             cadenceRepository: cadenceRepo
         )
@@ -50,12 +50,12 @@ final class CadenceContactsViewModelTests: XCTestCase {
 
     func testLoadPopulatesOtherGroups() {
         let thirdGroup = TestFactory.makeCadence(id: UUID(), name: "Quarterly", frequencyDays: 90, isDefault: false)
-        cadenceRepo.groups = [currentGroup, otherGroup, thirdGroup]
+        cadenceRepo.cadences = [currentGroup, otherGroup, thirdGroup]
 
         sut.load()
 
-        XCTAssertEqual(sut.otherGroups.count, 2, "Should list 2 other groups excluding current")
-        XCTAssertFalse(sut.otherGroups.contains(where: { $0.id == currentGroup.id }),
+        XCTAssertEqual(sut.otherCadences.count, 2, "Should list 2 other groups excluding current")
+        XCTAssertFalse(sut.otherCadences.contains(where: { $0.id == currentGroup.id }),
                        "Current group should not appear in otherGroups")
     }
 
@@ -70,15 +70,15 @@ final class CadenceContactsViewModelTests: XCTestCase {
         var nonDefaultLow = TestFactory.makeCadence(id: UUID(), name: "NonDefaultLow", isDefault: false)
         nonDefaultLow.sortOrder = 0
 
-        cadenceRepo.groups = [currentGroup, nonDefaultHigh, defaultMiddle, nonDefaultLow]
+        cadenceRepo.cadences = [currentGroup, nonDefaultHigh, defaultMiddle, nonDefaultLow]
 
         sut.load()
 
-        XCTAssertEqual(sut.otherGroups.count, 3)
+        XCTAssertEqual(sut.otherCadences.count, 3)
         // Default comes first, then non-default sorted by sortOrder (0 before 2)
-        XCTAssertEqual(sut.otherGroups[0].name, "DefaultMiddle")
-        XCTAssertEqual(sut.otherGroups[1].name, "NonDefaultLow")
-        XCTAssertEqual(sut.otherGroups[2].name, "NonDefaultHigh")
+        XCTAssertEqual(sut.otherCadences[0].name, "DefaultMiddle")
+        XCTAssertEqual(sut.otherCadences[1].name, "NonDefaultLow")
+        XCTAssertEqual(sut.otherCadences[2].name, "NonDefaultHigh")
     }
 
     // MARK: - movePerson

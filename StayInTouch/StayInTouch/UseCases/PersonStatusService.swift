@@ -14,12 +14,12 @@ struct PersonStatusService {
         self.calculator = FrequencyCalculator(referenceDate: referenceDate)
     }
 
-    func overduePeople(_ people: [Person], groups: [Cadence]) -> [Person] {
+    func overduePeople(_ people: [Person], cadences: [Cadence]) -> [Person] {
         let filtered = people.filter { !($0.isPaused) }
-        let overdue = filtered.filter { calculator.status(for: $0, in: groups) == .overdue }
+        let overdue = filtered.filter { calculator.status(for: $0, in: cadences) == .overdue }
         return overdue.sorted { lhs, rhs in
-            let lhsOverdue = calculator.daysOverdue(for: lhs, in: groups)
-            let rhsOverdue = calculator.daysOverdue(for: rhs, in: groups)
+            let lhsOverdue = calculator.daysOverdue(for: lhs, in: cadences)
+            let rhsOverdue = calculator.daysOverdue(for: rhs, in: cadences)
             if lhsOverdue != rhsOverdue {
                 return lhsOverdue > rhsOverdue
             }
@@ -32,17 +32,17 @@ struct PersonStatusService {
         }
     }
 
-    func dueSoonPeople(_ people: [Person], groups: [Cadence], settings: AppSettings) -> [Person] {
+    func dueSoonPeople(_ people: [Person], cadences: [Cadence], settings: AppSettings) -> [Person] {
         let filtered = people.filter { !($0.isPaused) }
         let dueSoon = filtered.filter { person in
-            guard calculator.status(for: person, in: groups) == .dueSoon else { return false }
-            let days = daysUntilDue(for: person, groups: groups)
+            guard calculator.status(for: person, in: cadences) == .dueSoon else { return false }
+            let days = daysUntilDue(for: person, cadences: cadences)
             return days > 0 && days <= settings.dueSoonWindowDays
         }
 
         return dueSoon.sorted { lhs, rhs in
-            let lhsDays = daysUntilDue(for: lhs, groups: groups)
-            let rhsDays = daysUntilDue(for: rhs, groups: groups)
+            let lhsDays = daysUntilDue(for: lhs, cadences: cadences)
+            let rhsDays = daysUntilDue(for: rhs, cadences: cadences)
             if lhsDays != rhsDays {
                 return lhsDays < rhsDays
             }
@@ -55,8 +55,8 @@ struct PersonStatusService {
         }
     }
 
-    private func daysUntilDue(for person: Person, groups: [Cadence]) -> Int {
-        guard let dueDate = calculator.effectiveDueDate(for: person, in: groups) else { return Int.max }
+    private func daysUntilDue(for person: Person, cadences: [Cadence]) -> Int {
+        guard let dueDate = calculator.effectiveDueDate(for: person, in: cadences) else { return Int.max }
         let cal = Calendar.current
         return cal.dateComponents([.day], from: cal.startOfDay(for: calculator.referenceDate), to: cal.startOfDay(for: dueDate)).day ?? Int.max
     }

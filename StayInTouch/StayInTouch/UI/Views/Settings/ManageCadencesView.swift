@@ -11,23 +11,23 @@ struct ManageCadencesView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ManageCadencesViewModel()
 
-    @State private var showNewGroup = false
-    @State private var editingGroup: Cadence?
+    @State private var showNewCadence = false
+    @State private var editingCadence: Cadence?
     @State private var deleteTarget: Cadence?
     @State private var showDeleteConfirm = false
     @State private var showCannotDeleteAlert = false
 
     var body: some View {
         List {
-            ForEach(viewModel.groups, id: \.id) { group in
+            ForEach(viewModel.cadences, id: \.id) { cadence in
                 NavigationLink {
-                    CadenceContactsView(group: group)
+                    CadenceContactsView(cadence: cadence)
                 } label: {
                     VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         HStack {
-                            Text(group.name)
+                            Text(cadence.name)
                                 .font(DS.Typography.contactName)
-                            if group.isDefault {
+                            if cadence.isDefault {
                                 Text("Default")
                                     .font(DS.Typography.captionBold)
                                     .foregroundStyle(DS.Colors.secondaryText)
@@ -38,7 +38,7 @@ struct ManageCadencesView: View {
                             }
                         }
 
-                        Text("Every \(group.frequencyDays) days \u{2022} \(viewModel.countsByGroup[group.id, default: 0]) contacts")
+                        Text("Every \(cadence.frequencyDays) days \u{2022} \(viewModel.countsByCadence[cadence.id, default: 0]) contacts")
                             .font(DS.Typography.metadata)
                             .foregroundStyle(DS.Colors.secondaryText)
                     }
@@ -46,17 +46,17 @@ struct ManageCadencesView: View {
                 }
                 .swipeActions(edge: .trailing) {
                     Button(role: .destructive) {
-                        guard !group.isDefault else { return }
-                        deleteTarget = group
+                        guard !cadence.isDefault else { return }
+                        deleteTarget = cadence
                         showDeleteConfirm = true
                     } label: {
                         Label("Delete", systemImage: "trash")
                     }
-                    .disabled(group.isDefault)
+                    .disabled(cadence.isDefault)
                 }
                 .swipeActions(edge: .trailing) {
                     Button {
-                        editingGroup = group
+                        editingCadence = cadence
                     } label: {
                         Label("Edit", systemImage: "pencil")
                     }
@@ -69,33 +69,33 @@ struct ManageCadencesView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    showNewGroup = true
+                    showNewCadence = true
                 } label: {
                     Image(systemName: "plus.circle.fill")
                 }
             }
         }
-        .sheet(item: $editingGroup) { group in
+        .sheet(item: $editingCadence) { cadence in
             CadenceEditorSheet(
-                group: group,
-                existingNames: viewModel.groups.map { $0.name },
-                defaultSortOrder: viewModel.groups.count,
-                onSave: { group, makeDefault in
-                    viewModel.save(group, makeDefault: makeDefault)
+                cadence: cadence,
+                existingNames: viewModel.cadences.map { $0.name },
+                defaultSortOrder: viewModel.cadences.count,
+                onSave: { cadence, makeDefault in
+                    viewModel.save(cadence, makeDefault: makeDefault)
                 },
                 onCancel: {}
             )
         }
-        .sheet(isPresented: $showNewGroup) {
+        .sheet(isPresented: $showNewCadence) {
             CadenceEditorSheet(
-                group: nil,
-                existingNames: viewModel.groups.map { $0.name },
-                defaultSortOrder: viewModel.groups.count,
-                onSave: { group, makeDefault in
-                    viewModel.save(group, makeDefault: makeDefault)
-                    showNewGroup = false
+                cadence: nil,
+                existingNames: viewModel.cadences.map { $0.name },
+                defaultSortOrder: viewModel.cadences.count,
+                onSave: { cadence, makeDefault in
+                    viewModel.save(cadence, makeDefault: makeDefault)
+                    showNewCadence = false
                 },
-                onCancel: { showNewGroup = false }
+                onCancel: { showNewCadence = false }
             )
         }
         .alert("Cannot Delete", isPresented: $showCannotDeleteAlert) {
@@ -108,16 +108,16 @@ struct ManageCadencesView: View {
                 guard let target = deleteTarget else { return }
                 Haptics.medium()
                 let defaultCadence = viewModel.defaultCadence()
-                if let defaultCadence, viewModel.countsByGroup[target.id, default: 0] > 0 {
+                if let defaultCadence, viewModel.countsByCadence[target.id, default: 0] > 0 {
                     viewModel.movePeople(from: target, to: defaultCadence)
                 }
-                viewModel.delete(group: target)
+                viewModel.delete(cadence: target)
                 deleteTarget = nil
             }
             Button("Cancel", role: .cancel) { deleteTarget = nil }
         } message: {
-            if let target = deleteTarget, viewModel.countsByGroup[target.id, default: 0] > 0 {
-                Text("\(viewModel.countsByGroup[target.id, default: 0]) contacts will be moved to the default frequency.")
+            if let target = deleteTarget, viewModel.countsByCadence[target.id, default: 0] > 0 {
+                Text("\(viewModel.countsByCadence[target.id, default: 0]) contacts will be moved to the default frequency.")
             } else {
                 Text("This action cannot be undone.")
             }
