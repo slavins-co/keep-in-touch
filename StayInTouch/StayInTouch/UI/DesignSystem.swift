@@ -387,7 +387,7 @@ enum DS {
         static let caption = Font.caption
         static let captionBold = Font.caption.weight(.medium)
 
-        // DESIGN: Light/dark structural difference — summary card: title (28pt) light / title2 (22pt) dark
+        // DESIGN: Light/dark structural difference — summary card: .title light / .title2 dark
         static func summaryNumber(scheme: ColorScheme) -> Font {
             scheme == .dark ? Font.title2.weight(.bold) : Font.title.weight(.bold)
         }
