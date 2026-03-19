@@ -302,7 +302,7 @@ struct DataImportService {
                 }
             }
 
-            // 3. Refresh valid cadence/group IDs after creation
+            // 3. Refresh valid cadence and group IDs after creation
             let allCadences = cadenceRepo.fetchAll()
             let defaultCadenceId = allCadences.first(where: { $0.isDefault })?.id ?? allCadences.first?.id ?? UUID()
             let validCadenceIds = Set(allCadences.map { $0.id })

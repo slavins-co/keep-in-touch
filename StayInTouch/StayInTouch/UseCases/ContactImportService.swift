@@ -71,11 +71,11 @@ struct ContactImportService {
         let backgroundContext = coreDataStack.newBackgroundContext()
         await backgroundContext.perform {
             let peopleRepo = CoreDataPersonRepository(context: backgroundContext)
-            let groupRepo = CoreDataCadenceRepository(context: backgroundContext)
+            let cadenceRepo = CoreDataCadenceRepository(context: backgroundContext)
             let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
 
-            let groups = groupRepo.fetchAll()
-            let defaultCadenceId = groups.first(where: { $0.isDefault })?.id ?? groups.first?.id
+            let cadences = cadenceRepo.fetchAll()
+            let defaultCadenceId = cadences.first(where: { $0.isDefault })?.id ?? cadences.first?.id
             guard let defaultCadenceId else { return }
 
             let existing = peopleRepo.fetchTracked(includePaused: true)

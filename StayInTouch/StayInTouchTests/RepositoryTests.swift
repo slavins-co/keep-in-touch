@@ -20,7 +20,7 @@ final class RepositoryTests: XCTestCase {
 
     func testCadenceRepositoryCrud() throws {
         let repo = CoreDataCadenceRepository(context: context)
-        let group = Cadence(
+        let cadence = Cadence(
             id: UUID(),
             name: "Weekly",
             frequencyDays: 7,
@@ -32,11 +32,11 @@ final class RepositoryTests: XCTestCase {
             modifiedAt: Date()
         )
 
-        try repo.save(group)
+        try repo.save(cadence)
         XCTAssertEqual(repo.fetchAll().count, 1)
-        XCTAssertEqual(repo.fetch(id: group.id)?.name, "Weekly")
+        XCTAssertEqual(repo.fetch(id: cadence.id)?.name, "Weekly")
 
-        try repo.delete(id: group.id)
+        try repo.delete(id: cadence.id)
         XCTAssertEqual(repo.fetchAll().count, 0)
     }
 
