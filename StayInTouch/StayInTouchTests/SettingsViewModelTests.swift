@@ -37,6 +37,10 @@ final class SettingsViewModelTests: XCTestCase {
 
     // MARK: - Export
 
+    private func cleanupURLs(_ urls: [URL]) {
+        for url in urls { try? FileManager.default.removeItem(at: url) }
+    }
+
     func testExportContactsReturnsFileWithValidJSON() throws {
         personRepo.people = [
             TestFactory.makePerson(name: "Alice"),
@@ -50,31 +54,29 @@ final class SettingsViewModelTests: XCTestCase {
             touchEventRepository: touchEventRepo
         )
 
-        let url = sut.exportContacts()
-
-        XCTAssertNotNil(url)
-        let data = try Data(contentsOf: url!)
+        let urls = sut.exportContacts()
+        XCTAssertEqual(urls.count, 1)
+        let data = try Data(contentsOf: urls[0])
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let decoded = try decoder.decode(ExportData.self, from: data)
         XCTAssertEqual(decoded.version, 3)
         XCTAssertEqual(decoded.people.count, 2)
 
-        try? FileManager.default.removeItem(at: url!)
+        cleanupURLs(urls)
     }
 
     func testExportEmptyContactsReturnsEmptyArray() throws {
-        let url = sut.exportContacts()
-
-        XCTAssertNotNil(url)
-        let data = try Data(contentsOf: url!)
+        let urls = sut.exportContacts()
+        XCTAssertEqual(urls.count, 1)
+        let data = try Data(contentsOf: urls[0])
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let decoded = try decoder.decode(ExportData.self, from: data)
         XCTAssertTrue(decoded.people.isEmpty)
         XCTAssertEqual(decoded.version, 3)
 
-        try? FileManager.default.removeItem(at: url!)
+        cleanupURLs(urls)
     }
 
     func testExportIncludesGroupsAndTags() throws {
@@ -91,8 +93,8 @@ final class SettingsViewModelTests: XCTestCase {
             touchEventRepository: touchEventRepo
         )
 
-        let url = sut.exportContacts()!
-        let data = try Data(contentsOf: url)
+        let urls = sut.exportContacts()
+        let data = try Data(contentsOf: urls[0])
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let decoded = try decoder.decode(ExportData.self, from: data)
@@ -104,7 +106,7 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertEqual(decoded.groups.first?.name, "Work")
         XCTAssertEqual(decoded.people.count, 1)
 
-        try? FileManager.default.removeItem(at: url)
+        cleanupURLs(urls)
     }
 
     func testExportDoesNotIncludeCnIdentifier() throws {
@@ -117,14 +119,173 @@ final class SettingsViewModelTests: XCTestCase {
             touchEventRepository: touchEventRepo
         )
 
-        let url = sut.exportContacts()!
-        let data = try Data(contentsOf: url)
+        let urls = sut.exportContacts()
+        let data = try Data(contentsOf: urls[0])
         let jsonString = String(data: data, encoding: .utf8)!
 
         XCTAssertFalse(jsonString.contains("cnIdentifier"))
         XCTAssertFalse(jsonString.contains("some-cn-id"))
 
-        try? FileManager.default.removeItem(at: url)
+        cleanupURLs(urls)
+    }
+
+    // MARK: - CSV Export
+
+    func testExportCSVReturnsTwoFilesWithHeaderAndRows() throws {
+        let cadenceId = UUID()
+        cadenceRepo.cadences = [TestFactory.makeCadence(id: cadenceId, name: "Weekly")]
+        personRepo.people = [
+            TestFactory.makePerson(name: "Alice", cadenceId: cadenceId),
+            TestFactory.makePerson(name: "Bob", cadenceId: cadenceId)
+        ]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
+            groupRepository: groupRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let urls = sut.exportContacts(format: .csv)
+        XCTAssertEqual(urls.count, 2, "Should return contacts CSV + history CSV")
+
+        let contactsCSV = try String(contentsOf: urls[0], encoding: .utf8)
+        let lines = contactsCSV.components(separatedBy: "\r\n")
+        XCTAssertEqual(lines.first, "Name,Cadence,Groups,Status,Birthday,Last Touched,Last Touch Method,Paused,Notes,Touch Count")
+        XCTAssertEqual(lines.count, 3) // header + 2 rows
+        XCTAssertTrue(lines[1].contains("Alice"))
+        XCTAssertTrue(lines[2].contains("Bob"))
+
+        cleanupURLs(urls)
+    }
+
+    func testExportCSVEscapesCommasAndQuotes() throws {
+        personRepo.people = [TestFactory.makePerson(name: "Smith, John")]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
+            groupRepository: groupRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let urls = sut.exportContacts(format: .csv)
+        let contactsCSV = try String(contentsOf: urls[0], encoding: .utf8)
+        XCTAssertTrue(contactsCSV.contains("\"Smith, John\""))
+
+        cleanupURLs(urls)
+    }
+
+    func testExportCSVEmptyContactsReturnsHeaderOnly() throws {
+        let urls = sut.exportContacts(format: .csv)
+        XCTAssertEqual(urls.count, 2)
+
+        let contactsCSV = try String(contentsOf: urls[0], encoding: .utf8)
+        let contactLines = contactsCSV.components(separatedBy: "\r\n")
+        XCTAssertEqual(contactLines.count, 1) // header only
+
+        let historyCSV = try String(contentsOf: urls[1], encoding: .utf8)
+        let historyLines = historyCSV.components(separatedBy: "\r\n")
+        XCTAssertEqual(historyLines.count, 1) // header only
+
+        cleanupURLs(urls)
+    }
+
+    func testExportCSVIncludesTouchCountAndHistory() throws {
+        let personId = UUID()
+        let date1 = Date()
+        let date2 = Date().addingTimeInterval(-86400)
+        personRepo.people = [TestFactory.makePerson(id: personId, name: "Alice")]
+        touchEventRepo.events = [
+            TouchEvent(id: UUID(), personId: personId, at: date1, method: .call, notes: "First", timeOfDay: nil, createdAt: Date(), modifiedAt: Date()),
+            TouchEvent(id: UUID(), personId: personId, at: date2, method: .text, notes: nil, timeOfDay: nil, createdAt: Date(), modifiedAt: Date())
+        ]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
+            groupRepository: groupRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let urls = sut.exportContacts(format: .csv)
+
+        // Contacts CSV: touch count = 2
+        let contactsCSV = try String(contentsOf: urls[0], encoding: .utf8)
+        let dataRow = contactsCSV.components(separatedBy: "\r\n")[1]
+        XCTAssertTrue(dataRow.hasSuffix(",2"))
+
+        // History CSV: 2 event rows + header
+        let historyCSV = try String(contentsOf: urls[1], encoding: .utf8)
+        let historyLines = historyCSV.components(separatedBy: "\r\n")
+        XCTAssertEqual(historyLines.count, 3) // header + 2 events
+        XCTAssertTrue(historyLines[1].contains("Alice"))
+        XCTAssertTrue(historyLines[2].contains("Alice"))
+
+        cleanupURLs(urls)
+    }
+
+    func testExportCSVIncludesStatusColumn() throws {
+        let cadenceId = UUID()
+        // Cadence with 7-day frequency, 2-day warning
+        cadenceRepo.cadences = [TestFactory.makeCadence(id: cadenceId, name: "Weekly", frequencyDays: 7)]
+        // Person last touched 30 days ago — should be overdue
+        let person = TestFactory.makePerson(name: "Alice", cadenceId: cadenceId, lastTouchAt: Date().addingTimeInterval(-30 * 86400))
+        personRepo.people = [person]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
+            groupRepository: groupRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let urls = sut.exportContacts(format: .csv)
+        let contactsCSV = try String(contentsOf: urls[0], encoding: .utf8)
+        let dataRow = contactsCSV.components(separatedBy: "\r\n")[1]
+        XCTAssertTrue(dataRow.contains("Overdue"))
+
+        cleanupURLs(urls)
+    }
+
+    func testExportCSVIncludesBirthdayColumn() throws {
+        let person = TestFactory.makePerson(name: "Alice", birthday: Birthday(month: 3, day: 15, year: nil))
+        personRepo.people = [person]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
+            groupRepository: groupRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let urls = sut.exportContacts(format: .csv)
+        let contactsCSV = try String(contentsOf: urls[0], encoding: .utf8)
+        let dataRow = contactsCSV.components(separatedBy: "\r\n")[1]
+        XCTAssertTrue(dataRow.contains("Mar 15"))
+
+        cleanupURLs(urls)
+    }
+
+    func testExportJSONFormatDefaultWorks() throws {
+        personRepo.people = [TestFactory.makePerson(name: "Alice")]
+        sut = SettingsViewModel(
+            settingsRepository: settingsRepo,
+            cadenceRepository: cadenceRepo,
+            groupRepository: groupRepo,
+            personRepository: personRepo,
+            touchEventRepository: touchEventRepo
+        )
+
+        let urls = sut.exportContacts(format: .json)
+        XCTAssertEqual(urls.count, 1)
+        let data = try Data(contentsOf: urls[0])
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(ExportData.self, from: data)
+        XCTAssertEqual(decoded.people.count, 1)
+
+        cleanupURLs(urls)
     }
 
     func testParseImportFileLegacyFormat() async throws {

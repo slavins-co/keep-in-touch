@@ -27,6 +27,7 @@ struct SettingsView: View {
     @State private var showImportSuccessAlert = false
     @State private var showImportErrorAlert = false
     @State private var importResultMessage = ""
+    @State private var showExportFormatPicker = false
     @State private var showResetFrequenciesConfirmation = false
     @State private var showPostImportMatch = false
     @State private var postImportResult: ImportResult?
@@ -52,8 +53,10 @@ struct SettingsView: View {
         .tint(DS.Colors.accent)
         .navigationTitle("Settings")
         .sheet(item: $shareItem) { item in
-            ShareSheet(items: [item.url]) {
-                try? FileManager.default.removeItem(at: item.url)
+            ShareSheet(items: item.urls) {
+                for url in item.urls {
+                    try? FileManager.default.removeItem(at: url)
+                }
             }
         }
         .alert("No New Contacts", isPresented: $showNoNewContactsAlert) {
@@ -322,11 +325,21 @@ struct SettingsView: View {
     private var dataSection: some View {
         Section("Data") {
             Button {
-                if let url = viewModel.exportContacts() {
-                    shareItem = ShareItem(url: url)
-                }
+                showExportFormatPicker = true
             } label: {
                 Label("Export Contacts", systemImage: "square.and.arrow.up")
+            }
+            .confirmationDialog("Export Format", isPresented: $showExportFormatPicker) {
+                ForEach(ExportFormat.allCases, id: \.self) { format in
+                    Button(format.displayName) {
+                        let urls = viewModel.exportContacts(format: format)
+                        if !urls.isEmpty {
+                            shareItem = ShareItem(urls: urls)
+                        }
+                    }
+                }
+            } message: {
+                Text("Choose a format for your export.")
             }
 
             Button {
@@ -435,7 +448,7 @@ struct SettingsView: View {
 
 private struct ShareItem: Identifiable {
     let id = UUID()
-    let url: URL
+    let urls: [URL]
 }
 
 private enum ContactImportStep: Identifiable {
