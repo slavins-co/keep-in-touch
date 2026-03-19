@@ -330,16 +330,12 @@ struct SettingsView: View {
                 Label("Export Contacts", systemImage: "square.and.arrow.up")
             }
             .confirmationDialog("Export Format", isPresented: $showExportFormatPicker) {
-                Button("JSON (backup & re-import)") {
-                    let urls = viewModel.exportContacts(format: .json)
-                    if !urls.isEmpty {
-                        shareItem = ShareItem(urls: urls)
-                    }
-                }
-                Button("CSV (spreadsheets)") {
-                    let urls = viewModel.exportContacts(format: .csv)
-                    if !urls.isEmpty {
-                        shareItem = ShareItem(urls: urls)
+                ForEach(ExportFormat.allCases, id: \.self) { format in
+                    Button(format.displayName) {
+                        let urls = viewModel.exportContacts(format: format)
+                        if !urls.isEmpty {
+                            shareItem = ShareItem(urls: urls)
+                        }
                     }
                 }
             } message: {

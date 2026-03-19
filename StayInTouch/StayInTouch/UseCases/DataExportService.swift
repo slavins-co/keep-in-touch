@@ -13,11 +13,7 @@ struct DataExportService {
     let groupRepository: GroupRepository
     let touchEventRepository: TouchEventRepository
 
-    func exportContacts() -> URL? {
-        exportJSON()
-    }
-
-    func exportJSON() -> URL? {
+    func exportJSON() -> [URL] {
         let (people, cadences, groups) = fetchExportData()
 
         let exportData = ExportData(
@@ -31,10 +27,11 @@ struct DataExportService {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        guard let data = try? encoder.encode(exportData) else { return nil }
+        guard let data = try? encoder.encode(exportData) else { return [] }
 
         let filename = "keepintouch-export-\(ISO8601DateFormatter().string(from: Date())).json"
-        return writeToTempFile(data: data, filename: filename)
+        guard let url = writeToTempFile(data: data, filename: filename) else { return [] }
+        return [url]
     }
 
     func exportCSV() -> [URL] {
