@@ -9,9 +9,13 @@ import XCTest
 @testable import StayInTouch
 
 final class PersonStatusServiceTests: XCTestCase {
-    func testDueSoonUsesSettingsWindow() {
+    /// Person 4 days from due with cadence warningDays=5 should appear in dueSoon
+    /// regardless of any global settings window. FrequencyCalculator is the single
+    /// source of truth for Due Soon status.
+    func testDueSoonUsesWarningDaysNotSettingsWindow() {
         let cadenceId = UUID()
         let now = Date()
+        // 26 days into a 30-day cadence → 4 days until due → within warningDays(5)
         let reference = Calendar.current.date(byAdding: .day, value: 26, to: now) ?? now
 
         let person = Person(
@@ -54,31 +58,10 @@ final class PersonStatusServiceTests: XCTestCase {
             modifiedAt: now
         )
 
-        let settings = AppSettings(
-            id: AppSettings.singletonId,
-            theme: .light,
-            notificationsEnabled: false,
-            breachTimeOfDay: LocalTime(hour: 18, minute: 0),
-            digestEnabled: false,
-            digestDay: .friday,
-            digestTime: LocalTime(hour: 18, minute: 0),
-            notificationGrouping: .perType,
-            badgeCountShowDueSoon: false,
-            dueSoonWindowDays: 3,
-            demoModeEnabled: false,
-            analyticsEnabled: true,
-            hideContactNamesInNotifications: false,
-            birthdayNotificationsEnabled: false,
-            birthdayNotificationTime: LocalTime(hour: 9, minute: 0),
-            birthdayIgnoreSnoozePause: true,
-            lastContactsSyncAt: nil,
-            onboardingCompleted: false,
-            appVersion: "1.0"
-        )
-
         let service = PersonStatusService(referenceDate: reference)
-        let dueSoon = service.dueSoonPeople([person], cadences: [cadence], settings: settings)
-        XCTAssertTrue(dueSoon.isEmpty)
+        let dueSoon = service.dueSoonPeople([person], cadences: [cadence])
+        XCTAssertEqual(dueSoon.count, 1)
+        XCTAssertEqual(dueSoon.first?.displayName, "Alex")
     }
 
     func testOverdueTieBreakByLastTouchOlderFirst() {
