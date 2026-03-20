@@ -6,7 +6,7 @@
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey.svg)](LICENSE)
 
-**Version:** 0.3.5 (Build 11) | **Status:** Pre-release Beta
+**Version:** 0.3.6 (Build 12) | **Status:** Pre-release Beta
 
 ---
 
@@ -23,7 +23,7 @@ Never lose track of the people who matter. Keep In Touch helps you maintain frie
 
 ## Current Status
 
-V0.3.5 is a patch release fixing stale status indicator colors after bulk updates. V0.3.4 completed a two-release quality sprint with grouped birthday alerts, pull-to-refresh contact sync, a dedicated Notifications settings screen, foreground notification delivery, and a new `AppDependencies` DI container — closing with 309 tests and full Swift 6 concurrency compliance.
+V0.3.6 adds VoiceOver accessibility labels to all picker and editor sheets, replaces hardcoded font sizes with Dynamic Type text styles, and introduces CSV export for spreadsheet use. Internally, the terminology refactor renames "Groups" to "Cadences" and "Tags" to "Groups" with full backward compatibility for existing exports. A bug fix restores Due Soon contacts to the Home View. 330 tests passing.
 
 **Up next:** App Store submission. See [open issues](https://github.com/slavins-co/keep-in-touch/issues) and [release history](https://github.com/slavins-co/keep-in-touch/releases) for details.
 
@@ -53,6 +53,7 @@ V0.3.5 is a patch release fixing stale status indicator colors after bulk update
 - Half-height picker sheets for dates, times, frequency, and groups
 - Full connection history with edit and delete
 - JSON import and export with deduplication and conflict resolution
+- CSV export for spreadsheet use
 - Centralized design system with adaptive dark/light mode tokens
 - Portrait-only orientation on iPhone
 
@@ -76,7 +77,7 @@ No external dependencies beyond [TelemetryDeck](https://telemetrydeck.com) for a
 
 ## Getting Started
 
-**TestFlight:** v0.3.5 (Build 11) available. Join via [TestFlight](https://testflight.apple.com/join/2rr93aKX).
+**TestFlight:** v0.3.6 (Build 12) available. Join via [TestFlight](https://testflight.apple.com/join/UY7Pgusg).
 
 **Developers:** Clone the repo, open `StayInTouch/StayInTouch.xcodeproj` in Xcode 15+, and run. Grant Contacts and Notifications permissions when prompted.
 

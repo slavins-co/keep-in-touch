@@ -1,7 +1,7 @@
 # TODO - Stay in Touch iOS App
 
-**Project Status:** v0.3.2 (Build 8) — Pre-release Beta
-**Last Updated:** March 9, 2026
+**Project Status:** v0.3.6 (Build 12) — Pre-release Beta
+**Last Updated:** March 20, 2026
 
 > **TestFlight Status:** Code blockers resolved. Manual submission steps remain — see `tasks/testflight-guide.md`.
 > When creating PRs, confirm TestFlight readiness is not regressed (deployment target 17.0, PrivacyInfo.xcprivacy present, UIBackgroundModes declared, build number incremented).
@@ -50,6 +50,17 @@ Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architect
 - [ ] **#68** App Store submission checklist
 - [ ] **#69** TestFlight beta validation plan
 - [ ] **#70** Validate core loop retention during beta
+
+---
+
+## Completed — Session 2026-03-20 (Issue #268: Due Soon Home View Bug)
+
+- [x] **#268** Fix Due Soon contacts missing from Home View when warningDays > dueSoonWindowDays (PR #269)
+  - Removed redundant `dueSoonWindowDays` second filter from `PersonStatusService.dueSoonPeople()`
+  - `FrequencyCalculator` is now single source of truth for Due Soon status
+  - 331 unit tests passing
+- [x] Code review: PASS
+- [x] Security review: PASS
 
 ---
 
