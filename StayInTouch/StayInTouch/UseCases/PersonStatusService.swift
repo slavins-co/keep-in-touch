@@ -32,13 +32,9 @@ struct PersonStatusService {
         }
     }
 
-    func dueSoonPeople(_ people: [Person], cadences: [Cadence], settings: AppSettings) -> [Person] {
+    func dueSoonPeople(_ people: [Person], cadences: [Cadence]) -> [Person] {
         let filtered = people.filter { !($0.isPaused) }
-        let dueSoon = filtered.filter { person in
-            guard calculator.status(for: person, in: cadences) == .dueSoon else { return false }
-            let days = daysUntilDue(for: person, cadences: cadences)
-            return days > 0 && days <= settings.dueSoonWindowDays
-        }
+        let dueSoon = filtered.filter { calculator.status(for: $0, in: cadences) == .dueSoon }
 
         return dueSoon.sorted { lhs, rhs in
             let lhsDays = daysUntilDue(for: lhs, cadences: cadences)

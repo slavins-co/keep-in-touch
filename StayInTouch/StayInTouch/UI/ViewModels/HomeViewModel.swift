@@ -108,30 +108,9 @@ final class HomeViewModel: ObservableObject {
         )
 
         let service = PersonStatusService(referenceDate: Date())
-        let currentSettings = settings ?? AppSettings(
-            id: AppSettings.singletonId,
-            theme: .light,
-            notificationsEnabled: false,
-            breachTimeOfDay: LocalTime(hour: 18, minute: 0),
-            digestEnabled: false,
-            digestDay: .friday,
-            digestTime: LocalTime(hour: 18, minute: 0),
-            notificationGrouping: .perType,
-            badgeCountShowDueSoon: false,
-            dueSoonWindowDays: 3,
-            demoModeEnabled: false,
-            analyticsEnabled: true,
-            hideContactNamesInNotifications: false,
-            birthdayNotificationsEnabled: false,
-            birthdayNotificationTime: LocalTime(hour: 9, minute: 0),
-            birthdayIgnoreSnoozePause: true,
-            lastContactsSyncAt: nil,
-            onboardingCompleted: false,
-            appVersion: ""
-        )
 
         let overdue = service.overduePeople(filtered, cadences: cadences)
-        let dueSoon = service.dueSoonPeople(filtered, cadences: cadences, settings: currentSettings)
+        let dueSoon = service.dueSoonPeople(filtered, cadences: cadences)
         let allGood = filtered.filter { person in
             guard !person.isPaused else { return false }
             let status = FrequencyCalculator().status(for: person, in: cadences)
