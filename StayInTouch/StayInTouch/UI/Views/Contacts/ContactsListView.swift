@@ -63,6 +63,7 @@ struct ContactsListView: View {
                     systemImage: "magnifyingglass"
                 )
                 Spacer()
+                contactsSearchBar
             } else {
                 contactsList
                     .overlay(alignment: .bottom) {
