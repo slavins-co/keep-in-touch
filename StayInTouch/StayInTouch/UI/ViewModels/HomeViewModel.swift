@@ -145,11 +145,12 @@ final class HomeViewModel: ObservableObject {
             if searchLower.isEmpty { return true }
 
             let nameMatch = person.displayName.lowercased().contains(searchLower)
+            let nicknameMatch = person.nickname?.lowercased().contains(searchLower) ?? false
             let groupMatch = person.groupIds
                 .compactMap { groupNameById[$0] }
                 .contains { $0.contains(searchLower) }
 
-            return nameMatch || groupMatch
+            return nameMatch || nicknameMatch || groupMatch
         }
     }
 

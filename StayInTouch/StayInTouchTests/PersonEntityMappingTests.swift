@@ -50,6 +50,53 @@ final class PersonEntityMappingTests: XCTestCase {
         XCTAssertEqual(domain.displayName, "", "toDomain should fall back to empty string when displayName is nil")
     }
 
+    // MARK: - Nickname round-trip (#275)
+
+    func testNicknameRoundTrips() {
+        let entity = PersonEntity(context: context)
+        entity.id = UUID()
+        entity.displayName = "Robert"
+        entity.nickname = "Bobby"
+        entity.initials = "RJ"
+        entity.avatarColor = "#FF0000"
+        entity.groupId = UUID()
+        entity.isPaused = false
+        entity.isTracked = true
+        entity.notificationsMuted = false
+        entity.contactUnavailable = false
+        entity.sortOrder = 0
+        entity.createdAt = Date()
+        entity.modifiedAt = Date()
+
+        let domain = entity.toDomain()
+        XCTAssertEqual(domain.nickname, "Bobby")
+
+        // Round-trip back
+        let entity2 = PersonEntity(context: context)
+        entity2.apply(domain)
+        XCTAssertEqual(entity2.nickname, "Bobby")
+    }
+
+    func testNilNicknameRoundTrips() {
+        let entity = PersonEntity(context: context)
+        entity.id = UUID()
+        entity.displayName = "Alice"
+        entity.nickname = nil
+        entity.initials = "AS"
+        entity.avatarColor = "#0000FF"
+        entity.groupId = UUID()
+        entity.isPaused = false
+        entity.isTracked = true
+        entity.notificationsMuted = false
+        entity.contactUnavailable = false
+        entity.sortOrder = 0
+        entity.createdAt = Date()
+        entity.modifiedAt = Date()
+
+        let domain = entity.toDomain()
+        XCTAssertNil(domain.nickname)
+    }
+
     func testNilGroupIdFallsBackToNewUUID() {
         let entity = PersonEntity(context: context)
         entity.id = UUID()

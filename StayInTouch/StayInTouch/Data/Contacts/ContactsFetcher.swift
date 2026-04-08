@@ -32,13 +32,15 @@ struct ContactSummary: Identifiable, Equatable {
     let id: String
     let identifier: String
     let displayName: String
+    let nickname: String?
     let initials: String
     let birthday: Birthday?
 
-    init(identifier: String, displayName: String, initials: String, birthday: Birthday? = nil) {
+    init(identifier: String, displayName: String, nickname: String? = nil, initials: String, birthday: Birthday? = nil) {
         self.id = identifier
         self.identifier = identifier
         self.displayName = displayName
+        self.nickname = nickname
         self.initials = initials
         self.birthday = birthday
     }
@@ -92,6 +94,7 @@ enum ContactsFetcher {
         let keys: [CNKeyDescriptor] = [
             CNContactIdentifierKey as CNKeyDescriptor,
             CNContactOrganizationNameKey as CNKeyDescriptor,
+            CNContactNicknameKey as CNKeyDescriptor,
             CNContactBirthdayKey as CNKeyDescriptor,
             formatterKeys
         ]
@@ -104,11 +107,13 @@ enum ContactsFetcher {
             try store.enumerateContacts(with: request) { contact, _ in
                 let displayName = CNContactFormatter.string(from: contact, style: .fullName)
                     ?? contact.organizationName
+                let nickname = contact.nickname.isEmpty ? nil : contact.nickname
                 let initials = InitialsBuilder.initials(for: displayName)
                 let birthday = contact.birthday.flatMap { Birthday.from(dateComponents: $0) }
                 results.append(ContactSummary(
                     identifier: contact.identifier,
                     displayName: displayName,
+                    nickname: nickname,
                     initials: initials,
                     birthday: birthday
                 ))
