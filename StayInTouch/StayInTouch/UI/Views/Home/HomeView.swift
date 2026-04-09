@@ -13,6 +13,7 @@ struct HomeView: View {
     var selectPerson: (Person) -> Void
     @StateObject private var settingsViewModel = SettingsViewModel()
     @State private var collapsedSections: Set<String> = ["all-good"]
+    @State private var savedCollapsedSections: Set<String>?
     @State private var showNewContactsPicker = false
     @State private var showNoNewContactsAlert = false
     @State private var showLimitedAccessAlert = false
@@ -47,6 +48,20 @@ struct HomeView: View {
             }
             withAnimation(.easeInOut(duration: 0.25)) {
                 viewModel.applyFilters()
+            }
+        }
+        .onChange(of: viewModel.searchText) { _, newValue in
+            let isSearching = !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            if isSearching && savedCollapsedSections == nil {
+                savedCollapsedSections = collapsedSections
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    collapsedSections = []
+                }
+            } else if !isSearching, let saved = savedCollapsedSections {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    collapsedSections = saved
+                }
+                savedCollapsedSections = nil
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in

@@ -95,6 +95,7 @@ struct ContactImportService {
                     id: personId,
                     cnIdentifier: summary.identifier,
                     displayName: summary.displayName,
+                    nickname: summary.nickname,
                     initials: summary.initials,
                     avatarColor: AvatarColors.randomHex(),
                     cadenceId: cadenceId,

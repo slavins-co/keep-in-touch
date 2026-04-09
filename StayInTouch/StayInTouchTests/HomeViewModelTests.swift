@@ -80,11 +80,90 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertEqual(filtered.first?.displayName, "A")
     }
 
-    private func makePerson(name: String, cadenceId: UUID, groupIds: [UUID]) -> Person {
+    // MARK: - Nickname Search Tests (#275)
+
+    func testFilterMatchesNickname() {
+        let cadenceId = UUID()
+        let people = [
+            makePerson(name: "Robert Johnson", nickname: "Bobby", cadenceId: cadenceId, groupIds: []),
+            makePerson(name: "Alice Smith", cadenceId: cadenceId, groupIds: [])
+        ]
+
+        let filtered = HomeViewModel.filterPeople(
+            people: people,
+            cadences: [makeCadence(id: cadenceId)],
+            groups: [],
+            selectedCadenceId: nil,
+            selectedGroupId: nil,
+            searchText: "Bobby"
+        )
+
+        XCTAssertEqual(filtered.count, 1)
+        XCTAssertEqual(filtered.first?.displayName, "Robert Johnson")
+    }
+
+    func testFilterDoesNotMatchWhenNicknameIsNil() {
+        let cadenceId = UUID()
+        let people = [
+            makePerson(name: "Robert Johnson", cadenceId: cadenceId, groupIds: [])
+        ]
+
+        let filtered = HomeViewModel.filterPeople(
+            people: people,
+            cadences: [makeCadence(id: cadenceId)],
+            groups: [],
+            selectedCadenceId: nil,
+            selectedGroupId: nil,
+            searchText: "Bobby"
+        )
+
+        XCTAssertEqual(filtered.count, 0)
+    }
+
+    func testFilterDoesNotMatchEmptyNickname() {
+        let cadenceId = UUID()
+        let people = [
+            makePerson(name: "Robert Johnson", nickname: "", cadenceId: cadenceId, groupIds: [])
+        ]
+
+        let filtered = HomeViewModel.filterPeople(
+            people: people,
+            cadences: [makeCadence(id: cadenceId)],
+            groups: [],
+            selectedCadenceId: nil,
+            selectedGroupId: nil,
+            searchText: "Bobby"
+        )
+
+        XCTAssertEqual(filtered.count, 0)
+    }
+
+    func testFilterMatchesDisplayNameWhenNicknameAlsoPresent() {
+        let cadenceId = UUID()
+        let people = [
+            makePerson(name: "Robert Johnson", nickname: "Bobby", cadenceId: cadenceId, groupIds: [])
+        ]
+
+        let filtered = HomeViewModel.filterPeople(
+            people: people,
+            cadences: [makeCadence(id: cadenceId)],
+            groups: [],
+            selectedCadenceId: nil,
+            selectedGroupId: nil,
+            searchText: "Robert"
+        )
+
+        XCTAssertEqual(filtered.count, 1)
+    }
+
+    // MARK: - Helpers
+
+    private func makePerson(name: String, nickname: String? = nil, cadenceId: UUID, groupIds: [UUID]) -> Person {
         Person(
             id: UUID(),
             cnIdentifier: nil,
             displayName: name,
+            nickname: nickname,
             initials: String(name.prefix(2)),
             avatarColor: "#FF6B6B",
             cadenceId: cadenceId,

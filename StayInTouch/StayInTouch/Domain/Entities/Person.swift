@@ -15,6 +15,7 @@ struct Person: Identifiable, Equatable, Hashable {
     let id: UUID
     var cnIdentifier: String?
     var displayName: String
+    var nickname: String?
     var initials: String
     var avatarColor: String
 

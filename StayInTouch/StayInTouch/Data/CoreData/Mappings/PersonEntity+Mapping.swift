@@ -13,6 +13,7 @@ extension PersonEntity {
             id: requiredField(id, entity: "PersonEntity", field: "id", fallback: UUID()),
             cnIdentifier: cnIdentifier,
             displayName: requiredField(displayName, entity: "PersonEntity", field: "displayName", fallback: ""),
+            nickname: nickname,
             initials: requiredField(initials, entity: "PersonEntity", field: "initials", fallback: ""),
             avatarColor: requiredField(avatarColor, entity: "PersonEntity", field: "avatarColor", fallback: ""),
             cadenceId: requiredField(groupId, entity: "PersonEntity", field: "groupId", fallback: UUID()),
@@ -42,6 +43,7 @@ extension PersonEntity {
         id = person.id
         cnIdentifier = person.cnIdentifier
         displayName = person.displayName
+        nickname = person.nickname
         initials = person.initials
         avatarColor = person.avatarColor
         groupId = person.cadenceId

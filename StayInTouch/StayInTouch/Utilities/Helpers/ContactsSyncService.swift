@@ -31,8 +31,9 @@ enum ContactsSyncService {
                 var updated = person
 
                 if let summary = byId[cnId] {
-                    // Contact still exists — sync name and clear unavailable flag
+                    // Contact still exists — sync name, nickname and clear unavailable flag
                     updated.displayName = summary.displayName
+                    updated.nickname = summary.nickname
                     updated.initials = summary.initials
                     if updated.contactUnavailable {
                         updated.contactUnavailable = false

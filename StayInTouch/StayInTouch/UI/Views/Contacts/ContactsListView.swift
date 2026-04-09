@@ -22,7 +22,8 @@ struct ContactsListView: View {
             }
         }
         return people.filter {
-            $0.displayName.lowercased().contains(query)
+            $0.displayName.lowercased().contains(query) ||
+            ($0.nickname?.lowercased().contains(query) ?? false)
         }.sorted {
             $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
         }
