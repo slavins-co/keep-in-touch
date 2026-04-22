@@ -127,8 +127,8 @@ enum WidgetDataProvider {
             return 0
         }
 
-        let slaDays = (group.value(forKey: "slaDays") as? Int64).map(Int.init) ?? 0
-        guard slaDays > 0 else { return 0 }
+        let frequencyDays = (group.value(forKey: "frequencyDays") as? Int64).map(Int.init) ?? 0
+        guard frequencyDays > 0 else { return 0 }
 
         let calendar = Calendar.current
         let fromDay = calendar.startOfDay(for: lastTouchAt)
@@ -137,7 +137,7 @@ enum WidgetDataProvider {
             .dateComponents([.day], from: fromDay, to: toDay)
             .day ?? 0
 
-        let daysOverdue = daysSinceLastTouch - slaDays
+        let daysOverdue = daysSinceLastTouch - frequencyDays
         return max(daysOverdue, 0)
     }
 }
