@@ -31,6 +31,9 @@ struct KeepInTouchApp: App {
                 .onReceive(NotificationCenter.default.publisher(for: .coreDataMigrationFailed)) { _ in
                     showMigrationAlert = true
                 }
+                .onOpenURL { url in
+                    DeepLinkRouter.shared.handleURL(url)
+                }
                 .alert("Data Update Required", isPresented: $showMigrationAlert) {
                     Button("Reset App Data", role: .destructive) {
                         coreDataStack.resetStore()
