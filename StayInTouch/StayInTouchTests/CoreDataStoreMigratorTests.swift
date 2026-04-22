@@ -111,15 +111,17 @@ final class CoreDataStoreMigratorTests: XCTestCase {
         XCTAssertFalse(fileManager.fileExists(atPath: targetURL.path + "-wal"))
     }
 
-    // MARK: - Partial recovery
+    // MARK: - Completed migration (marker present)
 
-    func test_migrateIfNeeded_whenTargetAlreadyExists_doesNothing() throws {
+    func test_migrateIfNeeded_whenMarkerExists_doesNothingAndPreservesTarget() throws {
         let legacyURL = legacyDir.appendingPathComponent("StayInTouch.sqlite")
         let targetURL = groupDir.appendingPathComponent("StayInTouch.sqlite")
+        let markerURL = CoreDataStoreMigrator.migrationMarkerURL(for: targetURL)
 
         try fileManager.createDirectory(at: groupDir, withIntermediateDirectories: true)
         try "legacy-data".write(to: legacyURL, atomically: true, encoding: .utf8)
         try "existing-group-data".write(to: targetURL, atomically: true, encoding: .utf8)
+        fileManager.createFile(atPath: markerURL.path, contents: Data())
 
         let migrated = try CoreDataStoreMigrator.migrateIfNeeded(
             legacyURL: legacyURL,
@@ -131,11 +133,97 @@ final class CoreDataStoreMigratorTests: XCTestCase {
         XCTAssertEqual(
             try String(contentsOf: targetURL, encoding: .utf8),
             "existing-group-data",
-            "Existing group store must never be overwritten"
+            "Completed-migration target must never be overwritten"
         )
         XCTAssertTrue(
             fileManager.fileExists(atPath: legacyURL.path),
-            "Legacy files must be preserved when migration is skipped"
+            "Legacy files not in our scope to delete once a prior migration finalized; leave them alone"
+        )
+    }
+
+    // MARK: - Interrupted migration (no marker, partial target)
+
+    func test_migrateIfNeeded_whenTargetHasPartialFilesWithoutMarker_cleansTargetAndRemigrates() throws {
+        let legacyURL = legacyDir.appendingPathComponent("StayInTouch.sqlite")
+        let targetURL = groupDir.appendingPathComponent("StayInTouch.sqlite")
+        let markerURL = CoreDataStoreMigrator.migrationMarkerURL(for: targetURL)
+
+        try fileManager.createDirectory(at: groupDir, withIntermediateDirectories: true)
+        try "truncated-db".write(to: targetURL, atomically: true, encoding: .utf8)
+
+        try "fresh-main".write(to: legacyURL, atomically: true, encoding: .utf8)
+        try "fresh-shm".write(
+            to: URL(fileURLWithPath: legacyURL.path + "-shm"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try "fresh-wal".write(
+            to: URL(fileURLWithPath: legacyURL.path + "-wal"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let migrated = try CoreDataStoreMigrator.migrateIfNeeded(
+            legacyURL: legacyURL,
+            targetURL: targetURL,
+            fileManager: fileManager
+        )
+
+        XCTAssertTrue(migrated)
+        XCTAssertEqual(try String(contentsOf: targetURL, encoding: .utf8), "fresh-main")
+        XCTAssertEqual(
+            try String(contentsOf: URL(fileURLWithPath: targetURL.path + "-wal"), encoding: .utf8),
+            "fresh-wal"
+        )
+        XCTAssertTrue(
+            fileManager.fileExists(atPath: markerURL.path),
+            "Marker must be written after successful remigration"
+        )
+    }
+
+    // MARK: - Marker lifecycle
+
+    func test_migrateIfNeeded_onSuccessfulMigration_createsMarker() throws {
+        let legacyURL = legacyDir.appendingPathComponent("StayInTouch.sqlite")
+        let targetURL = groupDir.appendingPathComponent("StayInTouch.sqlite")
+        let markerURL = CoreDataStoreMigrator.migrationMarkerURL(for: targetURL)
+
+        try "data".write(to: legacyURL, atomically: true, encoding: .utf8)
+
+        _ = try CoreDataStoreMigrator.migrateIfNeeded(
+            legacyURL: legacyURL,
+            targetURL: targetURL,
+            fileManager: fileManager
+        )
+
+        XCTAssertTrue(fileManager.fileExists(atPath: markerURL.path))
+    }
+
+    func test_migrateIfNeeded_onCopyThrow_doesNotCreateMarker() throws {
+        let legacyURL = legacyDir.appendingPathComponent("StayInTouch.sqlite")
+        let targetURL = groupDir.appendingPathComponent("StayInTouch.sqlite")
+        let markerURL = CoreDataStoreMigrator.migrationMarkerURL(for: targetURL)
+
+        try "data".write(to: legacyURL, atomically: true, encoding: .utf8)
+        try "wal".write(
+            to: URL(fileURLWithPath: legacyURL.path + "-wal"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let failingFM = FailingFileManager(failCopyToPathContaining: targetURL.path + "-wal")
+
+        XCTAssertThrowsError(
+            try CoreDataStoreMigrator.migrateIfNeeded(
+                legacyURL: legacyURL,
+                targetURL: targetURL,
+                fileManager: failingFM
+            )
+        )
+
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: markerURL.path),
+            "Marker must never be written when the copy phase throws"
         )
     }
 
