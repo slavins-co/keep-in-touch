@@ -39,6 +39,50 @@ final class CoreDataMigrationTests: XCTestCase {
         XCTAssertTrue(entityNames.contains("AppSettings"))
     }
 
+    // MARK: - resolveStoreURL
+
+    func test_resolveStoreURL_whenGroupURLPresent_usesGroupURL() {
+        let url = URL(fileURLWithPath: "/tmp/group/StayInTouch.sqlite")
+        let resolution = CoreDataStack.resolveStoreURL(
+            groupStoreURL: url,
+            hasPreviouslyMigrated: false
+        )
+        XCTAssertEqual(resolution, .useGroupURL(url))
+    }
+
+    func test_resolveStoreURL_whenGroupURLPresentAndAlreadyMigrated_stillUsesGroupURL() {
+        let url = URL(fileURLWithPath: "/tmp/group/StayInTouch.sqlite")
+        let resolution = CoreDataStack.resolveStoreURL(
+            groupStoreURL: url,
+            hasPreviouslyMigrated: true
+        )
+        XCTAssertEqual(resolution, .useGroupURL(url))
+    }
+
+    func test_resolveStoreURL_whenGroupNilOnFreshInstall_fallsBack() {
+        let resolution = CoreDataStack.resolveStoreURL(
+            groupStoreURL: nil,
+            hasPreviouslyMigrated: false
+        )
+        XCTAssertEqual(resolution, .fallbackToDefault)
+    }
+
+    func test_resolveStoreURL_whenGroupNilAfterPriorMigration_hardFails() {
+        let resolution = CoreDataStack.resolveStoreURL(
+            groupStoreURL: nil,
+            hasPreviouslyMigrated: true
+        )
+
+        if case .hardFail(let message) = resolution {
+            XCTAssertTrue(
+                message.contains("previously migrated"),
+                "Hard-fail message should reference the prior migration, got: \(message)"
+            )
+        } else {
+            XCTFail("Expected .hardFail resolution when App Group is nil after migration, got \(resolution)")
+        }
+    }
+
     func testInMemoryStoreCanInsertAndFetch() throws {
         let stack = CoreDataStack.make(inMemory: true, shouldSeedDefaults: false)
         let context = stack.viewContext

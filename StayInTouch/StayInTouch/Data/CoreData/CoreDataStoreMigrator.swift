@@ -24,20 +24,24 @@ enum CoreDataStoreMigrator {
             appropriateFor: nil,
             create: false
         ) else { return nil }
-        return libraryURL.appendingPathComponent("StayInTouch.sqlite")
+        return libraryURL.appendingPathComponent(AppGroup.coreDataStoreFilename)
     }
 
     /// Migrates the legacy store into the app group container if and only if
     /// the legacy store exists and the target location does not. Safe to call
     /// on every launch — it short-circuits when migration is unnecessary.
     ///
+    /// If the copy phase throws part-way through, any files already copied to
+    /// the target are removed before the error is rethrown, so the next
+    /// launch retries from a clean target rather than opening a partial store.
+    ///
     /// - Parameters:
     ///   - legacyURL: the pre-migration store location
     ///   - targetURL: the app group store location
     ///   - fileManager: injection point for tests
     /// - Returns: `true` if files were moved, `false` if nothing to do
-    /// - Throws: if file IO fails mid-migration (partial state is possible;
-    ///   caller should surface this as a migration failure)
+    /// - Throws: if file IO fails. Target is cleaned up before the throw so
+    ///   a subsequent call can retry. Legacy files are preserved on throw.
     @discardableResult
     static func migrateIfNeeded(
         legacyURL: URL,
@@ -56,18 +60,39 @@ enum CoreDataStoreMigrator {
             withIntermediateDirectories: true
         )
 
-        for suffix in sqliteSidecarSuffixes {
-            let source = URL(fileURLWithPath: legacyURL.path + suffix)
-            let destination = URL(fileURLWithPath: targetURL.path + suffix)
+        var copiedDestinations: [URL] = []
+        do {
+            for suffix in sqliteSidecarSuffixes {
+                let source = URL(fileURLWithPath: legacyURL.path + suffix)
+                let destination = URL(fileURLWithPath: targetURL.path + suffix)
 
-            guard fileManager.fileExists(atPath: source.path) else { continue }
-            try fileManager.copyItem(at: source, to: destination)
+                guard fileManager.fileExists(atPath: source.path) else { continue }
+                try fileManager.copyItem(at: source, to: destination)
+                copiedDestinations.append(destination)
+
+                try? fileManager.setAttributes(
+                    [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
+                    ofItemAtPath: destination.path
+                )
+            }
+        } catch {
+            for destination in copiedDestinations {
+                try? fileManager.removeItem(at: destination)
+            }
+            throw error
         }
 
         for suffix in sqliteSidecarSuffixes {
             let source = URL(fileURLWithPath: legacyURL.path + suffix)
             guard fileManager.fileExists(atPath: source.path) else { continue }
-            try? fileManager.removeItem(at: source)
+            do {
+                try fileManager.removeItem(at: source)
+            } catch {
+                AppLogger.logWarning(
+                    "Failed to remove legacy Core Data file at \(source.path): \(error.localizedDescription)",
+                    category: AppLogger.coreData
+                )
+            }
         }
 
         return true

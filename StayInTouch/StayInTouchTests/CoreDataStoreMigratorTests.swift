@@ -183,6 +183,114 @@ final class CoreDataStoreMigratorTests: XCTestCase {
         XCTAssertTrue(fileManager.fileExists(atPath: targetURL.path))
     }
 
+    // MARK: - Partial-copy failure cleanup
+
+    func test_migrateIfNeeded_whenCopyThrowsMidLoop_removesPartialTargetFilesAndPreservesLegacy() throws {
+        let legacyURL = legacyDir.appendingPathComponent("StayInTouch.sqlite")
+        let targetURL = groupDir.appendingPathComponent("StayInTouch.sqlite")
+
+        try "main-db".write(to: legacyURL, atomically: true, encoding: .utf8)
+        try "shm".write(
+            to: URL(fileURLWithPath: legacyURL.path + "-shm"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try "wal".write(
+            to: URL(fileURLWithPath: legacyURL.path + "-wal"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let failingFM = FailingFileManager(
+            failCopyToPathContaining: targetURL.path + "-wal"
+        )
+
+        XCTAssertThrowsError(
+            try CoreDataStoreMigrator.migrateIfNeeded(
+                legacyURL: legacyURL,
+                targetURL: targetURL,
+                fileManager: failingFM
+            )
+        )
+
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: targetURL.path),
+            "Partial main .sqlite must be cleaned up after throw"
+        )
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: targetURL.path + "-shm"),
+            "Partial -shm must be cleaned up after throw"
+        )
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: targetURL.path + "-wal"),
+            "Partial -wal must never exist if its copy threw"
+        )
+
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: legacyURL.path),
+            "Legacy main .sqlite must be preserved when migration throws"
+        )
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: legacyURL.path + "-shm"),
+            "Legacy -shm must be preserved when migration throws"
+        )
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: legacyURL.path + "-wal"),
+            "Legacy -wal must be preserved when migration throws"
+        )
+    }
+
+    func test_migrateIfNeeded_afterCopyThrowRecovery_succeedsOnRetryWithRealFileManager() throws {
+        let legacyURL = legacyDir.appendingPathComponent("StayInTouch.sqlite")
+        let targetURL = groupDir.appendingPathComponent("StayInTouch.sqlite")
+
+        try "main-db".write(to: legacyURL, atomically: true, encoding: .utf8)
+        try "wal".write(
+            to: URL(fileURLWithPath: legacyURL.path + "-wal"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let failingFM = FailingFileManager(
+            failCopyToPathContaining: targetURL.path + "-wal"
+        )
+        XCTAssertThrowsError(
+            try CoreDataStoreMigrator.migrateIfNeeded(
+                legacyURL: legacyURL,
+                targetURL: targetURL,
+                fileManager: failingFM
+            )
+        )
+
+        let migrated = try CoreDataStoreMigrator.migrateIfNeeded(
+            legacyURL: legacyURL,
+            targetURL: targetURL,
+            fileManager: FileManager.default
+        )
+
+        XCTAssertTrue(migrated)
+        XCTAssertEqual(try String(contentsOf: targetURL, encoding: .utf8), "main-db")
+        XCTAssertEqual(
+            try String(contentsOf: URL(fileURLWithPath: targetURL.path + "-wal"), encoding: .utf8),
+            "wal"
+        )
+    }
+
+    // MARK: - Legacy store URL derivation
+
+    func test_legacyStoreURL_pointsToApplicationSupportStayInTouchSqlite() {
+        guard let legacyURL = CoreDataStoreMigrator.legacyStoreURL() else {
+            XCTFail("legacyStoreURL should return a URL when Application Support exists")
+            return
+        }
+
+        XCTAssertEqual(legacyURL.lastPathComponent, "StayInTouch.sqlite")
+        XCTAssertTrue(
+            legacyURL.path.contains("Application Support"),
+            "Legacy URL should resolve under Application Support, got \(legacyURL.path)"
+        )
+    }
+
     // MARK: - AppGroup identifier sanity
 
     func test_appGroupIdentifier_matchesEntitlement() {
@@ -195,10 +303,33 @@ final class CoreDataStoreMigratorTests: XCTestCase {
             return
         }
 
-        XCTAssertEqual(storeURL.lastPathComponent, "StayInTouch.sqlite")
+        XCTAssertEqual(storeURL.lastPathComponent, AppGroup.coreDataStoreFilename)
         XCTAssertEqual(
             storeURL.deletingLastPathComponent().path,
             containerURL.path
         )
+    }
+}
+
+/// Test double that delegates to the real FileManager but throws from
+/// `copyItem(at:to:)` when the destination path contains the configured
+/// substring. Lets us simulate a mid-copy disk failure.
+private final class FailingFileManager: FileManager {
+    private let failCopyToPathContaining: String
+
+    init(failCopyToPathContaining substring: String) {
+        self.failCopyToPathContaining = substring
+        super.init()
+    }
+
+    override func copyItem(at srcURL: URL, to dstURL: URL) throws {
+        if dstURL.path.contains(failCopyToPathContaining) {
+            throw NSError(
+                domain: NSCocoaErrorDomain,
+                code: NSFileWriteUnknownError,
+                userInfo: [NSLocalizedDescriptionKey: "Injected failure for \(dstURL.path)"]
+            )
+        }
+        try super.copyItem(at: srcURL, to: dstURL)
     }
 }

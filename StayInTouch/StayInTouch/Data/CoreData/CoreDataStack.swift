@@ -10,6 +10,36 @@ import CoreData
 final class CoreDataStack: ObservableObject {
     static let shared = CoreDataStack()
 
+    /// Set once the app has successfully opened the persistent store at the
+    /// App Group location. If this is `true` on a subsequent launch but the
+    /// App Group container is unavailable (e.g. entitlement regression), we
+    /// hard-fail rather than silently opening an empty default-location store
+    /// and appearing to have lost the user's data.
+    static let hasMigratedToAppGroupKey = "hasMigratedToAppGroup"
+
+    /// Decides what to do when the App Group container may or may not be
+    /// available. Pure function — extracted for unit testing.
+    enum StoreURLResolution: Equatable {
+        case useGroupURL(URL)
+        case fallbackToDefault
+        case hardFail(String)
+    }
+
+    static func resolveStoreURL(
+        groupStoreURL: URL?,
+        hasPreviouslyMigrated: Bool
+    ) -> StoreURLResolution {
+        if let groupStoreURL {
+            return .useGroupURL(groupStoreURL)
+        }
+        if hasPreviouslyMigrated {
+            return .hardFail(
+                "App Group container is unavailable, but this install has previously migrated to it. Refusing to silently open an empty default-location store. Check entitlements."
+            )
+        }
+        return .fallbackToDefault
+    }
+
     let container: NSPersistentContainer
     private let shouldSeedDefaults: Bool
     private(set) var loadError: Error?
@@ -30,38 +60,73 @@ final class CoreDataStack: ObservableObject {
 
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
-        } else if let groupStoreURL = AppGroup.coreDataStoreURL {
-            if let legacyURL = CoreDataStoreMigrator.legacyStoreURL() {
-                do {
-                    let migrated = try CoreDataStoreMigrator.migrateIfNeeded(
-                        legacyURL: legacyURL,
-                        targetURL: groupStoreURL
-                    )
-                    if migrated {
-                        AppLogger.logInfo(
-                            "Migrated Core Data store from legacy default location to App Group container",
-                            category: AppLogger.coreData
-                        )
-                    }
-                } catch {
-                    AppLogger.logError(
-                        error,
-                        category: AppLogger.coreData,
-                        context: "CoreDataStack.storeMigration"
-                    )
-                }
-            }
-            container.persistentStoreDescriptions.first?.url = groupStoreURL
         } else {
-            AppLogger.logWarning(
-                "App Group container unavailable; falling back to default store location",
-                category: AppLogger.coreData
+            let resolution = Self.resolveStoreURL(
+                groupStoreURL: AppGroup.coreDataStoreURL,
+                hasPreviouslyMigrated: UserDefaults.standard.bool(forKey: Self.hasMigratedToAppGroupKey)
             )
+
+            switch resolution {
+            case .useGroupURL(let groupStoreURL):
+                if let legacyURL = CoreDataStoreMigrator.legacyStoreURL() {
+                    do {
+                        let migrated = try CoreDataStoreMigrator.migrateIfNeeded(
+                            legacyURL: legacyURL,
+                            targetURL: groupStoreURL
+                        )
+                        if migrated {
+                            AppLogger.logInfo(
+                                "Migrated Core Data store from legacy default location to App Group container",
+                                category: AppLogger.coreData
+                            )
+                        }
+                    } catch {
+                        AppLogger.logError(
+                            error,
+                            category: AppLogger.coreData,
+                            context: "CoreDataStack.storeMigration"
+                        )
+                        self.loadError = error
+                        self.isLoaded = false
+                        self.migrationFailed = true
+                        NotificationCenter.default.post(name: .coreDataMigrationFailed, object: error)
+                        return
+                    }
+                }
+                container.persistentStoreDescriptions.first?.url = groupStoreURL
+
+            case .hardFail(let message):
+                let error = NSError(
+                    domain: "CoreDataStack",
+                    code: -1001,
+                    userInfo: [NSLocalizedDescriptionKey: message]
+                )
+                AppLogger.logError(
+                    error,
+                    category: AppLogger.coreData,
+                    context: "CoreDataStack.appGroupUnavailableAfterMigration"
+                )
+                self.loadError = error
+                self.isLoaded = false
+                self.migrationFailed = true
+                NotificationCenter.default.post(name: .coreDataMigrationFailed, object: error)
+                return
+
+            case .fallbackToDefault:
+                AppLogger.logWarning(
+                    "App Group container unavailable; falling back to default store location",
+                    category: AppLogger.coreData
+                )
+            }
         }
 
         let description = container.persistentStoreDescriptions.first
         description?.shouldMigrateStoreAutomatically = true
         description?.shouldInferMappingModelAutomatically = true
+        description?.setOption(
+            FileProtectionType.completeUntilFirstUserAuthentication.rawValue as NSString,
+            forKey: NSPersistentStoreFileProtectionKey
+        )
 
         container.loadPersistentStores { [weak self] _, error in
             guard let self else { return }
@@ -76,6 +141,9 @@ final class CoreDataStack: ObservableObject {
             }
 
             self.isLoaded = true
+            if !inMemory, AppGroup.coreDataStoreURL != nil {
+                UserDefaults.standard.set(true, forKey: Self.hasMigratedToAppGroupKey)
+            }
             self.seedDefaultsIfNeeded()
         }
 
