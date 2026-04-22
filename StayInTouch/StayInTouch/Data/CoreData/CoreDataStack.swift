@@ -30,6 +30,33 @@ final class CoreDataStack: ObservableObject {
 
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
+        } else if let groupStoreURL = AppGroup.coreDataStoreURL {
+            if let legacyURL = CoreDataStoreMigrator.legacyStoreURL() {
+                do {
+                    let migrated = try CoreDataStoreMigrator.migrateIfNeeded(
+                        legacyURL: legacyURL,
+                        targetURL: groupStoreURL
+                    )
+                    if migrated {
+                        AppLogger.logInfo(
+                            "Migrated Core Data store from legacy default location to App Group container",
+                            category: AppLogger.coreData
+                        )
+                    }
+                } catch {
+                    AppLogger.logError(
+                        error,
+                        category: AppLogger.coreData,
+                        context: "CoreDataStack.storeMigration"
+                    )
+                }
+            }
+            container.persistentStoreDescriptions.first?.url = groupStoreURL
+        } else {
+            AppLogger.logWarning(
+                "App Group container unavailable; falling back to default store location",
+                category: AppLogger.coreData
+            )
         }
 
         let description = container.persistentStoreDescriptions.first
