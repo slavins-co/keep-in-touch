@@ -2,9 +2,9 @@
 //  WidgetAvatarView.swift
 //  KeepInTouchWidget
 //
-//  Colored-circle + initials avatar, with optional "+N" days-overdue
-//  badge and status ring. Mirrors the main app's avatar look without
-//  importing its design system (widgets run in their own process).
+//  Colored-circle + initials avatar, optionally wrapped in a status
+//  ring. Mirrors the main app's avatar look without importing its
+//  design system (widgets run in their own process).
 //
 
 import SwiftUI
@@ -12,18 +12,18 @@ import SwiftUI
 struct WidgetAvatarView: View {
     let initials: String
     let colorHex: String
-    let daysOverdueBadge: Int?
+    let statusRingColor: Color?
     let diameter: CGFloat
 
     init(
         initials: String,
         colorHex: String,
-        daysOverdueBadge: Int? = nil,
+        statusRingColor: Color? = nil,
         diameter: CGFloat = 40
     ) {
         self.initials = initials
         self.colorHex = colorHex
-        self.daysOverdueBadge = daysOverdueBadge
+        self.statusRingColor = statusRingColor
         self.diameter = diameter
     }
 
@@ -36,17 +36,11 @@ struct WidgetAvatarView: View {
                     .font(.system(size: diameter * 0.4, weight: .semibold))
                     .foregroundStyle(.white)
             )
-            .overlay(alignment: .topTrailing) {
-                if let days = daysOverdueBadge, days > 0 {
-                    Text("+\(days)")
-                        .font(.system(size: diameter * 0.28, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 2)
-                        .background(Color.red, in: Capsule())
-                        .offset(x: 4, y: -4)
-                }
-            }
+            .overlay(
+                Circle()
+                    .stroke(statusRingColor ?? .clear, lineWidth: 2)
+                    .padding(-3)
+            )
     }
 }
 

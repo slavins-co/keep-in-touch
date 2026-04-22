@@ -22,6 +22,7 @@ struct OverduePerson: Hashable {
     let displayName: String
     let initials: String
     let avatarColorHex: String
+    let groupName: String
     let groupColorHex: String?
     let daysOverdue: Int
 }
@@ -55,7 +56,8 @@ enum WidgetDataProvider {
                     let initials = person.value(forKey: "initials") as? String,
                     let avatarColor = person.value(forKey: "avatarColor") as? String,
                     let groupId = person.value(forKey: "groupId") as? UUID,
-                    let group = groupsByID[groupId]
+                    let group = groupsByID[groupId],
+                    let groupName = group.value(forKey: "name") as? String
                 else { return nil }
 
                 let daysOverdue = daysOverdueFor(person: person, group: group, now: now)
@@ -66,6 +68,7 @@ enum WidgetDataProvider {
                     displayName: displayName,
                     initials: initials,
                     avatarColorHex: avatarColor,
+                    groupName: groupName,
                     groupColorHex: group.value(forKey: "colorHex") as? String,
                     daysOverdue: daysOverdue
                 )

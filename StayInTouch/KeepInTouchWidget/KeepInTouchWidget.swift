@@ -26,7 +26,7 @@ struct OverdueTimelineProvider: AppIntentTimelineProvider {
         OverdueEntry(
             date: Date(),
             configuration: configuration,
-            snapshot: WidgetDataProvider.loadSnapshot(groupFilter: configuration.group?.id)
+            snapshot: WidgetDataProvider.loadSnapshot(groupFilter: configuredFilter(configuration))
         )
     }
 
@@ -35,10 +35,17 @@ struct OverdueTimelineProvider: AppIntentTimelineProvider {
         let entry = OverdueEntry(
             date: now,
             configuration: configuration,
-            snapshot: WidgetDataProvider.loadSnapshot(now: now, groupFilter: configuration.group?.id)
+            snapshot: WidgetDataProvider.loadSnapshot(now: now, groupFilter: configuredFilter(configuration))
         )
         let nextRefresh = Calendar.current.date(byAdding: .minute, value: 30, to: now) ?? now
         return Timeline(entries: [entry], policy: .after(nextRefresh))
+    }
+
+    private func configuredFilter(_ configuration: OverdueWidgetConfigurationIntent) -> UUID? {
+        guard let id = configuration.group?.id, id != GroupAppEntity.allGroupsID else {
+            return nil
+        }
+        return id
     }
 }
 
@@ -46,9 +53,9 @@ extension WidgetDataProvider.Snapshot {
     static let placeholder = WidgetDataProvider.Snapshot(
         overdueCount: 3,
         featured: [
-            OverduePerson(id: UUID(), displayName: "Alex", initials: "A", avatarColorHex: "#FF6B6B", groupColorHex: nil, daysOverdue: 5),
-            OverduePerson(id: UUID(), displayName: "Sam", initials: "S", avatarColorHex: "#4ECDC4", groupColorHex: nil, daysOverdue: 3),
-            OverduePerson(id: UUID(), displayName: "Jordan", initials: "J", avatarColorHex: "#FFD166", groupColorHex: nil, daysOverdue: 1),
+            OverduePerson(id: UUID(), displayName: "Alex", initials: "A", avatarColorHex: "#FF6B6B", groupName: "Weekly", groupColorHex: "#4ECDC4", daysOverdue: 5),
+            OverduePerson(id: UUID(), displayName: "Sam", initials: "S", avatarColorHex: "#4ECDC4", groupName: "Monthly", groupColorHex: "#FFD166", daysOverdue: 3),
+            OverduePerson(id: UUID(), displayName: "Jordan", initials: "J", avatarColorHex: "#FFD166", groupName: "Quarterly", groupColorHex: "#A78BFA", daysOverdue: 1),
         ],
         hasTrackedPeople: true
     )
@@ -92,6 +99,7 @@ struct SmallWidgetView: View {
                     HStack(alignment: .top) {
                         Text("\(snapshot.overdueCount)")
                             .font(.system(size: 40, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.red)
                         Spacer()
                         Text("overdue")
                             .font(.caption2)
@@ -103,15 +111,15 @@ struct SmallWidgetView: View {
                         WidgetAvatarView(
                             initials: first.initials,
                             colorHex: first.avatarColorHex,
-                            daysOverdueBadge: first.daysOverdue,
-                            diameter: 36
+                            statusRingColor: .red,
+                            diameter: 32
                         )
                         VStack(alignment: .leading, spacing: 0) {
                             Text(first.displayName)
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .lineLimit(1)
-                            Text("reach out")
+                            Text("\(first.daysOverdue)d overdue")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
@@ -144,9 +152,11 @@ struct MediumWidgetView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                 }
-                VStack(spacing: 6) {
+                VStack(spacing: 8) {
                     ForEach(snapshot.featured, id: \.id) { person in
-                        personRow(person)
+                        Link(destination: DeepLinkRoute.person(person.id).url()) {
+                            personRow(person)
+                        }
                     }
                     if snapshot.featured.count < 3 {
                         Spacer(minLength: 0)
@@ -159,35 +169,42 @@ struct MediumWidgetView: View {
 
     private func personRow(_ person: OverduePerson) -> some View {
         HStack(spacing: 10) {
-            Link(destination: DeepLinkRoute.person(person.id).url()) {
-                HStack(spacing: 10) {
-                    WidgetAvatarView(
-                        initials: person.initials,
-                        colorHex: person.avatarColorHex,
-                        diameter: 32
-                    )
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(person.displayName)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                        Text("\(person.daysOverdue) day\(person.daysOverdue == 1 ? "" : "s") overdue")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .contentShape(Rectangle())
+            WidgetAvatarView(
+                initials: person.initials,
+                colorHex: person.avatarColorHex,
+                statusRingColor: .red,
+                diameter: 32
+            )
+            VStack(alignment: .leading, spacing: 1) {
+                Text(person.displayName)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text("\(person.daysOverdue) day\(person.daysOverdue == 1 ? "" : "s") overdue")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
-            Button(intent: LogTouchIntent(personID: person.id)) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(.green)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Log touch with \(person.displayName)")
+            GroupChip(name: person.groupName, colorHex: person.groupColorHex)
         }
+        .contentShape(Rectangle())
+    }
+}
+
+private struct GroupChip: View {
+    let name: String
+    let colorHex: String?
+
+    var body: some View {
+        let tint = (colorHex.flatMap(Color.init(hex:))) ?? .gray
+        Text(name.uppercased())
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(tint.opacity(0.15), in: Capsule())
+            .lineLimit(1)
     }
 }
 
@@ -225,7 +242,7 @@ struct OverdueWidget: Widget {
             OverdueWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Keep In Touch")
-        .description("Shows who needs a touch today.")
+        .description("People from a selected group who are overdue for a reach-out.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
