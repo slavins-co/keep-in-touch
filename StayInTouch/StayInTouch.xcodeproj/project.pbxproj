@@ -7,11 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A2504FF92F9889B50039A003 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2504FF82F9889B50039A003 /* WidgetKit.framework */; };
+		A2504FFB2F9889B50039A003 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2504FFA2F9889B50039A003 /* SwiftUI.framework */; };
+		A250500A2F9889B50039A003 /* KeepInTouchWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A2504FF62F9889B50039A003 /* KeepInTouchWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A27E7BBB2F5217C30083BAB8 /* TelemetryClient in Frameworks */ = {isa = PBXBuildFile; productRef = A27E7BBA2F5217C30083BAB8 /* TelemetryClient */; };
 		A27E7BBD2F5217C30083BAB8 /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = A27E7BBC2F5217C30083BAB8 /* TelemetryDeck */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		A25050082F9889B50039A003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A28171D32F313E65003719BC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A2504FF52F9889B50039A003;
+			remoteInfo = KeepInTouchWidgetExtension;
+		};
 		A28171EE2F313E67003719BC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A28171D32F313E65003719BC /* Project object */;
@@ -28,24 +38,61 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		A250500B2F9889B50039A003 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A250500A2F9889B50039A003 /* KeepInTouchWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		A2504FF62F9889B50039A003 /* KeepInTouchWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = KeepInTouchWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2504FF82F9889B50039A003 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		A2504FFA2F9889B50039A003 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		A25050102F9889EA0039A003 /* KeepInTouchWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KeepInTouchWidgetExtension.entitlements; sourceTree = "<group>"; };
 		A28171DB2F313E65003719BC /* StayInTouch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StayInTouch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A28171ED2F313E67003719BC /* StayInTouchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StayInTouchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A28171F72F313E67003719BC /* StayInTouchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StayInTouchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A250500F2F9889B50039A003 /* Exceptions for "KeepInTouchWidget" folder in "KeepInTouchWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A2504FF52F9889B50039A003 /* KeepInTouchWidgetExtension */;
+		};
 		A28172522F314020003719BC /* Exceptions for "StayInTouch" folder in "StayInTouch" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				StayInTouch.entitlements,
 			);
 			target = A28171DA2F313E65003719BC /* StayInTouch */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		A2504FFC2F9889B50039A003 /* KeepInTouchWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A250500F2F9889B50039A003 /* Exceptions for "KeepInTouchWidget" folder in "KeepInTouchWidgetExtension" target */,
+			);
+			path = KeepInTouchWidget;
+			sourceTree = "<group>";
+		};
+		A2B4D6E52F9889B50039A003 /* Shared (widget membership) */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = StayInTouch/Shared;
+			sourceTree = "<group>";
+		};
 		A28171DD2F313E65003719BC /* StayInTouch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -67,6 +114,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		A2504FF32F9889B50039A003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A2504FFB2F9889B50039A003 /* SwiftUI.framework in Frameworks */,
+				A2504FF92F9889B50039A003 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A28171D82F313E65003719BC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -93,12 +149,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A2504FF72F9889B50039A003 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A2504FF82F9889B50039A003 /* WidgetKit.framework */,
+				A2504FFA2F9889B50039A003 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		A28171D22F313E65003719BC = {
 			isa = PBXGroup;
 			children = (
+				A25050102F9889EA0039A003 /* KeepInTouchWidgetExtension.entitlements */,
 				A28171DD2F313E65003719BC /* StayInTouch */,
 				A28171F02F313E67003719BC /* StayInTouchTests */,
 				A28171FA2F313E67003719BC /* StayInTouchUITests */,
+				A2504FFC2F9889B50039A003 /* KeepInTouchWidget */,
+				A2504FF72F9889B50039A003 /* Frameworks */,
 				A28171DC2F313E65003719BC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -109,6 +177,7 @@
 				A28171DB2F313E65003719BC /* StayInTouch.app */,
 				A28171ED2F313E67003719BC /* StayInTouchTests.xctest */,
 				A28171F72F313E67003719BC /* StayInTouchUITests.xctest */,
+				A2504FF62F9889B50039A003 /* KeepInTouchWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -116,6 +185,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		A2504FF52F9889B50039A003 /* KeepInTouchWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A250500E2F9889B50039A003 /* Build configuration list for PBXNativeTarget "KeepInTouchWidgetExtension" */;
+			buildPhases = (
+				A2504FF22F9889B50039A003 /* Sources */,
+				A2504FF32F9889B50039A003 /* Frameworks */,
+				A2504FF42F9889B50039A003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A2504FFC2F9889B50039A003 /* KeepInTouchWidget */,
+				A2B4D6E52F9889B50039A003 /* Shared (widget membership) */,
+			);
+			name = KeepInTouchWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = KeepInTouchWidgetExtension;
+			productReference = A2504FF62F9889B50039A003 /* KeepInTouchWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		A28171DA2F313E65003719BC /* StayInTouch */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A28172012F313E67003719BC /* Build configuration list for PBXNativeTarget "StayInTouch" */;
@@ -124,10 +216,12 @@
 				A28171D72F313E65003719BC /* Sources */,
 				A28171D82F313E65003719BC /* Frameworks */,
 				A28171D92F313E65003719BC /* Resources */,
+				A250500B2F9889B50039A003 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A25050092F9889B50039A003 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A28171DD2F313E65003719BC /* StayInTouch */,
@@ -194,9 +288,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1640;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
+					A2504FF52F9889B50039A003 = {
+						CreatedOnToolsVersion = 26.4;
+					};
 					A28171DA2F313E65003719BC = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -230,11 +327,19 @@
 				A28171DA2F313E65003719BC /* StayInTouch */,
 				A28171EC2F313E67003719BC /* StayInTouchTests */,
 				A28171F62F313E67003719BC /* StayInTouchUITests */,
+				A2504FF52F9889B50039A003 /* KeepInTouchWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		A2504FF42F9889B50039A003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A28171D92F313E65003719BC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -278,6 +383,13 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		A2504FF22F9889B50039A003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A28171D72F313E65003719BC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -302,6 +414,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		A25050092F9889B50039A003 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A2504FF52F9889B50039A003 /* KeepInTouchWidgetExtension */;
+			targetProxy = A25050082F9889B50039A003 /* PBXContainerItemProxy */;
+		};
 		A28171EF2F313E67003719BC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A28171DA2F313E65003719BC /* StayInTouch */;
@@ -315,6 +432,72 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		A250500C2F9889B50039A003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = KeepInTouchWidgetExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = AFG8NJ774P;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KeepInTouchWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = KeepInTouchWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.3.6;
+				PRODUCT_BUNDLE_IDENTIFIER = slavins.co.KeepInTouch.KeepInTouchWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A250500D2F9889B50039A003 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = KeepInTouchWidgetExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = AFG8NJ774P;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = KeepInTouchWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = KeepInTouchWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 0.3.6;
+				PRODUCT_BUNDLE_IDENTIFIER = slavins.co.KeepInTouch.KeepInTouchWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		A28171FF2F313E67003719BC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -579,6 +762,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A250500E2F9889B50039A003 /* Build configuration list for PBXNativeTarget "KeepInTouchWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A250500C2F9889B50039A003 /* Debug */,
+				A250500D2F9889B50039A003 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A28171D62F313E65003719BC /* Build configuration list for PBXProject "StayInTouch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
