@@ -42,6 +42,7 @@ final class CoreDataGroupRepository: GroupRepository {
                 entity.apply(group)
                 try context.save()
             }
+            WidgetRefresher.reloadAllTimelines()
         } catch let error as RepositoryError {
             throw error
         } catch {
@@ -58,6 +59,7 @@ final class CoreDataGroupRepository: GroupRepository {
                 }
                 try context.save()
             }
+            WidgetRefresher.reloadAllTimelines()
         } catch let error as RepositoryError {
             throw error
         } catch {
@@ -72,6 +74,7 @@ final class CoreDataGroupRepository: GroupRepository {
                 context.delete(entity)
                 try context.save()
             }
+            WidgetRefresher.reloadAllTimelines()
         } catch let error as RepositoryError {
             throw error
         } catch {

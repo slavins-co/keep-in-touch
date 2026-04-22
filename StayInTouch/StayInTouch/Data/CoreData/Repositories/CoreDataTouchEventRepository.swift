@@ -55,6 +55,7 @@ final class CoreDataTouchEventRepository: TouchEventRepository {
                 entity.apply(touchEvent)
                 try context.save()
             }
+            WidgetRefresher.reloadAllTimelines()
         } catch let error as RepositoryError {
             throw error
         } catch {
@@ -71,6 +72,7 @@ final class CoreDataTouchEventRepository: TouchEventRepository {
                 }
                 try context.save()
             }
+            WidgetRefresher.reloadAllTimelines()
         } catch let error as RepositoryError {
             throw error
         } catch {
@@ -85,6 +87,7 @@ final class CoreDataTouchEventRepository: TouchEventRepository {
                 context.delete(entity)
                 try context.save()
             }
+            WidgetRefresher.reloadAllTimelines()
         } catch let error as RepositoryError {
             throw error
         } catch {
