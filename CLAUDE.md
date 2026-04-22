@@ -41,7 +41,7 @@ Repository pattern: protocol in Domain, Core Data implementation in Data. UUID f
 
 **Person** - `id: UUID`, `cnIdentifier: String?`, `displayName: String`, `nickname: String?`, `initials: String`, `avatarColor: String`, `groupId: UUID`, `tagIds: Transformable ([UUID])`, `lastTouchAt: Date?`, `lastTouchMethod: String?`, `lastTouchNotes: String?`, `nextTouchNotes: String?`, `isPaused: Bool`, `isTracked: Bool`, `notificationsMuted: Bool`, `customBreachTime: String?` (LocalTime JSON), `snoozedUntil: Date?`, `customDueDate: Date?`, `birthday: String?`, `birthdayNotificationsEnabled: Bool`, `groupAddedAt: Date?`, `contactUnavailable: Bool`, `isDemoData: Bool`, `createdAt: Date`, `modifiedAt: Date`, `sortOrder: Int64`
 
-**Group** - `id: UUID`, `name: String`, `slaDays: Int64`, `warningDays: Int64`, `colorHex: String?`, `isDefault: Bool`, `sortOrder: Int64`, `createdAt: Date`, `modifiedAt: Date`
+**Group** - `id: UUID`, `name: String`, `frequencyDays: Int64`, `warningDays: Int64`, `colorHex: String?`, `isDefault: Bool`, `sortOrder: Int64`, `createdAt: Date`, `modifiedAt: Date`
 
 **Tag** - `id: UUID`, `name: String`, `colorHex: String`, `sortOrder: Int64`, `createdAt: Date`, `modifiedAt: Date`
 
