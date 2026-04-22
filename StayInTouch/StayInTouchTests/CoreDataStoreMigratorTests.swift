@@ -385,11 +385,11 @@ final class CoreDataStoreMigratorTests: XCTestCase {
         XCTAssertEqual(AppGroup.identifier, "group.slavins.co.KeepInTouch")
     }
 
-    func test_appGroupCoreDataStoreURL_appendsCorrectFilename() {
-        guard let containerURL = AppGroup.containerURL,
-              let storeURL = AppGroup.coreDataStoreURL else {
-            return
-        }
+    func test_appGroupCoreDataStoreURL_appendsCorrectFilename() throws {
+        try XCTSkipIf(AppGroup.containerURL == nil, "No App Group entitlement in test host")
+
+        let containerURL = AppGroup.containerURL!
+        let storeURL = AppGroup.coreDataStoreURL!
 
         XCTAssertEqual(storeURL.lastPathComponent, AppGroup.coreDataStoreFilename)
         XCTAssertEqual(
@@ -399,9 +399,6 @@ final class CoreDataStoreMigratorTests: XCTestCase {
     }
 }
 
-/// Test double that delegates to the real FileManager but throws from
-/// `copyItem(at:to:)` when the destination path contains the configured
-/// substring. Lets us simulate a mid-copy disk failure.
 private final class FailingFileManager: FileManager {
     private let failCopyToPathContaining: String
 

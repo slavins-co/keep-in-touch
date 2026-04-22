@@ -2,34 +2,22 @@
 //  CoreDataStoreMigrator.swift
 //  KeepInTouch
 //
-//  Moves the Core Data store from the app's private default location to the
-//  shared App Group container so the widget extension can read from it.
-//  Runs once per install, before the persistent container is loaded.
-//
-//  Robustness model:
-//  - A sentinel marker file is created only after every sidecar has been
-//    copied successfully. "Migration complete" == "marker exists".
-//  - If a prior run was killed mid-copy (no throw, no cleanup), the marker
-//    will be absent. On the next launch we detect the partial target, clean
-//    it up, and restart migration from the legacy source.
-//  - Legacy source files are never deleted before the marker lands.
+//  Invariants:
+//  - The marker file is written only after every sidecar copy succeeds.
+//  - Legacy source files are never deleted until the marker is in place.
 //
 
 import Foundation
 
 enum CoreDataStoreMigrator {
 
-    /// The store filenames Core Data creates for a SQLite persistent store.
-    /// All three must move together or the copy is worthless.
+    /// SQLite writes data to three files in lockstep — main DB plus `-shm`
+    /// (shared memory) and `-wal` (write-ahead log). All three must move
+    /// together or uncheckpointed writes are lost.
     static let sqliteSidecarSuffixes = ["", "-shm", "-wal"]
 
-    /// Written alongside the target store only after every sidecar has been
-    /// copied. Presence of this file is the single source of truth for
-    /// "migration has fully completed".
-    static let migrationMarkerFilename = ".StayInTouch-migration-complete"
+    private static let migrationMarkerFilename = ".StayInTouch-migration-complete"
 
-    /// Legacy default location — `NSPersistentContainer(name:)` used this by
-    /// default before the App Group move.
     static func legacyStoreURL(fileManager: FileManager = .default) -> URL? {
         guard let libraryURL = try? fileManager.url(
             for: .applicationSupportDirectory,
@@ -46,26 +34,12 @@ enum CoreDataStoreMigrator {
             .appendingPathComponent(migrationMarkerFilename)
     }
 
-    /// Migrates the legacy store into the app group container if and only if:
-    /// - the legacy store exists, AND
-    /// - the marker file does not yet exist (i.e. no prior successful migration).
+    /// Migrates the legacy store into the app group container if and only if
+    /// the marker file does not yet exist and the legacy store is present.
     ///
-    /// If an earlier run was interrupted (process kill, power loss) after
-    /// some sidecars copied but before the marker was written, the partial
-    /// target files are removed before the retry.
-    ///
-    /// If the copy phase throws part-way through, files already copied to
-    /// the target are removed before the error is rethrown, and the marker
-    /// is not written. Legacy files are never touched until after the marker
-    /// is in place.
-    ///
-    /// - Parameters:
-    ///   - legacyURL: the pre-migration store location
-    ///   - targetURL: the app group store location
-    ///   - fileManager: injection point for tests
-    /// - Returns: `true` if files were moved on this call, `false` otherwise
-    /// - Throws: if file IO fails. Target is cleaned up before the throw so
-    ///   a subsequent call can retry cleanly. Legacy files are preserved.
+    /// - Returns: `true` when files were moved on this call.
+    /// - Throws: if the copy phase fails. Files already copied to the target
+    ///   are removed before rethrowing; legacy files are preserved.
     @discardableResult
     static func migrateIfNeeded(
         legacyURL: URL,
@@ -133,7 +107,6 @@ enum CoreDataStoreMigrator {
         return true
     }
 
-    /// Removes any orphan target files from a prior incomplete migration.
     /// Called only when the marker is absent — a fully-migrated target is
     /// never touched here.
     private static func cleanupTarget(_ targetURL: URL, fileManager: FileManager) {

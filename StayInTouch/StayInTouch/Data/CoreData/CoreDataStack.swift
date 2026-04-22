@@ -7,6 +7,17 @@
 
 import CoreData
 
+enum CoreDataStackError: LocalizedError {
+    case appGroupUnavailableAfterMigration
+
+    var errorDescription: String? {
+        switch self {
+        case .appGroupUnavailableAfterMigration:
+            return "App Group container is unavailable, but this install has previously migrated to it. Refusing to silently open an empty default-location store. Check entitlements."
+        }
+    }
+}
+
 final class CoreDataStack: ObservableObject {
     static let shared = CoreDataStack()
 
@@ -15,14 +26,12 @@ final class CoreDataStack: ObservableObject {
     /// App Group container is unavailable (e.g. entitlement regression), we
     /// hard-fail rather than silently opening an empty default-location store
     /// and appearing to have lost the user's data.
-    static let hasMigratedToAppGroupKey = "hasMigratedToAppGroup"
+    private static let hasMigratedToAppGroupKey = "hasMigratedToAppGroup"
 
-    /// Decides what to do when the App Group container may or may not be
-    /// available. Pure function — extracted for unit testing.
     enum StoreURLResolution: Equatable {
         case useGroupURL(URL)
         case fallbackToDefault
-        case hardFail(String)
+        case hardFail
     }
 
     static func resolveStoreURL(
@@ -33,9 +42,7 @@ final class CoreDataStack: ObservableObject {
             return .useGroupURL(groupStoreURL)
         }
         if hasPreviouslyMigrated {
-            return .hardFail(
-                "App Group container is unavailable, but this install has previously migrated to it. Refusing to silently open an empty default-location store. Check entitlements."
-            )
+            return .hardFail
         }
         return .fallbackToDefault
     }
@@ -57,6 +64,8 @@ final class CoreDataStack: ObservableObject {
     private init(inMemory: Bool = false, shouldSeedDefaults: Bool = true) {
         self.shouldSeedDefaults = shouldSeedDefaults
         container = NSPersistentContainer(name: "StayInTouch")
+
+        var didUseGroupURL = false
 
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
@@ -94,13 +103,10 @@ final class CoreDataStack: ObservableObject {
                     }
                 }
                 container.persistentStoreDescriptions.first?.url = groupStoreURL
+                didUseGroupURL = true
 
-            case .hardFail(let message):
-                let error = NSError(
-                    domain: "CoreDataStack",
-                    code: -1001,
-                    userInfo: [NSLocalizedDescriptionKey: message]
-                )
+            case .hardFail:
+                let error = CoreDataStackError.appGroupUnavailableAfterMigration
                 AppLogger.logError(
                     error,
                     category: AppLogger.coreData,
@@ -141,8 +147,11 @@ final class CoreDataStack: ObservableObject {
             }
 
             self.isLoaded = true
-            if !inMemory, AppGroup.coreDataStoreURL != nil {
-                UserDefaults.standard.set(true, forKey: Self.hasMigratedToAppGroupKey)
+            if didUseGroupURL {
+                let defaults = UserDefaults.standard
+                if !defaults.bool(forKey: Self.hasMigratedToAppGroupKey) {
+                    defaults.set(true, forKey: Self.hasMigratedToAppGroupKey)
+                }
             }
             self.seedDefaultsIfNeeded()
         }

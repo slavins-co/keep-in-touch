@@ -72,15 +72,16 @@ final class CoreDataMigrationTests: XCTestCase {
             groupStoreURL: nil,
             hasPreviouslyMigrated: true
         )
+        XCTAssertEqual(resolution, .hardFail)
+    }
 
-        if case .hardFail(let message) = resolution {
-            XCTAssertTrue(
-                message.contains("previously migrated"),
-                "Hard-fail message should reference the prior migration, got: \(message)"
-            )
-        } else {
-            XCTFail("Expected .hardFail resolution when App Group is nil after migration, got \(resolution)")
-        }
+    func test_coreDataStackError_appGroupUnavailableAfterMigration_hasDescriptiveMessage() {
+        let error = CoreDataStackError.appGroupUnavailableAfterMigration
+        XCTAssertNotNil(error.errorDescription)
+        XCTAssertTrue(
+            error.errorDescription!.contains("previously migrated"),
+            "Error description should reference prior migration, got: \(error.errorDescription ?? "nil")"
+        )
     }
 
     func testInMemoryStoreCanInsertAndFetch() throws {
