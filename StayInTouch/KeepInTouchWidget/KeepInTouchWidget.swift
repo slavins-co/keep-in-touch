@@ -3,6 +3,7 @@
 //  KeepInTouchWidget
 //
 
+import AppIntents
 import SwiftUI
 import WidgetKit
 
@@ -145,9 +146,7 @@ struct MediumWidgetView: View {
                 }
                 VStack(spacing: 6) {
                     ForEach(snapshot.featured, id: \.id) { person in
-                        Link(destination: DeepLinkRoute.person(person.id).url()) {
-                            personRow(person)
-                        }
+                        personRow(person)
                     }
                     if snapshot.featured.count < 3 {
                         Spacer(minLength: 0)
@@ -160,24 +159,35 @@ struct MediumWidgetView: View {
 
     private func personRow(_ person: OverduePerson) -> some View {
         HStack(spacing: 10) {
-            WidgetAvatarView(
-                initials: person.initials,
-                colorHex: person.avatarColorHex,
-                diameter: 32
-            )
-            VStack(alignment: .leading, spacing: 1) {
-                Text(person.displayName)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text("\(person.daysOverdue) day\(person.daysOverdue == 1 ? "" : "s") overdue")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            Link(destination: DeepLinkRoute.person(person.id).url()) {
+                HStack(spacing: 10) {
+                    WidgetAvatarView(
+                        initials: person.initials,
+                        colorHex: person.avatarColorHex,
+                        diameter: 32
+                    )
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(person.displayName)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text("\(person.daysOverdue) day\(person.daysOverdue == 1 ? "" : "s") overdue")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .contentShape(Rectangle())
             }
             Spacer(minLength: 0)
+            Button(intent: LogTouchIntent(personID: person.id)) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.green)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Log touch with \(person.displayName)")
         }
-        .contentShape(Rectangle())
     }
 }
 
