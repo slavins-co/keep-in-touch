@@ -51,17 +51,44 @@ struct OverdueTimelineProvider: AppIntentTimelineProvider {
 
 extension WidgetDataProvider.Snapshot {
     static let placeholder = WidgetDataProvider.Snapshot(
-        overdueCount: 3,
+        overdueCount: 2,
         featured: [
-            OverduePerson(id: UUID(), displayName: "Alex", initials: "A", avatarColorHex: "#FF6B6B", groupName: "Weekly", groupColorHex: "#4ECDC4", daysOverdue: 5),
-            OverduePerson(id: UUID(), displayName: "Sam", initials: "S", avatarColorHex: "#4ECDC4", groupName: "Monthly", groupColorHex: "#FFD166", daysOverdue: 3),
-            OverduePerson(id: UUID(), displayName: "Jordan", initials: "J", avatarColorHex: "#FFD166", groupName: "Quarterly", groupColorHex: "#A78BFA", daysOverdue: 1),
+            OverduePerson(id: UUID(), displayName: "Alex", initials: "A", avatarColorHex: "#FF6B6B", groupName: "Weekly", groupColorHex: "#4ECDC4", status: .overdue(daysOverdue: 5)),
+            OverduePerson(id: UUID(), displayName: "Sam", initials: "S", avatarColorHex: "#4ECDC4", groupName: "Monthly", groupColorHex: "#FFD166", status: .overdue(daysOverdue: 1)),
+            OverduePerson(id: UUID(), displayName: "Jordan", initials: "J", avatarColorHex: "#FFD166", groupName: "Quarterly", groupColorHex: "#A78BFA", status: .dueSoon(daysUntilDue: 2)),
         ],
         hasTrackedPeople: true
     )
 
     static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: false)
     static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: true)
+}
+
+private extension WidgetPersonStatus {
+    var ringColor: Color {
+        switch self {
+        case .overdue: return .red
+        case .dueSoon: return .orange
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .overdue(let days):
+            return "\(days) day\(days == 1 ? "" : "s") overdue"
+        case .dueSoon(let days):
+            return days == 0 ? "Due today" : "Due in \(days) day\(days == 1 ? "" : "s")"
+        }
+    }
+
+    var shortSubtitle: String {
+        switch self {
+        case .overdue(let days):
+            return "\(days)d overdue"
+        case .dueSoon(let days):
+            return days == 0 ? "Due today" : "Due in \(days)d"
+        }
+    }
 }
 
 // MARK: - Entry view
@@ -92,26 +119,35 @@ struct SmallWidgetView: View {
 
     var body: some View {
         Group {
-            if snapshot.overdueCount == 0 {
-                EmptyStateView(hasTrackedPeople: snapshot.hasTrackedPeople)
-            } else if let first = snapshot.featured.first {
+            if let first = snapshot.featured.first {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(alignment: .top) {
-                        Text("\(snapshot.overdueCount)")
-                            .font(.system(size: 40, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.red)
-                        Spacer()
-                        Text("overdue")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 12)
+                        if snapshot.overdueCount > 0 {
+                            Text("\(snapshot.overdueCount)")
+                                .font(.system(size: 40, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.red)
+                            Spacer()
+                            Text("overdue")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 12)
+                        } else {
+                            Text("\(snapshot.featured.count)")
+                                .font(.system(size: 40, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.orange)
+                            Spacer()
+                            Text("due soon")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 12)
+                        }
                     }
                     Spacer(minLength: 0)
                     HStack(spacing: 8) {
                         WidgetAvatarView(
                             initials: first.initials,
                             colorHex: first.avatarColorHex,
-                            statusRingColor: .red,
+                            statusRingColor: first.status.ringColor,
                             diameter: 32
                         )
                         VStack(alignment: .leading, spacing: 0) {
@@ -119,7 +155,7 @@ struct SmallWidgetView: View {
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .lineLimit(1)
-                            Text("\(first.daysOverdue)d overdue")
+                            Text(first.status.shortSubtitle)
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
@@ -140,13 +176,13 @@ struct MediumWidgetView: View {
     let snapshot: WidgetDataProvider.Snapshot
 
     var body: some View {
-        if snapshot.overdueCount == 0 {
+        if snapshot.featured.isEmpty {
             EmptyStateView(hasTrackedPeople: snapshot.hasTrackedPeople)
                 .widgetURL(DeepLinkRoute.overdue.url())
         } else {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("\(snapshot.overdueCount) overdue")
+                    Text(headerText)
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundStyle(.secondary)
@@ -167,12 +203,22 @@ struct MediumWidgetView: View {
         }
     }
 
+    private var headerText: String {
+        let overdue = snapshot.overdueCount
+        let dueSoon = snapshot.featured.count - overdue
+        switch (overdue, dueSoon) {
+        case (0, _): return "\(dueSoon) due soon"
+        case (_, 0): return "\(overdue) overdue"
+        default: return "\(overdue) overdue · \(dueSoon) due soon"
+        }
+    }
+
     private func personRow(_ person: OverduePerson) -> some View {
         HStack(spacing: 10) {
             WidgetAvatarView(
                 initials: person.initials,
                 colorHex: person.avatarColorHex,
-                statusRingColor: .red,
+                statusRingColor: person.status.ringColor,
                 diameter: 32
             )
             VStack(alignment: .leading, spacing: 1) {
@@ -181,7 +227,7 @@ struct MediumWidgetView: View {
                     .fontWeight(.medium)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                Text("\(person.daysOverdue) day\(person.daysOverdue == 1 ? "" : "s") overdue")
+                Text(person.status.subtitle)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }

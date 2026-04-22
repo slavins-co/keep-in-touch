@@ -17,6 +17,11 @@
 import CoreData
 import Foundation
 
+enum WidgetPersonStatus: Hashable {
+    case overdue(daysOverdue: Int)
+    case dueSoon(daysUntilDue: Int)
+}
+
 struct OverduePerson: Hashable {
     let id: UUID
     let displayName: String
@@ -24,7 +29,7 @@ struct OverduePerson: Hashable {
     let avatarColorHex: String
     let groupName: String
     let groupColorHex: String?
-    let daysOverdue: Int
+    let status: WidgetPersonStatus
 }
 
 enum WidgetDataProvider {
@@ -48,7 +53,7 @@ enum WidgetDataProvider {
         let people = fetchTrackedPeople(context: context, groupFilter: groupFilter)
         let groupsByID = fetchGroupsByID(context: context)
 
-        let overdue = people
+        let atRisk = people
             .compactMap { person -> OverduePerson? in
                 guard
                     let id = person.value(forKey: "id") as? UUID,
@@ -57,11 +62,9 @@ enum WidgetDataProvider {
                     let avatarColor = person.value(forKey: "avatarColor") as? String,
                     let groupId = person.value(forKey: "groupId") as? UUID,
                     let group = groupsByID[groupId],
-                    let groupName = group.value(forKey: "name") as? String
+                    let groupName = group.value(forKey: "name") as? String,
+                    let status = statusFor(person: person, group: group, now: now)
                 else { return nil }
-
-                let daysOverdue = daysOverdueFor(person: person, group: group, now: now)
-                guard daysOverdue > 0 else { return nil }
 
                 return OverduePerson(
                     id: id,
@@ -70,17 +73,33 @@ enum WidgetDataProvider {
                     avatarColorHex: avatarColor,
                     groupName: groupName,
                     groupColorHex: group.value(forKey: "colorHex") as? String,
-                    daysOverdue: daysOverdue
+                    status: status
                 )
             }
-            .sorted { $0.daysOverdue > $1.daysOverdue }
+            .sorted(by: sortPriority)
 
-        let featured = Array(overdue.prefix(maxFeaturedPeople))
+        let overdueCount = atRisk.filter { if case .overdue = $0.status { return true } else { return false } }.count
+        let featured = Array(atRisk.prefix(maxFeaturedPeople))
         return Snapshot(
-            overdueCount: overdue.count,
+            overdueCount: overdueCount,
             featured: featured,
             hasTrackedPeople: !people.isEmpty
         )
+    }
+
+    /// Overdue people first (oldest overdue first), then due-soon
+    /// (nearest due date first).
+    private static func sortPriority(_ lhs: OverduePerson, _ rhs: OverduePerson) -> Bool {
+        switch (lhs.status, rhs.status) {
+        case (.overdue(let a), .overdue(let b)):
+            return a > b
+        case (.overdue, .dueSoon):
+            return true
+        case (.dueSoon, .overdue):
+            return false
+        case (.dueSoon(let a), .dueSoon(let b)):
+            return a < b
+        }
     }
 
     // MARK: - Core Data helpers
@@ -114,24 +133,26 @@ enum WidgetDataProvider {
 
     // MARK: - SLA
 
-    /// Returns days overdue (> 0) or 0 if the person is not overdue.
-    /// Respects snoozedUntil — a snoozed-forward person is never overdue.
-    private static func daysOverdueFor(
+    /// Returns the person's at-risk status, or nil if on track (skipped
+    /// from the widget). Respects snoozedUntil. Overdue = past the SLA.
+    /// Due soon = within the group's warningDays window before the SLA.
+    private static func statusFor(
         person: NSManagedObject,
         group: NSManagedObject,
         now: Date
-    ) -> Int {
+    ) -> WidgetPersonStatus? {
         if let snoozedUntil = person.value(forKey: "snoozedUntil") as? Date,
            snoozedUntil > now {
-            return 0
+            return nil
         }
 
         guard let lastTouchAt = person.value(forKey: "lastTouchAt") as? Date else {
-            return 0
+            return nil
         }
 
         let frequencyDays = (group.value(forKey: "frequencyDays") as? Int64).map(Int.init) ?? 0
-        guard frequencyDays > 0 else { return 0 }
+        guard frequencyDays > 0 else { return nil }
+        let warningDays = (group.value(forKey: "warningDays") as? Int64).map(Int.init) ?? 0
 
         let calendar = Calendar.current
         let fromDay = calendar.startOfDay(for: lastTouchAt)
@@ -140,7 +161,13 @@ enum WidgetDataProvider {
             .dateComponents([.day], from: fromDay, to: toDay)
             .day ?? 0
 
-        let daysOverdue = daysSinceLastTouch - frequencyDays
-        return max(daysOverdue, 0)
+        let delta = daysSinceLastTouch - frequencyDays
+        if delta >= 0 {
+            return .overdue(daysOverdue: delta)
+        }
+        if -delta <= warningDays {
+            return .dueSoon(daysUntilDue: -delta)
+        }
+        return nil
     }
 }
