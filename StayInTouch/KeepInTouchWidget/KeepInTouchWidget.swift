@@ -2,9 +2,6 @@
 //  KeepInTouchWidget.swift
 //  KeepInTouchWidget
 //
-//  Placeholder scaffolding. Timeline provider fetches from Core Data
-//  via the App Group container in a follow-up commit.
-//
 
 import SwiftUI
 import WidgetKit
@@ -12,40 +9,77 @@ import WidgetKit
 struct OverdueEntry: TimelineEntry {
     let date: Date
     let configuration: OverdueWidgetConfigurationIntent
+    let snapshot: WidgetDataProvider.Snapshot
 }
 
 struct OverdueTimelineProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> OverdueEntry {
-        OverdueEntry(date: Date(), configuration: OverdueWidgetConfigurationIntent())
+        OverdueEntry(
+            date: Date(),
+            configuration: OverdueWidgetConfigurationIntent(),
+            snapshot: .placeholder
+        )
     }
 
     func snapshot(for configuration: OverdueWidgetConfigurationIntent, in context: Context) async -> OverdueEntry {
-        OverdueEntry(date: Date(), configuration: configuration)
+        OverdueEntry(
+            date: Date(),
+            configuration: configuration,
+            snapshot: WidgetDataProvider.loadSnapshot()
+        )
     }
 
     func timeline(for configuration: OverdueWidgetConfigurationIntent, in context: Context) async -> Timeline<OverdueEntry> {
-        let entry = OverdueEntry(date: Date(), configuration: configuration)
-        let refreshAt = Calendar.current.date(byAdding: .minute, value: 30, to: Date()) ?? Date()
-        return Timeline(entries: [entry], policy: .after(refreshAt))
+        let now = Date()
+        let entry = OverdueEntry(
+            date: now,
+            configuration: configuration,
+            snapshot: WidgetDataProvider.loadSnapshot(now: now)
+        )
+        let nextRefresh = Calendar.current.date(byAdding: .minute, value: 30, to: now) ?? now
+        return Timeline(entries: [entry], policy: .after(nextRefresh))
     }
+}
+
+extension WidgetDataProvider.Snapshot {
+    static let placeholder = WidgetDataProvider.Snapshot(
+        overdueCount: 3,
+        featured: [
+            OverduePerson(
+                id: UUID(),
+                displayName: "Alex",
+                initials: "A",
+                avatarColorHex: "#FF6B6B",
+                groupColorHex: nil,
+                daysOverdue: 5
+            )
+        ],
+        hasTrackedPeople: true
+    )
 }
 
 struct OverdueWidgetEntryView: View {
     var entry: OverdueEntry
 
     var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: "person.2.fill")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            Text("Keep In Touch")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(AppGroup.identifier)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
+        VStack(spacing: 6) {
+            if entry.snapshot.overdueCount == 0 {
+                Text(entry.snapshot.hasTrackedPeople ? "All caught up" : "Add someone to track")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            } else {
+                Text("\(entry.snapshot.overdueCount)")
+                    .font(.largeTitle.weight(.semibold))
+                if let first = entry.snapshot.featured.first {
+                    Text(first.displayName)
+                        .font(.caption)
+                        .lineLimit(1)
+                    Text("+\(first.daysOverdue)d overdue")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .containerBackground(.fill.tertiary, for: .widget)
     }
@@ -71,5 +105,5 @@ struct OverdueWidget: Widget {
 #Preview(as: .systemSmall) {
     OverdueWidget()
 } timeline: {
-    OverdueEntry(date: .now, configuration: OverdueWidgetConfigurationIntent())
+    OverdueEntry(date: .now, configuration: OverdueWidgetConfigurationIntent(), snapshot: .placeholder)
 }
