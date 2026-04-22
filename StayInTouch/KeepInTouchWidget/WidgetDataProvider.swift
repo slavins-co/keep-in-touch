@@ -39,12 +39,12 @@ enum WidgetDataProvider {
         let hasTrackedPeople: Bool
     }
 
-    static func loadSnapshot(now: Date = Date()) -> Snapshot {
+    static func loadSnapshot(now: Date = Date(), groupFilter: UUID? = nil) -> Snapshot {
         guard let context = WidgetCoreData.shared?.viewContext else {
             return Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: false)
         }
 
-        let people = fetchTrackedPeople(context: context)
+        let people = fetchTrackedPeople(context: context, groupFilter: groupFilter)
         let groupsByID = fetchGroupsByID(context: context)
 
         let overdue = people
@@ -82,9 +82,20 @@ enum WidgetDataProvider {
 
     // MARK: - Core Data helpers
 
-    private static func fetchTrackedPeople(context: NSManagedObjectContext) -> [NSManagedObject] {
+    private static func fetchTrackedPeople(
+        context: NSManagedObjectContext,
+        groupFilter: UUID?
+    ) -> [NSManagedObject] {
         let request = NSFetchRequest<NSManagedObject>(entityName: "Person")
-        request.predicate = NSPredicate(format: "isTracked == YES AND isDemoData != YES AND isPaused != YES")
+        var predicates: [NSPredicate] = [
+            NSPredicate(format: "isTracked == YES"),
+            NSPredicate(format: "isDemoData != YES"),
+            NSPredicate(format: "isPaused != YES"),
+        ]
+        if let groupFilter {
+            predicates.append(NSPredicate(format: "groupId == %@", groupFilter as CVarArg))
+        }
+        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         request.fetchBatchSize = 50
         return (try? context.fetch(request)) ?? []
     }

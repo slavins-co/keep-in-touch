@@ -26,7 +26,7 @@ struct OverdueTimelineProvider: AppIntentTimelineProvider {
         OverdueEntry(
             date: Date(),
             configuration: configuration,
-            snapshot: WidgetDataProvider.loadSnapshot()
+            snapshot: WidgetDataProvider.loadSnapshot(groupFilter: configuration.group?.id)
         )
     }
 
@@ -35,7 +35,7 @@ struct OverdueTimelineProvider: AppIntentTimelineProvider {
         let entry = OverdueEntry(
             date: now,
             configuration: configuration,
-            snapshot: WidgetDataProvider.loadSnapshot(now: now)
+            snapshot: WidgetDataProvider.loadSnapshot(now: now, groupFilter: configuration.group?.id)
         )
         let nextRefresh = Calendar.current.date(byAdding: .minute, value: 30, to: now) ?? now
         return Timeline(entries: [entry], policy: .after(nextRefresh))
