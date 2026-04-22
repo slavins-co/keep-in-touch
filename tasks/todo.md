@@ -53,6 +53,31 @@ Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architect
 
 ---
 
+## Completed — Session 2026-04-08 (Issues #274, #275: Search Improvements)
+
+- [x] **#275** Enable nickname searching from contact info (PR #277)
+  - Added `nickname` field to Person entity with Core Data v8 migration
+  - Fetch `CNContactNicknameKey` from iOS Contacts during import and pull-to-refresh sync
+  - Search on both Home and Contacts tabs now matches nickname in addition to displayName
+  - 6 new unit tests, 341 total passing
+- [x] **#274** Auto-expand groups with matching results during search (PR #277)
+  - Auto-expand all collapsed Home tab status sections when search text is active
+  - Restore previous collapse state when search is cleared
+- [x] Code review: PASS
+- [x] Security review: PASS
+
+---
+
+## Completed — Session 2026-03-30 (Issue #272: Search Bar Empty State Bug)
+
+- [x] **#272** Fix search bar disappearing when search returns no results on Contacts tab (PR #273)
+  - Added `contactsSearchBar` to the empty-search-results branch in ContactsListView
+  - Users can now clear/edit search text when no results are found
+- [x] Code review: PASS
+- [x] Security review: PASS
+
+---
+
 ## Completed — Session 2026-03-20 (Issue #268: Due Soon Home View Bug)
 
 - [x] **#268** Fix Due Soon contacts missing from Home View when warningDays > dueSoonWindowDays (PR #269)
