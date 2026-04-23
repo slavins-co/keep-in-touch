@@ -12,8 +12,8 @@ import CoreData
 import Foundation
 
 struct GroupAppEntity: AppEntity, Identifiable {
-    /// Sentinel UUID that represents "no filter — show every group".
-    /// Real Core Data Group UUIDs will never collide with this.
+    /// Sentinel UUID representing "no filter". Real Core Data Group
+    /// UUIDs will never collide with this.
     static let allGroupsID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
     static let allGroups = GroupAppEntity(id: allGroupsID, name: "All groups")
 
@@ -45,18 +45,19 @@ struct GroupAppEntityQuery: EntityQuery {
 
     static func fetchAllGroups() -> [GroupAppEntity] {
         guard let context = WidgetCoreData.shared?.viewContext else { return [] }
-        let request = NSFetchRequest<NSManagedObject>(entityName: "Group")
-        request.sortDescriptors = [
-            NSSortDescriptor(key: "sortOrder", ascending: true),
-            NSSortDescriptor(key: "name", ascending: true),
-        ]
-        let results = (try? context.fetch(request)) ?? []
-        return results.compactMap { entity in
-            guard
-                let id = entity.value(forKey: "id") as? UUID,
-                let name = entity.value(forKey: "name") as? String
-            else { return nil }
-            return GroupAppEntity(id: id, name: name)
+        var results: [GroupAppEntity] = []
+        context.performAndWait {
+            let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
+            request.sortDescriptors = [
+                NSSortDescriptor(key: "sortOrder", ascending: true),
+                NSSortDescriptor(key: "name", ascending: true),
+            ]
+            let groups = (try? context.fetch(request)) ?? []
+            results = groups.compactMap { group in
+                guard let id = group.id, let name = group.name else { return nil }
+                return GroupAppEntity(id: id, name: name)
+            }
         }
+        return results
     }
 }

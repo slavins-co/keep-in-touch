@@ -30,6 +30,14 @@ enum WidgetCoreData {
         let description = NSPersistentStoreDescription(url: storeURL)
         description.shouldMigrateStoreAutomatically = false
         description.shouldInferMappingModelAutomatically = false
+        // Mirror the app's file-protection class for defensive symmetry.
+        // The file's actual protection is set when the app first creates
+        // it (see CoreDataStack), but asserting the same key here keeps
+        // the two stacks' descriptions in sync.
+        description.setOption(
+            FileProtectionType.completeUntilFirstUserAuthentication.rawValue as NSString,
+            forKey: NSPersistentStoreFileProtectionKey
+        )
         container.persistentStoreDescriptions = [description]
 
         var loadError: Error?

@@ -45,6 +45,8 @@ enum DeepLinkRoute: Equatable {
             components.host = "person"
             components.path = "/\(id.uuidString)"
         }
+        // Safe: scheme + host (+ optional path) are always set above, so
+        // URLComponents can always produce a valid URL here.
         return components.url!
     }
 }

@@ -6,12 +6,10 @@
 //  store and materializes them into lightweight OverduePerson DTOs for
 //  the widget view.
 //
-//  Self-contained: no dependency on the main app's domain types or
-//  FrequencyCalculator. The SLA rule here is intentionally simple and
-//  matches the app's widget contract — not its full nuanced calc
-//  (which handles customBreachTime, customDueDate, grace-period seeding,
-//  etc.). The widget renders the "who is overdue right now?" projection
-//  that matters for a glance.
+//  Uses the Xcode-generated PersonEntity / GroupEntity classes (each
+//  target compiles its own model and generates its own typed classes)
+//  so schema renames break the build rather than silently returning
+//  nil at runtime.
 //
 
 import CoreData
@@ -34,25 +32,14 @@ struct OverduePerson: Hashable {
 
 enum WidgetDataProvider {
 
-    /// Maximum number of people surfaced in a single entry payload.
-    /// The medium widget renders up to 3; keeping the DTO list bounded
-    /// stays inside the extension's memory budget (30 MB).
     static let maxFeaturedPeople = 3
 
     struct Snapshot {
-        /// Total count of everyone currently overdue (not capped by
-        /// `maxFeaturedPeople`).
         let overdueCount: Int
-        /// Total count of everyone currently in the due-soon warning
-        /// window (not capped by `maxFeaturedPeople`).
         let dueSoonCount: Int
-        /// The top slice displayed on the widget. Bounded so the
-        /// extension stays under its memory budget.
         let featured: [OverduePerson]
         let hasTrackedPeople: Bool
-        /// Raw AppSettings.theme string: "dark", "light", "system", or nil
-        /// if the settings row hasn't been seeded. The widget translates
-        /// this into a SwiftUI ColorScheme at render time.
+        /// Raw AppSettings.theme string: "dark", "light", "system", or nil.
         let themeOverride: String?
     }
 
@@ -61,51 +48,59 @@ enum WidgetDataProvider {
             return Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
         }
 
-        let people = fetchTrackedPeople(context: context, groupFilter: groupFilter)
-        let groupsByID = fetchGroupsByID(context: context)
-        let themeOverride = fetchAppTheme(context: context)
+        var result: Snapshot = .init(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
 
-        let atRisk = people
-            .compactMap { person -> OverduePerson? in
-                guard
-                    let id = person.value(forKey: "id") as? UUID,
-                    let displayName = person.value(forKey: "displayName") as? String,
-                    let initials = person.value(forKey: "initials") as? String,
-                    let avatarColor = person.value(forKey: "avatarColor") as? String,
-                    let groupId = person.value(forKey: "groupId") as? UUID,
-                    let group = groupsByID[groupId],
-                    let groupName = group.value(forKey: "name") as? String,
-                    let status = statusFor(person: person, group: group, now: now)
-                else { return nil }
+        context.performAndWait {
+            let hasTrackedPeople = countTrackedPeople(context: context) > 0
+            let people = fetchTrackedPeople(context: context, groupFilter: groupFilter)
+            let groupsByID = fetchGroupsByID(context: context)
+            let themeOverride = fetchAppTheme(context: context)
 
-                return OverduePerson(
-                    id: id,
-                    displayName: displayName,
-                    initials: initials,
-                    avatarColorHex: avatarColor,
-                    groupName: groupName,
-                    groupColorHex: group.value(forKey: "colorHex") as? String,
-                    status: status
-                )
+            let atRisk = people
+                .compactMap { person -> OverduePerson? in
+                    guard
+                        let id = person.id,
+                        let displayName = person.displayName,
+                        let initials = person.initials,
+                        let avatarColor = person.avatarColor,
+                        let groupId = person.groupId,
+                        let group = groupsByID[groupId],
+                        let groupName = group.name,
+                        let status = statusFor(person: person, group: group, now: now)
+                    else { return nil }
+
+                    return OverduePerson(
+                        id: id,
+                        displayName: displayName,
+                        initials: initials,
+                        avatarColorHex: avatarColor,
+                        groupName: groupName,
+                        groupColorHex: group.colorHex,
+                        status: status
+                    )
+                }
+                .sorted(by: sortPriority)
+
+            var overdueCount = 0
+            var dueSoonCount = 0
+            for person in atRisk {
+                switch person.status {
+                case .overdue: overdueCount += 1
+                case .dueSoon: dueSoonCount += 1
+                }
             }
-            .sorted(by: sortPriority)
+            let featured = Array(atRisk.prefix(maxFeaturedPeople))
 
-        var overdueCount = 0
-        var dueSoonCount = 0
-        for person in atRisk {
-            switch person.status {
-            case .overdue: overdueCount += 1
-            case .dueSoon: dueSoonCount += 1
-            }
+            result = Snapshot(
+                overdueCount: overdueCount,
+                dueSoonCount: dueSoonCount,
+                featured: featured,
+                hasTrackedPeople: hasTrackedPeople,
+                themeOverride: themeOverride
+            )
         }
-        let featured = Array(atRisk.prefix(maxFeaturedPeople))
-        return Snapshot(
-            overdueCount: overdueCount,
-            dueSoonCount: dueSoonCount,
-            featured: featured,
-            hasTrackedPeople: !people.isEmpty,
-            themeOverride: themeOverride
-        )
+
+        return result
     }
 
     /// Overdue people first (oldest overdue first), then due-soon
@@ -125,11 +120,27 @@ enum WidgetDataProvider {
 
     // MARK: - Core Data helpers
 
+    private static func fetchAppTheme(context: NSManagedObjectContext) -> String? {
+        let request: NSFetchRequest<AppSettingsEntity> = AppSettingsEntity.fetchRequest()
+        request.fetchLimit = 1
+        return (try? context.fetch(request))?.first?.theme
+    }
+
+    /// Count-only fetch against every tracked non-demo person. Used
+    /// only to distinguish "widget configured to an empty group" from
+    /// "user has not added anyone yet" — and therefore ignores the
+    /// group filter.
+    private static func countTrackedPeople(context: NSManagedObjectContext) -> Int {
+        let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "isTracked == YES AND isDemoData != YES")
+        return (try? context.count(for: request)) ?? 0
+    }
+
     private static func fetchTrackedPeople(
         context: NSManagedObjectContext,
         groupFilter: UUID?
-    ) -> [NSManagedObject] {
-        let request = NSFetchRequest<NSManagedObject>(entityName: "Person")
+    ) -> [PersonEntity] {
+        let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
         var predicates: [NSPredicate] = [
             NSPredicate(format: "isTracked == YES"),
             NSPredicate(format: "isDemoData != YES"),
@@ -143,44 +154,41 @@ enum WidgetDataProvider {
         return (try? context.fetch(request)) ?? []
     }
 
-    private static func fetchAppTheme(context: NSManagedObjectContext) -> String? {
-        let request = NSFetchRequest<NSManagedObject>(entityName: "AppSettings")
-        request.fetchLimit = 1
-        let results = (try? context.fetch(request)) ?? []
-        return results.first?.value(forKey: "theme") as? String
-    }
-
-    private static func fetchGroupsByID(context: NSManagedObjectContext) -> [UUID: NSManagedObject] {
-        let request = NSFetchRequest<NSManagedObject>(entityName: "Group")
+    private static func fetchGroupsByID(context: NSManagedObjectContext) -> [UUID: GroupEntity] {
+        let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
         request.fetchBatchSize = 50
         let groups = (try? context.fetch(request)) ?? []
         return Dictionary(uniqueKeysWithValues: groups.compactMap { group in
-            (group.value(forKey: "id") as? UUID).map { ($0, group) }
+            group.id.map { ($0, group) }
         })
     }
 
     // MARK: - SLA
 
-    /// Returns the person's at-risk status, or nil if on track (skipped
-    /// from the widget). Respects snoozedUntil. Overdue = past the SLA.
-    /// Due soon = within the group's warningDays window before the SLA.
+    /// Returns the person's at-risk status, or nil if on track.
+    /// Respects snoozedUntil. Overdue = past the SLA. Due soon = within
+    /// the group's warningDays window before the SLA.
+    ///
+    /// Known divergences from the app's FrequencyCalculator (acceptable
+    /// for the widget's "glance" projection): ignores customBreachTime,
+    /// customDueDate, and grace-period seeding. Users with custom
+    /// cadences may see the widget disagree with the app by a day.
     private static func statusFor(
-        person: NSManagedObject,
-        group: NSManagedObject,
+        person: PersonEntity,
+        group: GroupEntity,
         now: Date
     ) -> WidgetPersonStatus? {
-        if let snoozedUntil = person.value(forKey: "snoozedUntil") as? Date,
-           snoozedUntil > now {
+        if let snoozedUntil = person.snoozedUntil, snoozedUntil > now {
             return nil
         }
 
-        guard let lastTouchAt = person.value(forKey: "lastTouchAt") as? Date else {
+        guard let lastTouchAt = person.lastTouchAt else {
             return nil
         }
 
-        let frequencyDays = (group.value(forKey: "frequencyDays") as? Int64).map(Int.init) ?? 0
+        let frequencyDays = Int(group.frequencyDays)
         guard frequencyDays > 0 else { return nil }
-        let warningDays = (group.value(forKey: "warningDays") as? Int64).map(Int.init) ?? 0
+        let warningDays = Int(group.warningDays)
 
         let calendar = Calendar.current
         let fromDay = calendar.startOfDay(for: lastTouchAt)
