@@ -17,6 +17,13 @@ Compact prevention rules. Full narratives archived in `tasks/lessons-archive.md`
 - **NavigationLink consumers when changing nav bar**: When modifying a shared view's nav bar behavior, grep for ALL `NavigationLink` references. Test each navigation path
 - **`.overlay()` does NOT cover fullScreenCover/sheet**: These create separate UIKit presentation contexts. For app-wide overlays (privacy screen), use a UIWindow at `.alert + 1` level
 - **LazyVStack caches views by ForEach identity across sections**: When items move between sections (same UUID, different section), use `refreshToken` UUID + `.id()` on LazyVStack to force recreation. Clue: "force quit fixes it"
+- **Text + Text concat supports `.foregroundStyle` on iOS 17+**: `Text.foregroundStyle(_:)` returns `Text` (not `some View`), so mixed-color single-line labels via `Text(...) + Text(...)` work with the modern API. Don't fall back to deprecated `.foregroundColor` — it's not needed.
+
+## Multi-Target Sharing
+
+- **Protocol seam beats moving the domain layer**: When a widget/extension needs main-app logic, prefer narrow `FrequencyCalculator*` protocols over moving `Person` / `Cadence` / related value objects into `Shared/`. Existing domain types conform via empty extensions; the extension target defines tiny adapter structs populated from its own Core Data entities. Zero-diff for existing tests (generics over protocols, not `any P`)
+- **`PBXFileSystemSynchronizedRootGroup` subdirs inherit membership**: Files placed in `StayInTouch/StayInTouch/Shared/` are automatically members of the main app target because the main app's synced group (`path = StayInTouch`) is the parent directory. The widget target declares `Shared` explicitly via a second `PBXFileSystemSynchronizedRootGroup` (`Shared (widget membership)`). Moving a file into `Shared/` requires zero pbxproj edits
+- **Widget-only code that tests need access to**: Move it to `Shared/` so the main app module also compiles it — `@testable import StayInTouch` then sees it. Keep widget-only dependencies (e.g. `WidgetCoreData.shared`) in a thin extension file that stays in the widget target
 
 ## Core Data
 

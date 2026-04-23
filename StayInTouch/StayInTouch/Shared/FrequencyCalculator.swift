@@ -1,8 +1,10 @@
 //
 //  FrequencyCalculator.swift
-//  KeepInTouch
+//  KeepInTouch (Shared — compiled into main app + widget extension)
 //
-//  Created by Codex on 2/2/26.
+//  Reads from `FrequencyCalculatorPerson` / `FrequencyCalculatorCadence`
+//  protocols so the widget can reuse the exact same SLA logic without
+//  depending on the Domain layer.
 //
 
 import Foundation
@@ -14,7 +16,10 @@ struct FrequencyCalculator {
         self.referenceDate = referenceDate
     }
 
-    func status(for person: Person, in cadences: [Cadence]) -> ContactStatus {
+    func status<P: FrequencyCalculatorPerson, C: FrequencyCalculatorCadence>(
+        for person: P,
+        in cadences: [C]
+    ) -> ContactStatus {
         if person.isPaused { return .onTrack }
         if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return .onTrack }
         guard let cadence = cadences.first(where: { $0.id == person.cadenceId }) else {
@@ -35,7 +40,10 @@ struct FrequencyCalculator {
         return .onTrack
     }
 
-    func daysOverdue(for person: Person, in cadences: [Cadence]) -> Int {
+    func daysOverdue<P: FrequencyCalculatorPerson, C: FrequencyCalculatorCadence>(
+        for person: P,
+        in cadences: [C]
+    ) -> Int {
         if person.isPaused { return 0 }
         if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return 0 }
         guard cadences.first(where: { $0.id == person.cadenceId }) != nil else {
@@ -50,7 +58,10 @@ struct FrequencyCalculator {
         return max(0, -daysUntilDue)
     }
 
-    func effectiveDueDate(for person: Person, in cadences: [Cadence]) -> Date? {
+    func effectiveDueDate<P: FrequencyCalculatorPerson, C: FrequencyCalculatorCadence>(
+        for person: P,
+        in cadences: [C]
+    ) -> Date? {
         let cal = Calendar.current
         guard let cadence = cadences.first(where: { $0.id == person.cadenceId }) else { return nil }
 
@@ -72,12 +83,12 @@ struct FrequencyCalculator {
         }
     }
 
-    func effectiveLastTouchDate(for person: Person) -> Date? {
+    func effectiveLastTouchDate<P: FrequencyCalculatorPerson>(for person: P) -> Date? {
         if let lastTouch = person.lastTouchAt { return lastTouch }
         return person.cadenceAddedAt
     }
 
-    func daysSinceLastTouch(for person: Person) -> Int? {
+    func daysSinceLastTouch<P: FrequencyCalculatorPerson>(for person: P) -> Int? {
         guard let lastTouch = effectiveLastTouchDate(for: person) else { return nil }
         return calendarDaysBetween(from: lastTouch, to: referenceDate)
     }

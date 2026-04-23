@@ -1,15 +1,17 @@
 //
 //  WidgetDataProvider.swift
-//  KeepInTouchWidget
+//  KeepInTouch (Shared — compiled into main app + widget extension)
 //
-//  Fetches Person + Group entities from the shared App Group Core Data
-//  store and materializes them into lightweight OverduePerson DTOs for
-//  the widget view.
+//  Projects App Group Core Data entities into the lightweight DTOs
+//  the widget renders. Testable parts (`snapshot`, `sortPriority`,
+//  `statusFor`) live here so `StayInTouchTests` can exercise them via
+//  `@testable import StayInTouch`. The widget-only `loadSnapshot`
+//  wrapper — which reaches for `WidgetCoreData.shared` — lives in
+//  `KeepInTouchWidget/WidgetDataProvider+Loader.swift`.
 //
-//  Uses the Xcode-generated PersonEntity / GroupEntity classes (each
-//  target compiles its own model and generates its own typed classes)
-//  so schema renames break the build rather than silently returning
-//  nil at runtime.
+//  SLA uses the shared `FrequencyCalculator` (issue #284), so widget
+//  and app agree on overdue / due-soon status for every person,
+//  including `customDueDate` and grace-period (`groupAddedAt`) cases.
 //
 
 import CoreData
@@ -43,12 +45,14 @@ enum WidgetDataProvider {
         let themeOverride: String?
     }
 
-    static func loadSnapshot(now: Date = Date(), groupFilter: UUID? = nil) -> Snapshot {
-        guard let context = WidgetCoreData.shared?.viewContext else {
-            return Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
-        }
-
-        var result: Snapshot = .init(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
+    /// Testable core. `loadSnapshot` in the widget target wraps this
+    /// with `WidgetCoreData.shared?.viewContext`.
+    static func snapshot(
+        context: NSManagedObjectContext,
+        now: Date = Date(),
+        groupFilter: UUID? = nil
+    ) -> Snapshot {
+        var result = Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
 
         context.performAndWait {
             let hasTrackedPeople = countTrackedPeople(context: context) > 0
@@ -105,7 +109,7 @@ enum WidgetDataProvider {
 
     /// Overdue people first (oldest overdue first), then due-soon
     /// (nearest due date first).
-    private static func sortPriority(_ lhs: OverduePerson, _ rhs: OverduePerson) -> Bool {
+    static func sortPriority(_ lhs: OverduePerson, _ rhs: OverduePerson) -> Bool {
         switch (lhs.status, rhs.status) {
         case (.overdue(let a), .overdue(let b)):
             return a > b
@@ -163,47 +167,64 @@ enum WidgetDataProvider {
         })
     }
 
-    // MARK: - SLA
+    // MARK: - SLA (delegates to shared FrequencyCalculator)
+
+    /// Lightweight adapter conforming to `FrequencyCalculatorPerson`,
+    /// built from a `PersonEntity` read. Semantic renames preserved:
+    /// entity `groupId` == domain `cadenceId`, entity `groupAddedAt` ==
+    /// domain `cadenceAddedAt`.
+    private struct WidgetSLAPerson: FrequencyCalculatorPerson {
+        let isPaused: Bool
+        let snoozedUntil: Date?
+        let cadenceId: UUID
+        let lastTouchAt: Date?
+        let customDueDate: Date?
+        let cadenceAddedAt: Date?
+    }
+
+    private struct WidgetSLACadence: FrequencyCalculatorCadence {
+        let id: UUID
+        let frequencyDays: Int
+        let warningDays: Int
+    }
 
     /// Returns the person's at-risk status, or nil if on track.
-    /// Respects snoozedUntil. Overdue = past the SLA. Due soon = within
-    /// the group's warningDays window before the SLA.
-    ///
-    /// Known divergences from the app's FrequencyCalculator (acceptable
-    /// for the widget's "glance" projection): ignores customBreachTime,
-    /// customDueDate, and grace-period seeding. Users with custom
-    /// cadences may see the widget disagree with the app by a day.
-    private static func statusFor(
+    /// Delegates to the shared `FrequencyCalculator` so the widget
+    /// matches the main app for all SLA edge cases.
+    static func statusFor(
         person: PersonEntity,
         group: GroupEntity,
         now: Date
     ) -> WidgetPersonStatus? {
-        if let snoozedUntil = person.snoozedUntil, snoozedUntil > now {
+        guard let groupId = group.id else { return nil }
+
+        let slaPerson = WidgetSLAPerson(
+            isPaused: person.isPaused,
+            snoozedUntil: person.snoozedUntil,
+            cadenceId: groupId,
+            lastTouchAt: person.lastTouchAt,
+            customDueDate: person.customDueDate,
+            cadenceAddedAt: person.groupAddedAt
+        )
+        let slaCadence = WidgetSLACadence(
+            id: groupId,
+            frequencyDays: Int(group.frequencyDays),
+            warningDays: Int(group.warningDays)
+        )
+
+        let calc = FrequencyCalculator(referenceDate: now)
+        let cadences = [slaCadence]
+
+        switch calc.status(for: slaPerson, in: cadences) {
+        case .overdue:
+            return .overdue(daysOverdue: calc.daysOverdue(for: slaPerson, in: cadences))
+        case .dueSoon:
+            guard let dueDate = calc.effectiveDueDate(for: slaPerson, in: cadences) else { return nil }
+            let cal = Calendar.current
+            let daysUntil = cal.dateComponents([.day], from: cal.startOfDay(for: now), to: cal.startOfDay(for: dueDate)).day ?? 0
+            return .dueSoon(daysUntilDue: max(0, daysUntil))
+        case .onTrack, .unknown:
             return nil
         }
-
-        guard let lastTouchAt = person.lastTouchAt else {
-            return nil
-        }
-
-        let frequencyDays = Int(group.frequencyDays)
-        guard frequencyDays > 0 else { return nil }
-        let warningDays = Int(group.warningDays)
-
-        let calendar = Calendar.current
-        let fromDay = calendar.startOfDay(for: lastTouchAt)
-        let toDay = calendar.startOfDay(for: now)
-        let daysSinceLastTouch = calendar
-            .dateComponents([.day], from: fromDay, to: toDay)
-            .day ?? 0
-
-        let delta = daysSinceLastTouch - frequencyDays
-        if delta >= 0 {
-            return .overdue(daysOverdue: delta)
-        }
-        if -delta <= warningDays {
-            return .dueSoon(daysUntilDue: -delta)
-        }
-        return nil
     }
 }

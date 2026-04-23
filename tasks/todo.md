@@ -53,6 +53,36 @@ Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architect
 
 ---
 
+## Completed — Session 2026-04-22 (Issues #284, #286: Share FrequencyCalculator + Widget Tests)
+
+- [x] **#284** Share FrequencyCalculator between app and widget (single PR with #286)
+  - Introduced `FrequencyCalculatorPerson` / `FrequencyCalculatorCadence` protocols in `Shared/`
+  - `Person` + `Cadence` conform via empty extensions (passthrough)
+  - `FrequencyCalculator` moved to `Shared/`, methods generic over the protocols — 16 existing tests pass unchanged
+  - `ContactStatus` moved to `Shared/`
+  - `WidgetDataProvider.statusFor` rewritten to build lightweight adapter structs and delegate to `FrequencyCalculator` — widget and app now agree on `customDueDate` + grace-period (`groupAddedAt`) cases
+- [x] **#286** Widget unit tests (reduced scope — `statusFor` collapsed into `FrequencyCalculatorTests` via #284)
+  - Moved `WidgetDataProvider` testable core to `Shared/`; kept widget-only `loadSnapshot` wrapper in a loader file
+  - New `WidgetDataProviderTests` — 12 tests covering `sortPriority` ordering, `snapshot` counts + featured prefix + pause/demo/untracked exclusion, and parity with `FrequencyCalculator` for customDueDate / grace-period / snoozed cases
+- [x] Build: main app + widget compile clean
+- [x] Full test suite passes (previously 341 + 12 new widget tests)
+
+---
+
+## Completed — Session 2026-04-22 (Issue #278: Nickname Display)
+
+- [x] **#278** Display nickname in contact detail and list views (PR #287)
+  - Added `Person.displayNickname` computed property with case-insensitive/trim dedupe against `displayName`
+  - `ContactCard` renders inline parenthetical `Name (Nickname)` in secondary color via `Text + Text` concat
+  - `PersonHeroSection` renders `\u{2018}Nickname\u{2019}` on secondary line below hero name
+  - Accessibility: "also known as" on list, "Nickname" label on detail
+  - 7 new unit tests covering nil/empty/whitespace/case-insensitive/trim/different-value
+  - Follow-up commit: switched to `.foregroundStyle` on concatenated Text (iOS 17+ API)
+- [x] Code review: PASS (one sub-threshold `.foregroundStyle` consistency fix committed in-branch)
+- [x] Security review: PASS
+
+---
+
 ## Completed — Session 2026-04-08 (Issues #274, #275: Search Improvements)
 
 - [x] **#275** Enable nickname searching from contact info (PR #277)
