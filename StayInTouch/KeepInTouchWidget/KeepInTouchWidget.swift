@@ -307,7 +307,7 @@ struct EmptyStateView: View {
             Image(systemName: hasTrackedPeople ? "hand.wave.fill" : "person.crop.circle.badge.plus")
                 .font(.title)
                 .foregroundStyle(hasTrackedPeople ? .green : .secondary)
-            Text(hasTrackedPeople ? "You've reached out to everyone. Way to go." : "Add someone to track")
+            Text(hasTrackedPeople ? "You've reached out to everyone.\nWay to go!" : "Add someone to track")
                 .font(.caption)
                 .fontWeight(.medium)
                 .multilineTextAlignment(.center)
