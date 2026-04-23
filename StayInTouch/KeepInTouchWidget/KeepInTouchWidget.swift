@@ -304,15 +304,16 @@ struct EmptyStateView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: hasTrackedPeople ? "leaf.fill" : "person.crop.circle.badge.plus")
+            Image(systemName: hasTrackedPeople ? "hand.wave.fill" : "person.crop.circle.badge.plus")
                 .font(.title)
                 .foregroundStyle(hasTrackedPeople ? .green : .secondary)
-            Text(hasTrackedPeople ? "All caught up" : "Add someone to track")
+            Text(hasTrackedPeople ? "You've reached out to everyone. Way to go." : "Add someone to track")
                 .font(.caption)
                 .fontWeight(.medium)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
         }
+        .padding(.horizontal, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
