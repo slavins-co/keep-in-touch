@@ -29,7 +29,7 @@ struct WidgetAvatarView: View {
 
     var body: some View {
         Circle()
-            .fill(Color(hex: colorHex) ?? .gray)
+            .fill(Color(hex: colorHex))
             .frame(width: diameter, height: diameter)
             .overlay(
                 Text(initials)
@@ -41,18 +41,5 @@ struct WidgetAvatarView: View {
                     .stroke(statusRingColor ?? .clear, lineWidth: 2)
                     .padding(-3)
             )
-    }
-}
-
-extension Color {
-    init?(hex: String) {
-        let cleaned = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
-        guard cleaned.count == 6, let value = UInt32(cleaned, radix: 16) else {
-            return nil
-        }
-        let r = Double((value >> 16) & 0xFF) / 255
-        let g = Double((value >> 8) & 0xFF) / 255
-        let b = Double(value & 0xFF) / 255
-        self.init(red: r, green: g, blue: b)
     }
 }

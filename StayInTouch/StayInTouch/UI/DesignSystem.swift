@@ -218,7 +218,7 @@ enum DS {
         )
         // DESIGN: Light/dark structural difference — search focus ring: accent green light / gray-600 dark
         static let searchBarFocusRing = adaptiveColor(
-            light: UIColor(Color(hex: "3D6B4F")),
+            light: UIColor(BrandColors.heroAccentGreen),
             dark: UIColor.systemGray3
         )
         static let searchBarBorder = adaptiveColor(
@@ -232,11 +232,11 @@ enum DS {
 
         // MARK: Filters
 
-        static let filterAccent = adaptive(light: "3D6B4F", dark: "6BCB77")
+        static let filterAccent = adaptive(light: BrandColors.heroAccentGreenHex, dark: "6BCB77")
 
         // MARK: Detail Hero
 
-        static let heroAccentGreen = adaptive(light: "3D6B4F", dark: "3D6B4F")
+        static let heroAccentGreen = BrandColors.heroAccentGreen
         // DESIGN: Light/dark structural difference — hero avatar ring: solid white 4px light / white/5% dark
         static let heroAvatarRing = adaptiveColor(
             light: UIColor.white,
@@ -247,7 +247,7 @@ enum DS {
             dark: UIColor(Color(hex: "1C1C1E"))
         )
         static let ctaShadow = adaptiveColor(
-            light: UIColor(Color(hex: "3D6B4F").opacity(0.3)),
+            light: UIColor(BrandColors.heroAccentGreen.opacity(0.3)),
             dark: UIColor(Color(hex: "064E3B").opacity(0.2))
         )
 
@@ -370,7 +370,7 @@ enum DS {
                 return (Color(hex: "2D1B4E"), Color(hex: "D8B4FE"))
             default:
                 // Accent green fallback
-                return (Color(hex: "3D6B4F"), .white)
+                return (BrandColors.heroAccentGreen, .white)
             }
         }
     }
