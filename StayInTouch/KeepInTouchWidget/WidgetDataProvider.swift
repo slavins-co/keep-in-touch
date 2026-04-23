@@ -40,7 +40,14 @@ enum WidgetDataProvider {
     static let maxFeaturedPeople = 3
 
     struct Snapshot {
+        /// Total count of everyone currently overdue (not capped by
+        /// `maxFeaturedPeople`).
         let overdueCount: Int
+        /// Total count of everyone currently in the due-soon warning
+        /// window (not capped by `maxFeaturedPeople`).
+        let dueSoonCount: Int
+        /// The top slice displayed on the widget. Bounded so the
+        /// extension stays under its memory budget.
         let featured: [OverduePerson]
         let hasTrackedPeople: Bool
         /// Raw AppSettings.theme string: "dark", "light", "system", or nil
@@ -51,7 +58,7 @@ enum WidgetDataProvider {
 
     static func loadSnapshot(now: Date = Date(), groupFilter: UUID? = nil) -> Snapshot {
         guard let context = WidgetCoreData.shared?.viewContext else {
-            return Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
+            return Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
         }
 
         let people = fetchTrackedPeople(context: context, groupFilter: groupFilter)
@@ -83,10 +90,18 @@ enum WidgetDataProvider {
             }
             .sorted(by: sortPriority)
 
-        let overdueCount = atRisk.filter { if case .overdue = $0.status { return true } else { return false } }.count
+        var overdueCount = 0
+        var dueSoonCount = 0
+        for person in atRisk {
+            switch person.status {
+            case .overdue: overdueCount += 1
+            case .dueSoon: dueSoonCount += 1
+            }
+        }
         let featured = Array(atRisk.prefix(maxFeaturedPeople))
         return Snapshot(
             overdueCount: overdueCount,
+            dueSoonCount: dueSoonCount,
             featured: featured,
             hasTrackedPeople: !people.isEmpty,
             themeOverride: themeOverride

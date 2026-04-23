@@ -53,6 +53,7 @@ struct OverdueTimelineProvider: AppIntentTimelineProvider {
 extension WidgetDataProvider.Snapshot {
     static let placeholder = WidgetDataProvider.Snapshot(
         overdueCount: 2,
+        dueSoonCount: 1,
         featured: [
             OverduePerson(id: UUID(), displayName: "Alex", initials: "A", avatarColorHex: "#FF6B6B", groupName: "Weekly", groupColorHex: "#4ECDC4", status: .overdue(daysOverdue: 5)),
             OverduePerson(id: UUID(), displayName: "Sam", initials: "S", avatarColorHex: "#4ECDC4", groupName: "Monthly", groupColorHex: "#FFD166", status: .overdue(daysOverdue: 1)),
@@ -62,8 +63,8 @@ extension WidgetDataProvider.Snapshot {
         themeOverride: nil
     )
 
-    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
-    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: true, themeOverride: nil)
+    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
+    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: true, themeOverride: nil)
 }
 
 private extension WidgetPersonStatus {
@@ -174,7 +175,7 @@ struct SmallWidgetView: View {
                                 .foregroundStyle(.secondary)
                                 .padding(.top, 12)
                         } else {
-                            Text("\(snapshot.featured.count)")
+                            Text("\(snapshot.dueSoonCount)")
                                 .font(.system(size: 40, weight: .semibold, design: .rounded))
                                 .foregroundStyle(.orange)
                             Spacer()
@@ -247,7 +248,7 @@ struct MediumWidgetView: View {
 
     private var headerText: String {
         let overdue = snapshot.overdueCount
-        let dueSoon = snapshot.featured.count - overdue
+        let dueSoon = snapshot.dueSoonCount
         switch (overdue, dueSoon) {
         case (0, _): return "\(dueSoon) due soon"
         case (_, 0): return "\(overdue) overdue"
