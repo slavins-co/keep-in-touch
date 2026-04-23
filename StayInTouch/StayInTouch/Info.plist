@@ -14,5 +14,18 @@
 	<string>We need access to your contacts to help you keep in touch with the people who matter.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>We'll send you gentle reminders when it's time to reconnect with someone.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>slavins.co.KeepInTouch</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>keepintouch</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

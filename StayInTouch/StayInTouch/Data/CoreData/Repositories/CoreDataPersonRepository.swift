@@ -133,6 +133,7 @@ final class CoreDataPersonRepository: PersonRepository {
                 entity.apply(person)
                 try context.save()
             }
+            WidgetRefresher.reloadAllTimelines()
         } catch let error as RepositoryError {
             throw error
         } catch {
@@ -149,6 +150,7 @@ final class CoreDataPersonRepository: PersonRepository {
                 }
                 try context.save()
             }
+            WidgetRefresher.reloadAllTimelines()
         } catch let error as RepositoryError {
             throw error
         } catch {
@@ -163,6 +165,7 @@ final class CoreDataPersonRepository: PersonRepository {
                 context.delete(entity)
                 try context.save()
             }
+            WidgetRefresher.reloadAllTimelines()
         } catch let error as RepositoryError {
             throw error
         } catch {

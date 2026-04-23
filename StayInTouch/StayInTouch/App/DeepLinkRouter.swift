@@ -28,4 +28,18 @@ final class DeepLinkRouter: ObservableObject {
             Task { @MainActor in self.pending = .home }
         }
     }
+
+    /// Translate a `keepintouch://` URL (from a widget tap) into a pending
+    /// destination. Unknown or malformed URLs are silently ignored.
+    @discardableResult
+    func handleURL(_ url: URL) -> Bool {
+        guard let route = DeepLinkRoute(url: url) else { return false }
+        switch route {
+        case .overdue:
+            pending = .home
+        case .person(let id):
+            pending = .person(id)
+        }
+        return true
+    }
 }
