@@ -29,10 +29,10 @@ struct ContactCard: View {
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 HStack(spacing: DS.Spacing.xs) {
-                    Text(person.displayName)
+                    nameText
                         .font(DS.Typography.contactCardName)
-                        .foregroundStyle(DS.Colors.primaryText)
                         .lineLimit(1)
+                        .truncationMode(.tail)
                     if person.birthday?.isToday == true {
                         Image(systemName: "gift.fill")
                             .font(.caption)
@@ -69,6 +69,18 @@ struct ContactCard: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
+    }
+
+    // MARK: - Name
+
+    private var nameText: Text {
+        let base = Text(person.displayName)
+            .foregroundStyle(DS.Colors.primaryText)
+        if let nickname = person.displayNickname {
+            return base + Text(" (\(nickname))")
+                .foregroundStyle(Color(.secondaryLabel))
+        }
+        return base
     }
 
     // MARK: - Metadata Row
@@ -118,7 +130,12 @@ struct ContactCard: View {
     // MARK: - Accessibility
 
     private var accessibilityDescription: String {
-        var parts: [String] = ["Contact \(person.displayName)"]
+        var parts: [String] = []
+        if let nickname = person.displayNickname {
+            parts.append("Contact \(person.displayName), also known as \(nickname)")
+        } else {
+            parts.append("Contact \(person.displayName)")
+        }
 
         if person.birthday?.isToday == true {
             parts.append("birthday today")

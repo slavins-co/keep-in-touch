@@ -45,4 +45,16 @@ struct Person: Identifiable, Equatable, Hashable {
     var createdAt: Date
     var modifiedAt: Date
     var sortOrder: Int
+
+    /// Nickname to display in UI. Returns nil when the stored nickname is
+    /// absent, empty/whitespace, or equals `displayName` (trimmed, case-insensitive)
+    /// so contacts whose Contacts-app nickname echoes their first name don't
+    /// render a duplicate.
+    var displayNickname: String? {
+        guard let raw = nickname?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !raw.isEmpty,
+              raw.caseInsensitiveCompare(displayName.trimmingCharacters(in: .whitespacesAndNewlines)) != .orderedSame
+        else { return nil }
+        return raw
+    }
 }
