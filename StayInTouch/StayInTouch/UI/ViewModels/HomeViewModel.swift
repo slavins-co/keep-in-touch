@@ -22,6 +22,23 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var dueSoonPeople: [Person] = []
     @Published private(set) var allGoodPeople: [Person] = []
 
+    /// True when the user has tracked contacts but none are overdue or
+    /// due soon — triggers the celebratory banner (#283). Suppressed
+    /// whenever the list is narrowed (search, cadence filter, group
+    /// filter) because empty overdue/dueSoon could just be a filter
+    /// artifact — showing "reached out to everyone" when other slices
+    /// have overdue people would be misleading (parallels the fix in
+    /// PR #282 for the widget's `hasTrackedPeople` under group filter).
+    /// Also suppressed on a fresh install (use `EmptyStateView`).
+    var showsAllCaughtUpBanner: Bool {
+        overduePeople.isEmpty
+            && dueSoonPeople.isEmpty
+            && !allGoodPeople.isEmpty
+            && searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && selectedCadenceId == nil
+            && selectedGroupId == nil
+    }
+
     @Published private(set) var isRefreshing = false
     @Published var freshStartReason: FreshStartDetector.Reason?
     @Published private(set) var refreshToken = UUID()

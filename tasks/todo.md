@@ -35,6 +35,7 @@
 - [ ] **#231** Birthday push notifications with toggle and per-person settings *(M — extends #141)*
 - [x] **#134** Add CSV export option for spreadsheet use *(S — PR #265)*
 - [ ] **#37** Separate overdue tiers (Recently Due vs Long Overdue) *(S-M — UX improvement)*
+- [x] **#283** Add 'all caught up' empty state to Home screen when no one is overdue or due soon *(S)*
 - [x] **#232** Pull-to-refresh re-sync contact info from iOS Contacts *(S — PR #255)*
 
 ### Tier 4 — Deferred to v0.4+
@@ -50,6 +51,16 @@ Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architect
 - [ ] **#68** App Store submission checklist
 - [ ] **#69** TestFlight beta validation plan
 - [ ] **#70** Validate core loop retention during beta
+
+---
+
+## Completed — Session 2026-04-22 (Issue #283: Home 'All Caught Up' Banner)
+
+- [x] **#283** Add celebratory banner on Home when tracked contacts exist but none are overdue/due-soon — matches widget's `hand.wave.fill` + "You've reached out to everyone. Way to go!" copy
+  - New `AllCaughtUpView` component in `UI/Views/Home/`
+  - `HomeViewModel.showsAllCaughtUpBanner` computed property gates visibility: tracked-non-empty + overdue/dueSoon empty + not during search (whitespace-only search allowed)
+  - Inserted into `HomeView` content stack in place of overdue/due-soon sections; All Good list remains below
+  - 5 new unit tests (fresh install / all on-track / overdue present / search active / whitespace-only search)
 
 ---
 
