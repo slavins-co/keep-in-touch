@@ -212,6 +212,43 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertFalse(vm.showsAllCaughtUpBanner, "Search suppresses the banner — empty sections could be a filter artifact")
     }
 
+    func testShowsAllCaughtUpBanner_cadenceFilterActive_false() {
+        // All contacts visible in the current cadence filter are on-track,
+        // but other cadences might have overdue people. Banner must stay
+        // hidden to avoid implying "reached out to everyone" when the
+        // list is narrowed (parallels PR #282 widget filter bug).
+        let cadenceId = UUID()
+        let recent = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let vm = HomeViewModel(
+            personRepository: InMemoryPersonRepository(people: [
+                makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [], lastTouchAt: recent)
+            ]),
+            cadenceRepository: InMemoryCadenceRepository(cadences: [makeCadence(id: cadenceId)]),
+            groupRepository: InMemoryGroupRepository(groups: []),
+            settingsRepository: InMemorySettingsRepository()
+        )
+        vm.selectedCadenceId = cadenceId
+        vm.applyFilters()
+        XCTAssertFalse(vm.showsAllCaughtUpBanner, "Cadence filter suppresses the banner")
+    }
+
+    func testShowsAllCaughtUpBanner_groupFilterActive_false() {
+        let cadenceId = UUID()
+        let groupId = UUID()
+        let recent = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let vm = HomeViewModel(
+            personRepository: InMemoryPersonRepository(people: [
+                makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [groupId], lastTouchAt: recent)
+            ]),
+            cadenceRepository: InMemoryCadenceRepository(cadences: [makeCadence(id: cadenceId)]),
+            groupRepository: InMemoryGroupRepository(groups: []),
+            settingsRepository: InMemorySettingsRepository()
+        )
+        vm.selectedGroupId = groupId
+        vm.applyFilters()
+        XCTAssertFalse(vm.showsAllCaughtUpBanner, "Group filter suppresses the banner")
+    }
+
     func testShowsAllCaughtUpBanner_whitespaceOnlySearch_true() {
         let cadenceId = UUID()
         let recent = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
