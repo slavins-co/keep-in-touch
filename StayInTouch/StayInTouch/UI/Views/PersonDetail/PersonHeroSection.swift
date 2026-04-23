@@ -45,6 +45,14 @@ struct PersonHeroSection: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
 
+            if let nickname = viewModel.person.displayNickname {
+                Text("\u{2018}\(nickname)\u{2019}")
+                    .font(DS.Typography.contactCardMeta)
+                    .foregroundStyle(Color(.secondaryLabel))
+                    .multilineTextAlignment(.center)
+                    .accessibilityLabel("Nickname \(nickname)")
+            }
+
             Text(statusLabel())
                 .font(DS.Typography.detailStatusLine)
                 .foregroundStyle(statusLineColor)
