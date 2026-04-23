@@ -2,7 +2,8 @@
 //  Color+Hex.swift
 //  KeepInTouch
 //
-//  Created by Codex on 2/2/26.
+//  Hex-string <-> Color conversion. Lives in Shared/ so the widget
+//  extension and the main app use a single implementation.
 //
 
 import SwiftUI
