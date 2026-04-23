@@ -57,11 +57,12 @@ extension WidgetDataProvider.Snapshot {
             OverduePerson(id: UUID(), displayName: "Sam", initials: "S", avatarColorHex: "#4ECDC4", groupName: "Monthly", groupColorHex: "#FFD166", status: .overdue(daysOverdue: 1)),
             OverduePerson(id: UUID(), displayName: "Jordan", initials: "J", avatarColorHex: "#FFD166", groupName: "Quarterly", groupColorHex: "#A78BFA", status: .dueSoon(daysUntilDue: 2)),
         ],
-        hasTrackedPeople: true
+        hasTrackedPeople: true,
+        themeOverride: nil
     )
 
-    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: false)
-    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: true)
+    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
+    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: true, themeOverride: nil)
 }
 
 private extension WidgetPersonStatus {
@@ -109,6 +110,24 @@ struct OverdueWidgetEntryView: View {
             }
         }
         .containerBackground(.fill.tertiary, for: .widget)
+        .applyAppTheme(entry.snapshot.themeOverride)
+    }
+}
+
+private extension View {
+    /// Honors the app's Theme setting ("dark"/"light"/"system") from
+    /// AppSettings. Widgets default to following the system — this
+    /// modifier only overrides when the user picked a specific scheme.
+    @ViewBuilder
+    func applyAppTheme(_ theme: String?) -> some View {
+        switch theme {
+        case "dark":
+            self.environment(\.colorScheme, .dark)
+        case "light":
+            self.environment(\.colorScheme, .light)
+        default:
+            self
+        }
     }
 }
 

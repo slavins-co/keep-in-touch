@@ -43,15 +43,20 @@ enum WidgetDataProvider {
         let overdueCount: Int
         let featured: [OverduePerson]
         let hasTrackedPeople: Bool
+        /// Raw AppSettings.theme string: "dark", "light", "system", or nil
+        /// if the settings row hasn't been seeded. The widget translates
+        /// this into a SwiftUI ColorScheme at render time.
+        let themeOverride: String?
     }
 
     static func loadSnapshot(now: Date = Date(), groupFilter: UUID? = nil) -> Snapshot {
         guard let context = WidgetCoreData.shared?.viewContext else {
-            return Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: false)
+            return Snapshot(overdueCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
         }
 
         let people = fetchTrackedPeople(context: context, groupFilter: groupFilter)
         let groupsByID = fetchGroupsByID(context: context)
+        let themeOverride = fetchAppTheme(context: context)
 
         let atRisk = people
             .compactMap { person -> OverduePerson? in
@@ -83,7 +88,8 @@ enum WidgetDataProvider {
         return Snapshot(
             overdueCount: overdueCount,
             featured: featured,
-            hasTrackedPeople: !people.isEmpty
+            hasTrackedPeople: !people.isEmpty,
+            themeOverride: themeOverride
         )
     }
 
@@ -120,6 +126,13 @@ enum WidgetDataProvider {
         request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         request.fetchBatchSize = 50
         return (try? context.fetch(request)) ?? []
+    }
+
+    private static func fetchAppTheme(context: NSManagedObjectContext) -> String? {
+        let request = NSFetchRequest<NSManagedObject>(entityName: "AppSettings")
+        request.fetchLimit = 1
+        let results = (try? context.fetch(request)) ?? []
+        return results.first?.value(forKey: "theme") as? String
     }
 
     private static func fetchGroupsByID(context: NSManagedObjectContext) -> [UUID: NSManagedObject] {

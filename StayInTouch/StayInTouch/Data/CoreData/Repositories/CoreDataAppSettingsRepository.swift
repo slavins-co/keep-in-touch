@@ -30,6 +30,7 @@ final class CoreDataAppSettingsRepository: AppSettingsRepository {
             entity.apply(settings)
             try context.save()
         }
+        WidgetRefresher.reloadAllTimelines()
     }
 
     private func fetchEntity(id: UUID) -> AppSettingsEntity? {
