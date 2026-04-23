@@ -5,6 +5,7 @@
 
 import AppIntents
 import SwiftUI
+import UIKit
 import WidgetKit
 
 struct OverdueEntry: TimelineEntry {
@@ -109,8 +110,30 @@ struct OverdueWidgetEntryView: View {
                 SmallWidgetView(snapshot: entry.snapshot)
             }
         }
-        .containerBackground(.fill.tertiary, for: .widget)
+        .containerBackground(Color(uiColor: resolvedBackgroundColor), for: .widget)
         .applyAppTheme(entry.snapshot.themeOverride)
+    }
+
+    /// Resolves UIColor.systemBackground against either a forced trait
+    /// collection (when the user picked "dark" or "light" in-app) or
+    /// leaves it dynamic (when they chose "system"). Explicit resolution
+    /// is required because `.containerBackground(_:for:)` captures its
+    /// ShapeStyle outside the view's environment — `.fill.tertiary` and
+    /// friends won't flip in response to an `.environment(\.colorScheme)`
+    /// override applied higher up the widget's view tree.
+    private var resolvedBackgroundColor: UIColor {
+        switch entry.snapshot.themeOverride {
+        case "dark":
+            return UIColor.systemBackground.resolvedColor(
+                with: UITraitCollection(userInterfaceStyle: .dark)
+            )
+        case "light":
+            return UIColor.systemBackground.resolvedColor(
+                with: UITraitCollection(userInterfaceStyle: .light)
+            )
+        default:
+            return UIColor.systemBackground
+        }
     }
 }
 
