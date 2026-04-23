@@ -22,6 +22,17 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var dueSoonPeople: [Person] = []
     @Published private(set) var allGoodPeople: [Person] = []
 
+    /// True when the user has tracked contacts but none are overdue or
+    /// due soon — triggers the celebratory banner (#283). Not shown
+    /// during search (empty overdue/dueSoon could just be a filter
+    /// artifact) or on a fresh install (use `EmptyStateView` instead).
+    var showsAllCaughtUpBanner: Bool {
+        overduePeople.isEmpty
+            && dueSoonPeople.isEmpty
+            && !allGoodPeople.isEmpty
+            && searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     @Published private(set) var isRefreshing = false
     @Published var freshStartReason: FreshStartDetector.Reason?
     @Published private(set) var refreshToken = UUID()

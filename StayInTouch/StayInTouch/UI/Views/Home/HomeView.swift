@@ -348,31 +348,35 @@ struct HomeView: View {
                         )
                     }
                 } else {
-                    ContactListSection(
-                        title: "Overdue",
-                        people: viewModel.overduePeople,
-                        isCollapsed: collapsedSections.contains("overdue"),
-                        onToggle: { toggleSection("overdue") },
-                        cadencesById: cadencesById,
-                        groupsById: groupsById,
-                        statusForPerson: { _ in .overdue },
-                        daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
-                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
-                        selectPerson: selectPerson
-                    )
+                    if viewModel.showsAllCaughtUpBanner {
+                        AllCaughtUpView()
+                    } else {
+                        ContactListSection(
+                            title: "Overdue",
+                            people: viewModel.overduePeople,
+                            isCollapsed: collapsedSections.contains("overdue"),
+                            onToggle: { toggleSection("overdue") },
+                            cadencesById: cadencesById,
+                            groupsById: groupsById,
+                            statusForPerson: { _ in .overdue },
+                            daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
+                            timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
+                            selectPerson: selectPerson
+                        )
 
-                    ContactListSection(
-                        title: "Due Soon",
-                        people: viewModel.dueSoonPeople,
-                        isCollapsed: collapsedSections.contains("due-soon"),
-                        onToggle: { toggleSection("due-soon") },
-                        cadencesById: cadencesById,
-                        groupsById: groupsById,
-                        statusForPerson: { _ in .dueSoon },
-                        daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
-                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
-                        selectPerson: selectPerson
-                    )
+                        ContactListSection(
+                            title: "Due Soon",
+                            people: viewModel.dueSoonPeople,
+                            isCollapsed: collapsedSections.contains("due-soon"),
+                            onToggle: { toggleSection("due-soon") },
+                            cadencesById: cadencesById,
+                            groupsById: groupsById,
+                            statusForPerson: { _ in .dueSoon },
+                            daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
+                            timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
+                            selectPerson: selectPerson
+                        )
+                    }
 
                     ContactListSection(
                         title: "All Good",

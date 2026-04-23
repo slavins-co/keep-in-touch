@@ -156,9 +156,81 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertEqual(filtered.count, 1)
     }
 
+    // MARK: - #283: All Caught Up banner
+
+    func testShowsAllCaughtUpBanner_freshInstall_false() {
+        let vm = HomeViewModel(
+            personRepository: InMemoryPersonRepository(people: []),
+            cadenceRepository: InMemoryCadenceRepository(cadences: []),
+            groupRepository: InMemoryGroupRepository(groups: []),
+            settingsRepository: InMemorySettingsRepository()
+        )
+        XCTAssertFalse(vm.showsAllCaughtUpBanner, "Should not show the banner on a fresh install — use EmptyStateView instead")
+    }
+
+    func testShowsAllCaughtUpBanner_allOnTrack_true() {
+        let cadenceId = UUID()
+        let recent = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let vm = HomeViewModel(
+            personRepository: InMemoryPersonRepository(people: [
+                makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [], lastTouchAt: recent)
+            ]),
+            cadenceRepository: InMemoryCadenceRepository(cadences: [makeCadence(id: cadenceId)]),
+            groupRepository: InMemoryGroupRepository(groups: []),
+            settingsRepository: InMemorySettingsRepository()
+        )
+        XCTAssertTrue(vm.showsAllCaughtUpBanner, "Should show the banner when tracked contacts exist and all are on-track")
+    }
+
+    func testShowsAllCaughtUpBanner_hasOverdue_false() {
+        let cadenceId = UUID()
+        let old = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+        let vm = HomeViewModel(
+            personRepository: InMemoryPersonRepository(people: [
+                makePerson(name: "Overdue", cadenceId: cadenceId, groupIds: [], lastTouchAt: old)
+            ]),
+            cadenceRepository: InMemoryCadenceRepository(cadences: [makeCadence(id: cadenceId)]),
+            groupRepository: InMemoryGroupRepository(groups: []),
+            settingsRepository: InMemorySettingsRepository()
+        )
+        XCTAssertFalse(vm.showsAllCaughtUpBanner)
+    }
+
+    func testShowsAllCaughtUpBanner_duringSearch_false() {
+        let cadenceId = UUID()
+        let recent = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let vm = HomeViewModel(
+            personRepository: InMemoryPersonRepository(people: [
+                makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [], lastTouchAt: recent)
+            ]),
+            cadenceRepository: InMemoryCadenceRepository(cadences: [makeCadence(id: cadenceId)]),
+            groupRepository: InMemoryGroupRepository(groups: []),
+            settingsRepository: InMemorySettingsRepository()
+        )
+        vm.searchText = "zzz-no-match"
+        vm.applyFilters()
+        XCTAssertFalse(vm.showsAllCaughtUpBanner, "Search suppresses the banner — empty sections could be a filter artifact")
+    }
+
+    func testShowsAllCaughtUpBanner_whitespaceOnlySearch_true() {
+        let cadenceId = UUID()
+        let recent = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let vm = HomeViewModel(
+            personRepository: InMemoryPersonRepository(people: [
+                makePerson(name: "Alice", cadenceId: cadenceId, groupIds: [], lastTouchAt: recent)
+            ]),
+            cadenceRepository: InMemoryCadenceRepository(cadences: [makeCadence(id: cadenceId)]),
+            groupRepository: InMemoryGroupRepository(groups: []),
+            settingsRepository: InMemorySettingsRepository()
+        )
+        vm.searchText = "   "
+        vm.applyFilters()
+        XCTAssertTrue(vm.showsAllCaughtUpBanner, "Whitespace-only search should be treated as no search")
+    }
+
     // MARK: - Helpers
 
-    private func makePerson(name: String, nickname: String? = nil, cadenceId: UUID, groupIds: [UUID]) -> Person {
+    private func makePerson(name: String, nickname: String? = nil, cadenceId: UUID, groupIds: [UUID], lastTouchAt: Date? = nil) -> Person {
         Person(
             id: UUID(),
             cnIdentifier: nil,
@@ -168,7 +240,7 @@ final class HomeViewModelTests: XCTestCase {
             avatarColor: "#FF6B6B",
             cadenceId: cadenceId,
             groupIds: groupIds,
-            lastTouchAt: nil,
+            lastTouchAt: lastTouchAt,
             lastTouchMethod: nil,
             lastTouchNotes: nil,
             nextTouchNotes: nil,
