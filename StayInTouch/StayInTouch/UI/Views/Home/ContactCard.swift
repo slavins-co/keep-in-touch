@@ -75,10 +75,10 @@ struct ContactCard: View {
 
     private var nameText: Text {
         let base = Text(person.displayName)
-            .foregroundColor(DS.Colors.primaryText)
+            .foregroundStyle(DS.Colors.primaryText)
         if let nickname = person.displayNickname {
             return base + Text(" (\(nickname))")
-                .foregroundColor(Color(.secondaryLabel))
+                .foregroundStyle(Color(.secondaryLabel))
         }
         return base
     }
