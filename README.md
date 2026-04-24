@@ -6,7 +6,7 @@
 [![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey.svg)](LICENSE)
 
-**Version:** 0.3.6 (Build 12) | **Status:** Pre-release Beta
+**Version:** 0.4.0 (Build 13) | **Status:** Pre-release Beta
 
 ---
 
@@ -23,7 +23,7 @@ Never lose track of the people who matter. Keep In Touch helps you maintain frie
 
 ## Current Status
 
-V0.3.6 adds VoiceOver accessibility labels to all picker and editor sheets, replaces hardcoded font sizes with Dynamic Type text styles, and introduces CSV export for spreadsheet use. Internally, the terminology refactor renames "Groups" to "Cadences" and "Tags" to "Groups" with full backward compatibility for existing exports. A bug fix restores Due Soon contacts to the Home View. 330 tests passing.
+V0.4.0 introduces the Keep In Touch **iOS home screen widget** in small and medium sizes, with interactive tap-to-log actions. Under the hood, Core Data moved to an App Group container and shared logic (frequency calculation, brand colors) was extracted so the widget stays in lockstep with the app. UX polish: nicknames now appear in contact detail and list views and are searchable, an "All caught up" banner celebrates an empty Home, and the search bar stays visible when a query has no results.
 
 **Up next:** App Store submission. See [open issues](https://github.com/slavins-co/keep-in-touch/issues) and [release history](https://github.com/slavins-co/keep-in-touch/releases) for details.
 
@@ -32,8 +32,11 @@ V0.3.6 adds VoiceOver accessibility labels to all picker and editor sheets, repl
 ## Features
 
 **Core**
+- iOS home screen widget (small and medium) with interactive tap-to-log
 - Tab bar navigation with Home, Contacts, and Settings tabs
 - Home screen with status summary cards, sticky sections, and floating search
+- "All caught up" banner on Home when no contacts are overdue
+- Nickname display and search across contact lists and detail
 - A-Z Contacts tab with section index and search
 - Full-screen contact detail with hero section, action buttons, and timeline history
 - Connection logging with method tracking (Text, Call, In Person, Email)
@@ -77,7 +80,7 @@ No external dependencies beyond [TelemetryDeck](https://telemetrydeck.com) for a
 
 ## Getting Started
 
-**TestFlight:** v0.3.6 (Build 12) available. Join via [TestFlight](https://testflight.apple.com/join/UY7Pgusg).
+**TestFlight:** v0.4.0 (Build 13) available. Join via [TestFlight](https://testflight.apple.com/join/UY7Pgusg).
 
 **Developers:** Clone the repo, open `StayInTouch/StayInTouch.xcodeproj` in Xcode 15+, and run. Grant Contacts and Notifications permissions when prompted.
 
