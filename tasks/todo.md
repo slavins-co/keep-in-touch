@@ -351,6 +351,7 @@ Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architect
 - [ ] Full accessibility audit (VoiceOver, Dynamic Type) — #39, #197, ~~#202~~
 - [ ] **#49** Create and host privacy policy URL
 - [ ] App Store screenshots (use demo mode)
+- [ ] **README screenshots** Add 2-3 evergreen shots (Home, widget on home screen, contact detail) to README under `docs/screenshots/`. Reuse App Store marketing shots when produced. *(XS — pairs with App Store screenshot prep)*
 - [ ] Edge-case testing (timezone changes, large contact lists)
 - [ ] Performance testing (100+ contacts, launch time)
 
@@ -369,6 +370,6 @@ See `tasks/testflight-guide.md`:
 - [ ] **#241** Rename backend terminology: Group→Cadence, Tag→Group (tech debt)
 - [ ] CloudKit sync
 - [ ] Shortcuts integration
-- [ ] Widgets
+- [x] Widgets *(shipped v0.4.0 — PR #282)*
 - [ ] Manual contact creation
 - [ ] macOS companion app
