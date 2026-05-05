@@ -68,28 +68,13 @@ extension WidgetDataProvider.Snapshot {
 }
 
 extension WidgetPersonStatus {
+    /// SwiftUI ring tint. Lives here (widget target) because `Color` is
+    /// SwiftUI; the textual helpers are in `Shared/WidgetDataProvider.swift`
+    /// so non-SwiftUI consumers (`AccessoryWidgetLogic`, tests) can reach them.
     var ringColor: Color {
         switch self {
         case .overdue: return .red
         case .dueSoon: return .orange
-        }
-    }
-
-    var subtitle: String {
-        switch self {
-        case .overdue(let days):
-            return "\(days) day\(days == 1 ? "" : "s") overdue"
-        case .dueSoon(let days):
-            return days == 0 ? "Due today" : "Due in \(days) day\(days == 1 ? "" : "s")"
-        }
-    }
-
-    var shortSubtitle: String {
-        switch self {
-        case .overdue(let days):
-            return "\(days)d overdue"
-        case .dueSoon(let days):
-            return days == 0 ? "Due today" : "Due in \(days)d"
         }
     }
 }

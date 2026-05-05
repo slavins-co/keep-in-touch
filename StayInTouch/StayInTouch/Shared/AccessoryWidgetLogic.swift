@@ -78,18 +78,13 @@ enum AccessoryWidgetLogic {
     // MARK: - Rectangular subtitle
 
     /// Composes the second line of the rectangular widget: featured
-    /// person's status + optional "X more" suffix.
+    /// person's status (delegates to `WidgetPersonStatus.shortSubtitle`)
+    /// + optional "X more" suffix.
     static func rectangularSubtitle(
         featuredStatus: WidgetPersonStatus,
         additionalAtRisk: Int
     ) -> String {
-        let primary: String
-        switch featuredStatus {
-        case .overdue(let days):
-            primary = "\(days)d overdue"
-        case .dueSoon(let days):
-            primary = days == 0 ? "Due today" : "Due in \(days)d"
-        }
+        let primary = featuredStatus.shortSubtitle
         if additionalAtRisk > 0 {
             return "\(primary) · \(additionalAtRisk) more"
         }

@@ -22,6 +22,30 @@ enum WidgetPersonStatus: Hashable {
     case dueSoon(daysUntilDue: Int)
 }
 
+extension WidgetPersonStatus {
+    /// Long-form, used by the medium home-screen widget.
+    /// Example: "3 days overdue", "Due in 1 day", "Due today".
+    var subtitle: String {
+        switch self {
+        case .overdue(let days):
+            return "\(days) day\(days == 1 ? "" : "s") overdue"
+        case .dueSoon(let days):
+            return days == 0 ? "Due today" : "Due in \(days) day\(days == 1 ? "" : "s")"
+        }
+    }
+
+    /// Compact form, used by small + accessory widgets.
+    /// Example: "3d overdue", "Due in 1d", "Due today".
+    var shortSubtitle: String {
+        switch self {
+        case .overdue(let days):
+            return "\(days)d overdue"
+        case .dueSoon(let days):
+            return days == 0 ? "Due today" : "Due in \(days)d"
+        }
+    }
+}
+
 struct OverduePerson: Hashable {
     let id: UUID
     let displayName: String
