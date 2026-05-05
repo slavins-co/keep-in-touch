@@ -55,9 +55,9 @@ extension WidgetDataProvider.Snapshot {
         overdueCount: 2,
         dueSoonCount: 1,
         featured: [
-            OverduePerson(id: UUID(), displayName: "Alex", initials: "A", avatarColorHex: "#FF6B6B", groupName: "Weekly", groupColorHex: "#4ECDC4", status: .overdue(daysOverdue: 5)),
-            OverduePerson(id: UUID(), displayName: "Sam", initials: "S", avatarColorHex: "#4ECDC4", groupName: "Monthly", groupColorHex: "#FFD166", status: .overdue(daysOverdue: 1)),
-            OverduePerson(id: UUID(), displayName: "Jordan", initials: "J", avatarColorHex: "#FFD166", groupName: "Quarterly", groupColorHex: "#A78BFA", status: .dueSoon(daysUntilDue: 2)),
+            OverduePerson(id: UUID(), displayName: "Alex Carter", nickname: nil, initials: "AC", avatarColorHex: "#FF6B6B", groupName: "Weekly", groupColorHex: "#4ECDC4", status: .overdue(daysOverdue: 5)),
+            OverduePerson(id: UUID(), displayName: "Samantha Park", nickname: "Sam", initials: "SP", avatarColorHex: "#4ECDC4", groupName: "Monthly", groupColorHex: "#FFD166", status: .overdue(daysOverdue: 1)),
+            OverduePerson(id: UUID(), displayName: "Jordan", nickname: nil, initials: "J", avatarColorHex: "#FFD166", groupName: "Quarterly", groupColorHex: "#A78BFA", status: .dueSoon(daysUntilDue: 2)),
         ],
         hasTrackedPeople: true,
         themeOverride: nil

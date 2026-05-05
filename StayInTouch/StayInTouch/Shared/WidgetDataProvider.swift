@@ -25,11 +25,25 @@ enum WidgetPersonStatus: Hashable {
 struct OverduePerson: Hashable {
     let id: UUID
     let displayName: String
+    let nickname: String?
     let initials: String
     let avatarColorHex: String
     let groupName: String
     let groupColorHex: String?
     let status: WidgetPersonStatus
+}
+
+extension OverduePerson {
+    /// Short display preference: nickname (when present) > first name > displayName.
+    /// Used by accessory rectangular and inline widgets where space is constrained.
+    var displayShortName: String {
+        if let nick = nickname?.trimmingCharacters(in: .whitespacesAndNewlines), !nick.isEmpty {
+            return nick
+        }
+        let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let first = trimmed.split(separator: " ").first.map(String.init) ?? ""
+        return first.isEmpty ? trimmed : first
+    }
 }
 
 enum WidgetDataProvider {
@@ -76,6 +90,7 @@ enum WidgetDataProvider {
                     return OverduePerson(
                         id: id,
                         displayName: displayName,
+                        nickname: person.nickname,
                         initials: initials,
                         avatarColorHex: avatarColor,
                         groupName: groupName,

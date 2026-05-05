@@ -200,12 +200,43 @@ final class WidgetDataProviderTests: XCTestCase {
         XCTAssertTrue(snap.featured.isEmpty)
     }
 
+    // MARK: - Nickname
+
+    func testSnapshot_populatesNickname_whenPersonHasNickname() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 10, warningDays: 2)
+        _ = seedPerson(
+            name: "Robert Smith",
+            cadenceId: cadenceId,
+            lastTouchAt: daysAgo(30),
+            nickname: "Bobby"
+        )
+
+        let snap = WidgetDataProvider.snapshot(context: context)
+        XCTAssertEqual(snap.featured.first?.nickname, "Bobby")
+    }
+
+    func testSnapshot_nicknameIsNil_whenPersonHasNoNickname() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 10, warningDays: 2)
+        _ = seedPerson(
+            name: "Alice",
+            cadenceId: cadenceId,
+            lastTouchAt: daysAgo(30),
+            nickname: nil
+        )
+
+        let snap = WidgetDataProvider.snapshot(context: context)
+        XCTAssertNil(snap.featured.first?.nickname)
+    }
+
     // MARK: - Fixtures
 
-    private func makeOverduePerson(name: String, status: WidgetPersonStatus) -> OverduePerson {
+    private func makeOverduePerson(name: String, status: WidgetPersonStatus, nickname: String? = nil) -> OverduePerson {
         OverduePerson(
             id: UUID(),
             displayName: name,
+            nickname: nickname,
             initials: String(name.prefix(2)),
             avatarColorHex: "#FF6B6B",
             groupName: "Friends",
@@ -244,7 +275,8 @@ final class WidgetDataProviderTests: XCTestCase {
         groupAddedAt: Date? = nil,
         isPaused: Bool = false,
         isTracked: Bool = true,
-        isDemoData: Bool = false
+        isDemoData: Bool = false,
+        nickname: String? = nil
     ) -> PersonEntity {
         let entity = PersonEntity(context: context)
         entity.id = UUID()
@@ -262,6 +294,7 @@ final class WidgetDataProviderTests: XCTestCase {
         entity.notificationsMuted = false
         entity.contactUnavailable = false
         entity.birthdayNotificationsEnabled = true
+        entity.nickname = nickname
         entity.sortOrder = 0
         entity.createdAt = Date()
         entity.modifiedAt = Date()
