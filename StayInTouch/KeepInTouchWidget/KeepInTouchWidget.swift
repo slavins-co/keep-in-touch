@@ -67,7 +67,7 @@ extension WidgetDataProvider.Snapshot {
     static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: true, themeOverride: nil)
 }
 
-private extension WidgetPersonStatus {
+extension WidgetPersonStatus {
     var ringColor: Color {
         switch self {
         case .overdue: return .red
