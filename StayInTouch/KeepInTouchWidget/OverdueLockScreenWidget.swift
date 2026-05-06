@@ -85,6 +85,7 @@ struct AccessoryCircularView: View {
             EmptyView()
         case .binary(let color):
             ringStroke(from: 0, to: 1, color: tint(for: color))
+                .accentedIfAvailable()
         case .twoTone(let overdueFraction):
             if renderingMode == .fullColor {
                 // Two-tone red + orange. Red arc covers the overdue
@@ -92,9 +93,10 @@ struct AccessoryCircularView: View {
                 ringStroke(from: 0, to: overdueFraction, color: .red)
                 ringStroke(from: overdueFraction, to: 1, color: .orange)
             } else {
-                // Lock Screen / StandBy night flatten to a single tint.
-                // Show a fully filled ring; let the system tint it.
+                // Accented zone — on iOS 18+ this picks up the
+                // wallpaper-derived accent color on lock screen.
                 ringStroke(from: 0, to: 1, color: .accentColor)
+                    .accentedIfAvailable()
             }
         }
     }
@@ -120,17 +122,19 @@ struct AccessoryCircularView: View {
     @ViewBuilder
     private func centerView(digit: String?) -> some View {
         if let digit {
-            // Stack a small "people" icon above the digit. On lock screen
-            // (accented rendering) the ring color is lost — the icon makes
-            // the widget legible monochrome by giving "this is people" context
-            // without relying on red/orange to convey severity.
+            // Bigger digit dominates the widget; small people icon stays
+            // for "this is people" context. The digit is marked
+            // .widgetAccentedRenderingMode(.accented) on iOS 18+ so it
+            // picks up the wallpaper-derived accent color instead of
+            // pure white in monochrome contexts.
             VStack(spacing: 0) {
                 Image(systemName: "person.2.fill")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Text(digit)
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
+                    .accentedIfAvailable()
             }
         } else {
             Image(systemName: snapshot.hasTrackedPeople ? "hand.wave.fill" : "person.crop.circle.badge.plus")
@@ -140,16 +144,35 @@ struct AccessoryCircularView: View {
     }
 }
 
+private extension View {
+    /// Marks this zone as accented so the system applies the
+    /// wallpaper-derived accent treatment in monochrome contexts
+    /// (Lock Screen, StandBy night). iOS 16+.
+    func accentedIfAvailable() -> some View {
+        self.widgetAccentable(true)
+    }
+}
+
 // MARK: - Rectangular
 
 struct AccessoryRectangularView: View {
     let snapshot: WidgetDataProvider.Snapshot
 
     var body: some View {
+        let additionalAtRisk = max(0, snapshot.overdueCount + snapshot.dueSoonCount - 1)
         Group {
             if let featured = snapshot.featured.first {
                 featuredContent(featured)
-                    .widgetURL(DeepLinkRoute.person(featured.id).url())
+                    // When there are more at-risk people beyond the
+                    // featured one, route taps to the overdue list so
+                    // the user can see the full set. Only when the
+                    // featured person is the only at-risk do we deep
+                    // link directly to their detail page.
+                    .widgetURL(
+                        additionalAtRisk > 0
+                            ? DeepLinkRoute.overdue.url()
+                            : DeepLinkRoute.person(featured.id).url()
+                    )
             } else if snapshot.hasTrackedPeople {
                 Label("All caught up", systemImage: "hand.wave.fill")
                     .font(.headline)
@@ -170,19 +193,27 @@ struct AccessoryRectangularView: View {
             additionalAtRisk: additional
         )
 
-        // No status SF Symbol — text ("3d overdue · 2 more") carries the
-        // urgency. The icon felt alarmist on lock screen and ate horizontal
-        // room from the name.
-        return VStack(alignment: .leading, spacing: 2) {
-            Text(featured.displayShortName)
-                .font(.headline)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-            Text(subtitle)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
+        // person.crop.circle.fill matches the inline + circular widgets
+        // — gives Keep In Touch a visual identity on the lock screen
+        // without needing app-name copy. Status urgency stays in the
+        // subtitle text.
+        return Label(
+            title: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(featured.displayShortName)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            },
+            icon: {
+                Image(systemName: "person.crop.circle.fill")
+            }
+        )
     }
 }
 
