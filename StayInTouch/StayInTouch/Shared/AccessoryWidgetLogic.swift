@@ -56,8 +56,11 @@ enum AccessoryWidgetLogic {
 
     // MARK: - Circular center digit
 
-    /// Returns the digit to render at the center of the circular widget,
+    /// Total at-risk count to render at the center of the circular widget,
     /// or nil if the widget should fall back to a symbol-only empty state.
+    /// Returns `overdue + dueSoon` because the lock-screen / accented
+    /// rendering mode strips the two-tone color distinction, so a single
+    /// total reads more clearly than a per-bucket count.
     /// `hasTrackedPeople` is accepted for call-site symmetry; the count fields
     /// already encode the empty case.
     static func centerDigit(
@@ -66,13 +69,8 @@ enum AccessoryWidgetLogic {
         hasTrackedPeople: Bool
     ) -> String? {
         _ = hasTrackedPeople
-        if overdueCount > 0 {
-            return "\(overdueCount)"
-        }
-        if dueSoonCount > 0 {
-            return "\(dueSoonCount)"
-        }
-        return nil
+        let total = overdueCount + dueSoonCount
+        return total > 0 ? "\(total)" : nil
     }
 
     // MARK: - Rectangular subtitle
@@ -101,18 +99,20 @@ enum AccessoryWidgetLogic {
     /// Composes the single-line inline widget label.
     /// Order of preference: featured overdue → featured due-soon →
     /// all-caught-up → no-tracked-people.
+    /// Symbol is `person.crop.circle.fill` for any at-risk state — text
+    /// carries the urgency. Empty / no-tracked states keep their own symbol.
     static func inlineLabel(snapshot: WidgetDataProvider.Snapshot) -> InlineLabel {
         if let featured = snapshot.featured.first {
             let name = featured.displayShortName
             if snapshot.overdueCount > 0 {
                 return InlineLabel(
-                    symbol: "exclamationmark.circle.fill",
+                    symbol: "person.crop.circle.fill",
                     text: "\(snapshot.overdueCount) overdue · \(name) next"
                 )
             }
             if snapshot.dueSoonCount > 0 {
                 return InlineLabel(
-                    symbol: "clock.fill",
+                    symbol: "person.crop.circle.fill",
                     text: "\(snapshot.dueSoonCount) due soon · \(name) next"
                 )
             }

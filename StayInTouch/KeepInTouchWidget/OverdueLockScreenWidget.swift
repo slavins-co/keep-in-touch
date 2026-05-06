@@ -101,10 +101,12 @@ struct AccessoryCircularView: View {
 
     /// Single ring arc. `from` and `to` are 0...1 fractions of the
     /// circumference. Rotated -90° so trim(from: 0) starts at 12 o'clock.
+    /// 4pt stroke is wide enough to read clearly without color in
+    /// monochrome accented rendering modes.
     private func ringStroke(from: Double, to: Double, color: Color) -> some View {
         Circle()
             .trim(from: from, to: to)
-            .stroke(color, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+            .stroke(color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
             .rotationEffect(.degrees(-90))
     }
 
@@ -118,9 +120,18 @@ struct AccessoryCircularView: View {
     @ViewBuilder
     private func centerView(digit: String?) -> some View {
         if let digit {
-            Text(digit)
-                .font(.system(size: 22, weight: .semibold, design: .rounded))
-                .foregroundStyle(.primary)
+            // Stack a small "people" icon above the digit. On lock screen
+            // (accented rendering) the ring color is lost — the icon makes
+            // the widget legible monochrome by giving "this is people" context
+            // without relying on red/orange to convey severity.
+            VStack(spacing: 0) {
+                Image(systemName: "person.2.fill")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Text(digit)
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.primary)
+            }
         } else {
             Image(systemName: snapshot.hasTrackedPeople ? "hand.wave.fill" : "person.crop.circle.badge.plus")
                 .font(.title2)
@@ -153,15 +164,17 @@ struct AccessoryRectangularView: View {
     }
 
     private func featuredContent(_ featured: OverduePerson) -> some View {
-        let symbol = statusSymbol(for: featured.status)
         let additional = max(0, snapshot.overdueCount + snapshot.dueSoonCount - 1)
         let subtitle = AccessoryWidgetLogic.rectangularSubtitle(
             featuredStatus: featured.status,
             additionalAtRisk: additional
         )
 
+        // No status SF Symbol — text ("3d overdue · 2 more") carries the
+        // urgency. The icon felt alarmist on lock screen and ate horizontal
+        // room from the name.
         return VStack(alignment: .leading, spacing: 2) {
-            Label(featured.displayShortName, systemImage: symbol)
+            Text(featured.displayShortName)
                 .font(.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -169,13 +182,6 @@ struct AccessoryRectangularView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-        }
-    }
-
-    private func statusSymbol(for status: WidgetPersonStatus) -> String {
-        switch status {
-        case .overdue: return "exclamationmark.circle.fill"
-        case .dueSoon: return "clock.fill"
         }
     }
 }

@@ -63,14 +63,22 @@ final class AccessoryWidgetLogicTests: XCTestCase {
 
     // MARK: - centerDigit(...)
 
-    func testCenterDigit_showsOverdueWhenAny() {
+    func testCenterDigit_showsTotalAtRiskWhenBothBucketsPresent() {
         XCTAssertEqual(
             AccessoryWidgetLogic.centerDigit(overdueCount: 3, dueSoonCount: 2, hasTrackedPeople: true),
+            "5",
+            "Lock-screen rendering loses two-tone color, so we show total at-risk count"
+        )
+    }
+
+    func testCenterDigit_showsOverdueOnly() {
+        XCTAssertEqual(
+            AccessoryWidgetLogic.centerDigit(overdueCount: 3, dueSoonCount: 0, hasTrackedPeople: true),
             "3"
         )
     }
 
-    func testCenterDigit_showsDueSoonWhenNoOverdue() {
+    func testCenterDigit_showsDueSoonOnly() {
         XCTAssertEqual(
             AccessoryWidgetLogic.centerDigit(overdueCount: 0, dueSoonCount: 4, hasTrackedPeople: true),
             "4"
@@ -160,7 +168,7 @@ final class AccessoryWidgetLogicTests: XCTestCase {
             featured: [makeFeatured(displayName: "Mom", nickname: nil, status: .overdue(daysOverdue: 5))]
         )
         let label = AccessoryWidgetLogic.inlineLabel(snapshot: snapshot)
-        XCTAssertEqual(label.symbol, "exclamationmark.circle.fill")
+        XCTAssertEqual(label.symbol, "person.crop.circle.fill")
         XCTAssertEqual(label.text, "3 overdue · Mom next")
     }
 
@@ -171,7 +179,7 @@ final class AccessoryWidgetLogicTests: XCTestCase {
             featured: [makeFeatured(displayName: "Sam", nickname: nil, status: .dueSoon(daysUntilDue: 1))]
         )
         let label = AccessoryWidgetLogic.inlineLabel(snapshot: snapshot)
-        XCTAssertEqual(label.symbol, "clock.fill")
+        XCTAssertEqual(label.symbol, "person.crop.circle.fill")
         XCTAssertEqual(label.text, "2 due soon · Sam next")
     }
 
