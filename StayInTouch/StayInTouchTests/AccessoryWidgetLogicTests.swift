@@ -15,49 +15,72 @@ final class AccessoryWidgetLogicTests: XCTestCase {
 
     func testRing_emptyWhenNoTrackedPeople() {
         XCTAssertEqual(
-            AccessoryWidgetLogic.ring(overdueCount: 0, dueSoonCount: 0, hasTrackedPeople: false),
+            AccessoryWidgetLogic.ring(overdueCount: 0, dueSoonCount: 0, trackedCount: 0, hasTrackedPeople: false),
             .empty
         )
     }
 
     func testRing_emptyWhenAllCaughtUp() {
         XCTAssertEqual(
-            AccessoryWidgetLogic.ring(overdueCount: 0, dueSoonCount: 0, hasTrackedPeople: true),
+            AccessoryWidgetLogic.ring(overdueCount: 0, dueSoonCount: 0, trackedCount: 5, hasTrackedPeople: true),
             .empty
         )
     }
 
-    func testRing_binaryOverdueWhenOnlyOverdue() {
-        XCTAssertEqual(
-            AccessoryWidgetLogic.ring(overdueCount: 3, dueSoonCount: 0, hasTrackedPeople: true),
-            .binary(color: .overdue)
-        )
-    }
-
-    func testRing_binaryDueSoonWhenOnlyDueSoon() {
-        XCTAssertEqual(
-            AccessoryWidgetLogic.ring(overdueCount: 0, dueSoonCount: 3, hasTrackedPeople: true),
-            .binary(color: .dueSoon)
-        )
-    }
-
-    func testRing_twoToneFractionWhenBothCategoriesPresent() {
-        // 3 overdue + 2 due-soon → overdue fraction = 0.6
-        let result = AccessoryWidgetLogic.ring(overdueCount: 3, dueSoonCount: 2, hasTrackedPeople: true)
-        if case .twoTone(let fraction) = result {
-            XCTAssertEqual(fraction, 0.6, accuracy: 0.0001)
+    func testRing_gaugeOverdueOnly() {
+        // 3 overdue out of 10 tracked → overdue fraction = 0.3
+        let result = AccessoryWidgetLogic.ring(overdueCount: 3, dueSoonCount: 0, trackedCount: 10, hasTrackedPeople: true)
+        if case .gauge(let overdueFraction, let dueSoonFraction) = result {
+            XCTAssertEqual(overdueFraction, 0.3, accuracy: 0.0001)
+            XCTAssertEqual(dueSoonFraction, 0.0, accuracy: 0.0001)
         } else {
-            XCTFail("Expected .twoTone, got \(result)")
+            XCTFail("Expected .gauge, got \(result)")
         }
     }
 
-    func testRing_twoToneEvenSplit() {
-        // 1 overdue + 1 due-soon → overdue fraction = 0.5
-        let result = AccessoryWidgetLogic.ring(overdueCount: 1, dueSoonCount: 1, hasTrackedPeople: true)
-        if case .twoTone(let fraction) = result {
-            XCTAssertEqual(fraction, 0.5, accuracy: 0.0001)
+    func testRing_gaugeDueSoonOnly() {
+        // 0 overdue + 3 dueSoon out of 10 tracked → dueSoon fraction = 0.3
+        let result = AccessoryWidgetLogic.ring(overdueCount: 0, dueSoonCount: 3, trackedCount: 10, hasTrackedPeople: true)
+        if case .gauge(let overdueFraction, let dueSoonFraction) = result {
+            XCTAssertEqual(overdueFraction, 0.0, accuracy: 0.0001)
+            XCTAssertEqual(dueSoonFraction, 0.3, accuracy: 0.0001)
         } else {
-            XCTFail("Expected .twoTone, got \(result)")
+            XCTFail("Expected .gauge, got \(result)")
+        }
+    }
+
+    func testRing_gaugeBothCategoriesProportionalToTracked() {
+        // 3 overdue + 2 dueSoon out of 10 tracked → 0.3 + 0.2, remainder 0.5
+        let result = AccessoryWidgetLogic.ring(overdueCount: 3, dueSoonCount: 2, trackedCount: 10, hasTrackedPeople: true)
+        if case .gauge(let overdueFraction, let dueSoonFraction) = result {
+            XCTAssertEqual(overdueFraction, 0.3, accuracy: 0.0001)
+            XCTAssertEqual(dueSoonFraction, 0.2, accuracy: 0.0001)
+        } else {
+            XCTFail("Expected .gauge, got \(result)")
+        }
+    }
+
+    func testRing_gaugeFullWhenEveryoneAtRisk() {
+        // 3 overdue + 2 dueSoon out of 5 tracked → fractions sum to 1.0
+        let result = AccessoryWidgetLogic.ring(overdueCount: 3, dueSoonCount: 2, trackedCount: 5, hasTrackedPeople: true)
+        if case .gauge(let overdueFraction, let dueSoonFraction) = result {
+            XCTAssertEqual(overdueFraction, 0.6, accuracy: 0.0001)
+            XCTAssertEqual(dueSoonFraction, 0.4, accuracy: 0.0001)
+        } else {
+            XCTFail("Expected .gauge, got \(result)")
+        }
+    }
+
+    func testRing_gaugeDefensiveWhenTrackedCountUnderAtRisk() {
+        // Defensive: if data is inconsistent (atRisk > tracked), fall back
+        // to filling the ring proportional to atRisk so we never divide
+        // by zero or compute >100% fill.
+        let result = AccessoryWidgetLogic.ring(overdueCount: 3, dueSoonCount: 2, trackedCount: 0, hasTrackedPeople: true)
+        if case .gauge(let overdueFraction, let dueSoonFraction) = result {
+            XCTAssertEqual(overdueFraction, 0.6, accuracy: 0.0001, "Falls back to atRisk-relative fill when trackedCount is degenerate")
+            XCTAssertEqual(dueSoonFraction, 0.4, accuracy: 0.0001)
+        } else {
+            XCTFail("Expected .gauge, got \(result)")
         }
     }
 
@@ -266,13 +289,15 @@ final class AccessoryWidgetLogicTests: XCTestCase {
         overdueCount: Int,
         dueSoonCount: Int,
         featured: [OverduePerson],
-        hasTrackedPeople: Bool = true
+        hasTrackedPeople: Bool = true,
+        trackedCount: Int = 5
     ) -> WidgetDataProvider.Snapshot {
         WidgetDataProvider.Snapshot(
             overdueCount: overdueCount,
             dueSoonCount: dueSoonCount,
             featured: featured,
             hasTrackedPeople: hasTrackedPeople,
+            trackedCount: trackedCount,
             themeOverride: nil
         )
     }

@@ -63,6 +63,7 @@ struct AccessoryCircularView: View {
         let ring = AccessoryWidgetLogic.ring(
             overdueCount: snapshot.overdueCount,
             dueSoonCount: snapshot.dueSoonCount,
+            trackedCount: snapshot.trackedCount,
             hasTrackedPeople: snapshot.hasTrackedPeople
         )
         let digit = AccessoryWidgetLogic.centerDigit(
@@ -76,6 +77,8 @@ struct AccessoryCircularView: View {
             centerView(digit: digit)
         }
         .widgetURL(DeepLinkRoute.overdue.url())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(circularAccessibilityLabel())
     }
 
     @ViewBuilder
@@ -83,22 +86,53 @@ struct AccessoryCircularView: View {
         switch ring {
         case .empty:
             EmptyView()
-        case .binary(let color):
-            ringStroke(from: 0, to: 1, color: tint(for: color))
-                .accentedIfAvailable()
-        case .twoTone(let overdueFraction):
+        case .gauge(let overdueFraction, let dueSoonFraction):
             if renderingMode == .fullColor {
-                // Two-tone red + orange. Red arc covers the overdue
-                // fraction; orange arc covers the rest.
-                ringStroke(from: 0, to: overdueFraction, color: .red)
-                ringStroke(from: overdueFraction, to: 1, color: .orange)
+                // Red arc covers overdue portion; orange arc continues
+                // for due-soon portion; remainder of the circumference
+                // is the on-track portion (unfilled). Combined, the ring
+                // shows both severity (color) and scale (fill).
+                if overdueFraction > 0 {
+                    ringStroke(from: 0, to: overdueFraction, color: .red)
+                }
+                if dueSoonFraction > 0 {
+                    ringStroke(
+                        from: overdueFraction,
+                        to: overdueFraction + dueSoonFraction,
+                        color: .orange
+                    )
+                }
             } else {
-                // Accented zone — on iOS 18+ this picks up the
-                // wallpaper-derived accent color on lock screen.
-                ringStroke(from: 0, to: 1, color: .accentColor)
-                    .accentedIfAvailable()
+                // Monochrome lock screen / StandBy night — single tinted
+                // arc fills the at-risk portion, giving a glanceable
+                // gauge without color.
+                ringStroke(
+                    from: 0,
+                    to: overdueFraction + dueSoonFraction,
+                    color: .accentColor
+                )
+                .accentedIfAvailable()
             }
         }
+    }
+
+    private func circularAccessibilityLabel() -> String {
+        let overdue = snapshot.overdueCount
+        let dueSoon = snapshot.dueSoonCount
+        let atRisk = overdue + dueSoon
+        if atRisk == 0 {
+            return snapshot.hasTrackedPeople
+                ? "Keep In Touch. All caught up."
+                : "Keep In Touch. Add someone to track."
+        }
+        var parts: [String] = []
+        if overdue > 0 {
+            parts.append("\(overdue) \(overdue == 1 ? "person" : "people") overdue")
+        }
+        if dueSoon > 0 {
+            parts.append("\(dueSoon) due soon")
+        }
+        return "Keep In Touch. " + parts.joined(separator: ", ") + "."
     }
 
     /// Single ring arc. `from` and `to` are 0...1 fractions of the
@@ -110,13 +144,6 @@ struct AccessoryCircularView: View {
             .trim(from: from, to: to)
             .stroke(color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
             .rotationEffect(.degrees(-90))
-    }
-
-    private func tint(for ringColor: AccessoryWidgetLogic.RingColor) -> Color {
-        switch ringColor {
-        case .overdue: return renderingMode == .fullColor ? .red : .accentColor
-        case .dueSoon: return renderingMode == .fullColor ? .orange : .accentColor
-        }
     }
 
     @ViewBuilder
@@ -184,6 +211,31 @@ struct AccessoryRectangularView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(rectangularAccessibilityLabel())
+    }
+
+    private func rectangularAccessibilityLabel() -> String {
+        if let featured = snapshot.featured.first {
+            let additional = max(0, snapshot.overdueCount + snapshot.dueSoonCount - 1)
+            let primary: String
+            switch featured.status {
+            case .overdue(let days):
+                primary = "\(featured.displayShortName), \(days) \(days == 1 ? "day" : "days") overdue"
+            case .dueSoon(let days):
+                primary = days == 0
+                    ? "\(featured.displayShortName), due today"
+                    : "\(featured.displayShortName), due in \(days) \(days == 1 ? "day" : "days")"
+            }
+            if additional > 0 {
+                return "Keep In Touch. \(primary). \(additional) more \(additional == 1 ? "person" : "people") need a reach-out."
+            }
+            return "Keep In Touch. \(primary)."
+        }
+        if snapshot.hasTrackedPeople {
+            return "Keep In Touch. All caught up."
+        }
+        return "Keep In Touch. Add someone to track."
     }
 
     private func featuredContent(_ featured: OverduePerson) -> some View {
@@ -225,6 +277,7 @@ struct AccessoryInlineView: View {
         let label = AccessoryWidgetLogic.inlineLabel(snapshot: snapshot)
         Label(label.text, systemImage: label.symbol)
             .widgetURL(tapTargetURL())
+            .accessibilityLabel(inlineAccessibilityLabel())
     }
 
     private func tapTargetURL() -> URL {
@@ -232,6 +285,22 @@ struct AccessoryInlineView: View {
             return DeepLinkRoute.person(featured.id).url()
         }
         return DeepLinkRoute.overdue.url()
+    }
+
+    private func inlineAccessibilityLabel() -> String {
+        if let featured = snapshot.featured.first {
+            let name = featured.displayShortName
+            if snapshot.overdueCount > 0 {
+                return "Keep In Touch. \(snapshot.overdueCount) overdue. \(name) is up next."
+            }
+            if snapshot.dueSoonCount > 0 {
+                return "Keep In Touch. \(snapshot.dueSoonCount) due soon. \(name) is up next."
+            }
+        }
+        if snapshot.hasTrackedPeople {
+            return "Keep In Touch. All caught up."
+        }
+        return "Keep In Touch. Add someone to track."
     }
 }
 

@@ -60,11 +60,12 @@ extension WidgetDataProvider.Snapshot {
             OverduePerson(id: UUID(), displayName: "Jordan", nickname: nil, initials: "J", avatarColorHex: "#FFD166", groupName: "Quarterly", groupColorHex: "#A78BFA", status: .dueSoon(daysUntilDue: 2)),
         ],
         hasTrackedPeople: true,
+        trackedCount: 8,
         themeOverride: nil
     )
 
-    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
-    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: true, themeOverride: nil)
+    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil)
+    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: true, trackedCount: 5, themeOverride: nil)
 }
 
 extension WidgetPersonStatus {

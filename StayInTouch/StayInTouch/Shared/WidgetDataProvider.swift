@@ -79,6 +79,10 @@ enum WidgetDataProvider {
         let dueSoonCount: Int
         let featured: [OverduePerson]
         let hasTrackedPeople: Bool
+        /// Total tracked, non-paused, non-demo people in scope (after group
+        /// filter). Used as the denominator for the accessory circular
+        /// widget's gauge fill (`atRisk / trackedCount`).
+        let trackedCount: Int
         /// Raw AppSettings.theme string: "dark", "light", "system", or nil.
         let themeOverride: String?
     }
@@ -90,7 +94,7 @@ enum WidgetDataProvider {
         now: Date = Date(),
         groupFilter: UUID? = nil
     ) -> Snapshot {
-        var result = Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
+        var result = Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil)
 
         context.performAndWait {
             let hasTrackedPeople = countTrackedPeople(context: context) > 0
@@ -139,6 +143,7 @@ enum WidgetDataProvider {
                 dueSoonCount: dueSoonCount,
                 featured: featured,
                 hasTrackedPeople: hasTrackedPeople,
+                trackedCount: people.count,
                 themeOverride: themeOverride
             )
         }

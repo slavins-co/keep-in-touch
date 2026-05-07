@@ -15,43 +15,46 @@ enum AccessoryWidgetLogic {
 
     // MARK: - Circular ring fill
 
-    enum RingColor: Equatable {
-        case overdue
-        case dueSoon
-    }
-
     enum CircularRing: Equatable {
         /// No ring drawn. Symbol-only state (all caught up or no tracked people).
         case empty
-        /// Single full ring in one color (only one at-risk bucket has people).
-        case binary(color: RingColor)
-        /// Split ring: red arc covers `overdueFraction` (0...1) of the
-        /// circumference; orange arc covers the remainder. Used when both
-        /// overdue and due-soon buckets are non-empty.
-        case twoTone(overdueFraction: Double)
+        /// Gauge fill expressed as fractions of the full circumference.
+        /// Both fractions are 0...1 and their sum is ≤ 1.0 (the unfilled
+        /// remainder is the on-track portion of the user's tracked set).
+        ///
+        /// Visual interpretation:
+        /// - In fullColor mode: red arc covers `overdueFraction`, orange
+        ///   arc continues for `dueSoonFraction`, the rest is unfilled.
+        /// - In monochrome / accented mode: a single tinted arc fills
+        ///   `overdueFraction + dueSoonFraction` of the circumference,
+        ///   giving a "how bad is it" gauge — sliver = healthy, full =
+        ///   everyone needs a reach-out.
+        case gauge(overdueFraction: Double, dueSoonFraction: Double)
     }
 
     /// Decide what kind of ring (if any) the accessory circular widget should draw.
-    /// `hasTrackedPeople` is accepted for symmetry with the other helpers; the
-    /// count fields already encode the at-risk state, so it isn't consulted here.
+    /// The gauge fractions are computed against `trackedCount` so the ring
+    /// answers "what fraction of the people I follow need attention?".
+    /// `hasTrackedPeople` is accepted for call-site symmetry.
     static func ring(
         overdueCount: Int,
         dueSoonCount: Int,
+        trackedCount: Int,
         hasTrackedPeople: Bool
     ) -> CircularRing {
         _ = hasTrackedPeople
-        if overdueCount == 0 && dueSoonCount == 0 {
+        let atRisk = overdueCount + dueSoonCount
+        if atRisk == 0 {
             return .empty
         }
-        if overdueCount > 0 && dueSoonCount == 0 {
-            return .binary(color: .overdue)
-        }
-        if overdueCount == 0 && dueSoonCount > 0 {
-            return .binary(color: .dueSoon)
-        }
-        let total = Double(overdueCount + dueSoonCount)
-        let fraction = Double(overdueCount) / total
-        return .twoTone(overdueFraction: fraction)
+        // Defensive: at-risk should be a subset of tracked, but if data
+        // is inconsistent fall back to filling the ring proportional to
+        // at-risk itself rather than dividing by zero.
+        let denom = max(trackedCount, atRisk)
+        return .gauge(
+            overdueFraction: Double(overdueCount) / Double(denom),
+            dueSoonFraction: Double(dueSoonCount) / Double(denom)
+        )
     }
 
     // MARK: - Circular center digit

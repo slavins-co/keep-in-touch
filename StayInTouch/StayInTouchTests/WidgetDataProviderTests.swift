@@ -200,6 +200,45 @@ final class WidgetDataProviderTests: XCTestCase {
         XCTAssertTrue(snap.featured.isEmpty)
     }
 
+    // MARK: - trackedCount (used by accessory circular gauge fill)
+
+    func testSnapshot_trackedCount_zeroWhenEmpty() {
+        let snap = WidgetDataProvider.snapshot(context: context)
+        XCTAssertEqual(snap.trackedCount, 0)
+    }
+
+    func testSnapshot_trackedCount_excludesPausedAndDemoAndUntracked() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 10, warningDays: 2)
+
+        // 4 active tracked, 1 paused, 1 demo, 1 untracked → trackedCount = 4
+        for i in 0..<4 {
+            _ = seedPerson(name: "Active\(i)", cadenceId: cadenceId, lastTouchAt: daysAgo(2))
+        }
+        _ = seedPerson(name: "Paused", cadenceId: cadenceId, lastTouchAt: daysAgo(2), isPaused: true)
+        _ = seedPerson(name: "Demo", cadenceId: cadenceId, lastTouchAt: daysAgo(2), isDemoData: true)
+        _ = seedPerson(name: "Untracked", cadenceId: cadenceId, lastTouchAt: daysAgo(2), isTracked: false)
+
+        let snap = WidgetDataProvider.snapshot(context: context)
+        XCTAssertEqual(snap.trackedCount, 4)
+    }
+
+    func testSnapshot_trackedCount_respectsGroupFilter() {
+        let cadenceA = UUID()
+        let cadenceB = UUID()
+        _ = seedGroup(id: cadenceA, frequencyDays: 10, warningDays: 2)
+        _ = seedGroup(id: cadenceB, frequencyDays: 10, warningDays: 2)
+
+        for i in 0..<3 { _ = seedPerson(name: "A\(i)", cadenceId: cadenceA, lastTouchAt: daysAgo(2)) }
+        for i in 0..<5 { _ = seedPerson(name: "B\(i)", cadenceId: cadenceB, lastTouchAt: daysAgo(2)) }
+
+        let unfiltered = WidgetDataProvider.snapshot(context: context)
+        XCTAssertEqual(unfiltered.trackedCount, 8)
+
+        let filteredA = WidgetDataProvider.snapshot(context: context, groupFilter: cadenceA)
+        XCTAssertEqual(filteredA.trackedCount, 3)
+    }
+
     // MARK: - Nickname
 
     func testSnapshot_populatesNickname_whenPersonHasNickname() {
