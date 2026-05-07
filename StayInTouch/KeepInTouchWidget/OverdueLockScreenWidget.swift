@@ -193,27 +193,26 @@ struct AccessoryRectangularView: View {
             additionalAtRisk: additional
         )
 
-        // person.crop.circle.fill matches the inline + circular widgets
-        // — gives Keep In Touch a visual identity on the lock screen
-        // without needing app-name copy. Status urgency stays in the
-        // subtitle text.
-        return Label(
-            title: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(featured.displayShortName)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                    Text(subtitle)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            },
-            icon: {
-                Image(systemName: "person.crop.circle.fill")
+        // Custom HStack instead of Label so we control the icon-to-text
+        // gap (Label's default spacing eats lock-screen horizontal room
+        // and truncates the subtitle). minimumScaleFactor lets SwiftUI
+        // shrink the subtitle font slightly before clipping when names
+        // run long.
+        return HStack(alignment: .center, spacing: 5) {
+            Image(systemName: "person.crop.circle.fill")
+                .imageScale(.medium)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(featured.displayShortName)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
-        )
+        }
     }
 }
 
