@@ -37,6 +37,7 @@ struct PersonSettingsSection: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Contact Settings")
             .accessibilityHint(settingsExpanded ? "Collapses settings" : "Expands settings")
+            .tutorialAnchor(TutorialAnchor.personMenuButton)
 
             if settingsExpanded {
                 settingsContent
@@ -55,6 +56,7 @@ struct PersonSettingsSection: View {
                 settingsDivider
                 settingsRowCustomDueDate
             }
+            .tutorialAnchor(TutorialAnchor.personCadenceRow)
 
             settingsSectionHeader("DETAILS")
             settingsCard {

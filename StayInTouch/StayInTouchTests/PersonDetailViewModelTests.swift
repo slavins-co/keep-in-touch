@@ -458,4 +458,103 @@ final class PersonDetailViewModelTests: XCTestCase {
         XCTAssertEqual(statusAfter, .onTrack,
             "After load(), person should reflect the updated lastTouchAt from the repository")
     }
+
+    // MARK: - Preview Mode
+
+    func test_previewMode_loadServesInjectedValues_doesNotHitRepos() {
+        let demoCadence = TestFactory.makeCadence(name: "Close Friends", frequencyDays: 14)
+        let demoTag = TestFactory.makeGroup(name: "College")
+        let demoTouches = [TestFactory.makeTouchEvent(personId: person.id)]
+        let previewData = PersonDetailViewModel.PreviewData(
+            cadence: demoCadence,
+            cadences: [demoCadence],
+            groups: [demoTag],
+            touchEvents: demoTouches,
+            phone: nil,
+            email: nil,
+            contactBirthday: nil
+        )
+
+        personRepo.people = [] // empty real repo
+        cadenceRepo.cadences = []
+        groupRepo.groups = []
+        touchRepo.events = []
+
+        let previewVM = PersonDetailViewModel(
+            person: person,
+            mode: .preview(previewData),
+            personRepository: personRepo,
+            cadenceRepository: cadenceRepo,
+            groupRepository: groupRepo,
+            touchRepository: touchRepo
+        )
+
+        XCTAssertTrue(previewVM.isPreview)
+        XCTAssertEqual(previewVM.cadence?.name, "Close Friends")
+        XCTAssertEqual(previewVM.cadences.count, 1)
+        XCTAssertEqual(previewVM.groups.first?.name, "College")
+        XCTAssertEqual(previewVM.touchEvents.count, 1)
+    }
+
+    func test_previewMode_mutations_areNoOps() {
+        let demoCadence = TestFactory.makeCadence()
+        let previewData = PersonDetailViewModel.PreviewData(
+            cadence: demoCadence,
+            cadences: [demoCadence],
+            groups: [],
+            touchEvents: [],
+            phone: nil,
+            email: nil,
+            contactBirthday: nil
+        )
+
+        let previewVM = PersonDetailViewModel(
+            person: person,
+            mode: .preview(previewData),
+            personRepository: personRepo,
+            cadenceRepository: cadenceRepo,
+            groupRepository: groupRepo,
+            touchRepository: touchRepo
+        )
+
+        previewVM.logTouch(method: .call, notes: "Should not save", date: Date())
+        previewVM.togglePause()
+        previewVM.snooze(until: Date().addingTimeInterval(86_400))
+        previewVM.setBirthday(Birthday(month: 1, day: 1, year: nil))
+        previewVM.changeCadence(to: UUID())
+        previewVM.deletePerson()
+
+        XCTAssertEqual(touchRepo.savedEvents.count, 0)
+        XCTAssertEqual(personRepo.savedPersons.count, 0)
+        XCTAssertEqual(personRepo.deletedIds.count, 0)
+        XCTAssertFalse(previewVM.person.isPaused)
+        XCTAssertNil(previewVM.person.snoozedUntil)
+        XCTAssertNil(previewVM.person.birthday)
+    }
+
+    func test_previewMode_openAction_returnsNil() {
+        let demoCadence = TestFactory.makeCadence()
+        let previewData = PersonDetailViewModel.PreviewData(
+            cadence: demoCadence,
+            cadences: [demoCadence],
+            groups: [],
+            touchEvents: [],
+            phone: "+15551234567",
+            email: "alex@example.com",
+            contactBirthday: nil
+        )
+        let previewVM = PersonDetailViewModel(
+            person: person,
+            mode: .preview(previewData),
+            personRepository: personRepo,
+            cadenceRepository: cadenceRepo,
+            groupRepository: groupRepo,
+            touchRepository: touchRepo
+        )
+
+        XCTAssertNil(previewVM.openAction(type: .call))
+        XCTAssertNil(previewVM.openAction(type: .message))
+        XCTAssertNil(previewVM.openAction(type: .email))
+        XCTAssertNil(previewVM.openActionWithValue(type: .call, value: "+15551234567"))
+    }
 }

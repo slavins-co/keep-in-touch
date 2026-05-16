@@ -9,6 +9,24 @@ import Foundation
 
 @MainActor
 final class PersonDetailViewModel: ObservableObject {
+    /// Operating mode. `.preview` is used by the tutorial walkthrough to render
+    /// PersonDetailView against an in-memory demo contact without touching the
+    /// real repositories. All mutation methods early-return in `.preview` mode.
+    enum Mode {
+        case normal
+        case preview(PreviewData)
+    }
+
+    struct PreviewData {
+        let cadence: Cadence
+        let cadences: [Cadence]
+        let groups: [Group]
+        let touchEvents: [TouchEvent]
+        let phone: String?
+        let email: String?
+        let contactBirthday: Birthday?
+    }
+
     @Published private(set) var person: Person
     @Published private(set) var cadence: Cadence?
     @Published private(set) var cadences: [Cadence] = []
@@ -25,25 +43,35 @@ final class PersonDetailViewModel: ObservableObject {
     @Published var showEmailPicker = false
     var pendingPhoneAction: QuickActionType?
 
+    let mode: Mode
     private let personRepository: PersonRepository
     private let cadenceRepository: CadenceRepository
     private let groupRepository: GroupRepository
     private let touchRepository: TouchEventRepository
 
+    var isPreview: Bool {
+        if case .preview = mode { return true }
+        return false
+    }
+
     init(
         person: Person,
+        mode: Mode = .normal,
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
         cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
         groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
         touchRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext)
     ) {
         self.person = person
+        self.mode = mode
         self.personRepository = personRepository
         self.cadenceRepository = cadenceRepository
         self.groupRepository = groupRepository
         self.touchRepository = touchRepository
         load()
-        AnalyticsService.track("person.viewed")
+        if case .normal = mode {
+            AnalyticsService.track("person.viewed")
+        }
     }
 
     convenience init(person: Person, dependencies: AppDependencies) {
@@ -57,6 +85,17 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func load() {
+        if case let .preview(data) = mode {
+            cadence = data.cadence
+            cadences = data.cadences
+            groups = data.groups
+            availableGroups = []
+            touchEvents = data.touchEvents
+            phone = data.phone
+            email = data.email
+            contactBirthday = data.contactBirthday
+            return
+        }
         if let refreshed = personRepository.fetch(id: person.id) {
             person = refreshed
         }
@@ -68,6 +107,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func refreshContactInfo() async {
+        if isPreview { return }
         guard let cnId = person.cnIdentifier else {
             phone = nil
             email = nil
@@ -124,6 +164,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func setBirthday(_ birthday: Birthday?) {
+        if isPreview { return }
         var updated = person
         updated.birthday = birthday
         updated.modifiedAt = Date()
@@ -131,6 +172,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func setBirthdayNotificationsEnabled(_ enabled: Bool) {
+        if isPreview { return }
         AnalyticsService.track("person.birthdayNotifications.toggled", parameters: ["enabled": String(enabled)])
         var updated = person
         updated.birthdayNotificationsEnabled = enabled
@@ -139,12 +181,14 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func changeCadence(to cadenceId: UUID) {
+        if isPreview { return }
         let updated = AssignCadenceUseCase().assign(person: person, to: cadenceId)
         savePerson(updated)
         cadence = cadenceRepository.fetch(id: cadenceId)
     }
 
     func togglePause() {
+        if isPreview { return }
         var updated = person
         updated.isPaused.toggle()
         updated.modifiedAt = Date()
@@ -153,6 +197,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func setNotificationsMuted(_ muted: Bool) {
+        if isPreview { return }
         var updated = person
         updated.notificationsMuted = muted
         updated.modifiedAt = Date()
@@ -160,6 +205,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func setCustomBreachTime(_ time: LocalTime?) {
+        if isPreview { return }
         var updated = person
         updated.customBreachTime = time
         updated.modifiedAt = Date()
@@ -167,6 +213,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func saveNextTouchNotes(_ notes: String?) {
+        if isPreview { return }
         var updated = person
         updated.nextTouchNotes = notes?.isEmpty == true ? nil : notes
         updated.modifiedAt = Date()
@@ -174,6 +221,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func snooze(until date: Date) {
+        if isPreview { return }
         AnalyticsService.track("person.snoozed")
         var updated = person
         updated.snoozedUntil = date
@@ -182,6 +230,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func clearSnooze() {
+        if isPreview { return }
         var updated = person
         updated.snoozedUntil = nil
         updated.modifiedAt = Date()
@@ -189,6 +238,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func setCustomDueDate(_ date: Date?) {
+        if isPreview { return }
         AnalyticsService.track(date != nil ? "person.customDueDate.set" : "person.customDueDate.cleared")
         var updated = person
         updated.customDueDate = date
@@ -201,6 +251,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func restoreNotificationDefaults() {
+        if isPreview { return }
         var updated = person
         updated.customBreachTime = nil
         updated.notificationsMuted = false
@@ -209,6 +260,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func resumeAndUpdateLastTouch(date: Date?) {
+        if isPreview { return }
         var updated = person
         updated.isPaused = false
         updated.modifiedAt = Date()
@@ -244,6 +296,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func addGroup(_ group: Group) {
+        if isPreview { return }
         guard !person.groupIds.contains(group.id) else { return }
         var updated = person
         updated.groupIds.append(group.id)
@@ -253,6 +306,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func removeGroup(_ group: Group) {
+        if isPreview { return }
         var updated = person
         updated.groupIds.removeAll { $0 == group.id }
         updated.modifiedAt = Date()
@@ -261,6 +315,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func logTouch(method: TouchMethod, notes: String?, date: Date, timeOfDay: TimeOfDay? = nil) {
+        if isPreview { return }
         AnalyticsService.track("connection.logged", parameters: ["method": method.rawValue])
         let now = date
         let touch = TouchEvent(
@@ -296,6 +351,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func updateTouch(_ touch: TouchEvent, method: TouchMethod, notes: String?, timeOfDay: TimeOfDay? = nil) {
+        if isPreview { return }
         var updatedTouch = touch
         updatedTouch.method = method
         updatedTouch.timeOfDay = timeOfDay
@@ -323,6 +379,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func deleteTouch(_ touch: TouchEvent) {
+        if isPreview { return }
         AnalyticsService.track("connection.deleted")
         do {
             try touchRepository.delete(id: touch.id)
@@ -350,6 +407,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func relinkContact(cnIdentifier: String) {
+        if isPreview { return }
         AnalyticsService.track("person.contactRelinked")
         var updated = person
         updated.cnIdentifier = cnIdentifier
@@ -359,6 +417,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func deletePerson() {
+        if isPreview { return }
         AnalyticsService.track("person.deleted")
         do {
             // Cascade: delete all TouchEvents for this person first
@@ -378,6 +437,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func openAction(type: QuickActionType) -> URL? {
+        if isPreview { return nil }
         quickActionMessage = nil
         switch type {
         case .message, .call:
@@ -405,6 +465,7 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     func openActionWithValue(type: QuickActionType, value: String) -> URL? {
+        if isPreview { return nil }
         quickActionMessage = nil
         switch type {
         case .message, .call:

@@ -37,8 +37,11 @@ struct PersonDetailView: View {
     @State private var showRemoveUndo = false
     @State private var pendingRemoveTask: Task<Void, Never>?
 
-    init(person: Person) {
-        _viewModel = StateObject(wrappedValue: PersonDetailViewModel(person: person))
+    init(person: Person, mode: PersonDetailViewModel.Mode = .normal) {
+        _viewModel = StateObject(wrappedValue: PersonDetailViewModel(person: person, mode: mode))
+        if case .preview = mode {
+            _settingsExpanded = State(initialValue: true)
+        }
     }
 
     var body: some View {
@@ -56,6 +59,7 @@ struct PersonDetailView: View {
                         }
                     }
                 )
+                .tutorialAnchor(TutorialAnchor.personHero)
 
                 PersonQuickActionsBar(
                     viewModel: viewModel,
@@ -203,6 +207,7 @@ struct PersonDetailView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Log connection with \(viewModel.person.displayName)")
             .shadow(color: DS.Colors.ctaShadow, radius: 8, y: 2)
+            .tutorialAnchor(TutorialAnchor.personLogTouch)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
         }
