@@ -118,6 +118,14 @@ final class WalkthroughCoordinator: ObservableObject {
     ///   `postDismissAnimationDuration` so the cover's slide-down finishes
     ///   before the parent (`WalkthroughHost`) is swapped out by ContentView.
     private func markComplete() {
+        // Re-entrancy guard. If the user taps the wrap CTA, then swipe-dismisses
+        // the demo cover during the 2s hold, WalkthroughHost's binding fires
+        // `skip()` → `markComplete()` a second time while the first call's
+        // deferred Task is still in flight. Without this guard the second call
+        // saves the flag again, fires another `.settingsDidChange`, and races
+        // the first Task. Idempotent: the first call already did everything.
+        guard !didComplete else { return }
+
         let wasPresentingDemo = isPresentingDemoDetail
         let isWrapCompletion = currentStep == .detailWrap
 

@@ -131,6 +131,28 @@ final class WalkthroughCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.didComplete)
     }
 
+    /// Re-entrant `markComplete` (e.g. user swipes the demo cover down during
+    /// the 2s wrap-CTA hold) must be idempotent — exactly one save, one tip
+    /// gate update, regardless of how many times skip/advance fires after the
+    /// initial completion.
+    func test_markComplete_isIdempotent_underReentry() {
+        coordinator.start()
+        for _ in 0..<13 { coordinator.advance() }
+        XCTAssertEqual(coordinator.currentStep, .detailWrap)
+        XCTAssertEqual(settingsRepo.saveCount, 0)
+
+        coordinator.advance() // first completion
+        XCTAssertTrue(coordinator.didComplete)
+        XCTAssertEqual(settingsRepo.saveCount, 1)
+
+        // Simulated re-entry: user swipe-dismisses the cover during the hold,
+        // which routes through WalkthroughHost binding → skip() → markComplete.
+        coordinator.skip()
+        coordinator.skip()
+
+        XCTAssertEqual(settingsRepo.saveCount, 1, "markComplete must be idempotent")
+    }
+
     // MARK: - phase helpers
 
     func test_isInDetailPhase_reflectsCurrentStep() {
