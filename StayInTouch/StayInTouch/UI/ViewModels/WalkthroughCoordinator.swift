@@ -31,6 +31,14 @@ final class WalkthroughCoordinator: ObservableObject {
     /// a real contact looks like" to land.
     static let postCompleteHoldDuration: TimeInterval = 2.0
 
+    /// Seconds to wait between setting `isPresentingDemoDetail = false`
+    /// (which kicks off the fullScreenCover slide-down) and posting
+    /// `.settingsDidChange` (which makes ContentView swap WalkthroughHost
+    /// back to plain MainTabView). Without this gap the parent unmount
+    /// obliterates the cover mid-animation and the demo PersonDetail
+    /// appears to vanish abruptly. iOS's stock cover transition runs ~0.35s.
+    static let postDismissAnimationDuration: TimeInterval = 0.5
+
     private let settingsRepository: AppSettingsRepository
     private let haptics: WalkthroughHaptics
 
@@ -105,19 +113,33 @@ final class WalkthroughCoordinator: ObservableObject {
     /// `MainTabView`, which dismounts the `fullScreenCover` and the demo
     /// PersonDetail vanishes before the hold timer fires.
     private func markComplete(holdDemoDetail: Bool) {
+        let wasPresentingDemo = isPresentingDemoDetail
         currentStep = nil
         stepHistory = []
         didComplete = true
         saveCompletionFlag()
         TutorialTipGate.update(walkthroughCompleted: true)
 
-        if holdDemoDetail && isPresentingDemoDetail {
+        if holdDemoDetail && wasPresentingDemo {
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: UInt64(Self.postCompleteHoldDuration * 1_000_000_000))
                 isPresentingDemoDetail = false
+                // Wait for the cover slide-down to finish before posting
+                // .settingsDidChange. Otherwise the parent unmount tears the
+                // cover off mid-animation and Alex appears to vanish abruptly.
+                try? await Task.sleep(nanoseconds: UInt64(Self.postDismissAnimationDuration * 1_000_000_000))
+                NotificationCenter.default.post(name: .settingsDidChange, object: nil)
+            }
+        } else if wasPresentingDemo {
+            // Skip from detail phase: still let the cover slide down before
+            // unmounting the host.
+            isPresentingDemoDetail = false
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64(Self.postDismissAnimationDuration * 1_000_000_000))
                 NotificationCenter.default.post(name: .settingsDidChange, object: nil)
             }
         } else {
+            // No cover up (skip from home phase) — safe to post immediately.
             isPresentingDemoDetail = false
             NotificationCenter.default.post(name: .settingsDidChange, object: nil)
         }
