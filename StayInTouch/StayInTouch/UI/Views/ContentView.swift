@@ -28,6 +28,8 @@ struct ContentView: View {
         .onAppear {
             viewModel.start()
             loadTheme()
+            // v1: stamps lastSeenAppVersion. Future versions present cards.
+            _ = WhatsNewService.contentToPresent(repository: dependencies.settingsRepository)
         }
         .onReceive(NotificationCenter.default.publisher(for: .settingsDidChange)) { _ in
             loadTheme()
