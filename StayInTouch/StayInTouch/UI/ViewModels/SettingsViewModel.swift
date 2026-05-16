@@ -182,6 +182,11 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - Tutorial
 
     func replayTutorial() {
+        // Switch to Home tab BEFORE flipping the flag so the freshly mounted
+        // MainTabView inside the WalkthroughHost reads tab 0 from the
+        // DeepLinkRouter singleton on its first render — otherwise the
+        // walkthrough overlay sits on top of whatever tab the user was on.
+        DeepLinkRouter.shared.selectedTab = 0
         settings.tutorialCompleted = false
         save()
         TutorialTipGate.update(walkthroughCompleted: false)
