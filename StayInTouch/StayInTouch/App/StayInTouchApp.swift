@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 @main
 struct KeepInTouchApp: App {
@@ -17,6 +18,17 @@ struct KeepInTouchApp: App {
         return CoreDataStack.shared
     }()
     @State private var showMigrationAlert = false
+
+    init() {
+        try? Tips.configure([
+            .displayFrequency(.immediate),
+            .datastoreLocation(.applicationDefault),
+        ])
+        let settings = CoreDataAppSettingsRepository(
+            context: CoreDataStack.shared.viewContext
+        ).fetch()
+        TutorialTipGate.update(walkthroughCompleted: settings?.tutorialCompleted ?? false)
+    }
 
     var body: some Scene {
         WindowGroup {

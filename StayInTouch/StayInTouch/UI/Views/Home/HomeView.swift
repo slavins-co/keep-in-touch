@@ -6,12 +6,15 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct HomeView: View {
     @Environment(\.openURL) private var openURL
     @ObservedObject var viewModel: HomeViewModel
     var selectPerson: (Person) -> Void
     @StateObject private var settingsViewModel = SettingsViewModel()
+    @State private var logTouchSwipeTip = LogTouchSwipeTip()
+    @State private var allCaughtUpTip = AllCaughtUpTip()
     @State private var collapsedSections: Set<String> = ["all-good"]
     @State private var savedCollapsedSections: Set<String>?
     @State private var showNewContactsPicker = false
@@ -148,6 +151,7 @@ struct HomeView: View {
                 borderColor: DS.Colors.overdueCardBorder
             )
             .tutorialAnchor(TutorialAnchor.sectionOverdue)
+            .popoverTip(logTouchSwipeTip)
 
             StatusSummaryCard(
                 count: viewModel.dueSoonPeople.count,
@@ -355,6 +359,7 @@ struct HomeView: View {
                 } else {
                     if viewModel.showsAllCaughtUpBanner {
                         AllCaughtUpView()
+                            .popoverTip(allCaughtUpTip)
                     } else {
                         ContactListSection(
                             title: "Overdue",

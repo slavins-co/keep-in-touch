@@ -4,11 +4,14 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct PersonSettingsSection: View {
     @ObservedObject var viewModel: PersonDetailViewModel
     @Binding var settingsExpanded: Bool
     var onAction: (PersonSettingsAction) -> Void
+
+    @State private var tagsDiscoveryTip = TagsDiscoveryTip()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -252,6 +255,7 @@ struct PersonSettingsSection: View {
             }
         }
         .frame(minHeight: 48)
+        .popoverTip(tagsDiscoveryTip)
     }
 
     private var settingsRowNotificationTime: some View {

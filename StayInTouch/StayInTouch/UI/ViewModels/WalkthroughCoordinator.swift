@@ -95,6 +95,7 @@ final class WalkthroughCoordinator: ObservableObject {
         do {
             try settingsRepository.save(settings)
             NotificationCenter.default.post(name: .settingsDidChange, object: nil)
+            TutorialTipGate.update(walkthroughCompleted: true)
         } catch {
             AppLogger.logError(
                 error,
