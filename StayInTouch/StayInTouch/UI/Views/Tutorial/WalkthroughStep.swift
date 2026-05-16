@@ -98,7 +98,7 @@ enum WalkthroughStep: String, CaseIterable, Identifiable {
         case .homeSearch:
             return "Search by name or nickname when you need to log a touch in a hurry. Let's see what a contact looks like."
         case .detailHero:
-            return "The header shows their nickname, photo, and how long since you last connected."
+            return "The header shows their nickname, birthday, and how long since you last connected."
         case .detailQuickActions:
             return "Message, call, or email straight from here — we'll log it to history automatically."
         case .detailLogTouch:

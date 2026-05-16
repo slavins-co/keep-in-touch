@@ -15,8 +15,6 @@ enum TutorialTipGate {
     /// Pass `true` after the walkthrough completes; pass `false` to suppress
     /// tips again (e.g. when "Replay tutorial" is invoked).
     static func update(walkthroughCompleted: Bool) {
-        LogTouchSwipeTip.walkthroughCompleted = walkthroughCompleted
         AllCaughtUpTip.walkthroughCompleted = walkthroughCompleted
-        TagsDiscoveryTip.walkthroughCompleted = walkthroughCompleted
     }
 }

@@ -13,7 +13,6 @@ struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
     var selectPerson: (Person) -> Void
     @StateObject private var settingsViewModel = SettingsViewModel()
-    @State private var logTouchSwipeTip = LogTouchSwipeTip()
     @State private var allCaughtUpTip = AllCaughtUpTip()
     @State private var collapsedSections: Set<String> = ["all-good"]
     @State private var savedCollapsedSections: Set<String>?
@@ -151,7 +150,6 @@ struct HomeView: View {
                 borderColor: DS.Colors.overdueCardBorder
             )
             .tutorialAnchor(TutorialAnchor.sectionOverdue)
-            .popoverTip(logTouchSwipeTip)
 
             StatusSummaryCard(
                 count: viewModel.dueSoonPeople.count,

@@ -16,14 +16,18 @@ enum TutorialDemoData {
     private static let touchEvent1ID = UUID(uuidString: "11111111-1111-1111-1111-111111111140")!
     private static let touchEvent2ID = UUID(uuidString: "11111111-1111-1111-1111-111111111141")!
 
+    /// Monthly is one of the four default cadences seeded by `DefaultDataSeeder`
+    /// (`Weekly`, `Bi-Weekly`, `Monthly`, `Quarterly`). Using a real default
+    /// keeps the demo PersonDetail consistent with what a fresh-install user
+    /// sees in their own list.
     static let cadence = Cadence(
         id: cadenceID,
-        name: "Close Friends",
-        frequencyDays: 14,
-        warningDays: 3,
-        colorHex: "6BCB77",
-        isDefault: false,
-        sortOrder: 0,
+        name: "Monthly",
+        frequencyDays: 30,
+        warningDays: 5,
+        colorHex: nil,
+        isDefault: true,
+        sortOrder: 2,
         createdAt: Date(),
         modifiedAt: Date()
     )
