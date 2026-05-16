@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 @main
 struct KeepInTouchApp: App {
@@ -17,6 +18,17 @@ struct KeepInTouchApp: App {
         return CoreDataStack.shared
     }()
     @State private var showMigrationAlert = false
+
+    init() {
+        // TipKit needs to be configured BEFORE any tip can render. The
+        // `walkthroughCompleted` gate parameter is synced from AppSettings
+        // in `ContentView.loadSettings()` once Core Data is up, so we don't
+        // duplicate the fetch on the cold-launch critical path here.
+        try? Tips.configure([
+            .displayFrequency(.immediate),
+            TipsDatastore.location(),
+        ])
+    }
 
     var body: some Scene {
         WindowGroup {

@@ -37,58 +37,77 @@ struct PersonDetailView: View {
     @State private var showRemoveUndo = false
     @State private var pendingRemoveTask: Task<Void, Never>?
 
-    init(person: Person) {
-        _viewModel = StateObject(wrappedValue: PersonDetailViewModel(person: person))
+    init(person: Person, mode: PersonDetailViewModel.Mode = .normal) {
+        _viewModel = StateObject(wrappedValue: PersonDetailViewModel(person: person, mode: mode))
+        if case .preview = mode {
+            _settingsExpanded = State(initialValue: true)
+        }
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                // TIER 1: Hero Zone
-                PersonHeroSection(
-                    viewModel: viewModel,
-                    onBirthdayEdit: { activeSheet = .birthdayEditor },
-                    onResumePrompt: { activeAlert = .resumePrompt },
-                    onRemoveConfirm: { activeAlert = .removeConfirm },
-                    onLinkContact: {
-                        ContactPickerPresenter.present { cnIdentifier in
-                            viewModel.relinkContact(cnIdentifier: cnIdentifier)
+        ScrollViewReader { scrollProxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // TIER 1: Hero Zone
+                    PersonHeroSection(
+                        viewModel: viewModel,
+                        onBirthdayEdit: { activeSheet = .birthdayEditor },
+                        onResumePrompt: { activeAlert = .resumePrompt },
+                        onRemoveConfirm: { activeAlert = .removeConfirm },
+                        onLinkContact: {
+                            ContactPickerPresenter.present { cnIdentifier in
+                                viewModel.relinkContact(cnIdentifier: cnIdentifier)
+                            }
                         }
-                    }
-                )
+                    )
+                    .tutorialAnchor(TutorialAnchor.personHero)
+                    .tutorialScrollID(TutorialAnchor.personHero, isPreview: viewModel.isPreview)
 
-                PersonQuickActionsBar(
-                    viewModel: viewModel,
-                    onQuickAction: { open($0) }
-                )
-                .opacity(viewModel.person.contactUnavailable ? 0.4 : 1.0)
-                .disabled(viewModel.person.contactUnavailable)
+                    PersonQuickActionsBar(
+                        viewModel: viewModel,
+                        onQuickAction: { open($0) }
+                    )
+                    .opacity(viewModel.person.contactUnavailable ? 0.4 : 1.0)
+                    .disabled(viewModel.person.contactUnavailable)
+                    .tutorialAnchor(TutorialAnchor.personQuickActions)
+                    .tutorialScrollID(TutorialAnchor.personQuickActions, isPreview: viewModel.isPreview)
 
-                SubtleDivider()
+                    SubtleDivider()
 
-                // TIER 2: Context Zone
-                PersonConversationContextCard(viewModel: viewModel)
+                    // TIER 2: Context Zone
+                    PersonConversationContextCard(viewModel: viewModel)
+                        .tutorialAnchor(TutorialAnchor.personNextTouchNotes)
+                        .tutorialScrollID(TutorialAnchor.personNextTouchNotes, isPreview: viewModel.isPreview)
 
-                SubtleDivider()
+                    SubtleDivider()
 
-                PersonTouchHistorySection(
-                    viewModel: viewModel,
-                    showFullHistory: $showFullHistory,
-                    onEditTouch: { activeSheet = .editTouch($0) },
-                    onDeleteTouch: { activeAlert = .deleteConfirm($0) }
-                )
+                    PersonTouchHistorySection(
+                        viewModel: viewModel,
+                        showFullHistory: $showFullHistory,
+                        onEditTouch: { activeSheet = .editTouch($0) },
+                        onDeleteTouch: { activeAlert = .deleteConfirm($0) }
+                    )
+                    .tutorialAnchor(TutorialAnchor.personTimeline)
+                    .tutorialScrollID(TutorialAnchor.personTimeline, isPreview: viewModel.isPreview)
 
-                SubtleDivider()
+                    SubtleDivider()
 
-                // TIER 3: Settings Zone
-                PersonSettingsSection(
-                    viewModel: viewModel,
-                    settingsExpanded: $settingsExpanded,
-                    onAction: { handleSettingsAction($0) }
-                )
+                    // TIER 3: Settings Zone
+                    PersonSettingsSection(
+                        viewModel: viewModel,
+                        settingsExpanded: $settingsExpanded,
+                        onAction: { handleSettingsAction($0) }
+                    )
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .onReceive(NotificationCenter.default.publisher(for: .tutorialScrollToAnchor)) { note in
+                guard viewModel.isPreview, let anchor = note.object as? String else { return }
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    scrollProxy.scrollTo(anchor, anchor: .center)
+                }
+            }
         }
         .safeAreaInset(edge: .bottom) {
             fixedBottomCTA
@@ -203,6 +222,7 @@ struct PersonDetailView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Log connection with \(viewModel.person.displayName)")
             .shadow(color: DS.Colors.ctaShadow, radius: 8, y: 2)
+            .tutorialAnchor(TutorialAnchor.personLogTouch)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
         }

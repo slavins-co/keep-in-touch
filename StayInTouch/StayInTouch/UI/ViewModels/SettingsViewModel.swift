@@ -178,6 +178,31 @@ final class SettingsViewModel: ObservableObject {
         Task { await updateDemoData(enabled) }
     }
 
+    // MARK: - Tutorial
+
+    func replayTutorial() {
+        // Switch to Home tab BEFORE flipping the flag so the freshly mounted
+        // MainTabView inside the WalkthroughHost reads tab 0 from the
+        // DeepLinkRouter singleton on its first render — otherwise the
+        // walkthrough overlay sits on top of whatever tab the user was on.
+        DeepLinkRouter.shared.selectedTab = 0
+        settings.tutorialCompleted = false
+        save()
+        TutorialTipGate.update(walkthroughCompleted: false)
+    }
+
+    func resetFeatureTips() {
+        // TipKit's `Tips.resetDatastore()` only works BEFORE `Tips.configure()`
+        // (which happens in App.init), so it errors out at runtime with
+        // `tipsDatastoreAlreadyConfigured`. Instead, bump the epoch — the next
+        // launch reads from a fresh datastore path and TipKit sees no prior
+        // display history, so the rule-eligible tips fire again.
+        TipsDatastore.bumpEpoch()
+        ErrorToastManager.shared.show(
+            AppError(message: "Feature tips will reset the next time you open Keep In Touch.")
+        )
+    }
+
     // MARK: - Demo Data
 
     private func updateDemoData(_ enabled: Bool) async {

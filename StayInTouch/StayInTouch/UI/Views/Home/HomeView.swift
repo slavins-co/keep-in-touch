@@ -6,12 +6,14 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct HomeView: View {
     @Environment(\.openURL) private var openURL
     @ObservedObject var viewModel: HomeViewModel
     var selectPerson: (Person) -> Void
     @StateObject private var settingsViewModel = SettingsViewModel()
+    @State private var allCaughtUpTip = AllCaughtUpTip()
     @State private var collapsedSections: Set<String> = ["all-good"]
     @State private var savedCollapsedSections: Set<String>?
     @State private var showNewContactsPicker = false
@@ -147,6 +149,7 @@ struct HomeView: View {
                 backgroundColor: DS.Colors.overdueCardBackground,
                 borderColor: DS.Colors.overdueCardBorder
             )
+            .tutorialAnchor(TutorialAnchor.sectionOverdue)
 
             StatusSummaryCard(
                 count: viewModel.dueSoonPeople.count,
@@ -156,6 +159,7 @@ struct HomeView: View {
                 backgroundColor: DS.Colors.dueSoonCardBackground,
                 borderColor: DS.Colors.dueSoonCardBorder
             )
+            .tutorialAnchor(TutorialAnchor.sectionDueSoon)
 
             StatusSummaryCard(
                 count: viewModel.allGoodPeople.count,
@@ -165,6 +169,7 @@ struct HomeView: View {
                 backgroundColor: DS.Colors.allGoodCardBackground,
                 borderColor: DS.Colors.allGoodCardBorder
             )
+            .tutorialAnchor(TutorialAnchor.sectionAllGood)
         }
         .padding(.horizontal)
         .padding(.bottom, DS.Spacing.md)
@@ -179,6 +184,7 @@ struct HomeView: View {
         }
         .padding(.horizontal)
         .padding(.bottom, DS.Spacing.md)
+        .tutorialAnchor(TutorialAnchor.homeFilters)
     }
 
     private var frequencyFilterButton: some View {
@@ -315,6 +321,7 @@ struct HomeView: View {
                 radius: 8,
                 y: 2
             )
+            .tutorialAnchor(TutorialAnchor.searchBar)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.lg)
             .frame(maxWidth: .infinity)
@@ -350,6 +357,7 @@ struct HomeView: View {
                 } else {
                     if viewModel.showsAllCaughtUpBanner {
                         AllCaughtUpView()
+                            .popoverTip(allCaughtUpTip)
                     } else {
                         ContactListSection(
                             title: "Overdue",
