@@ -2,8 +2,8 @@
 //  WalkthroughStepCard.swift
 //  KeepInTouch
 //
-//  Visual card rendered for each walkthrough step. Title, body, primary CTA,
-//  and an optional Skip button. Uses ViewThatFits to adapt to large Dynamic Type.
+//  Visual card rendered for each walkthrough step. Progress bar, title, body,
+//  primary CTA, and a Skip button visible on every step except the wrap.
 //
 
 import SwiftUI
@@ -13,8 +13,21 @@ struct WalkthroughStepCard: View {
     var onPrimary: () -> Void
     var onSkip: () -> Void
 
+    private var progress: Double {
+        guard let index = WalkthroughCoordinator.stepOrder.firstIndex(of: step) else { return 0 }
+        let total = max(1, WalkthroughCoordinator.stepOrder.count - 1)
+        return Double(index) / Double(total)
+    }
+
+    private var progressAccessibilityLabel: String {
+        guard let index = WalkthroughCoordinator.stepOrder.firstIndex(of: step) else { return "" }
+        return "Step \(index + 1) of \(WalkthroughCoordinator.stepOrder.count)"
+    }
+
     var body: some View {
         VStack(spacing: DS.Spacing.md) {
+            progressBar
+
             Text(step.title)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(DS.Colors.primaryText)
@@ -48,5 +61,21 @@ struct WalkthroughStepCard: View {
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: 4)
         .padding(.horizontal, DS.Spacing.md)
+    }
+
+    private var progressBar: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(DS.Colors.separator.opacity(0.4))
+                Capsule()
+                    .fill(DS.Colors.accent)
+                    .frame(width: geo.size.width * progress)
+            }
+        }
+        .frame(height: 3)
+        .animation(.easeInOut(duration: 0.3), value: progress)
+        .accessibilityElement()
+        .accessibilityLabel(progressAccessibilityLabel)
     }
 }

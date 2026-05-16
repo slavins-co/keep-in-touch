@@ -125,9 +125,10 @@ enum WalkthroughStep: String, CaseIterable, Identifiable {
         }
     }
 
-    /// True for the very first step where the user can opt out before investing.
+    /// True for every step except the final wrap, where the primary CTA is
+    /// itself the "I'm done" action so a Skip is redundant.
     var showsSkipButton: Bool {
-        self == .welcome
+        self != .detailWrap
     }
 
     /// True for steps rendered as a centered card with no spotlight cutout.
