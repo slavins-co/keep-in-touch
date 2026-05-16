@@ -18,6 +18,7 @@ extension WidgetDataProvider {
                 dueSoonCount: 0,
                 featured: [],
                 hasTrackedPeople: false,
+                trackedCount: 0,
                 themeOverride: nil
             )
         }

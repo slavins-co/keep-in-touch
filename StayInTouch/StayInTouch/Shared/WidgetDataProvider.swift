@@ -22,14 +22,52 @@ enum WidgetPersonStatus: Hashable {
     case dueSoon(daysUntilDue: Int)
 }
 
+extension WidgetPersonStatus {
+    /// Long-form, used by the medium home-screen widget.
+    /// Example: "3 days overdue", "Due in 1 day", "Due today".
+    var subtitle: String {
+        switch self {
+        case .overdue(let days):
+            return "\(days) day\(days == 1 ? "" : "s") overdue"
+        case .dueSoon(let days):
+            return days == 0 ? "Due today" : "Due in \(days) day\(days == 1 ? "" : "s")"
+        }
+    }
+
+    /// Compact form, used by small + accessory widgets.
+    /// Example: "3d overdue", "Due in 1d", "Due today".
+    var shortSubtitle: String {
+        switch self {
+        case .overdue(let days):
+            return "\(days)d overdue"
+        case .dueSoon(let days):
+            return days == 0 ? "Due today" : "Due in \(days)d"
+        }
+    }
+}
+
 struct OverduePerson: Hashable {
     let id: UUID
     let displayName: String
+    let nickname: String?
     let initials: String
     let avatarColorHex: String
     let groupName: String
     let groupColorHex: String?
     let status: WidgetPersonStatus
+}
+
+extension OverduePerson {
+    /// Short display preference: nickname (when present) > first name > displayName.
+    /// Used by accessory rectangular and inline widgets where space is constrained.
+    var displayShortName: String {
+        if let nick = nickname?.trimmingCharacters(in: .whitespacesAndNewlines), !nick.isEmpty {
+            return nick
+        }
+        let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let first = trimmed.split(separator: " ").first.map(String.init) ?? ""
+        return first.isEmpty ? trimmed : first
+    }
 }
 
 enum WidgetDataProvider {
@@ -41,6 +79,10 @@ enum WidgetDataProvider {
         let dueSoonCount: Int
         let featured: [OverduePerson]
         let hasTrackedPeople: Bool
+        /// Total tracked, non-paused, non-demo people in scope (after group
+        /// filter). Used as the denominator for the accessory circular
+        /// widget's gauge fill (`atRisk / trackedCount`).
+        let trackedCount: Int
         /// Raw AppSettings.theme string: "dark", "light", "system", or nil.
         let themeOverride: String?
     }
@@ -52,7 +94,7 @@ enum WidgetDataProvider {
         now: Date = Date(),
         groupFilter: UUID? = nil
     ) -> Snapshot {
-        var result = Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
+        var result = Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil)
 
         context.performAndWait {
             let hasTrackedPeople = countTrackedPeople(context: context) > 0
@@ -76,6 +118,7 @@ enum WidgetDataProvider {
                     return OverduePerson(
                         id: id,
                         displayName: displayName,
+                        nickname: person.nickname,
                         initials: initials,
                         avatarColorHex: avatarColor,
                         groupName: groupName,
@@ -100,6 +143,7 @@ enum WidgetDataProvider {
                 dueSoonCount: dueSoonCount,
                 featured: featured,
                 hasTrackedPeople: hasTrackedPeople,
+                trackedCount: people.count,
                 themeOverride: themeOverride
             )
         }

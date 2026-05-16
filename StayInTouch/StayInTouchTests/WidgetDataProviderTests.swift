@@ -200,12 +200,82 @@ final class WidgetDataProviderTests: XCTestCase {
         XCTAssertTrue(snap.featured.isEmpty)
     }
 
+    // MARK: - trackedCount (used by accessory circular gauge fill)
+
+    func testSnapshot_trackedCount_zeroWhenEmpty() {
+        let snap = WidgetDataProvider.snapshot(context: context)
+        XCTAssertEqual(snap.trackedCount, 0)
+    }
+
+    func testSnapshot_trackedCount_excludesPausedAndDemoAndUntracked() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 10, warningDays: 2)
+
+        // 4 active tracked, 1 paused, 1 demo, 1 untracked → trackedCount = 4
+        for i in 0..<4 {
+            _ = seedPerson(name: "Active\(i)", cadenceId: cadenceId, lastTouchAt: daysAgo(2))
+        }
+        _ = seedPerson(name: "Paused", cadenceId: cadenceId, lastTouchAt: daysAgo(2), isPaused: true)
+        _ = seedPerson(name: "Demo", cadenceId: cadenceId, lastTouchAt: daysAgo(2), isDemoData: true)
+        _ = seedPerson(name: "Untracked", cadenceId: cadenceId, lastTouchAt: daysAgo(2), isTracked: false)
+
+        let snap = WidgetDataProvider.snapshot(context: context)
+        XCTAssertEqual(snap.trackedCount, 4)
+    }
+
+    func testSnapshot_trackedCount_respectsGroupFilter() {
+        let cadenceA = UUID()
+        let cadenceB = UUID()
+        _ = seedGroup(id: cadenceA, frequencyDays: 10, warningDays: 2)
+        _ = seedGroup(id: cadenceB, frequencyDays: 10, warningDays: 2)
+
+        for i in 0..<3 { _ = seedPerson(name: "A\(i)", cadenceId: cadenceA, lastTouchAt: daysAgo(2)) }
+        for i in 0..<5 { _ = seedPerson(name: "B\(i)", cadenceId: cadenceB, lastTouchAt: daysAgo(2)) }
+
+        let unfiltered = WidgetDataProvider.snapshot(context: context)
+        XCTAssertEqual(unfiltered.trackedCount, 8)
+
+        let filteredA = WidgetDataProvider.snapshot(context: context, groupFilter: cadenceA)
+        XCTAssertEqual(filteredA.trackedCount, 3)
+    }
+
+    // MARK: - Nickname
+
+    func testSnapshot_populatesNickname_whenPersonHasNickname() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 10, warningDays: 2)
+        _ = seedPerson(
+            name: "Robert Smith",
+            cadenceId: cadenceId,
+            lastTouchAt: daysAgo(30),
+            nickname: "Bobby"
+        )
+
+        let snap = WidgetDataProvider.snapshot(context: context)
+        XCTAssertEqual(snap.featured.first?.nickname, "Bobby")
+    }
+
+    func testSnapshot_nicknameIsNil_whenPersonHasNoNickname() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 10, warningDays: 2)
+        _ = seedPerson(
+            name: "Alice",
+            cadenceId: cadenceId,
+            lastTouchAt: daysAgo(30),
+            nickname: nil
+        )
+
+        let snap = WidgetDataProvider.snapshot(context: context)
+        XCTAssertNil(snap.featured.first?.nickname)
+    }
+
     // MARK: - Fixtures
 
-    private func makeOverduePerson(name: String, status: WidgetPersonStatus) -> OverduePerson {
+    private func makeOverduePerson(name: String, status: WidgetPersonStatus, nickname: String? = nil) -> OverduePerson {
         OverduePerson(
             id: UUID(),
             displayName: name,
+            nickname: nickname,
             initials: String(name.prefix(2)),
             avatarColorHex: "#FF6B6B",
             groupName: "Friends",
@@ -244,7 +314,8 @@ final class WidgetDataProviderTests: XCTestCase {
         groupAddedAt: Date? = nil,
         isPaused: Bool = false,
         isTracked: Bool = true,
-        isDemoData: Bool = false
+        isDemoData: Bool = false,
+        nickname: String? = nil
     ) -> PersonEntity {
         let entity = PersonEntity(context: context)
         entity.id = UUID()
@@ -262,6 +333,7 @@ final class WidgetDataProviderTests: XCTestCase {
         entity.notificationsMuted = false
         entity.contactUnavailable = false
         entity.birthdayNotificationsEnabled = true
+        entity.nickname = nickname
         entity.sortOrder = 0
         entity.createdAt = Date()
         entity.modifiedAt = Date()

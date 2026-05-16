@@ -55,41 +55,27 @@ extension WidgetDataProvider.Snapshot {
         overdueCount: 2,
         dueSoonCount: 1,
         featured: [
-            OverduePerson(id: UUID(), displayName: "Alex", initials: "A", avatarColorHex: "#FF6B6B", groupName: "Weekly", groupColorHex: "#4ECDC4", status: .overdue(daysOverdue: 5)),
-            OverduePerson(id: UUID(), displayName: "Sam", initials: "S", avatarColorHex: "#4ECDC4", groupName: "Monthly", groupColorHex: "#FFD166", status: .overdue(daysOverdue: 1)),
-            OverduePerson(id: UUID(), displayName: "Jordan", initials: "J", avatarColorHex: "#FFD166", groupName: "Quarterly", groupColorHex: "#A78BFA", status: .dueSoon(daysUntilDue: 2)),
+            OverduePerson(id: UUID(), displayName: "Alex Carter", nickname: nil, initials: "AC", avatarColorHex: "#FF6B6B", groupName: "Weekly", groupColorHex: "#4ECDC4", status: .overdue(daysOverdue: 5)),
+            OverduePerson(id: UUID(), displayName: "Samantha Park", nickname: "Sam", initials: "SP", avatarColorHex: "#4ECDC4", groupName: "Monthly", groupColorHex: "#FFD166", status: .overdue(daysOverdue: 1)),
+            OverduePerson(id: UUID(), displayName: "Jordan", nickname: nil, initials: "J", avatarColorHex: "#FFD166", groupName: "Quarterly", groupColorHex: "#A78BFA", status: .dueSoon(daysUntilDue: 2)),
         ],
         hasTrackedPeople: true,
+        trackedCount: 8,
         themeOverride: nil
     )
 
-    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, themeOverride: nil)
-    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: true, themeOverride: nil)
+    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil)
+    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: true, trackedCount: 5, themeOverride: nil)
 }
 
-private extension WidgetPersonStatus {
+extension WidgetPersonStatus {
+    /// SwiftUI ring tint. Lives here (widget target) because `Color` is
+    /// SwiftUI; the textual helpers are in `Shared/WidgetDataProvider.swift`
+    /// so non-SwiftUI consumers (`AccessoryWidgetLogic`, tests) can reach them.
     var ringColor: Color {
         switch self {
         case .overdue: return .red
         case .dueSoon: return .orange
-        }
-    }
-
-    var subtitle: String {
-        switch self {
-        case .overdue(let days):
-            return "\(days) day\(days == 1 ? "" : "s") overdue"
-        case .dueSoon(let days):
-            return days == 0 ? "Due today" : "Due in \(days) day\(days == 1 ? "" : "s")"
-        }
-    }
-
-    var shortSubtitle: String {
-        switch self {
-        case .overdue(let days):
-            return "\(days)d overdue"
-        case .dueSoon(let days):
-            return days == 0 ? "Due today" : "Due in \(days)d"
         }
     }
 }

@@ -10,5 +10,6 @@ import WidgetKit
 struct KeepInTouchWidgetBundle: WidgetBundle {
     var body: some Widget {
         OverdueWidget()
+        OverdueLockScreenWidget()
     }
 }
