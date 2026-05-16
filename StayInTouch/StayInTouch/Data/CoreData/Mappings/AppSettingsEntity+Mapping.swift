@@ -28,7 +28,10 @@ extension AppSettingsEntity {
             birthdayIgnoreSnoozePause: birthdayIgnoreSnoozePause,
             lastContactsSyncAt: lastContactsSyncAt,
             onboardingCompleted: onboardingCompleted,
-            appVersion: appVersion ?? ""
+            appVersion: appVersion ?? "",
+            tutorialCompleted: tutorialCompleted,
+            tutorialVersion: tutorialVersion,
+            lastSeenAppVersion: lastSeenAppVersion
         )
     }
 
@@ -52,5 +55,8 @@ extension AppSettingsEntity {
         lastContactsSyncAt = settings.lastContactsSyncAt
         onboardingCompleted = settings.onboardingCompleted
         appVersion = settings.appVersion
+        tutorialCompleted = settings.tutorialCompleted
+        tutorialVersion = settings.tutorialVersion
+        lastSeenAppVersion = settings.lastSeenAppVersion
     }
 }

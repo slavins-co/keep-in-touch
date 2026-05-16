@@ -18,6 +18,10 @@ Compact prevention rules. Full narratives archived in `tasks/lessons-archive.md`
 - **`.overlay()` does NOT cover fullScreenCover/sheet**: These create separate UIKit presentation contexts. For app-wide overlays (privacy screen), use a UIWindow at `.alert + 1` level
 - **LazyVStack caches views by ForEach identity across sections**: When items move between sections (same UUID, different section), use `refreshToken` UUID + `.id()` on LazyVStack to force recreation. Clue: "force quit fixes it"
 - **Text + Text concat supports `.foregroundStyle` on iOS 17+**: `Text.foregroundStyle(_:)` returns `Text` (not `some View`), so mixed-color single-line labels via `Text(...) + Text(...)` work with the modern API. Don't fall back to deprecated `.foregroundColor` — it's not needed.
+- **`widgetAccentable(true)` is the iOS 16+ accent API**: Not `widgetAccentedRenderingMode(_:)` (that's iOS 18+ and a different API for controlling subtree rendering). For zones that should pick up the system accent treatment on Lock Screen / StandBy, use `.widgetAccentable(true)` — no availability check needed
+- **Accessory widget body can't host bare `switch` / `let`**: `@ViewBuilder` rejects standalone non-view statements. Extract symbol/copy decisions into separate non-ViewBuilder helpers that return the value, then use the value inside the body. Symptom: "type '()' cannot conform to 'View'"
+- **Lock Screen accessory widgets force monochrome — encode severity in fill, weight, or iconography**: Color is stripped on Lock Screen and StandBy night. A ring that always fills 100% becomes a frame, not a signal. Make fill proportional (e.g., `atRisk / trackedCount`) so the widget conveys "how bad" without color
+- **`.widgetURL(_:)` on a child inside `Group` propagates up**: Per-branch widget URLs in conditional content work — SwiftUI modifiers propagate upward. Don't refactor away conditional `.widgetURL` placement on the assumption it must be at the root; the existing small/medium widgets already use this pattern
 
 ## Multi-Target Sharing
 
@@ -70,6 +74,7 @@ Compact prevention rules. Full narratives archived in `tasks/lessons-archive.md`
 - **Touch target vs layout inflation**: `minHeight: 44` on inline elements inflates parent height. For compact containers (chips, pills), use `minWidth` only + `.contentShape(Rectangle())`
 - **Font weight as legibility lever**: For section-level headers at `subheadline` size or smaller, default to `.bold`. Reserve `.semibold` for body-adjacent text
 - **Semantic color tiers**: `primaryText` = main content. `secondaryText` = supporting content that must be read (labels, section headers). `tertiaryText` = decorative/hint only (placeholders, disabled). When in doubt, use `secondaryText`
+- **Lock-screen widgets need custom `.accessibilityLabel()`**: VoiceOver reads literal widget text including the interpunct (`·`) as "dot." Compose explicit labels that lead with the app name and read in plain English ("Keep In Touch. 3 people overdue.") instead of falling back to default text inference
 
 ## Testing
 

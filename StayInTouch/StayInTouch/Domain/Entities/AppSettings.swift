@@ -33,4 +33,8 @@ struct AppSettings: Identifiable, Equatable {
     var lastContactsSyncAt: Date?
     var onboardingCompleted: Bool
     var appVersion: String
+
+    var tutorialCompleted: Bool = false
+    var tutorialVersion: String? = nil
+    var lastSeenAppVersion: String? = nil
 }
