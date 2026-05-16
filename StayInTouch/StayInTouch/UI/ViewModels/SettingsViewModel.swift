@@ -8,6 +8,7 @@
 import Foundation
 import UserNotifications
 import Contacts
+import TipKit
 
 @MainActor
 final class SettingsViewModel: ObservableObject {
@@ -176,6 +177,18 @@ final class SettingsViewModel: ObservableObject {
         settings.demoModeEnabled = enabled
         save()
         Task { await updateDemoData(enabled) }
+    }
+
+    // MARK: - Tutorial
+
+    func replayTutorial() {
+        settings.tutorialCompleted = false
+        save()
+        TutorialTipGate.update(walkthroughCompleted: false)
+    }
+
+    func resetFeatureTips() {
+        try? Tips.resetDatastore()
     }
 
     // MARK: - Demo Data

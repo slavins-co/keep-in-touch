@@ -29,6 +29,7 @@ struct SettingsView: View {
     @State private var importResultMessage = ""
     @State private var showExportFormatPicker = false
     @State private var showResetFrequenciesConfirmation = false
+    @State private var showResetTipsConfirm = false
     @State private var showPostImportMatch = false
     @State private var postImportResult: ImportResult?
     @State private var postImportMatchSummary: ContactMatchSummary?
@@ -83,6 +84,12 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Enable Contacts access in Settings to import contacts.")
+        }
+        .alert("Reset Feature Tips?", isPresented: $showResetTipsConfirm) {
+            Button("Reset", role: .destructive) { viewModel.resetFeatureTips() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Show all feature tips again the next time you encounter them.")
         }
         .sheet(item: $contactImportStep, onDismiss: {
             if let next = pendingImportStep {
@@ -371,6 +378,20 @@ struct SettingsView: View {
             )) {
                 Label("Anonymous Usage Analytics", systemImage: "shield.checkered")
             }
+
+            Button {
+                viewModel.replayTutorial()
+            } label: {
+                Label("Replay Tutorial", systemImage: "sparkles")
+            }
+            .accessibilityHint("Re-runs the welcome walkthrough on Home")
+
+            Button {
+                showResetTipsConfirm = true
+            } label: {
+                Label("Reset Feature Tips", systemImage: "lightbulb")
+            }
+            .accessibilityHint("Makes all hint popovers eligible again")
 
             NavigationLink(destination: AdvancedSettingsView(viewModel: viewModel)) {
                 Label("Advanced Settings", systemImage: "gearshape.2")
