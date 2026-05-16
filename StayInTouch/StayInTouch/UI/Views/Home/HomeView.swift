@@ -147,6 +147,7 @@ struct HomeView: View {
                 backgroundColor: DS.Colors.overdueCardBackground,
                 borderColor: DS.Colors.overdueCardBorder
             )
+            .tutorialAnchor(TutorialAnchor.sectionOverdue)
 
             StatusSummaryCard(
                 count: viewModel.dueSoonPeople.count,
@@ -156,6 +157,7 @@ struct HomeView: View {
                 backgroundColor: DS.Colors.dueSoonCardBackground,
                 borderColor: DS.Colors.dueSoonCardBorder
             )
+            .tutorialAnchor(TutorialAnchor.sectionDueSoon)
 
             StatusSummaryCard(
                 count: viewModel.allGoodPeople.count,
@@ -165,6 +167,7 @@ struct HomeView: View {
                 backgroundColor: DS.Colors.allGoodCardBackground,
                 borderColor: DS.Colors.allGoodCardBorder
             )
+            .tutorialAnchor(TutorialAnchor.sectionAllGood)
         }
         .padding(.horizontal)
         .padding(.bottom, DS.Spacing.md)
@@ -175,6 +178,7 @@ struct HomeView: View {
     private var filters: some View {
         HStack(spacing: DS.Spacing.sm) {
             frequencyFilterButton
+                .tutorialAnchor(TutorialAnchor.frequencyFilter)
             groupFilterButton
         }
         .padding(.horizontal)
@@ -315,6 +319,7 @@ struct HomeView: View {
                 radius: 8,
                 y: 2
             )
+            .tutorialAnchor(TutorialAnchor.searchBar)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.lg)
             .frame(maxWidth: .infinity)
