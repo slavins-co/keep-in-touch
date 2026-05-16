@@ -97,35 +97,43 @@ final class WalkthroughCoordinator: ObservableObject {
     /// demo PersonDetail is currently presented, the cover stays visible for
     /// `postCompleteHoldDuration` seconds before dismissing — letting the
     /// "this is a real contact" mental model land before the demo vanishes.
+    ///
+    /// CRITICAL ordering: the flag is saved IMMEDIATELY (so a crash mid-hold
+    /// still records the completion), but `.settingsDidChange` is posted ONLY
+    /// after the hold completes. Otherwise `ContentView` would observe the
+    /// notification immediately and swap `WalkthroughHost` back to plain
+    /// `MainTabView`, which dismounts the `fullScreenCover` and the demo
+    /// PersonDetail vanishes before the hold timer fires.
     private func markComplete(holdDemoDetail: Bool) {
         currentStep = nil
         stepHistory = []
         didComplete = true
-        persistCompletion()
+        saveCompletionFlag()
+        TutorialTipGate.update(walkthroughCompleted: true)
 
         if holdDemoDetail && isPresentingDemoDetail {
             Task { @MainActor in
                 try? await Task.sleep(nanoseconds: UInt64(Self.postCompleteHoldDuration * 1_000_000_000))
                 isPresentingDemoDetail = false
+                NotificationCenter.default.post(name: .settingsDidChange, object: nil)
             }
         } else {
             isPresentingDemoDetail = false
+            NotificationCenter.default.post(name: .settingsDidChange, object: nil)
         }
     }
 
-    private func persistCompletion() {
+    private func saveCompletionFlag() {
         guard var settings = settingsRepository.fetch() else { return }
         settings.tutorialCompleted = true
         settings.tutorialVersion = Self.currentVersion
         do {
             try settingsRepository.save(settings)
-            NotificationCenter.default.post(name: .settingsDidChange, object: nil)
-            TutorialTipGate.update(walkthroughCompleted: true)
         } catch {
             AppLogger.logError(
                 error,
                 category: AppLogger.viewModel,
-                context: "WalkthroughCoordinator.persistCompletion"
+                context: "WalkthroughCoordinator.saveCompletionFlag"
             )
             ErrorToastManager.shared.show(.saveFailed("Tutorial"))
         }

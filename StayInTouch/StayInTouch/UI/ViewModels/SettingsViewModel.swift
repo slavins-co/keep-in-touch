@@ -8,7 +8,6 @@
 import Foundation
 import UserNotifications
 import Contacts
-import TipKit
 
 @MainActor
 final class SettingsViewModel: ObservableObject {
@@ -193,12 +192,15 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func resetFeatureTips() {
-        do {
-            try Tips.resetDatastore()
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.resetFeatureTips")
-            ErrorToastManager.shared.show(AppError(message: "Couldn't reset feature tips. Please try again."))
-        }
+        // TipKit's `Tips.resetDatastore()` only works BEFORE `Tips.configure()`
+        // (which happens in App.init), so it errors out at runtime with
+        // `tipsDatastoreAlreadyConfigured`. Instead, bump the epoch — the next
+        // launch reads from a fresh datastore path and TipKit sees no prior
+        // display history, so the rule-eligible tips fire again.
+        TipsDatastore.bumpEpoch()
+        ErrorToastManager.shared.show(
+            AppError(message: "Feature tips will reset the next time you open Keep In Touch.")
+        )
     }
 
     // MARK: - Demo Data

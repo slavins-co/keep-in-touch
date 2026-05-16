@@ -22,7 +22,7 @@ struct KeepInTouchApp: App {
     init() {
         try? Tips.configure([
             .displayFrequency(.immediate),
-            .datastoreLocation(.applicationDefault),
+            TipsDatastore.location(),
         ])
         let settings = CoreDataAppSettingsRepository(
             context: CoreDataStack.shared.viewContext

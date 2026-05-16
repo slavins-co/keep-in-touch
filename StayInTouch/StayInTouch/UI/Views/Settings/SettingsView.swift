@@ -89,7 +89,7 @@ struct SettingsView: View {
             Button("Reset", role: .destructive) { viewModel.resetFeatureTips() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Show all feature tips again the next time you encounter them.")
+            Text("Feature tips will reset the next time you open Keep In Touch.")
         }
         .sheet(item: $contactImportStep, onDismiss: {
             if let next = pendingImportStep {
