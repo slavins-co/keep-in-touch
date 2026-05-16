@@ -180,11 +180,11 @@ struct HomeView: View {
     private var filters: some View {
         HStack(spacing: DS.Spacing.sm) {
             frequencyFilterButton
-                .tutorialAnchor(TutorialAnchor.frequencyFilter)
             groupFilterButton
         }
         .padding(.horizontal)
         .padding(.bottom, DS.Spacing.md)
+        .tutorialAnchor(TutorialAnchor.homeFilters)
     }
 
     private var frequencyFilterButton: some View {

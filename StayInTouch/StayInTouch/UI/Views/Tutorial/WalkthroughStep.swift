@@ -52,7 +52,7 @@ enum WalkthroughStep: String, CaseIterable, Identifiable {
         case .homeOverdue:        return TutorialAnchor.sectionOverdue
         case .homeDueSoon:        return TutorialAnchor.sectionDueSoon
         case .homeAllGood:        return TutorialAnchor.sectionAllGood
-        case .homeFilters:        return TutorialAnchor.frequencyFilter
+        case .homeFilters:        return TutorialAnchor.homeFilters
         case .homeSearch:         return TutorialAnchor.searchBar
         case .detailHero:         return TutorialAnchor.personHero
         case .detailQuickActions: return TutorialAnchor.personQuickActions
@@ -70,7 +70,7 @@ enum WalkthroughStep: String, CaseIterable, Identifiable {
         case .homeOverdue:            return "Overdue"
         case .homeDueSoon:            return "Due Soon"
         case .homeAllGood:            return "All Good"
-        case .homeFilters:            return "Focus by cadence"
+        case .homeFilters:            return "Filter your list"
         case .homeSearch:             return "Find someone fast"
         case .detailHero:             return "Meet Alex"
         case .detailQuickActions:     return "Quick connect"
@@ -94,7 +94,7 @@ enum WalkthroughStep: String, CaseIterable, Identifiable {
         case .homeAllGood:
             return "People you're on top of. Nothing needed right now."
         case .homeFilters:
-            return "Filter to see just your close circle, or just your wider network."
+            return "Narrow by Frequency to focus on a specific cadence, or by Group to zoom into a circle like Work or Family."
         case .homeSearch:
             return "Search by name or nickname when you need to log a touch in a hurry. Let's see what a contact looks like."
         case .detailHero:
@@ -142,7 +142,7 @@ enum TutorialAnchor {
     static let sectionOverdue        = "section-overdue"
     static let sectionDueSoon        = "section-duesoon"
     static let sectionAllGood        = "section-allgood"
-    static let frequencyFilter       = "frequency-filter"
+    static let homeFilters           = "home-filters"
     static let searchBar             = "search-bar"
     static let personHero            = "person-hero"
     static let personQuickActions    = "person-quick-actions"
