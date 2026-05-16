@@ -20,14 +20,14 @@ struct KeepInTouchApp: App {
     @State private var showMigrationAlert = false
 
     init() {
+        // TipKit needs to be configured BEFORE any tip can render. The
+        // `walkthroughCompleted` gate parameter is synced from AppSettings
+        // in `ContentView.loadSettings()` once Core Data is up, so we don't
+        // duplicate the fetch on the cold-launch critical path here.
         try? Tips.configure([
             .displayFrequency(.immediate),
             TipsDatastore.location(),
         ])
-        let settings = CoreDataAppSettingsRepository(
-            context: CoreDataStack.shared.viewContext
-        ).fetch()
-        TutorialTipGate.update(walkthroughCompleted: settings?.tutorialCompleted ?? false)
     }
 
     var body: some Scene {

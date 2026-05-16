@@ -11,9 +11,9 @@ import Foundation
 @MainActor
 final class WalkthroughCoordinator: ObservableObject {
     @Published private(set) var currentStep: WalkthroughStep?
-    @Published private(set) var stepHistory: [WalkthroughStep] = []
     @Published private(set) var isPresentingDemoDetail: Bool = false
-    @Published private(set) var didComplete: Bool = false
+    private(set) var stepHistory: [WalkthroughStep] = []
+    private(set) var didComplete: Bool = false
 
     static let currentVersion = "1.0"
 
@@ -31,23 +31,22 @@ final class WalkthroughCoordinator: ObservableObject {
     /// a real contact looks like" to land.
     static let postCompleteHoldDuration: TimeInterval = 2.0
 
-    /// Seconds to wait between setting `isPresentingDemoDetail = false`
-    /// (which kicks off the fullScreenCover slide-down) and posting
-    /// `.settingsDidChange` (which makes ContentView swap WalkthroughHost
+    /// Seconds to wait between starting the fullScreenCover slide-down and
+    /// posting `.settingsDidChange` (which makes ContentView swap WalkthroughHost
     /// back to plain MainTabView). Without this gap the parent unmount
-    /// obliterates the cover mid-animation and the demo PersonDetail
-    /// appears to vanish abruptly. iOS's stock cover transition runs ~0.35s.
+    /// obliterates the cover mid-animation. iOS's stock cover transition runs
+    /// ~0.35s.
     static let postDismissAnimationDuration: TimeInterval = 0.5
 
     private let settingsRepository: AppSettingsRepository
-    private let haptics: WalkthroughHaptics
+    private let hapticsEnabled: Bool
 
     init(
         settingsRepository: AppSettingsRepository,
-        haptics: WalkthroughHaptics = DefaultWalkthroughHaptics()
+        hapticsEnabled: Bool = true
     ) {
         self.settingsRepository = settingsRepository
-        self.haptics = haptics
+        self.hapticsEnabled = hapticsEnabled
     }
 
     var canGoBack: Bool { !stepHistory.isEmpty }
@@ -65,10 +64,10 @@ final class WalkthroughCoordinator: ObservableObject {
 
     func advance() {
         guard let step = currentStep else { return }
-        haptics.soft()
+        playHaptic()
         guard let index = Self.stepOrder.firstIndex(of: step),
               index + 1 < Self.stepOrder.count else {
-            markComplete(holdDemoDetail: isInDetailPhase)
+            markComplete()
             return
         }
         let next = Self.stepOrder[index + 1]
@@ -78,7 +77,7 @@ final class WalkthroughCoordinator: ObservableObject {
             isPresentingDemoDetail = true
         }
         currentStep = next
-        postScrollIfNeeded(for: next)
+        postScrollAnchor(for: next)
     }
 
     func back() {
@@ -88,61 +87,71 @@ final class WalkthroughCoordinator: ObservableObject {
             isPresentingDemoDetail = false
         }
         currentStep = previous
-        postScrollIfNeeded(for: previous)
+        postScrollAnchor(for: previous)
     }
 
-    private func postScrollIfNeeded(for step: WalkthroughStep) {
+    func skip() {
+        playHaptic()
+        markComplete()
+    }
+
+    // MARK: - Private
+
+    private func playHaptic() {
+        guard hapticsEnabled else { return }
+        Haptics.soft()
+    }
+
+    private func postScrollAnchor(for step: WalkthroughStep) {
         guard step.phase == .detailB, let anchor = step.anchorID else { return }
         NotificationCenter.default.post(name: .tutorialScrollToAnchor, object: anchor)
     }
 
-    func skip() {
-        haptics.soft()
-        markComplete(holdDemoDetail: false)
-    }
-
-    /// Marks the walkthrough complete. When `holdDemoDetail` is true and the
-    /// demo PersonDetail is currently presented, the cover stays visible for
-    /// `postCompleteHoldDuration` seconds before dismissing — letting the
-    /// "this is a real contact" mental model land before the demo vanishes.
-    ///
-    /// CRITICAL ordering: the flag is saved IMMEDIATELY (so a crash mid-hold
-    /// still records the completion), but `.settingsDidChange` is posted ONLY
-    /// after the hold completes. Otherwise `ContentView` would observe the
-    /// notification immediately and swap `WalkthroughHost` back to plain
-    /// `MainTabView`, which dismounts the `fullScreenCover` and the demo
-    /// PersonDetail vanishes before the hold timer fires.
-    private func markComplete(holdDemoDetail: Bool) {
+    /// Marks the walkthrough complete. Three cases:
+    /// - No demo cover up (skip from Home phase): post `.settingsDidChange`
+    ///   immediately.
+    /// - Wrap-CTA path (`currentStep == .detailWrap`): hold the cover up for
+    ///   `postCompleteHoldDuration` so the user gets a beat with the "real
+    ///   contact" view, then dismiss + post.
+    /// - Skip from Detail phase: dismiss synchronously so callers see the
+    ///   flag flip immediately, but defer the notification post by
+    ///   `postDismissAnimationDuration` so the cover's slide-down finishes
+    ///   before the parent (`WalkthroughHost`) is swapped out by ContentView.
+    private func markComplete() {
         let wasPresentingDemo = isPresentingDemoDetail
+        let isWrapCompletion = currentStep == .detailWrap
+
         currentStep = nil
         stepHistory = []
         didComplete = true
         saveCompletionFlag()
         TutorialTipGate.update(walkthroughCompleted: true)
 
-        if holdDemoDetail && wasPresentingDemo {
+        guard wasPresentingDemo else {
+            NotificationCenter.default.post(name: .settingsDidChange, object: nil)
+            return
+        }
+
+        if isWrapCompletion {
+            // Hold the cover up, then dismiss + post after the slide-down.
             Task { @MainActor in
-                try? await Task.sleep(nanoseconds: UInt64(Self.postCompleteHoldDuration * 1_000_000_000))
+                await sleep(Self.postCompleteHoldDuration)
                 isPresentingDemoDetail = false
-                // Wait for the cover slide-down to finish before posting
-                // .settingsDidChange. Otherwise the parent unmount tears the
-                // cover off mid-animation and Alex appears to vanish abruptly.
-                try? await Task.sleep(nanoseconds: UInt64(Self.postDismissAnimationDuration * 1_000_000_000))
-                NotificationCenter.default.post(name: .settingsDidChange, object: nil)
-            }
-        } else if wasPresentingDemo {
-            // Skip from detail phase: still let the cover slide down before
-            // unmounting the host.
-            isPresentingDemoDetail = false
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: UInt64(Self.postDismissAnimationDuration * 1_000_000_000))
+                await sleep(Self.postDismissAnimationDuration)
                 NotificationCenter.default.post(name: .settingsDidChange, object: nil)
             }
         } else {
-            // No cover up (skip from home phase) — safe to post immediately.
+            // Skip-from-detail: dismiss now, post after the slide-down.
             isPresentingDemoDetail = false
-            NotificationCenter.default.post(name: .settingsDidChange, object: nil)
+            Task { @MainActor in
+                await sleep(Self.postDismissAnimationDuration)
+                NotificationCenter.default.post(name: .settingsDidChange, object: nil)
+            }
         }
+    }
+
+    private func sleep(_ seconds: TimeInterval) async {
+        try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
     }
 
     private func saveCompletionFlag() {

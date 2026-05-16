@@ -19,7 +19,7 @@ final class WalkthroughCoordinatorTests: XCTestCase {
         settingsRepo.settings = MockSettingsRepository.makeSettings()
         coordinator = WalkthroughCoordinator(
             settingsRepository: settingsRepo,
-            haptics: NoOpWalkthroughHaptics()
+            hapticsEnabled: false
         )
     }
 
