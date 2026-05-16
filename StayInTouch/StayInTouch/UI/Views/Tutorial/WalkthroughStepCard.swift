@@ -27,11 +27,6 @@ struct WalkthroughStepCard: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            if step == .homeSwipeDemo {
-                SwipeDemoView()
-                    .padding(.vertical, DS.Spacing.xs)
-            }
-
             Button(action: onPrimary) {
                 Text(step.primaryCTA)
             }

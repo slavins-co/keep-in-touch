@@ -29,4 +29,23 @@ extension View {
             value: .bounds
         ) { [id: $0] }
     }
+
+    /// Attaches a `.id(_:)` to a view ONLY when in tutorial preview mode, so the
+    /// walkthrough can ask the surrounding `ScrollViewReader` to scroll to it
+    /// without affecting normal-mode view identity.
+    @ViewBuilder
+    func tutorialScrollID(_ id: String, isPreview: Bool) -> some View {
+        if isPreview {
+            self.id(id)
+        } else {
+            self
+        }
+    }
+}
+
+extension Notification.Name {
+    /// Posted by `WalkthroughCoordinator` when the current step changes inside
+    /// the demo PersonDetail. The notification's `object` is the anchor ID
+    /// (`String`) that the ScrollViewReader should scroll into view.
+    static let tutorialScrollToAnchor = Notification.Name("tutorialScrollToAnchor")
 }

@@ -20,10 +20,16 @@ final class WalkthroughCoordinator: ObservableObject {
     static let stepOrder: [WalkthroughStep] = [
         .welcome,
         .homeOverdue, .homeDueSoon, .homeAllGood,
-        .homeFilters, .homeSearch, .homeSwipeDemo,
-        .detailHero, .detailLogTouch, .detailCadenceGroupTags,
-        .detailSettingsMenu, .detailWrap,
+        .homeFilters, .homeSearch,
+        .detailHero, .detailQuickActions, .detailLogTouch,
+        .detailNextTouchNotes, .detailTimeline,
+        .detailCadenceGroupTags, .detailSettingsMenu, .detailWrap,
     ]
+
+    /// Seconds the demo PersonDetail stays visible after the user taps the
+    /// wrap CTA, before the cover dismisses. Gives a beat for "this is what
+    /// a real contact looks like" to land.
+    static let postCompleteHoldDuration: TimeInterval = 2.0
 
     private let settingsRepository: AppSettingsRepository
     private let haptics: WalkthroughHaptics
@@ -54,38 +60,57 @@ final class WalkthroughCoordinator: ObservableObject {
         haptics.soft()
         guard let index = Self.stepOrder.firstIndex(of: step),
               index + 1 < Self.stepOrder.count else {
-            markComplete()
+            markComplete(holdDemoDetail: isInDetailPhase)
             return
         }
         let next = Self.stepOrder[index + 1]
         stepHistory.append(step)
         // Crossing the A → B boundary navigates into the demo PersonDetail.
-        if step == .homeSwipeDemo && next == .detailHero {
+        if step == .homeSearch && next == .detailHero {
             isPresentingDemoDetail = true
         }
         currentStep = next
+        postScrollIfNeeded(for: next)
     }
 
     func back() {
         guard let previous = stepHistory.popLast() else { return }
         // Crossing the B → A boundary backwards dismisses the demo PersonDetail.
-        if currentStep == .detailHero && previous == .homeSwipeDemo {
+        if currentStep == .detailHero && previous == .homeSearch {
             isPresentingDemoDetail = false
         }
         currentStep = previous
+        postScrollIfNeeded(for: previous)
+    }
+
+    private func postScrollIfNeeded(for step: WalkthroughStep) {
+        guard step.phase == .detailB, let anchor = step.anchorID else { return }
+        NotificationCenter.default.post(name: .tutorialScrollToAnchor, object: anchor)
     }
 
     func skip() {
         haptics.soft()
-        markComplete()
+        markComplete(holdDemoDetail: false)
     }
 
-    private func markComplete() {
+    /// Marks the walkthrough complete. When `holdDemoDetail` is true and the
+    /// demo PersonDetail is currently presented, the cover stays visible for
+    /// `postCompleteHoldDuration` seconds before dismissing — letting the
+    /// "this is a real contact" mental model land before the demo vanishes.
+    private func markComplete(holdDemoDetail: Bool) {
         currentStep = nil
         stepHistory = []
-        isPresentingDemoDetail = false
         didComplete = true
         persistCompletion()
+
+        if holdDemoDetail && isPresentingDemoDetail {
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64(Self.postCompleteHoldDuration * 1_000_000_000))
+                isPresentingDemoDetail = false
+            }
+        } else {
+            isPresentingDemoDetail = false
+        }
     }
 
     private func persistCompletion() {

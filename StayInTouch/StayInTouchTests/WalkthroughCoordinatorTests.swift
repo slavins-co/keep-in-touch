@@ -39,9 +39,10 @@ final class WalkthroughCoordinatorTests: XCTestCase {
         coordinator.start()
         let expected: [WalkthroughStep] = [
             .welcome, .homeOverdue, .homeDueSoon, .homeAllGood,
-            .homeFilters, .homeSearch, .homeSwipeDemo,
-            .detailHero, .detailLogTouch, .detailCadenceGroupTags,
-            .detailSettingsMenu, .detailWrap,
+            .homeFilters, .homeSearch,
+            .detailHero, .detailQuickActions, .detailLogTouch,
+            .detailNextTouchNotes, .detailTimeline,
+            .detailCadenceGroupTags, .detailSettingsMenu, .detailWrap,
         ]
         for step in expected {
             XCTAssertEqual(coordinator.currentStep, step)
@@ -53,17 +54,19 @@ final class WalkthroughCoordinatorTests: XCTestCase {
 
     func test_advance_acrossAtoBBoundary_setsIsPresentingDemoDetail() {
         coordinator.start()
-        for _ in 0..<6 { coordinator.advance() }
-        XCTAssertEqual(coordinator.currentStep, .homeSwipeDemo)
+        // welcome → homeOverdue → homeDueSoon → homeAllGood → homeFilters → homeSearch
+        for _ in 0..<5 { coordinator.advance() }
+        XCTAssertEqual(coordinator.currentStep, .homeSearch)
         XCTAssertFalse(coordinator.isPresentingDemoDetail)
         coordinator.advance()
         XCTAssertEqual(coordinator.currentStep, .detailHero)
         XCTAssertTrue(coordinator.isPresentingDemoDetail)
     }
 
-    func test_advance_atFinalStep_marksComplete_persistsFlag() {
+    func test_advance_atFinalStep_marksComplete_persistsFlag() async {
         coordinator.start()
-        for _ in 0..<11 { coordinator.advance() }
+        // Advance to .detailWrap (13th step, index 13).
+        for _ in 0..<13 { coordinator.advance() }
         XCTAssertEqual(coordinator.currentStep, .detailWrap)
         XCTAssertEqual(settingsRepo.saveCount, 0)
         coordinator.advance()
@@ -72,6 +75,9 @@ final class WalkthroughCoordinatorTests: XCTestCase {
         XCTAssertEqual(settingsRepo.saveCount, 1)
         XCTAssertTrue(settingsRepo.settings?.tutorialCompleted ?? false)
         XCTAssertEqual(settingsRepo.settings?.tutorialVersion, WalkthroughCoordinator.currentVersion)
+        // The demo detail stays visible briefly after wrap before dismissing.
+        // Yield once so the held-dismiss Task can be observed if needed.
+        await Task.yield()
     }
 
     // MARK: - back
@@ -93,11 +99,12 @@ final class WalkthroughCoordinatorTests: XCTestCase {
 
     func test_back_acrossBtoABoundary_dismissesDemoDetail() {
         coordinator.start()
-        for _ in 0..<7 { coordinator.advance() }
+        // welcome → homeOverdue → homeDueSoon → homeAllGood → homeFilters → homeSearch → detailHero
+        for _ in 0..<6 { coordinator.advance() }
         XCTAssertEqual(coordinator.currentStep, .detailHero)
         XCTAssertTrue(coordinator.isPresentingDemoDetail)
         coordinator.back()
-        XCTAssertEqual(coordinator.currentStep, .homeSwipeDemo)
+        XCTAssertEqual(coordinator.currentStep, .homeSearch)
         XCTAssertFalse(coordinator.isPresentingDemoDetail)
     }
 
@@ -116,7 +123,8 @@ final class WalkthroughCoordinatorTests: XCTestCase {
 
     func test_skip_fromDetailPhase_clearsIsPresentingDemoDetail() {
         coordinator.start()
-        for _ in 0..<7 { coordinator.advance() }
+        for _ in 0..<6 { coordinator.advance() }
+        XCTAssertEqual(coordinator.currentStep, .detailHero)
         XCTAssertTrue(coordinator.isPresentingDemoDetail)
         coordinator.skip()
         XCTAssertFalse(coordinator.isPresentingDemoDetail)
@@ -128,7 +136,8 @@ final class WalkthroughCoordinatorTests: XCTestCase {
     func test_isInDetailPhase_reflectsCurrentStep() {
         coordinator.start()
         XCTAssertFalse(coordinator.isInDetailPhase)
-        for _ in 0..<7 { coordinator.advance() }
+        for _ in 0..<6 { coordinator.advance() }
+        XCTAssertEqual(coordinator.currentStep, .detailHero)
         XCTAssertTrue(coordinator.isInDetailPhase)
     }
 
