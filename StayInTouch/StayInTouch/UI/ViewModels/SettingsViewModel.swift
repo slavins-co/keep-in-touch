@@ -188,7 +188,12 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func resetFeatureTips() {
-        try? Tips.resetDatastore()
+        do {
+            try Tips.resetDatastore()
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.resetFeatureTips")
+            ErrorToastManager.shared.show(AppError(message: "Couldn't reset feature tips. Please try again."))
+        }
     }
 
     // MARK: - Demo Data
