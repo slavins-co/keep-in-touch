@@ -480,6 +480,8 @@ enum DS {
         case .call: return "phone.fill"
         case .irl: return "person.2.fill"
         case .email: return "envelope.fill"
+        case .whatsapp: return "bubble.left.and.bubble.right.fill"
+        case .signal: return "lock.message.fill"
         case .other: return "ellipsis.circle.fill"
         }
     }

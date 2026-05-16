@@ -12,5 +12,7 @@ enum TouchMethod: String, CaseIterable, Codable {
     case call = "Call"
     case irl = "IRL"
     case email = "Email"
+    case whatsapp = "WhatsApp"
+    case signal = "Signal"
     case other = "Other"
 }

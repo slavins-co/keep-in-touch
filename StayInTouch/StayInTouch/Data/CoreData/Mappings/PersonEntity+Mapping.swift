@@ -35,7 +35,8 @@ extension PersonEntity {
             cadenceAddedAt: groupAddedAt,
             createdAt: requiredField(createdAt, entity: "PersonEntity", field: "createdAt", fallback: Date()),
             modifiedAt: requiredField(modifiedAt, entity: "PersonEntity", field: "modifiedAt", fallback: Date()),
-            sortOrder: Int(sortOrder)
+            sortOrder: Int(sortOrder),
+            preferredMessenger: preferredMessenger.flatMap(PreferredMessenger.init(rawValue:))
         )
     }
 
@@ -66,6 +67,7 @@ extension PersonEntity {
         createdAt = person.createdAt
         modifiedAt = person.modifiedAt
         sortOrder = Int64(person.sortOrder)
+        preferredMessenger = person.preferredMessenger?.rawValue
     }
 
     /// Returns `value` if non-nil; otherwise logs a data-corruption warning and returns the fallback.

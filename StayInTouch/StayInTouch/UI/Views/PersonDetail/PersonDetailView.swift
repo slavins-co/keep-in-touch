@@ -65,7 +65,8 @@ struct PersonDetailView: View {
 
                     PersonQuickActionsBar(
                         viewModel: viewModel,
-                        onQuickAction: { open($0) }
+                        onQuickAction: { open($0) },
+                        onMessageWith: { openMessage(with: $0) }
                     )
                     .opacity(viewModel.person.contactUnavailable ? 0.4 : 1.0)
                     .disabled(viewModel.person.contactUnavailable)
@@ -130,25 +131,38 @@ struct PersonDetailView: View {
         .confirmationDialog("Choose a number", isPresented: $viewModel.showPhonePicker) {
             ForEach(viewModel.phoneNumbers) { phone in
                 Button("\(phone.label): \(phone.value)") {
-                    guard let action = viewModel.pendingPhoneAction,
-                          let url = viewModel.openActionWithValue(type: action, value: phone.value) else {
+                    guard let action = viewModel.pendingPhoneAction else {
                         viewModel.pendingPhoneAction = nil
+                        viewModel.pendingExplicitMessenger = nil
+                        return
+                    }
+                    let explicit = viewModel.pendingExplicitMessenger
+                    let routedMessenger: PreferredMessenger? = action == .message
+                        ? (explicit ?? viewModel.resolvedMessenger)
+                        : nil
+                    guard let url = viewModel.openActionWithValue(type: action, value: phone.value, explicit: explicit) else {
+                        viewModel.pendingPhoneAction = nil
+                        viewModel.pendingExplicitMessenger = nil
                         return
                     }
                     openURL(url) { accepted in
                         if accepted {
                             Haptics.light()
-                            let method = action.touchMethod
+                            let method: TouchMethod = routedMessenger?.touchMethod ?? action.touchMethod
                             viewModel.logTouch(method: method, notes: nil, date: Date())
                             pendingQuickActionTouch = viewModel.touchEvents.first
                             pendingQuickActionMethod = method
+                        } else if let routedMessenger {
+                            viewModel.handleFailedMessengerOpen(messenger: routedMessenger)
                         }
                     }
                     viewModel.pendingPhoneAction = nil
+                    viewModel.pendingExplicitMessenger = nil
                 }
             }
             Button("Cancel", role: .cancel) {
                 viewModel.pendingPhoneAction = nil
+                viewModel.pendingExplicitMessenger = nil
             }
         }
         .confirmationDialog("Choose an email", isPresented: $viewModel.showEmailPicker) {
@@ -363,15 +377,36 @@ struct PersonDetailView: View {
 
     private func open(_ action: QuickActionType) {
         guard let url = viewModel.openAction(type: action) else { return }
+        let routedMessenger: PreferredMessenger? = action == .message ? viewModel.resolvedMessenger : nil
         openURL(url) { accepted in
             if accepted {
                 Haptics.light()
-                let method = action.touchMethod
+                let method: TouchMethod = routedMessenger?.touchMethod ?? action.touchMethod
+                viewModel.logTouch(method: method, notes: nil, date: Date())
+                pendingQuickActionTouch = viewModel.touchEvents.first
+                pendingQuickActionMethod = method
+            } else if let routedMessenger {
+                viewModel.handleFailedMessengerOpen(messenger: routedMessenger)
+            } else {
+                viewModel.quickActionMessage = "Whoops — couldn't open that on this device."
+            }
+        }
+    }
+
+    /// Explicit messenger pick from the long-press menu. Persists the preference
+    /// then opens the chosen messenger. Auto-logs the appropriate TouchMethod.
+    private func openMessage(with messenger: PreferredMessenger) {
+        viewModel.setPreferredMessenger(messenger)
+        guard let url = viewModel.openAction(type: .message, explicit: messenger) else { return }
+        openURL(url) { accepted in
+            if accepted {
+                Haptics.light()
+                let method = messenger.touchMethod
                 viewModel.logTouch(method: method, notes: nil, date: Date())
                 pendingQuickActionTouch = viewModel.touchEvents.first
                 pendingQuickActionMethod = method
             } else {
-                viewModel.quickActionMessage = "Whoops — couldn't open that on this device."
+                viewModel.handleFailedMessengerOpen(messenger: messenger)
             }
         }
     }

@@ -42,12 +42,14 @@ final class PersonDetailViewModel: ObservableObject {
     @Published var showPhonePicker = false
     @Published var showEmailPicker = false
     var pendingPhoneAction: QuickActionType?
+    var pendingExplicitMessenger: PreferredMessenger?
 
     let mode: Mode
     private let personRepository: PersonRepository
     private let cadenceRepository: CadenceRepository
     private let groupRepository: GroupRepository
     private let touchRepository: TouchEventRepository
+    private let messengerAvailability: MessengerAvailabilityChecking
 
     var isPreview: Bool {
         if case .preview = mode { return true }
@@ -60,7 +62,8 @@ final class PersonDetailViewModel: ObservableObject {
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
         cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
         groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
-        touchRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext)
+        touchRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext),
+        messengerAvailability: MessengerAvailabilityChecking = SystemMessengerAvailability()
     ) {
         self.person = person
         self.mode = mode
@@ -68,6 +71,7 @@ final class PersonDetailViewModel: ObservableObject {
         self.cadenceRepository = cadenceRepository
         self.groupRepository = groupRepository
         self.touchRepository = touchRepository
+        self.messengerAvailability = messengerAvailability
         load()
         if case .normal = mode {
             AnalyticsService.track("person.viewed")
@@ -436,13 +440,71 @@ final class PersonDetailViewModel: ObservableObject {
         }
     }
 
-    func openAction(type: QuickActionType) -> URL? {
+    /// Resolves which messenger should handle a `.message` tap for the current person.
+    /// Falls back to iMessage when no preference is set.
+    var resolvedMessenger: PreferredMessenger {
+        person.preferredMessenger ?? .iMessage
+    }
+
+    /// Messengers available on this device, used to build the long-press picker.
+    var availableMessengers: [PreferredMessenger] {
+        messengerAvailability.availableMessengers()
+    }
+
+    /// Routed TouchMethod for the resolved or explicitly chosen messenger.
+    func touchMethod(forMessenger messenger: PreferredMessenger) -> TouchMethod {
+        messenger.touchMethod
+    }
+
+    /// Persists the user's explicit messenger choice for this person.
+    /// We store `nil` for `.iMessage` so a future global default can flip
+    /// behavior without per-row migration.
+    func setPreferredMessenger(_ messenger: PreferredMessenger) {
+        if isPreview { return }
+        let toStore: PreferredMessenger? = messenger == .iMessage ? nil : messenger
+        guard person.preferredMessenger != toStore else { return }
+        var updated = person
+        updated.preferredMessenger = toStore
+        updated.modifiedAt = Date()
+        AnalyticsService.track("person.preferredMessenger.set", parameters: ["value": messenger.rawValue])
+        savePerson(updated)
+    }
+
+    /// Self-heal: a sticky non-iMessage choice failed to open (likely uninstalled).
+    /// Clear the preference and surface a one-time toast.
+    func handleFailedMessengerOpen(messenger: PreferredMessenger) {
+        if isPreview { return }
+        if person.preferredMessenger == messenger && messenger != .iMessage {
+            var updated = person
+            updated.preferredMessenger = nil
+            updated.modifiedAt = Date()
+            savePerson(updated)
+            quickActionMessage = "Couldn't open \(messenger.displayName). Falling back to iMessage."
+        } else {
+            quickActionMessage = "Whoops — couldn't open that on this device."
+        }
+    }
+
+    func openAction(type: QuickActionType, explicit: PreferredMessenger? = nil) -> URL? {
         if isPreview { return nil }
         quickActionMessage = nil
         switch type {
-        case .message, .call:
+        case .message:
             if phoneNumbers.count > 1 {
                 pendingPhoneAction = type
+                pendingExplicitMessenger = explicit
+                showPhonePicker = true
+                return nil
+            }
+            guard let phone else {
+                quickActionMessage = "Whoops — no phone number found."
+                return nil
+            }
+            return buildMessageURL(phone: phone, explicit: explicit)
+        case .call:
+            if phoneNumbers.count > 1 {
+                pendingPhoneAction = type
+                pendingExplicitMessenger = nil
                 showPhonePicker = true
                 return nil
             }
@@ -464,15 +526,27 @@ final class PersonDetailViewModel: ObservableObject {
         }
     }
 
-    func openActionWithValue(type: QuickActionType, value: String) -> URL? {
+    func openActionWithValue(type: QuickActionType, value: String, explicit: PreferredMessenger? = nil) -> URL? {
         if isPreview { return nil }
         quickActionMessage = nil
         switch type {
-        case .message, .call:
+        case .message:
+            return buildMessageURL(phone: value, explicit: explicit)
+        case .call:
             return buildPhoneURL(type: type, phone: value)
         case .email:
             return buildEmailURL(email: value)
         }
+    }
+
+    private func buildMessageURL(phone: String, explicit: PreferredMessenger?) -> URL? {
+        let messenger = explicit ?? resolvedMessenger
+        guard let url = MessengerRouter.url(for: messenger, phone: phone) else {
+            AppLogger.logWarning("Failed to create \(messenger.rawValue) URL for contact \(person.id)", category: AppLogger.viewModel)
+            quickActionMessage = "Whoops — couldn't read that phone number."
+            return nil
+        }
+        return url
     }
 
     private func buildPhoneURL(type: QuickActionType, phone: String) -> URL? {

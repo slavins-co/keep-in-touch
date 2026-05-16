@@ -106,4 +106,55 @@ final class PersonEntityMappingTests: XCTestCase {
         let domain = entity.toDomain()
         XCTAssertNotNil(domain.cadenceId, "toDomain should produce a non-nil cadenceId even when entity.groupId is nil")
     }
+
+    // MARK: - preferredMessenger round-trip (#233)
+
+    func testPreferredMessengerRoundTripsWhatsApp() {
+        let entity = makeEntity()
+        entity.preferredMessenger = PreferredMessenger.whatsapp.rawValue
+
+        let domain = entity.toDomain()
+        XCTAssertEqual(domain.preferredMessenger, .whatsapp)
+
+        let entity2 = PersonEntity(context: context)
+        entity2.apply(domain)
+        XCTAssertEqual(entity2.preferredMessenger, PreferredMessenger.whatsapp.rawValue)
+    }
+
+    func testPreferredMessengerRoundTripsNil() {
+        let entity = makeEntity()
+        entity.preferredMessenger = nil
+
+        let domain = entity.toDomain()
+        XCTAssertNil(domain.preferredMessenger)
+
+        let entity2 = PersonEntity(context: context)
+        entity2.apply(domain)
+        XCTAssertNil(entity2.preferredMessenger)
+    }
+
+    func testPreferredMessengerUnknownRawDecodesAsNil() {
+        let entity = makeEntity()
+        entity.preferredMessenger = "telegram"
+
+        let domain = entity.toDomain()
+        XCTAssertNil(domain.preferredMessenger, "Unknown raw values should decode as nil (fallback to default)")
+    }
+
+    private func makeEntity() -> PersonEntity {
+        let entity = PersonEntity(context: context)
+        entity.id = UUID()
+        entity.displayName = "Test"
+        entity.initials = "T"
+        entity.avatarColor = "#FF0000"
+        entity.groupId = UUID()
+        entity.isPaused = false
+        entity.isTracked = true
+        entity.notificationsMuted = false
+        entity.contactUnavailable = false
+        entity.sortOrder = 0
+        entity.createdAt = Date()
+        entity.modifiedAt = Date()
+        return entity
+    }
 }

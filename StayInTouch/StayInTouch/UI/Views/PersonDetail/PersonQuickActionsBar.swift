@@ -8,11 +8,12 @@ import SwiftUI
 struct PersonQuickActionsBar: View {
     @ObservedObject var viewModel: PersonDetailViewModel
     var onQuickAction: (QuickActionType) -> Void
+    var onMessageWith: (PreferredMessenger) -> Void
 
     var body: some View {
         VStack(spacing: DS.Spacing.sm) {
             HStack(spacing: DS.Spacing.sm) {
-                actionCard(icon: "message.fill", label: "Message", enabled: hasPhone) { onQuickAction(.message) }
+                messageActionCard
                 actionCard(icon: "phone.fill", label: "Call", enabled: hasPhone) { onQuickAction(.call) }
                 actionCard(icon: "envelope.fill", label: "Email", enabled: hasEmail) { onQuickAction(.email) }
             }
@@ -36,18 +37,63 @@ struct PersonQuickActionsBar: View {
         viewModel.email != nil || !viewModel.emailAddresses.isEmpty
     }
 
-    private func actionCard(icon: String, label: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+    private var messengerOptions: [PreferredMessenger] {
+        viewModel.availableMessengers
+    }
+
+    /// Message card: tap = resolved messenger (sticky or iMessage), long-press = picker.
+    /// Shows a small badge when the resolved messenger is not iMessage.
+    @ViewBuilder
+    private var messageActionCard: some View {
+        let resolved = viewModel.resolvedMessenger
+        let label = resolved == .iMessage ? "Message" : resolved.displayName
+        let badgeVisible = viewModel.person.preferredMessenger != nil
+
+        actionCard(icon: "message.fill", label: label, enabled: hasPhone, badgeVisible: badgeVisible) {
+            onQuickAction(.message)
+        }
+        .contextMenu {
+            if messengerOptions.count > 1 {
+                ForEach(messengerOptions, id: \.self) { messenger in
+                    Button {
+                        onMessageWith(messenger)
+                    } label: {
+                        Label(messenger.displayName, systemImage: messenger.iconName)
+                    }
+                }
+            }
+        }
+    }
+
+    private func actionCard(
+        icon: String,
+        label: String,
+        enabled: Bool,
+        badgeVisible: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             VStack(spacing: DS.Spacing.sm) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(DS.Colors.actionButtonIconCircleOpacity)
-                    .clipShape(Circle())
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: icon)
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(DS.Colors.actionButtonIconCircleOpacity)
+                        .clipShape(Circle())
+                    if badgeVisible {
+                        Circle()
+                            .fill(DS.Colors.accent)
+                            .frame(width: 10, height: 10)
+                            .overlay(Circle().stroke(DS.Colors.actionButtonBackground, lineWidth: 1.5))
+                            .offset(x: 2, y: -2)
+                            .accessibilityHidden(true)
+                    }
+                }
                 Text(label)
                     .font(DS.Typography.contactCardMeta)
                     .foregroundStyle(.white)
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
             .frame(minHeight: 80)
