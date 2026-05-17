@@ -54,16 +54,10 @@ final class PersonDetailViewModel: ObservableObject {
     private let groupRepository: GroupRepository
     private let touchRepository: TouchEventRepository
     private let messengerAvailability: MessengerAvailabilityChecking
-    private let callerAvailability: CallerAvailabilityChecking
 
     var isPreview: Bool {
         if case .preview = mode { return true }
         return false
-    }
-
-    /// Exposed for the Call long-press menu — whether to surface a FaceTime entry.
-    var isFaceTimeAvailable: Bool {
-        callerAvailability.isFaceTimeAvailable
     }
 
     init(
@@ -73,8 +67,7 @@ final class PersonDetailViewModel: ObservableObject {
         cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
         groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
         touchRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext),
-        messengerAvailability: MessengerAvailabilityChecking = SystemMessengerAvailability(),
-        callerAvailability: CallerAvailabilityChecking = SystemCallerAvailability()
+        messengerAvailability: MessengerAvailabilityChecking = SystemMessengerAvailability()
     ) {
         self.person = person
         self.mode = mode
@@ -83,7 +76,6 @@ final class PersonDetailViewModel: ObservableObject {
         self.groupRepository = groupRepository
         self.touchRepository = touchRepository
         self.messengerAvailability = messengerAvailability
-        self.callerAvailability = callerAvailability
         load()
         if case .normal = mode {
             AnalyticsService.track("person.viewed")

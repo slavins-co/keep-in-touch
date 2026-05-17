@@ -12,7 +12,6 @@ final class PersonDetailViewModelFaceTimeTests: XCTestCase {
     private var cadenceRepo: MockCadenceRepository!
     private var groupRepo: MockGroupRepository!
     private var touchRepo: MockTouchEventRepository!
-    private var caller: FakeCallerAvailability!
     private var person: Person!
     private var sut: PersonDetailViewModel!
 
@@ -28,25 +27,14 @@ final class PersonDetailViewModelFaceTimeTests: XCTestCase {
         cadenceRepo.cadences = [cadence]
         groupRepo = MockGroupRepository()
         touchRepo = MockTouchEventRepository()
-        caller = FakeCallerAvailability(isFaceTimeAvailable: true)
 
         sut = PersonDetailViewModel(
             person: person,
             personRepository: personRepo,
             cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
-            touchRepository: touchRepo,
-            callerAvailability: caller
+            touchRepository: touchRepo
         )
-    }
-
-    // MARK: - isFaceTimeAvailable
-
-    func testIsFaceTimeAvailableReflectsInjectedAdapter() {
-        XCTAssertTrue(sut.isFaceTimeAvailable)
-
-        caller.isFaceTimeAvailable = false
-        XCTAssertFalse(sut.isFaceTimeAvailable)
     }
 
     // MARK: - openFaceTimeAction (single phone path)
@@ -99,15 +87,5 @@ final class PersonDetailViewModelFaceTimeTests: XCTestCase {
         XCTAssertTrue(sut.pendingFaceTime)
         sut.pendingFaceTime = false
         XCTAssertFalse(sut.pendingFaceTime)
-    }
-}
-
-// MARK: - Test double
-
-private final class FakeCallerAvailability: CallerAvailabilityChecking {
-    var isFaceTimeAvailable: Bool
-
-    init(isFaceTimeAvailable: Bool) {
-        self.isFaceTimeAvailable = isFaceTimeAvailable
     }
 }
