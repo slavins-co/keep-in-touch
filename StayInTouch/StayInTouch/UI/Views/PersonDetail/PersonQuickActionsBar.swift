@@ -96,7 +96,7 @@ struct PersonQuickActionsBar: View {
         let badgeVisible = viewModel.person.preferredMessenger != nil
 
         Menu {
-            if messengerOptions.count > 1 && !viewModel.isPreview {
+            if !viewModel.isPreview {
                 ForEach(messengerOptions, id: \.self) { messenger in
                     Button {
                         onMessageWith(messenger)
