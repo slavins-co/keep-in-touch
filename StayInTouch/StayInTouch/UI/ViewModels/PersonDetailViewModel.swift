@@ -497,11 +497,18 @@ final class PersonDetailViewModel: ObservableObject {
         case faceTime
         case message(explicit: PreferredMessenger?)
 
-        var touchMethod: TouchMethod {
+        /// TouchMethod to log when this routing succeeds.
+        /// For `.message(explicit: nil)` the caller MUST pass the resolved
+        /// default messenger (typically `viewModel.resolvedMessenger`) —
+        /// otherwise a contact with a saved WhatsApp/Signal preference
+        /// would log as `.text` even though the actual app opened was
+        /// WhatsApp/Signal. The signature forces this at the call site so
+        /// the regression can't be reintroduced silently.
+        func resolvedTouchMethod(defaultMessenger: PreferredMessenger) -> TouchMethod {
             switch self {
             case .call: return .call
             case .faceTime: return .facetime
-            case .message(let explicit): return (explicit ?? .iMessage).touchMethod
+            case .message(let explicit): return (explicit ?? defaultMessenger).touchMethod
             }
         }
     }

@@ -160,14 +160,59 @@ final class PersonDetailViewModelMessengerTests: XCTestCase {
         XCTAssertNotNil(sut.quickActionMessage)
     }
 
-    // MARK: - PhoneRouting.touchMethod mapping
+    // MARK: - PhoneRouting.resolvedTouchMethod mapping
 
-    func testPhoneRoutingTouchMethodMapping() {
-        XCTAssertEqual(PersonDetailViewModel.PhoneRouting.call.touchMethod, .call)
-        XCTAssertEqual(PersonDetailViewModel.PhoneRouting.faceTime.touchMethod, .facetime)
-        XCTAssertEqual(PersonDetailViewModel.PhoneRouting.message(explicit: nil).touchMethod, .text)
-        XCTAssertEqual(PersonDetailViewModel.PhoneRouting.message(explicit: .whatsapp).touchMethod, .whatsapp)
-        XCTAssertEqual(PersonDetailViewModel.PhoneRouting.message(explicit: .signal).touchMethod, .signal)
+    func testResolvedTouchMethodForCallAndFaceTimeIgnoresDefaultMessenger() {
+        // .call and .faceTime have a fixed TouchMethod regardless of default.
+        XCTAssertEqual(
+            PersonDetailViewModel.PhoneRouting.call.resolvedTouchMethod(defaultMessenger: .whatsapp),
+            .call
+        )
+        XCTAssertEqual(
+            PersonDetailViewModel.PhoneRouting.faceTime.resolvedTouchMethod(defaultMessenger: .signal),
+            .facetime
+        )
+    }
+
+    func testResolvedTouchMethodForExplicitMessengerUsesExplicit() {
+        // .message(.whatsapp) always logs .whatsapp, regardless of the default.
+        XCTAssertEqual(
+            PersonDetailViewModel.PhoneRouting.message(explicit: .whatsapp)
+                .resolvedTouchMethod(defaultMessenger: .iMessage),
+            .whatsapp
+        )
+        XCTAssertEqual(
+            PersonDetailViewModel.PhoneRouting.message(explicit: .signal)
+                .resolvedTouchMethod(defaultMessenger: .whatsapp),
+            .signal
+        )
+    }
+
+    /// Regression test for the bug introduced in commit fd46a1e and fixed in
+    /// the follow-up: when the user has a sticky WhatsApp/Signal preference
+    /// and single-taps the Message card (no explicit pick), the touch must
+    /// be logged with the resolved messenger's TouchMethod, NOT iMessage's
+    /// `.text`. The bug surfaced because `.message(explicit: nil)` previously
+    /// defaulted to `.iMessage` regardless of saved preference, so a tap
+    /// that correctly opened WhatsApp would log as Text in history.
+    func testResolvedTouchMethodForImplicitMessengerUsesDefault() {
+        XCTAssertEqual(
+            PersonDetailViewModel.PhoneRouting.message(explicit: nil)
+                .resolvedTouchMethod(defaultMessenger: .iMessage),
+            .text
+        )
+        XCTAssertEqual(
+            PersonDetailViewModel.PhoneRouting.message(explicit: nil)
+                .resolvedTouchMethod(defaultMessenger: .whatsapp),
+            .whatsapp,
+            "Sticky WhatsApp preference must log .whatsapp on single-tap, not .text"
+        )
+        XCTAssertEqual(
+            PersonDetailViewModel.PhoneRouting.message(explicit: nil)
+                .resolvedTouchMethod(defaultMessenger: .signal),
+            .signal,
+            "Sticky Signal preference must log .signal on single-tap, not .text"
+        )
     }
 }
 

@@ -390,15 +390,18 @@ struct PersonDetailView: View {
     /// dialog. The `routing` overload encapsulates messenger preference
     /// persistence + handleFailedMessengerOpen self-heal so callers don't
     /// have to reproduce that dance. The plain `method:` overload is for
-    /// codepaths without phone routing (email).
+    /// codepaths that don't need messenger preference handling (email + FaceTime).
     private func executeQuickAction(url: URL, routing: PersonDetailViewModel.PhoneRouting) {
-        let method = routing.touchMethod
-        let explicitMessenger: PreferredMessenger? = {
-            if case .message(let explicit) = routing { return explicit }
+        // Resolve the messenger ONCE — used for both the auto-logged TouchMethod
+        // (so `.message` with a sticky WhatsApp preference logs `.whatsapp`,
+        // not `.text`) and the self-heal target on failure.
+        let resolvedMessenger: PreferredMessenger? = {
+            if case .message(let explicit) = routing { return explicit ?? viewModel.resolvedMessenger }
             return nil
         }()
-        let failureMessenger: PreferredMessenger? = {
-            if case .message(let explicit) = routing { return explicit ?? viewModel.resolvedMessenger }
+        let method = routing.resolvedTouchMethod(defaultMessenger: viewModel.resolvedMessenger)
+        let explicitMessenger: PreferredMessenger? = {
+            if case .message(let explicit) = routing { return explicit }
             return nil
         }()
         openURL(url) { accepted in
@@ -407,8 +410,8 @@ struct PersonDetailView: View {
                     viewModel.setPreferredMessenger(explicitMessenger)
                 }
                 logTouchAndArmUndo(method: method)
-            } else if let failureMessenger {
-                viewModel.handleFailedMessengerOpen(messenger: failureMessenger)
+            } else if let resolvedMessenger {
+                viewModel.handleFailedMessengerOpen(messenger: resolvedMessenger)
             } else {
                 viewModel.quickActionMessage = "Whoops — couldn't open that on this device."
             }
