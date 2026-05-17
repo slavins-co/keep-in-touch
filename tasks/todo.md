@@ -22,7 +22,7 @@
 
 ### Tier 2 — Should Ship (privacy + UX polish)
 
-- [ ] **#105** Add screenshot blur protection on app background *(S — deferred, needs native UIKit approach)*
+- [x] **#105** Add screenshot blur protection on app background *(M — PR #298, same-window UIVisualEffectView)*
 - [x] **#106** Add notification privacy setting to hide contact names *(S-M — PR #244)*
 - [x] **#236** Display multiple groups on contact cards in list views *(S — PR #242)*
 - [x] **#235** Add "Link to Contact" option when contact is unavailable *(S — PR #243)*
