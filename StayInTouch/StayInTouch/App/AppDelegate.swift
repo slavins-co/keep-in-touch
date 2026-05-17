@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         NotificationScheduler.shared.startObserving()
         UNUserNotificationCenter.current().delegate = self
         registerBackgroundTasks()
+        PrivacyOverlayManager.shared.start()
         Task { await NotificationScheduler.shared.scheduleAll() }
         return true
     }
