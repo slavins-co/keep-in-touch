@@ -44,13 +44,14 @@ struct PersonQuickActionsBar: View {
 
     /// Call card: tap = phone (always), long-press = menu with FaceTime when available.
     /// No persistent preference, no badge — single-tap behavior is unchanged.
+    /// Menu is suppressed in preview mode to keep the tutorial walkthrough deterministic.
     @ViewBuilder
     private var callActionCard: some View {
         actionCard(icon: "phone.fill", label: "Call", enabled: hasPhone) {
             onQuickAction(.call)
         }
         .contextMenu {
-            if hasPhone && viewModel.isFaceTimeAvailable {
+            if hasPhone && viewModel.isFaceTimeAvailable && !viewModel.isPreview {
                 Button {
                     onFaceTime()
                 } label: {
@@ -62,17 +63,26 @@ struct PersonQuickActionsBar: View {
 
     /// Message card: tap = resolved messenger (sticky or iMessage), long-press = picker.
     /// Shows a small badge when the resolved messenger is not iMessage.
+    /// Menu is suppressed in preview mode to keep the tutorial walkthrough deterministic.
+    /// Accessibility hint is messenger-specific (avoids the ungrammatical
+    /// "WhatsApps this contact" that the generic actionCard formula produces).
     @ViewBuilder
     private var messageActionCard: some View {
         let resolved = viewModel.resolvedMessenger
         let label = resolved == .iMessage ? "Message" : resolved.displayName
         let badgeVisible = viewModel.person.preferredMessenger != nil
 
-        actionCard(icon: "message.fill", label: label, enabled: hasPhone, badgeVisible: badgeVisible) {
+        actionCard(
+            icon: "message.fill",
+            label: label,
+            enabled: hasPhone,
+            badgeVisible: badgeVisible,
+            hintOverride: resolved.actionHint
+        ) {
             onQuickAction(.message)
         }
         .contextMenu {
-            if messengerOptions.count > 1 {
+            if messengerOptions.count > 1 && !viewModel.isPreview {
                 ForEach(messengerOptions, id: \.self) { messenger in
                     Button {
                         onMessageWith(messenger)
@@ -89,6 +99,7 @@ struct PersonQuickActionsBar: View {
         label: String,
         enabled: Bool,
         badgeVisible: Bool = false,
+        hintOverride: String? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -126,7 +137,9 @@ struct PersonQuickActionsBar: View {
         }
         .buttonStyle(ActionCardButtonStyle())
         .accessibilityLabel(enabled ? label : "\(label), unavailable")
-        .accessibilityHint(enabled ? "\(label)s this contact" : "No \(label == "Email" ? "email address" : "phone number") on file")
+        .accessibilityHint(enabled
+            ? (hintOverride ?? "\(label)s this contact")
+            : "No \(label == "Email" ? "email address" : "phone number") on file")
         .disabled(!enabled)
         .opacity(!enabled && !viewModel.person.contactUnavailable ? 0.5 : 1.0)
     }

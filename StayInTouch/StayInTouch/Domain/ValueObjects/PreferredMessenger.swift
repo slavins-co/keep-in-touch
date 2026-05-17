@@ -38,4 +38,16 @@ enum PreferredMessenger: String, CaseIterable, Codable {
         case .signal: return .signal
         }
     }
+
+    /// VoiceOver accessibility hint describing the outcome of tapping the
+    /// Message button when this messenger is the resolved default. Avoids
+    /// the naive `"\(displayName)s this contact"` formula which produces
+    /// ungrammatical results like "WhatsApps this contact".
+    var actionHint: String {
+        switch self {
+        case .iMessage: return "Sends a message to this contact"
+        case .whatsapp: return "Opens WhatsApp chat with this contact"
+        case .signal: return "Opens Signal chat with this contact"
+        }
+    }
 }

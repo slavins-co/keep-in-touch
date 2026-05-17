@@ -153,6 +153,12 @@ struct PersonDetailView: View {
                     }
                     openURL(url) { accepted in
                         if accepted {
+                            // Persist messenger preference only on successful open,
+                            // mirroring openMessage(with:) — avoids a sticky preference
+                            // that the user never actually used.
+                            if let explicit, action == .message {
+                                viewModel.setPreferredMessenger(explicit)
+                            }
                             Haptics.light()
                             let method: TouchMethod = isFaceTime
                                 ? .facetime
@@ -424,13 +430,18 @@ struct PersonDetailView: View {
         viewModel.pendingFaceTime = false
     }
 
-    /// Explicit messenger pick from the long-press menu. Persists the preference
-    /// then opens the chosen messenger. Auto-logs the appropriate TouchMethod.
+    /// Explicit messenger pick from the long-press menu. Opens the chosen
+    /// messenger; on success (openURL accepted) persists the preference and
+    /// auto-logs the touch. We deliberately persist AFTER the system confirms
+    /// the URL opened — saving earlier would strand a sticky preference if
+    /// the user cancels a downstream phone picker for a multi-phone contact.
+    /// (The multi-phone case is handled in the confirmationDialog branch,
+    /// which calls setPreferredMessenger in the same accepted-true path.)
     private func openMessage(with messenger: PreferredMessenger) {
-        viewModel.setPreferredMessenger(messenger)
         guard let url = viewModel.openAction(type: .message, explicit: messenger) else { return }
         openURL(url) { accepted in
             if accepted {
+                viewModel.setPreferredMessenger(messenger)
                 Haptics.light()
                 let method = messenger.touchMethod
                 viewModel.logTouch(method: method, notes: nil, date: Date())
