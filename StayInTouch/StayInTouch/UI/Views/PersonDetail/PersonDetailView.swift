@@ -65,7 +65,9 @@ struct PersonDetailView: View {
 
                     PersonQuickActionsBar(
                         viewModel: viewModel,
-                        onQuickAction: { open($0) }
+                        onQuickAction: { open($0) },
+                        onMessageWith: { openMessage(with: $0) },
+                        onFaceTime: { faceTime() }
                     )
                     .opacity(viewModel.person.contactUnavailable ? 0.4 : 1.0)
                     .disabled(viewModel.person.contactUnavailable)
@@ -130,39 +132,24 @@ struct PersonDetailView: View {
         .confirmationDialog("Choose a number", isPresented: $viewModel.showPhonePicker) {
             ForEach(viewModel.phoneNumbers) { phone in
                 Button("\(phone.label): \(phone.value)") {
-                    guard let action = viewModel.pendingPhoneAction,
-                          let url = viewModel.openActionWithValue(type: action, value: phone.value) else {
-                        viewModel.pendingPhoneAction = nil
+                    guard let routing = viewModel.pendingPhoneRouting,
+                          let url = viewModel.routeActionWithValue(routing, value: phone.value) else {
+                        viewModel.cancelPendingPhonePicker()
                         return
                     }
-                    openURL(url) { accepted in
-                        if accepted {
-                            Haptics.light()
-                            let method = action.touchMethod
-                            viewModel.logTouch(method: method, notes: nil, date: Date())
-                            pendingQuickActionTouch = viewModel.touchEvents.first
-                            pendingQuickActionMethod = method
-                        }
-                    }
-                    viewModel.pendingPhoneAction = nil
+                    executeQuickAction(url: url, routing: routing)
+                    viewModel.cancelPendingPhonePicker()
                 }
             }
             Button("Cancel", role: .cancel) {
-                viewModel.pendingPhoneAction = nil
+                viewModel.cancelPendingPhonePicker()
             }
         }
         .confirmationDialog("Choose an email", isPresented: $viewModel.showEmailPicker) {
             ForEach(viewModel.emailAddresses) { email in
                 Button("\(email.label): \(email.value)") {
-                    guard let url = viewModel.openActionWithValue(type: .email, value: email.value) else { return }
-                    openURL(url) { accepted in
-                        if accepted {
-                            Haptics.light()
-                            viewModel.logTouch(method: .email, notes: nil, date: Date())
-                            pendingQuickActionTouch = viewModel.touchEvents.first
-                            pendingQuickActionMethod = .email
-                        }
-                    }
+                    guard let url = viewModel.openEmailActionWithValue(email.value) else { return }
+                    executeQuickAction(url: url, method: .email, onFailure: nil)
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -362,18 +349,90 @@ struct PersonDetailView: View {
     // MARK: - Quick Actions
 
     private func open(_ action: QuickActionType) {
-        guard let url = viewModel.openAction(type: action) else { return }
+        switch action {
+        case .message:
+            let routing = PersonDetailViewModel.PhoneRouting.message(explicit: nil)
+            guard let url = viewModel.routeAction(routing) else { return }
+            executeQuickAction(url: url, routing: routing)
+        case .call:
+            guard let url = viewModel.routeAction(.call) else { return }
+            executeQuickAction(url: url, routing: .call)
+        case .email:
+            guard let url = viewModel.openEmailAction() else { return }
+            executeQuickAction(url: url, method: .email, onFailure: nil)
+        }
+    }
+
+    /// Long-press → FaceTime from the Call card. No persistent preference.
+    private func faceTime() {
+        guard let url = viewModel.routeAction(.faceTime) else { return }
+        executeQuickAction(
+            url: url,
+            method: .facetime,
+            onFailure: { viewModel.quickActionMessage = "Whoops — couldn't open FaceTime on this device." }
+        )
+    }
+
+    /// Explicit messenger pick from the long-press menu. The preference is
+    /// persisted AFTER `openURL` succeeds — saving earlier would strand a
+    /// sticky preference if the user cancels a downstream phone picker for
+    /// a multi-phone contact. The multi-phone case is handled by the
+    /// `routeActionWithValue` branch in the phone-picker dialog, which
+    /// likewise persists only on accepted-true.
+    private func openMessage(with messenger: PreferredMessenger) {
+        let routing = PersonDetailViewModel.PhoneRouting.message(explicit: messenger)
+        guard let url = viewModel.routeAction(routing) else { return }
+        executeQuickAction(url: url, routing: routing)
+    }
+
+    /// Centralised "open URL, log touch on success, surface error on failure"
+    /// flow shared by every quick-action entry point and the phone-picker
+    /// dialog. The `routing` overload encapsulates messenger preference
+    /// persistence + handleFailedMessengerOpen self-heal so callers don't
+    /// have to reproduce that dance. The plain `method:` overload is for
+    /// codepaths that don't need messenger preference handling (email + FaceTime).
+    private func executeQuickAction(url: URL, routing: PersonDetailViewModel.PhoneRouting) {
+        // Resolve the messenger ONCE — used for both the auto-logged TouchMethod
+        // (so `.message` with a sticky WhatsApp preference logs `.whatsapp`,
+        // not `.text`) and the self-heal target on failure.
+        let resolvedMessenger: PreferredMessenger? = {
+            if case .message(let explicit) = routing { return explicit ?? viewModel.resolvedMessenger }
+            return nil
+        }()
+        let method = routing.resolvedTouchMethod(defaultMessenger: viewModel.resolvedMessenger)
+        let explicitMessenger: PreferredMessenger? = {
+            if case .message(let explicit) = routing { return explicit }
+            return nil
+        }()
         openURL(url) { accepted in
             if accepted {
-                Haptics.light()
-                let method = action.touchMethod
-                viewModel.logTouch(method: method, notes: nil, date: Date())
-                pendingQuickActionTouch = viewModel.touchEvents.first
-                pendingQuickActionMethod = method
+                if let explicitMessenger {
+                    viewModel.setPreferredMessenger(explicitMessenger)
+                }
+                logTouchAndArmUndo(method: method)
+            } else if let resolvedMessenger {
+                viewModel.handleFailedMessengerOpen(messenger: resolvedMessenger)
             } else {
                 viewModel.quickActionMessage = "Whoops — couldn't open that on this device."
             }
         }
+    }
+
+    private func executeQuickAction(url: URL, method: TouchMethod, onFailure: (() -> Void)?) {
+        openURL(url) { accepted in
+            if accepted {
+                logTouchAndArmUndo(method: method)
+            } else {
+                onFailure?()
+            }
+        }
+    }
+
+    private func logTouchAndArmUndo(method: TouchMethod) {
+        Haptics.light()
+        viewModel.logTouch(method: method, notes: nil, date: Date())
+        pendingQuickActionTouch = viewModel.touchEvents.first
+        pendingQuickActionMethod = method
     }
 
     private func quickActionUndoBanner(method: TouchMethod) -> some View {

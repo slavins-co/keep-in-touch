@@ -552,9 +552,10 @@ final class PersonDetailViewModelTests: XCTestCase {
             touchRepository: touchRepo
         )
 
-        XCTAssertNil(previewVM.openAction(type: .call))
-        XCTAssertNil(previewVM.openAction(type: .message))
-        XCTAssertNil(previewVM.openAction(type: .email))
-        XCTAssertNil(previewVM.openActionWithValue(type: .call, value: "+15551234567"))
+        XCTAssertNil(previewVM.routeAction(.call))
+        XCTAssertNil(previewVM.routeAction(.faceTime))
+        XCTAssertNil(previewVM.routeAction(.message(explicit: nil)))
+        XCTAssertNil(previewVM.openEmailAction())
+        XCTAssertNil(previewVM.routeActionWithValue(.call, value: "+15551234567"))
     }
 }
