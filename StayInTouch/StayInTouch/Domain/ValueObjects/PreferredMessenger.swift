@@ -31,11 +31,12 @@ enum PreferredMessenger: String, CaseIterable, Codable {
     }
 
     /// TouchMethod recorded when a touch is auto-logged via this messenger.
+    /// All three messengers are text-medium apps and log as `.text` (#299).
+    /// The per-contact app preference is preserved on `Person.preferredMessenger`,
+    /// not duplicated on each `TouchEvent`.
     var touchMethod: TouchMethod {
         switch self {
-        case .iMessage: return .text
-        case .whatsapp: return .whatsapp
-        case .signal: return .signal
+        case .iMessage, .whatsapp, .signal: return .text
         }
     }
 
