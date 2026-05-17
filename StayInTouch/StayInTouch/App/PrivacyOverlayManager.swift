@@ -9,7 +9,8 @@
 //
 //  Architecture rationale: same-window subview (not a separate UIWindow)
 //  because UIVisualEffectView blur only renders content from its host
-//  window. See Apple UIKit docs and tasks/lessons.md.
+//  window — per Apple UIKit docs, taking a snapshot of a hierarchy that
+//  contains a visual effect view requires the entire host UIWindow.
 //
 
 import UIKit
