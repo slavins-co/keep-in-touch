@@ -35,12 +35,11 @@ final class RecentGroupsStore {
     /// Append a new group, dedupe by membership set, cap at `capacity`.
     /// Order: most recent first.
     func append(personIds: [UUID], now: Date = Date()) {
-        let cleaned = personIds.filter { _ in true }
-        guard !cleaned.isEmpty else { return }
-        let newSet = Set(cleaned)
+        guard !personIds.isEmpty else { return }
+        let newSet = Set(personIds)
 
         var current = load().filter { Set($0.personIds) != newSet }
-        let entry = RecentGroup(id: UUID(), personIds: cleaned, createdAt: now)
+        let entry = RecentGroup(id: UUID(), personIds: personIds, createdAt: now)
         current.insert(entry, at: 0)
         if current.count > Self.capacity {
             current = Array(current.prefix(Self.capacity))

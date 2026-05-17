@@ -18,9 +18,9 @@ struct ContactListSection: View {
     let daysOverdueForPerson: (Person) -> Int
     let timeAgoForPerson: (Person) -> String
     let selectPerson: (Person) -> Void
-    /// Optional select-mode coordinator. When provided AND `coordinator.isSelectMode`
-    /// is true, rows render with a checkmark, taps toggle selection
-    /// instead of opening the detail. When nil, behavior is unchanged.
+    /// Shared select-mode coordinator. When `coordinator.isSelectMode` is
+    /// true, rows render with a leading checkmark and taps toggle
+    /// selection instead of opening the detail.
     @ObservedObject var coordinator: SelectionCoordinator
 
     @Environment(\.colorScheme) private var colorScheme
