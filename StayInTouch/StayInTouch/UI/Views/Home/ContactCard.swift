@@ -15,11 +15,22 @@ struct ContactCard: View {
     let timeAgo: String
     let lastMethod: TouchMethod?
     let groups: [Group]
+    /// When non-nil, renders a leading select-mode checkmark in place of
+    /// the chevron behavior. `nil` = not in select mode (default).
+    var isSelected: Bool? = nil
 
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(alignment: .center, spacing: DS.Spacing.contactCardAvatarSpacing(scheme: colorScheme)) {
+            if let isSelected {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(isSelected ? DS.Colors.heroAccentGreen : DS.Colors.muted)
+                    .accessibilityHidden(true)
+                    .transition(.scale.combined(with: .opacity))
+            }
+
             ContactPhotoView(
                 cnIdentifier: person.cnIdentifier,
                 displayName: person.displayName,
@@ -131,6 +142,9 @@ struct ContactCard: View {
 
     private var accessibilityDescription: String {
         var parts: [String] = []
+        if let isSelected {
+            parts.append(isSelected ? "Selected" : "Not selected")
+        }
         if let nickname = person.displayNickname {
             parts.append("Contact \(person.displayName), also known as \(nickname)")
         } else {
@@ -175,7 +189,9 @@ struct ContactCard: View {
             let groupNames = groups.map(\.name).joined(separator: ", ")
             parts.append(groups.count == 1 ? "group \(groupNames)" : "groups \(groupNames)")
         }
-        parts.append("tap to view details")
+        if isSelected == nil {
+            parts.append("tap to view details")
+        }
 
         return parts.joined(separator: ", ")
     }
