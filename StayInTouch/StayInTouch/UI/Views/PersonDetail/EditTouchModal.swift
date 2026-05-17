@@ -35,30 +35,7 @@ struct EditTouchModal: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
-                HStack(spacing: DS.Spacing.md) {
-                    ForEach(TouchMethod.allCases, id: \.self) { touchMethod in
-                        Button {
-                            selectedMethod = touchMethod
-                        } label: {
-                            VStack(spacing: DS.Spacing.xs) {
-                                Image(systemName: DS.touchMethodIcon(touchMethod))
-                                    .font(.title2)
-                                Text(touchMethod.rawValue)
-                                    .font(DS.Typography.caption)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, DS.Spacing.sm)
-                            .background(
-                                selectedMethod == touchMethod
-                                    ? DS.Colors.accent.opacity(0.12)
-                                    : Color.clear
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundColor(selectedMethod == touchMethod ? DS.Colors.accent : DS.Colors.secondaryText)
-                    }
-                }
+                TouchMethodPicker(selection: $selectedMethod)
 
                 Picker("Time of Day", selection: $selectedTimeOfDay) {
                     Text("None").tag(TimeOfDay?.none)
