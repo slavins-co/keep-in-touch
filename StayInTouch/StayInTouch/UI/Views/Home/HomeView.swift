@@ -370,18 +370,14 @@ struct HomeView: View {
         let calculator = FrequencyCalculator()
         let cadencesById = Dictionary(uniqueKeysWithValues: viewModel.cadences.map { ($0.id, $0) })
         let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
-        let peopleById = Dictionary(uniqueKeysWithValues: viewModel.allPeople.map { ($0.id, $0) })
 
         return ScrollView {
             LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
                 if selectionCoordinator.isSelectMode && !recentGroups.isEmpty {
                     RecentGroupsSection(
                         groups: recentGroups,
-                        peopleById: peopleById,
-                        onSelect: { ids in
-                            selectionCoordinator.setSelection(ids)
-                            AnalyticsService.track("recent_group.reused")
-                        }
+                        peopleById: Dictionary(uniqueKeysWithValues: viewModel.allPeople.map { ($0.id, $0) }),
+                        onSelect: selectionCoordinator.chooseRecentGroup
                     )
                 }
 

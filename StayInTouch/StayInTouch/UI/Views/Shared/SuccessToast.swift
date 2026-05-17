@@ -16,13 +16,11 @@ final class SuccessToastManager: ObservableObject {
         let id: UUID
         let message: String
         let actionTitle: String?
-        let onActionToken: UUID?
 
-        init(message: String, actionTitle: String? = nil, onActionToken: UUID? = nil) {
+        init(message: String, actionTitle: String? = nil) {
             self.id = UUID()
             self.message = message
             self.actionTitle = actionTitle
-            self.onActionToken = onActionToken
         }
     }
 
@@ -33,8 +31,7 @@ final class SuccessToastManager: ObservableObject {
     private var actionHandler: (() -> Void)?
 
     func show(_ message: String, actionTitle: String? = nil, onAction: (() -> Void)? = nil) {
-        let token = onAction != nil ? UUID() : nil
-        let payload = Payload(message: message, actionTitle: actionTitle, onActionToken: token)
+        let payload = Payload(message: message, actionTitle: actionTitle)
         current = payload
         actionHandler = onAction
 

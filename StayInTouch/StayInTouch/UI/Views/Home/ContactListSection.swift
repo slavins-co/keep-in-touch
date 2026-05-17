@@ -35,8 +35,7 @@ struct ContactListSection: View {
 
                     Button {
                         if inSelectMode {
-                            coordinator.toggle(person.id)
-                            Haptics.light()
+                            coordinator.toggleWithHaptic(person.id)
                         } else {
                             selectPerson(person)
                         }

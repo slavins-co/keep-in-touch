@@ -233,8 +233,8 @@ struct MainTabView: View {
             recentGroupsStore.append(personIds: Array(combined))
             recentGroups = recentGroupsStore.load()
 
-            // Refresh the home view so the new touch dates surface.
-            viewModel.load()
+            // HomeView observes `.personDidChange` and reloads — one
+            // post is enough, no need for an extra viewModel.load() here.
             NotificationCenter.default.post(name: .personDidChange, object: nil)
 
             // Build the toast message + "Forgot?" hook.

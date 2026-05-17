@@ -50,10 +50,24 @@ final class SelectionCoordinator: ObservableObject {
         }
     }
 
+    /// Toggle + light haptic. Centralized so every row tap in any list
+    /// surface fires the same feedback without copy-pasting `Haptics.light()`.
+    func toggleWithHaptic(_ id: UUID) {
+        toggle(id)
+        Haptics.light()
+    }
+
     func contains(_ id: UUID) -> Bool { selection.contains(id) }
 
     func setSelection(_ ids: [UUID]) {
         selection = Set(ids)
+    }
+
+    /// Replace selection with a recent group and emit the analytics
+    /// signal. Single seam so the event can't drift across surfaces.
+    func chooseRecentGroup(_ ids: [UUID]) {
+        setSelection(ids)
+        AnalyticsService.track("recent_group.reused")
     }
 
     func remove(_ id: UUID) {
