@@ -7,6 +7,8 @@ import SwiftUI
 
 struct ContactsListView: View {
     @ObservedObject var viewModel: HomeViewModel
+    @ObservedObject var selectionCoordinator: SelectionCoordinator
+    var recentGroups: [RecentGroup]
     var selectPerson: (Person) -> Void
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
@@ -88,6 +90,21 @@ struct ContactsListView: View {
                 .font(DS.Typography.homeSubtitle)
                 .foregroundStyle(Color(.secondaryLabel))
             Spacer()
+            Button {
+                if selectionCoordinator.isSelectMode {
+                    selectionCoordinator.exit()
+                } else {
+                    selectionCoordinator.enter(origin: .people)
+                    AnalyticsService.track("bulk_log.opened", parameters: ["origin": "people"])
+                }
+            } label: {
+                Text(selectionCoordinator.isSelectMode ? "Cancel" : "Select")
+                    .font(DS.Typography.filterLabel)
+                    .foregroundStyle(DS.Colors.filterAccent)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(selectionCoordinator.isSelectMode ? "Exit selection mode" : "Enter selection mode")
+            .accessibilityHint("Selects multiple contacts to log a group connection")
         }
         .padding(.horizontal)
         .padding(.vertical, DS.Spacing.sm)
@@ -100,17 +117,35 @@ struct ContactsListView: View {
         let calculator = FrequencyCalculator()
         let cadencesById = Dictionary(uniqueKeysWithValues: viewModel.cadences.map { ($0.id, $0) })
         let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
+        let peopleById = Dictionary(uniqueKeysWithValues: viewModel.allPeople.map { ($0.id, $0) })
 
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                    if selectionCoordinator.isSelectMode && !recentGroups.isEmpty {
+                        RecentGroupsSection(
+                            groups: recentGroups,
+                            peopleById: peopleById,
+                            onSelect: { ids in
+                                selectionCoordinator.setSelection(ids)
+                                AnalyticsService.track("recent_group.reused")
+                            }
+                        )
+                    }
+
                     ForEach(sections, id: \.letter) { section in
                         Section {
                             ForEach(Array(section.people.enumerated()), id: \.element.id) { index, person in
                                 let frequencyName = cadencesById[person.cadenceId]?.name ?? "Frequency"
                                 let personGroups = person.groupIds.compactMap { groupsById[$0] }
+                                let inSelectMode = selectionCoordinator.isSelectMode
                                 Button {
-                                    selectPerson(person)
+                                    if inSelectMode {
+                                        selectionCoordinator.toggle(person.id)
+                                        Haptics.light()
+                                    } else {
+                                        selectPerson(person)
+                                    }
                                 } label: {
                                     ContactCard(
                                         person: person,
@@ -119,11 +154,21 @@ struct ContactsListView: View {
                                         daysOverdue: calculator.daysOverdue(for: person, in: viewModel.cadences),
                                         timeAgo: timeAgoText(for: person, calculator: calculator),
                                         lastMethod: person.lastTouchMethod,
-                                        groups: personGroups
+                                        groups: personGroups,
+                                        isSelected: inSelectMode ? selectionCoordinator.contains(person.id) : nil
                                     )
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityHint("Opens contact details")
+                                .accessibilityHint(inSelectMode
+                                                   ? "Toggles selection"
+                                                   : "Opens contact details")
+                                .simultaneousGesture(
+                                    LongPressGesture(minimumDuration: 0.4).onEnded { _ in
+                                        if !selectionCoordinator.isSelectMode {
+                                            selectionCoordinator.enter(origin: .people, preselect: person.id)
+                                        }
+                                    }
+                                )
                                 .padding(.leading)
                                 .padding(.trailing, 36)
 
@@ -140,12 +185,18 @@ struct ContactsListView: View {
                     }
                 }
                 .padding(.bottom, 80)
+                // LazyVStack caches across sections; rebuild the whole
+                // list when select mode flips so checkmark overlays don't
+                // come from a stale cached row.
+                .id(selectionCoordinator.isSelectMode)
             }
             .background(DS.Colors.pageBg)
             .overlay(alignment: .trailing) {
-                SectionIndexView(sections: sectionLetters) { letter in
-                    withAnimation {
-                        proxy.scrollTo(letter, anchor: .top)
+                if !selectionCoordinator.isSelectMode {
+                    SectionIndexView(sections: sectionLetters) { letter in
+                        withAnimation {
+                            proxy.scrollTo(letter, anchor: .top)
+                        }
                     }
                 }
             }

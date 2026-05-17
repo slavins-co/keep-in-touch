@@ -11,6 +11,8 @@ import TipKit
 struct HomeView: View {
     @Environment(\.openURL) private var openURL
     @ObservedObject var viewModel: HomeViewModel
+    @ObservedObject var selectionCoordinator: SelectionCoordinator
+    var recentGroups: [RecentGroup]
     var selectPerson: (Person) -> Void
     @StateObject private var settingsViewModel = SettingsViewModel()
     @State private var allCaughtUpTip = AllCaughtUpTip()
@@ -181,10 +183,43 @@ struct HomeView: View {
         HStack(spacing: DS.Spacing.sm) {
             frequencyFilterButton
             groupFilterButton
+            selectFilterButton
         }
         .padding(.horizontal)
         .padding(.bottom, DS.Spacing.md)
         .tutorialAnchor(TutorialAnchor.homeFilters)
+    }
+
+    private var selectFilterButton: some View {
+        Button {
+            if selectionCoordinator.isSelectMode {
+                selectionCoordinator.exit()
+            } else {
+                selectionCoordinator.enter(origin: .home)
+                AnalyticsService.track("bulk_log.opened", parameters: ["origin": "home"])
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: selectionCoordinator.isSelectMode ? "checkmark.circle.fill" : "checkmark.circle")
+                    .font(DS.Typography.filterChevron)
+                Text(selectionCoordinator.isSelectMode ? "Selecting" : "Select")
+                    .font(DS.Typography.filterLabel)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.sm)
+            .background(selectionCoordinator.isSelectMode ? DS.Colors.filterAccent.opacity(0.08) : Color.clear)
+            .foregroundStyle(selectionCoordinator.isSelectMode ? DS.Colors.filterAccent : Color(.secondaryLabel))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.md)
+                    .stroke(selectionCoordinator.isSelectMode ? DS.Colors.filterAccent : DS.Colors.separator, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(selectionCoordinator.isSelectMode ? "Exit selection mode" : "Enter selection mode")
+        .accessibilityHint("Selects multiple contacts to log a group connection")
     }
 
     private var frequencyFilterButton: some View {
@@ -335,9 +370,21 @@ struct HomeView: View {
         let calculator = FrequencyCalculator()
         let cadencesById = Dictionary(uniqueKeysWithValues: viewModel.cadences.map { ($0.id, $0) })
         let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
+        let peopleById = Dictionary(uniqueKeysWithValues: viewModel.allPeople.map { ($0.id, $0) })
 
         return ScrollView {
             LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                if selectionCoordinator.isSelectMode && !recentGroups.isEmpty {
+                    RecentGroupsSection(
+                        groups: recentGroups,
+                        peopleById: peopleById,
+                        onSelect: { ids in
+                            selectionCoordinator.setSelection(ids)
+                            AnalyticsService.track("recent_group.reused")
+                        }
+                    )
+                }
+
                 if viewModel.overduePeople.isEmpty && viewModel.dueSoonPeople.isEmpty && viewModel.allGoodPeople.isEmpty {
                     if viewModel.searchText.isEmpty {
                         EmptyStateView(
@@ -355,7 +402,7 @@ struct HomeView: View {
                         )
                     }
                 } else {
-                    if viewModel.showsAllCaughtUpBanner {
+                    if viewModel.showsAllCaughtUpBanner && !selectionCoordinator.isSelectMode {
                         AllCaughtUpView()
                             .popoverTip(allCaughtUpTip)
                     } else {
@@ -369,7 +416,8 @@ struct HomeView: View {
                             statusForPerson: { _ in .overdue },
                             daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
                             timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
-                            selectPerson: selectPerson
+                            selectPerson: selectPerson,
+                            coordinator: selectionCoordinator
                         )
 
                         ContactListSection(
@@ -382,7 +430,8 @@ struct HomeView: View {
                             statusForPerson: { _ in .dueSoon },
                             daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
                             timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
-                            selectPerson: selectPerson
+                            selectPerson: selectPerson,
+                            coordinator: selectionCoordinator
                         )
                     }
 
@@ -396,14 +445,18 @@ struct HomeView: View {
                         statusForPerson: { _ in .onTrack },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
                         timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
-                        selectPerson: selectPerson
+                        selectPerson: selectPerson,
+                        coordinator: selectionCoordinator
                     )
                 }
             }
             .padding(.horizontal)
             .padding(.top, DS.Spacing.md)
             .padding(.bottom, 80)
-            .id(viewModel.refreshToken)
+            // Per memory: LazyVStack caches across sections. Force a clean
+            // rebuild when select mode toggles to avoid stale checkmark
+            // overlays on rows that moved between sections.
+            .id("\(viewModel.refreshToken)-\(selectionCoordinator.isSelectMode)")
         }
         .background(DS.Colors.pageBg)
         .refreshable {
