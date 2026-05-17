@@ -16,7 +16,7 @@ struct PersonQuickActionsBar: View {
             HStack(spacing: DS.Spacing.sm) {
                 messageActionCard
                 callActionCard
-                actionCard(icon: "envelope.fill", label: "Email", enabled: hasEmail) { onQuickAction(.email) }
+                emailActionCard
             }
 
             if let message = viewModel.quickActionMessage {
@@ -42,46 +42,60 @@ struct PersonQuickActionsBar: View {
         viewModel.availableMessengers
     }
 
-    /// Call card: tap = phone (always), long-press = menu with FaceTime when available.
-    /// No persistent preference, no badge — single-tap behavior is unchanged.
-    /// Menu is suppressed in preview mode to keep the tutorial walkthrough deterministic.
+    // MARK: - Email card (plain button, no menu)
+
+    private var emailActionCard: some View {
+        actionCardButton(
+            icon: "envelope.fill",
+            label: "Email",
+            enabled: hasEmail,
+            hint: "Emails this contact",
+            disabledHint: "No email address on file"
+        ) {
+            onQuickAction(.email)
+        }
+    }
+
+    // MARK: - Call card — tap dials, long-press shows FaceTime
+    //
+    // Uses `Menu(content:label:primaryAction:)` — Apple's documented pattern
+    // for "tap performs primary action, long-press shows menu." This bypasses
+    // the SwiftUI quirk where `.contextMenu` on a Button with a custom
+    // ButtonStyle has unreliable long-press recognition.
+
     @ViewBuilder
     private var callActionCard: some View {
-        actionCard(icon: "phone.fill", label: "Call", enabled: hasPhone) {
-            onQuickAction(.call)
-        }
-        .contextMenu {
-            if hasPhone && viewModel.isFaceTimeAvailable && !viewModel.isPreview {
+        Menu {
+            if hasPhone && !viewModel.isPreview {
                 Button {
                     onFaceTime()
                 } label: {
                     Label("FaceTime", systemImage: "video.fill")
                 }
             }
+        } label: {
+            actionCardLabel(icon: "phone.fill", label: "Call", badgeVisible: false)
+        } primaryAction: {
+            onQuickAction(.call)
         }
+        .disabled(!hasPhone)
+        .opacity(!hasPhone && !viewModel.person.contactUnavailable ? 0.5 : 1.0)
+        .accessibilityLabel(hasPhone ? "Call" : "Call, unavailable")
+        .accessibilityHint(hasPhone ? "Calls this contact" : "No phone number on file")
     }
 
-    /// Message card: tap = resolved messenger (sticky or iMessage), long-press = picker.
-    /// Shows a small badge when the resolved messenger is not iMessage.
-    /// Menu is suppressed in preview mode to keep the tutorial walkthrough deterministic.
-    /// Accessibility hint is messenger-specific (avoids the ungrammatical
-    /// "WhatsApps this contact" that the generic actionCard formula produces).
+    // MARK: - Message card — tap routes via resolved messenger, long-press picks one
+    //
+    // Same Menu(primaryAction:) pattern. Badge indicates a sticky preference.
+    // Accessibility hint is messenger-specific (avoids "WhatsApps this contact").
+
     @ViewBuilder
     private var messageActionCard: some View {
         let resolved = viewModel.resolvedMessenger
         let label = resolved == .iMessage ? "Message" : resolved.displayName
         let badgeVisible = viewModel.person.preferredMessenger != nil
 
-        actionCard(
-            icon: "message.fill",
-            label: label,
-            enabled: hasPhone,
-            badgeVisible: badgeVisible,
-            hintOverride: resolved.actionHint
-        ) {
-            onQuickAction(.message)
-        }
-        .contextMenu {
+        Menu {
             if messengerOptions.count > 1 && !viewModel.isPreview {
                 ForEach(messengerOptions, id: \.self) { messenger in
                     Button {
@@ -91,57 +105,76 @@ struct PersonQuickActionsBar: View {
                     }
                 }
             }
+        } label: {
+            actionCardLabel(icon: "message.fill", label: label, badgeVisible: badgeVisible)
+        } primaryAction: {
+            onQuickAction(.message)
         }
+        .disabled(!hasPhone)
+        .opacity(!hasPhone && !viewModel.person.contactUnavailable ? 0.5 : 1.0)
+        .accessibilityLabel(hasPhone ? label : "\(label), unavailable")
+        .accessibilityHint(hasPhone ? resolved.actionHint : "No phone number on file")
     }
 
-    private func actionCard(
+    // MARK: - Action card primitives
+
+    /// Plain Button-based action card (used by Email which has no menu).
+    private func actionCardButton(
         icon: String,
         label: String,
         enabled: Bool,
-        badgeVisible: Bool = false,
-        hintOverride: String? = nil,
+        hint: String,
+        disabledHint: String,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: DS.Spacing.sm) {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: icon)
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                        .frame(width: 36, height: 36)
-                        .background(DS.Colors.actionButtonIconCircleOpacity)
-                        .clipShape(Circle())
-                    if badgeVisible {
-                        Circle()
-                            .fill(DS.Colors.accent)
-                            .frame(width: 10, height: 10)
-                            .overlay(Circle().stroke(DS.Colors.actionButtonBackground, lineWidth: 1.5))
-                            .offset(x: 2, y: -2)
-                            .accessibilityHidden(true)
-                    }
-                }
-                Text(label)
-                    .font(DS.Typography.contactCardMeta)
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 80)
-            .background(DS.Colors.actionButtonBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(DS.Colors.actionButtonBorder, lineWidth: 1)
-            )
-            .shadow(color: DS.Colors.actionButtonShadow, radius: 6, y: 2)
+            actionCardLabel(icon: icon, label: label, badgeVisible: false)
         }
         .buttonStyle(ActionCardButtonStyle())
         .accessibilityLabel(enabled ? label : "\(label), unavailable")
-        .accessibilityHint(enabled
-            ? (hintOverride ?? "\(label)s this contact")
-            : "No \(label == "Email" ? "email address" : "phone number") on file")
+        .accessibilityHint(enabled ? hint : disabledHint)
         .disabled(!enabled)
         .opacity(!enabled && !viewModel.person.contactUnavailable ? 0.5 : 1.0)
+    }
+
+    /// Visual presentation of the card (icon + optional badge + label).
+    /// Used as either a Button's content (Email) or a Menu's label (Call, Message).
+    private func actionCardLabel(
+        icon: String,
+        label: String,
+        badgeVisible: Bool
+    ) -> some View {
+        VStack(spacing: DS.Spacing.sm) {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(DS.Colors.actionButtonIconCircleOpacity)
+                    .clipShape(Circle())
+                if badgeVisible {
+                    Circle()
+                        .fill(DS.Colors.accent)
+                        .frame(width: 10, height: 10)
+                        .overlay(Circle().stroke(DS.Colors.actionButtonBackground, lineWidth: 1.5))
+                        .offset(x: 2, y: -2)
+                        .accessibilityHidden(true)
+                }
+            }
+            Text(label)
+                .font(DS.Typography.contactCardMeta)
+                .foregroundStyle(.white)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: 80)
+        .background(DS.Colors.actionButtonBackground)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.lg)
+                .stroke(DS.Colors.actionButtonBorder, lineWidth: 1)
+        )
+        .shadow(color: DS.Colors.actionButtonShadow, radius: 6, y: 2)
     }
 }
 

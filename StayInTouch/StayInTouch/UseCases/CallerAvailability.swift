@@ -15,14 +15,16 @@ protocol CallerAvailabilityChecking {
     var isFaceTimeAvailable: Bool { get }
 }
 
-/// Production implementation backed by `UIApplication.canOpenURL("facetime://")`.
-/// On iPhone where FaceTime is preinstalled this returns true. The check
-/// requires `facetime` in `LSApplicationQueriesSchemes`.
+/// Production implementation. FaceTime ships on every iPhone, so we
+/// surface it unconditionally on iOS. The previous `canOpenURL("facetime://")`
+/// gate returned false on simulators (the FaceTime app isn't installed there)
+/// which broke testing without buying any safety on real devices — if an
+/// edge-case device doesn't have FaceTime, the existing "couldn't open
+/// FaceTime" toast in `PersonDetailView.faceTime()` handles it.
 struct SystemCallerAvailability: CallerAvailabilityChecking {
     var isFaceTimeAvailable: Bool {
         #if canImport(UIKit)
-        guard let url = URL(string: "facetime://") else { return false }
-        return UIApplication.shared.canOpenURL(url)
+        return true
         #else
         return false
         #endif
