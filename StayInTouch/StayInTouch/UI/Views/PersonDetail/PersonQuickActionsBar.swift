@@ -68,6 +68,11 @@ struct PersonQuickActionsBar: View {
         Menu {
             if hasPhone && !viewModel.isPreview {
                 Button {
+                    onQuickAction(.call)
+                } label: {
+                    Label("Phone", systemImage: "phone.fill")
+                }
+                Button {
                     onFaceTime()
                 } label: {
                     Label("FaceTime", systemImage: "video.fill")
