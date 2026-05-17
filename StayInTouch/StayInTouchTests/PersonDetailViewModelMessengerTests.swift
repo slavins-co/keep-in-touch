@@ -62,8 +62,18 @@ final class PersonDetailViewModelMessengerTests: XCTestCase {
     }
 
     func testAvailableMessengersExcludesUninstalled() {
-        availability.installed = [.iMessage]
-        XCTAssertEqual(sut.availableMessengers, [.iMessage])
+        // availableMessengers is cached at init, so build a fresh VM with the
+        // desired availability rather than mutating the fake post-init.
+        let onlyiMessage = FakeMessengerAvailability(installed: [.iMessage])
+        let vm = PersonDetailViewModel(
+            person: person,
+            personRepository: personRepo,
+            cadenceRepository: cadenceRepo,
+            groupRepository: groupRepo,
+            touchRepository: touchRepo,
+            messengerAvailability: onlyiMessage
+        )
+        XCTAssertEqual(vm.availableMessengers, [.iMessage])
     }
 
     // MARK: - setPreferredMessenger
@@ -115,50 +125,49 @@ final class PersonDetailViewModelMessengerTests: XCTestCase {
         XCTAssertNotNil(sut.quickActionMessage)
     }
 
-    // MARK: - openAction routing
+    // MARK: - routeAction / routeActionWithValue routing
 
-    func testOpenActionMessageRoutesThroughResolvedMessenger() async {
-        // Inject a phone number into the ViewModel directly via public mutation
-        // path is awkward — use the openActionWithValue overload which bypasses
-        // the phone-picker logic and exercises buildMessageURL directly.
-        let url = sut.openActionWithValue(type: .message, value: "+14155551212", explicit: nil)
+    func testMessageRouteDefaultsToSmsWhenNoPreferenceSet() {
+        let url = sut.routeActionWithValue(.message(explicit: nil), value: "+14155551212")
         XCTAssertEqual(url?.scheme, "sms", "Default routing should produce sms: when preference is nil")
     }
 
-    func testOpenActionMessageWithExplicitWhatsAppRoutesToWaMe() {
-        let url = sut.openActionWithValue(type: .message, value: "+14155551212", explicit: .whatsapp)
+    func testMessageRouteWithExplicitWhatsAppRoutesToWaMe() {
+        let url = sut.routeActionWithValue(.message(explicit: .whatsapp), value: "+14155551212")
         XCTAssertEqual(url?.host, "wa.me")
     }
 
-    func testOpenActionMessageRespectsSavedPreference() {
+    func testMessageRouteRespectsSavedPreference() {
         var updated = person!
         updated.preferredMessenger = .whatsapp
         personRepo.people = [updated]
         sut.load()
 
-        let url = sut.openActionWithValue(type: .message, value: "+14155551212", explicit: nil)
+        let url = sut.routeActionWithValue(.message(explicit: nil), value: "+14155551212")
         XCTAssertEqual(url?.host, "wa.me",
                        "Saved preference should drive routing when no explicit override")
     }
 
-    func testOpenActionCallAlwaysProducesTelScheme() {
-        let url = sut.openActionWithValue(type: .call, value: "+14155551212")
+    func testCallRouteAlwaysProducesTelScheme() {
+        let url = sut.routeActionWithValue(.call, value: "+14155551212")
         XCTAssertEqual(url?.scheme, "tel",
                        "Call should always route to tel: regardless of messenger preference")
     }
 
-    func testOpenActionMessageWithMalformedPhoneSetsToast() {
-        let url = sut.openActionWithValue(type: .message, value: "", explicit: .whatsapp)
+    func testMessageRouteWithMalformedPhoneSetsToast() {
+        let url = sut.routeActionWithValue(.message(explicit: .whatsapp), value: "")
         XCTAssertNil(url)
         XCTAssertNotNil(sut.quickActionMessage)
     }
 
-    // MARK: - touchMethod mapping
+    // MARK: - PhoneRouting.touchMethod mapping
 
-    func testTouchMethodForMessengerMatchesEnum() {
-        XCTAssertEqual(sut.touchMethod(forMessenger: .iMessage), .text)
-        XCTAssertEqual(sut.touchMethod(forMessenger: .whatsapp), .whatsapp)
-        XCTAssertEqual(sut.touchMethod(forMessenger: .signal), .signal)
+    func testPhoneRoutingTouchMethodMapping() {
+        XCTAssertEqual(PersonDetailViewModel.PhoneRouting.call.touchMethod, .call)
+        XCTAssertEqual(PersonDetailViewModel.PhoneRouting.faceTime.touchMethod, .facetime)
+        XCTAssertEqual(PersonDetailViewModel.PhoneRouting.message(explicit: nil).touchMethod, .text)
+        XCTAssertEqual(PersonDetailViewModel.PhoneRouting.message(explicit: .whatsapp).touchMethod, .whatsapp)
+        XCTAssertEqual(PersonDetailViewModel.PhoneRouting.message(explicit: .signal).touchMethod, .signal)
     }
 }
 

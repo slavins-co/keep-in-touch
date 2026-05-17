@@ -41,12 +41,10 @@ final class PersonDetailViewModel: ObservableObject {
     @Published var quickActionMessage: String?
     @Published var showPhonePicker = false
     @Published var showEmailPicker = false
-    var pendingPhoneAction: QuickActionType?
-    var pendingExplicitMessenger: PreferredMessenger?
-    /// True when the phone-picker dialog should route the selected number into
-    /// a FaceTime URL (instead of the default tel: routing). One-shot flag —
-    /// cleared after the picker resolves or cancels.
-    var pendingFaceTime: Bool = false
+    /// What to do with the phone the user picks from `showPhonePicker`.
+    /// Set by `routeAction` when a multi-phone contact triggers the dialog;
+    /// cleared by `cancelPendingPhonePicker` when the dialog completes or cancels.
+    private(set) var pendingPhoneRouting: PhoneRouting?
 
     let mode: Mode
     private let personRepository: PersonRepository
@@ -76,6 +74,7 @@ final class PersonDetailViewModel: ObservableObject {
         self.groupRepository = groupRepository
         self.touchRepository = touchRepository
         self.messengerAvailability = messengerAvailability
+        self.availableMessengers = messengerAvailability.availableMessengers()
         load()
         if case .normal = mode {
             AnalyticsService.track("person.viewed")
@@ -451,14 +450,8 @@ final class PersonDetailViewModel: ObservableObject {
     }
 
     /// Messengers available on this device, used to build the long-press picker.
-    var availableMessengers: [PreferredMessenger] {
-        messengerAvailability.availableMessengers()
-    }
-
-    /// Routed TouchMethod for the resolved or explicitly chosen messenger.
-    func touchMethod(forMessenger messenger: PreferredMessenger) -> TouchMethod {
-        messenger.touchMethod
-    }
+    /// Cached at init — `canOpenURL` results are stable for the app's lifetime.
+    let availableMessengers: [PreferredMessenger]
 
     /// Persists the user's explicit messenger choice for this person.
     /// We store `nil` for `.iMessage` so a future global default can flip
@@ -489,72 +482,39 @@ final class PersonDetailViewModel: ObservableObject {
         }
     }
 
-    func openAction(type: QuickActionType, explicit: PreferredMessenger? = nil) -> URL? {
-        if isPreview { return nil }
-        quickActionMessage = nil
-        switch type {
-        case .message:
-            if phoneNumbers.count > 1 {
-                pendingPhoneAction = type
-                pendingExplicitMessenger = explicit
-                showPhonePicker = true
-                return nil
+    // MARK: - Phone-action routing
+    //
+    // The Message and Call buttons share a phone-picker codepath: a contact
+    // with multiple numbers stashes the routing intent (which messenger or
+    // which call mode the user picked) and shows the picker dialog. When the
+    // user picks a number, the View calls back with the routing + value to
+    // produce the final URL. `PhoneRouting` encodes the three valid intents
+    // so the View doesn't have to coordinate three separate state fields.
+
+    /// What the user wants to do with a phone number once one is selected.
+    enum PhoneRouting: Equatable {
+        case call
+        case faceTime
+        case message(explicit: PreferredMessenger?)
+
+        var touchMethod: TouchMethod {
+            switch self {
+            case .call: return .call
+            case .faceTime: return .facetime
+            case .message(let explicit): return (explicit ?? .iMessage).touchMethod
             }
-            guard let phone else {
-                quickActionMessage = "Whoops — no phone number found."
-                return nil
-            }
-            return buildMessageURL(phone: phone, explicit: explicit)
-        case .call:
-            if phoneNumbers.count > 1 {
-                pendingPhoneAction = type
-                pendingExplicitMessenger = nil
-                showPhonePicker = true
-                return nil
-            }
-            guard let phone else {
-                quickActionMessage = "Whoops — no phone number found."
-                return nil
-            }
-            return buildPhoneURL(type: type, phone: phone)
-        case .email:
-            if emailAddresses.count > 1 {
-                showEmailPicker = true
-                return nil
-            }
-            guard let email else {
-                quickActionMessage = "Whoops — no email address found."
-                return nil
-            }
-            return buildEmailURL(email: email)
         }
     }
 
-    func openActionWithValue(type: QuickActionType, value: String, explicit: PreferredMessenger? = nil) -> URL? {
-        if isPreview { return nil }
-        quickActionMessage = nil
-        switch type {
-        case .message:
-            return buildMessageURL(phone: value, explicit: explicit)
-        case .call:
-            return buildPhoneURL(type: type, phone: value)
-        case .email:
-            return buildEmailURL(email: value)
-        }
-    }
-
-    /// Builds a FaceTime URL for the contact's primary phone, or triggers the
-    /// phone-picker dialog if the contact has multiple numbers. The picker
-    /// callback in PersonDetailView reads `pendingFaceTime` to route correctly.
-    /// Returns nil when no phone is available, when a picker is needed, or
-    /// when normalization fails (in which case `quickActionMessage` is set).
-    func openFaceTimeAction() -> URL? {
+    /// Routes a phone action. Returns the URL when the contact has a single
+    /// number; otherwise stashes the routing intent and triggers the phone
+    /// picker (`showPhonePicker = true`) — the View's confirmationDialog
+    /// callback then resolves via `routeActionWithValue`.
+    func routeAction(_ routing: PhoneRouting) -> URL? {
         if isPreview { return nil }
         quickActionMessage = nil
         if phoneNumbers.count > 1 {
-            pendingPhoneAction = .call
-            pendingFaceTime = true
-            pendingExplicitMessenger = nil
+            pendingPhoneRouting = routing
             showPhonePicker = true
             return nil
         }
@@ -562,45 +522,62 @@ final class PersonDetailViewModel: ObservableObject {
             quickActionMessage = "Whoops — no phone number found."
             return nil
         }
-        return buildFaceTimeURL(phone: phone)
+        return buildPhoneActionURL(routing: routing, phone: phone)
     }
 
-    /// Builds a FaceTime URL for a specific phone value (used after the
-    /// phone-picker dialog resolves).
-    func openFaceTimeActionWithValue(_ value: String) -> URL? {
+    /// Resolves a phone action against a specific number (post-picker).
+    func routeActionWithValue(_ routing: PhoneRouting, value: String) -> URL? {
         if isPreview { return nil }
         quickActionMessage = nil
-        return buildFaceTimeURL(phone: value)
+        return buildPhoneActionURL(routing: routing, phone: value)
     }
 
-    private func buildFaceTimeURL(phone: String) -> URL? {
-        guard let normalized = PhoneNormalizer.normalize(phone),
-              let encoded = normalized.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-              let url = URL(string: "facetime://+\(encoded)") else {
-            AppLogger.logWarning("Failed to create facetime URL for contact \(person.id)", category: AppLogger.viewModel)
-            quickActionMessage = "Whoops — couldn't read that phone number."
+    /// Clears any pending phone-picker state. Called when the View dismisses
+    /// or completes the picker dialog. Keeps `PhoneRouting` state encapsulated.
+    func cancelPendingPhonePicker() {
+        pendingPhoneRouting = nil
+    }
+
+    /// Email is its own codepath — it has its own value picker (multi-email
+    /// contact) and doesn't share state with phone actions.
+    func openEmailAction() -> URL? {
+        if isPreview { return nil }
+        quickActionMessage = nil
+        if emailAddresses.count > 1 {
+            showEmailPicker = true
             return nil
         }
-        return url
-    }
-
-    private func buildMessageURL(phone: String, explicit: PreferredMessenger?) -> URL? {
-        let messenger = explicit ?? resolvedMessenger
-        guard let url = MessengerRouter.url(for: messenger, phone: phone) else {
-            AppLogger.logWarning("Failed to create \(messenger.rawValue) URL for contact \(person.id)", category: AppLogger.viewModel)
-            quickActionMessage = "Whoops — couldn't read that phone number."
+        guard let email else {
+            quickActionMessage = "Whoops — no email address found."
             return nil
         }
-        return url
+        return buildEmailURL(email: email)
     }
 
-    private func buildPhoneURL(type: QuickActionType, phone: String) -> URL? {
-        let sanitizedPhone = sanitize(phone)
-        let scheme = type == .message ? "sms" : "tel"
-        guard let encoded = sanitizedPhone.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-              let url = URL(string: "\(scheme):\(encoded)") else {
-            AppLogger.logWarning("Failed to create \(scheme) URL for contact \(person.id)", category: AppLogger.viewModel)
-            return nil
+    func openEmailActionWithValue(_ value: String) -> URL? {
+        if isPreview { return nil }
+        quickActionMessage = nil
+        return buildEmailURL(email: value)
+    }
+
+    private func buildPhoneActionURL(routing: PhoneRouting, phone: String) -> URL? {
+        let url: URL?
+        let label: String
+        switch routing {
+        case .call:
+            url = CallerRouter.telURL(phone: phone)
+            label = "tel"
+        case .faceTime:
+            url = CallerRouter.faceTimeURL(phone: phone)
+            label = "facetime"
+        case .message(let explicit):
+            let messenger = explicit ?? resolvedMessenger
+            url = MessengerRouter.url(for: messenger, phone: phone)
+            label = messenger.rawValue
+        }
+        if url == nil {
+            AppLogger.logWarning("Failed to create \(label) URL for contact \(person.id)", category: AppLogger.viewModel)
+            quickActionMessage = "Whoops — couldn't read that phone number."
         }
         return url
     }
@@ -638,23 +615,13 @@ final class PersonDetailViewModel: ObservableObject {
             return ($0.timeOfDay?.sortOrder ?? 0) > ($1.timeOfDay?.sortOrder ?? 0)
         }
     }
-
-    private func sanitize(_ phone: String) -> String {
-        phone.filter { $0.isNumber || $0 == "+" }
-    }
-
 }
 
+/// Which quick-action card the user tapped. Thin intent enum exchanged
+/// between the View and ViewModel; routing logic translates this into
+/// `PhoneRouting` (Message/Call) or the email codepath.
 enum QuickActionType {
     case message
     case call
     case email
-
-    var touchMethod: TouchMethod {
-        switch self {
-        case .message: return .text
-        case .call: return .call
-        case .email: return .email
-        }
-    }
 }

@@ -37,55 +37,55 @@ final class PersonDetailViewModelFaceTimeTests: XCTestCase {
         )
     }
 
-    // MARK: - openFaceTimeAction (single phone path)
+    // MARK: - routeAction(.faceTime) — single phone path
 
-    func testOpenFaceTimeActionWithNoPhoneSetsToastAndReturnsNil() {
+    func testFaceTimeRouteWithNoPhoneSetsToastAndReturnsNil() {
         // Default test person has no phone wired up via ContactsFetcher.
-        let url = sut.openFaceTimeAction()
+        let url = sut.routeAction(.faceTime)
         XCTAssertNil(url)
         XCTAssertNotNil(sut.quickActionMessage)
     }
 
-    // MARK: - openFaceTimeActionWithValue (post-picker path)
+    // MARK: - routeActionWithValue(.faceTime, ...) — post-picker path
 
-    func testOpenFaceTimeActionWithValueProducesFaceTimeUrl() {
-        let url = sut.openFaceTimeActionWithValue("+14155551212")
+    func testFaceTimeRouteWithValueProducesFaceTimeUrl() {
+        let url = sut.routeActionWithValue(.faceTime, value: "+14155551212")
         XCTAssertEqual(url?.scheme, "facetime")
         XCTAssertTrue(url?.absoluteString.contains("+14155551212") ?? false,
                       "FaceTime URL should preserve E.164 with leading +")
     }
 
-    func testOpenFaceTimeActionWithValueNormalizesLocalNumber() {
+    func testFaceTimeRouteWithValueNormalizesLocalNumber() {
         // 10-digit US number without + should get country code prepended.
-        let url = sut.openFaceTimeActionWithValue("(415) 555-1212")
+        let url = sut.routeActionWithValue(.faceTime, value: "(415) 555-1212")
         XCTAssertEqual(url?.scheme, "facetime")
         XCTAssertTrue(url?.absoluteString.contains("+14155551212") ?? false ||
                       url?.absoluteString.contains("+1") ?? false,
                       "Local-format US number should be normalized")
     }
 
-    func testOpenFaceTimeActionWithMalformedPhoneReturnsNilAndSetsToast() {
-        let url = sut.openFaceTimeActionWithValue("")
+    func testFaceTimeRouteWithMalformedPhoneReturnsNilAndSetsToast() {
+        let url = sut.routeActionWithValue(.faceTime, value: "")
         XCTAssertNil(url)
         XCTAssertNotNil(sut.quickActionMessage)
     }
 
-    func testOpenFaceTimeActionWithGarbageReturnsNilAndSetsToast() {
-        let url = sut.openFaceTimeActionWithValue("hello")
+    func testFaceTimeRouteWithGarbageReturnsNilAndSetsToast() {
+        let url = sut.routeActionWithValue(.faceTime, value: "hello")
         XCTAssertNil(url)
         XCTAssertNotNil(sut.quickActionMessage)
     }
 
-    // MARK: - pendingFaceTime flag lifecycle (multi-phone picker hook)
+    // MARK: - pendingPhoneRouting lifecycle
 
-    func testPendingFaceTimeDefaultsToFalse() {
-        XCTAssertFalse(sut.pendingFaceTime)
+    func testPendingPhoneRoutingDefaultsToNil() {
+        XCTAssertNil(sut.pendingPhoneRouting)
     }
 
-    func testPendingFaceTimeCanBeSetAndCleared() {
-        sut.pendingFaceTime = true
-        XCTAssertTrue(sut.pendingFaceTime)
-        sut.pendingFaceTime = false
-        XCTAssertFalse(sut.pendingFaceTime)
+    func testCancelPendingPhonePickerClearsState() {
+        // routeAction with a multi-phone contact would set this; we don't have
+        // that fixture wired here, so verify the cancel method works directly.
+        sut.cancelPendingPhonePicker()
+        XCTAssertNil(sut.pendingPhoneRouting)
     }
 }

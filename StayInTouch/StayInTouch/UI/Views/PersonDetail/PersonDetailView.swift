@@ -132,65 +132,24 @@ struct PersonDetailView: View {
         .confirmationDialog("Choose a number", isPresented: $viewModel.showPhonePicker) {
             ForEach(viewModel.phoneNumbers) { phone in
                 Button("\(phone.label): \(phone.value)") {
-                    guard let action = viewModel.pendingPhoneAction else {
-                        clearPhonePickerPending()
+                    guard let routing = viewModel.pendingPhoneRouting,
+                          let url = viewModel.routeActionWithValue(routing, value: phone.value) else {
+                        viewModel.cancelPendingPhonePicker()
                         return
                     }
-                    let explicit = viewModel.pendingExplicitMessenger
-                    let isFaceTime = viewModel.pendingFaceTime
-                    let routedMessenger: PreferredMessenger? = action == .message
-                        ? (explicit ?? viewModel.resolvedMessenger)
-                        : nil
-                    let url: URL?
-                    if isFaceTime {
-                        url = viewModel.openFaceTimeActionWithValue(phone.value)
-                    } else {
-                        url = viewModel.openActionWithValue(type: action, value: phone.value, explicit: explicit)
-                    }
-                    guard let url else {
-                        clearPhonePickerPending()
-                        return
-                    }
-                    openURL(url) { accepted in
-                        if accepted {
-                            // Persist messenger preference only on successful open,
-                            // mirroring openMessage(with:) — avoids a sticky preference
-                            // that the user never actually used.
-                            if let explicit, action == .message {
-                                viewModel.setPreferredMessenger(explicit)
-                            }
-                            Haptics.light()
-                            let method: TouchMethod = isFaceTime
-                                ? .facetime
-                                : (routedMessenger?.touchMethod ?? action.touchMethod)
-                            viewModel.logTouch(method: method, notes: nil, date: Date())
-                            pendingQuickActionTouch = viewModel.touchEvents.first
-                            pendingQuickActionMethod = method
-                        } else if let routedMessenger {
-                            viewModel.handleFailedMessengerOpen(messenger: routedMessenger)
-                        } else {
-                            viewModel.quickActionMessage = "Whoops — couldn't open that on this device."
-                        }
-                    }
-                    clearPhonePickerPending()
+                    executeQuickAction(url: url, routing: routing)
+                    viewModel.cancelPendingPhonePicker()
                 }
             }
             Button("Cancel", role: .cancel) {
-                clearPhonePickerPending()
+                viewModel.cancelPendingPhonePicker()
             }
         }
         .confirmationDialog("Choose an email", isPresented: $viewModel.showEmailPicker) {
             ForEach(viewModel.emailAddresses) { email in
                 Button("\(email.label): \(email.value)") {
-                    guard let url = viewModel.openActionWithValue(type: .email, value: email.value) else { return }
-                    openURL(url) { accepted in
-                        if accepted {
-                            Haptics.light()
-                            viewModel.logTouch(method: .email, notes: nil, date: Date())
-                            pendingQuickActionTouch = viewModel.touchEvents.first
-                            pendingQuickActionMethod = .email
-                        }
-                    }
+                    guard let url = viewModel.openEmailActionWithValue(email.value) else { return }
+                    executeQuickAction(url: url, method: .email, onFailure: nil)
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -390,67 +349,87 @@ struct PersonDetailView: View {
     // MARK: - Quick Actions
 
     private func open(_ action: QuickActionType) {
-        guard let url = viewModel.openAction(type: action) else { return }
-        let routedMessenger: PreferredMessenger? = action == .message ? viewModel.resolvedMessenger : nil
+        switch action {
+        case .message:
+            let routing = PersonDetailViewModel.PhoneRouting.message(explicit: nil)
+            guard let url = viewModel.routeAction(routing) else { return }
+            executeQuickAction(url: url, routing: routing)
+        case .call:
+            guard let url = viewModel.routeAction(.call) else { return }
+            executeQuickAction(url: url, routing: .call)
+        case .email:
+            guard let url = viewModel.openEmailAction() else { return }
+            executeQuickAction(url: url, method: .email, onFailure: nil)
+        }
+    }
+
+    /// Long-press → FaceTime from the Call card. No persistent preference.
+    private func faceTime() {
+        guard let url = viewModel.routeAction(.faceTime) else { return }
+        executeQuickAction(
+            url: url,
+            method: .facetime,
+            onFailure: { viewModel.quickActionMessage = "Whoops — couldn't open FaceTime on this device." }
+        )
+    }
+
+    /// Explicit messenger pick from the long-press menu. The preference is
+    /// persisted AFTER `openURL` succeeds — saving earlier would strand a
+    /// sticky preference if the user cancels a downstream phone picker for
+    /// a multi-phone contact. The multi-phone case is handled by the
+    /// `routeActionWithValue` branch in the phone-picker dialog, which
+    /// likewise persists only on accepted-true.
+    private func openMessage(with messenger: PreferredMessenger) {
+        let routing = PersonDetailViewModel.PhoneRouting.message(explicit: messenger)
+        guard let url = viewModel.routeAction(routing) else { return }
+        executeQuickAction(url: url, routing: routing)
+    }
+
+    /// Centralised "open URL, log touch on success, surface error on failure"
+    /// flow shared by every quick-action entry point and the phone-picker
+    /// dialog. The `routing` overload encapsulates messenger preference
+    /// persistence + handleFailedMessengerOpen self-heal so callers don't
+    /// have to reproduce that dance. The plain `method:` overload is for
+    /// codepaths without phone routing (email).
+    private func executeQuickAction(url: URL, routing: PersonDetailViewModel.PhoneRouting) {
+        let method = routing.touchMethod
+        let explicitMessenger: PreferredMessenger? = {
+            if case .message(let explicit) = routing { return explicit }
+            return nil
+        }()
+        let failureMessenger: PreferredMessenger? = {
+            if case .message(let explicit) = routing { return explicit ?? viewModel.resolvedMessenger }
+            return nil
+        }()
         openURL(url) { accepted in
             if accepted {
-                Haptics.light()
-                let method: TouchMethod = routedMessenger?.touchMethod ?? action.touchMethod
-                viewModel.logTouch(method: method, notes: nil, date: Date())
-                pendingQuickActionTouch = viewModel.touchEvents.first
-                pendingQuickActionMethod = method
-            } else if let routedMessenger {
-                viewModel.handleFailedMessengerOpen(messenger: routedMessenger)
+                if let explicitMessenger {
+                    viewModel.setPreferredMessenger(explicitMessenger)
+                }
+                logTouchAndArmUndo(method: method)
+            } else if let failureMessenger {
+                viewModel.handleFailedMessengerOpen(messenger: failureMessenger)
             } else {
                 viewModel.quickActionMessage = "Whoops — couldn't open that on this device."
             }
         }
     }
 
-    /// Long-press → FaceTime from the Call card. Opens `facetime://` for the
-    /// contact's phone (or fires the existing multi-phone picker first).
-    /// Auto-logs as `.facetime` on success. No persistent preference is stored.
-    private func faceTime() {
-        guard let url = viewModel.openFaceTimeAction() else { return }
+    private func executeQuickAction(url: URL, method: TouchMethod, onFailure: (() -> Void)?) {
         openURL(url) { accepted in
             if accepted {
-                Haptics.light()
-                viewModel.logTouch(method: .facetime, notes: nil, date: Date())
-                pendingQuickActionTouch = viewModel.touchEvents.first
-                pendingQuickActionMethod = .facetime
+                logTouchAndArmUndo(method: method)
             } else {
-                viewModel.quickActionMessage = "Whoops — couldn't open FaceTime on this device."
+                onFailure?()
             }
         }
     }
 
-    private func clearPhonePickerPending() {
-        viewModel.pendingPhoneAction = nil
-        viewModel.pendingExplicitMessenger = nil
-        viewModel.pendingFaceTime = false
-    }
-
-    /// Explicit messenger pick from the long-press menu. Opens the chosen
-    /// messenger; on success (openURL accepted) persists the preference and
-    /// auto-logs the touch. We deliberately persist AFTER the system confirms
-    /// the URL opened — saving earlier would strand a sticky preference if
-    /// the user cancels a downstream phone picker for a multi-phone contact.
-    /// (The multi-phone case is handled in the confirmationDialog branch,
-    /// which calls setPreferredMessenger in the same accepted-true path.)
-    private func openMessage(with messenger: PreferredMessenger) {
-        guard let url = viewModel.openAction(type: .message, explicit: messenger) else { return }
-        openURL(url) { accepted in
-            if accepted {
-                viewModel.setPreferredMessenger(messenger)
-                Haptics.light()
-                let method = messenger.touchMethod
-                viewModel.logTouch(method: method, notes: nil, date: Date())
-                pendingQuickActionTouch = viewModel.touchEvents.first
-                pendingQuickActionMethod = method
-            } else {
-                viewModel.handleFailedMessengerOpen(messenger: messenger)
-            }
-        }
+    private func logTouchAndArmUndo(method: TouchMethod) {
+        Haptics.light()
+        viewModel.logTouch(method: method, notes: nil, date: Date())
+        pendingQuickActionTouch = viewModel.touchEvents.first
+        pendingQuickActionMethod = method
     }
 
     private func quickActionUndoBanner(method: TouchMethod) -> some View {
