@@ -174,28 +174,28 @@ final class PersonDetailViewModelMessengerTests: XCTestCase {
         )
     }
 
-    func testResolvedTouchMethodForExplicitMessengerUsesExplicit() {
-        // .message(.whatsapp) always logs .whatsapp, regardless of the default.
+    func testResolvedTouchMethodForExplicitMessengerLogsTextMedium() {
+        // #299: TouchMethod collapsed to medium-only. WhatsApp and Signal are
+        // text-medium apps — they route correctly via PreferredMessenger but
+        // log as .text. Per-touch app identity is no longer recorded; the
+        // per-contact preference lives on Person.preferredMessenger.
         XCTAssertEqual(
             PersonDetailViewModel.PhoneRouting.message(explicit: .whatsapp)
                 .resolvedTouchMethod(defaultMessenger: .iMessage),
-            .whatsapp
+            .text
         )
         XCTAssertEqual(
             PersonDetailViewModel.PhoneRouting.message(explicit: .signal)
                 .resolvedTouchMethod(defaultMessenger: .whatsapp),
-            .signal
+            .text
         )
     }
 
-    /// Regression test for the bug introduced in commit fd46a1e and fixed in
-    /// the follow-up: when the user has a sticky WhatsApp/Signal preference
-    /// and single-taps the Message card (no explicit pick), the touch must
-    /// be logged with the resolved messenger's TouchMethod, NOT iMessage's
-    /// `.text`. The bug surfaced because `.message(explicit: nil)` previously
-    /// defaulted to `.iMessage` regardless of saved preference, so a tap
-    /// that correctly opened WhatsApp would log as Text in history.
-    func testResolvedTouchMethodForImplicitMessengerUsesDefault() {
+    /// Sticky messenger preferences (WhatsApp/Signal) still ROUTE to the
+    /// correct app on single-tap, but the logged TouchMethod is .text for
+    /// all text-medium apps after #299. The which-app signal is preserved
+    /// on Person.preferredMessenger, not duplicated on each TouchEvent.
+    func testResolvedTouchMethodForImplicitMessengerAlwaysTextMedium() {
         XCTAssertEqual(
             PersonDetailViewModel.PhoneRouting.message(explicit: nil)
                 .resolvedTouchMethod(defaultMessenger: .iMessage),
@@ -204,14 +204,14 @@ final class PersonDetailViewModelMessengerTests: XCTestCase {
         XCTAssertEqual(
             PersonDetailViewModel.PhoneRouting.message(explicit: nil)
                 .resolvedTouchMethod(defaultMessenger: .whatsapp),
-            .whatsapp,
-            "Sticky WhatsApp preference must log .whatsapp on single-tap, not .text"
+            .text,
+            "Sticky WhatsApp preference routes to WhatsApp app but logs as .text medium (#299)"
         )
         XCTAssertEqual(
             PersonDetailViewModel.PhoneRouting.message(explicit: nil)
                 .resolvedTouchMethod(defaultMessenger: .signal),
-            .signal,
-            "Sticky Signal preference must log .signal on single-tap, not .text"
+            .text,
+            "Sticky Signal preference routes to Signal app but logs as .text medium (#299)"
         )
     }
 }

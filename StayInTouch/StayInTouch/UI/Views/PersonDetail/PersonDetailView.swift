@@ -392,9 +392,10 @@ struct PersonDetailView: View {
     /// have to reproduce that dance. The plain `method:` overload is for
     /// codepaths that don't need messenger preference handling (email + FaceTime).
     private func executeQuickAction(url: URL, routing: PersonDetailViewModel.PhoneRouting) {
-        // Resolve the messenger ONCE — used for both the auto-logged TouchMethod
-        // (so `.message` with a sticky WhatsApp preference logs `.whatsapp`,
-        // not `.text`) and the self-heal target on failure.
+        // Resolve the messenger ONCE — used for the self-heal target on failure.
+        // The auto-logged TouchMethod is always `.text` for text-medium messengers
+        // (#299 collapsed TouchMethod to medium-only); the which-app signal lives
+        // on `Person.preferredMessenger`.
         let resolvedMessenger: PreferredMessenger? = {
             if case .message(let explicit) = routing { return explicit ?? viewModel.resolvedMessenger }
             return nil
