@@ -66,7 +66,8 @@ struct PersonDetailView: View {
                     PersonQuickActionsBar(
                         viewModel: viewModel,
                         onQuickAction: { open($0) },
-                        onMessageWith: { openMessage(with: $0) }
+                        onMessageWith: { openMessage(with: $0) },
+                        onFaceTime: { faceTime() }
                     )
                     .opacity(viewModel.person.contactUnavailable ? 0.4 : 1.0)
                     .disabled(viewModel.person.contactUnavailable)
@@ -132,37 +133,44 @@ struct PersonDetailView: View {
             ForEach(viewModel.phoneNumbers) { phone in
                 Button("\(phone.label): \(phone.value)") {
                     guard let action = viewModel.pendingPhoneAction else {
-                        viewModel.pendingPhoneAction = nil
-                        viewModel.pendingExplicitMessenger = nil
+                        clearPhonePickerPending()
                         return
                     }
                     let explicit = viewModel.pendingExplicitMessenger
+                    let isFaceTime = viewModel.pendingFaceTime
                     let routedMessenger: PreferredMessenger? = action == .message
                         ? (explicit ?? viewModel.resolvedMessenger)
                         : nil
-                    guard let url = viewModel.openActionWithValue(type: action, value: phone.value, explicit: explicit) else {
-                        viewModel.pendingPhoneAction = nil
-                        viewModel.pendingExplicitMessenger = nil
+                    let url: URL?
+                    if isFaceTime {
+                        url = viewModel.openFaceTimeActionWithValue(phone.value)
+                    } else {
+                        url = viewModel.openActionWithValue(type: action, value: phone.value, explicit: explicit)
+                    }
+                    guard let url else {
+                        clearPhonePickerPending()
                         return
                     }
                     openURL(url) { accepted in
                         if accepted {
                             Haptics.light()
-                            let method: TouchMethod = routedMessenger?.touchMethod ?? action.touchMethod
+                            let method: TouchMethod = isFaceTime
+                                ? .facetime
+                                : (routedMessenger?.touchMethod ?? action.touchMethod)
                             viewModel.logTouch(method: method, notes: nil, date: Date())
                             pendingQuickActionTouch = viewModel.touchEvents.first
                             pendingQuickActionMethod = method
                         } else if let routedMessenger {
                             viewModel.handleFailedMessengerOpen(messenger: routedMessenger)
+                        } else {
+                            viewModel.quickActionMessage = "Whoops — couldn't open that on this device."
                         }
                     }
-                    viewModel.pendingPhoneAction = nil
-                    viewModel.pendingExplicitMessenger = nil
+                    clearPhonePickerPending()
                 }
             }
             Button("Cancel", role: .cancel) {
-                viewModel.pendingPhoneAction = nil
-                viewModel.pendingExplicitMessenger = nil
+                clearPhonePickerPending()
             }
         }
         .confirmationDialog("Choose an email", isPresented: $viewModel.showEmailPicker) {
@@ -391,6 +399,29 @@ struct PersonDetailView: View {
                 viewModel.quickActionMessage = "Whoops — couldn't open that on this device."
             }
         }
+    }
+
+    /// Long-press → FaceTime from the Call card. Opens `facetime://` for the
+    /// contact's phone (or fires the existing multi-phone picker first).
+    /// Auto-logs as `.facetime` on success. No persistent preference is stored.
+    private func faceTime() {
+        guard let url = viewModel.openFaceTimeAction() else { return }
+        openURL(url) { accepted in
+            if accepted {
+                Haptics.light()
+                viewModel.logTouch(method: .facetime, notes: nil, date: Date())
+                pendingQuickActionTouch = viewModel.touchEvents.first
+                pendingQuickActionMethod = .facetime
+            } else {
+                viewModel.quickActionMessage = "Whoops — couldn't open FaceTime on this device."
+            }
+        }
+    }
+
+    private func clearPhonePickerPending() {
+        viewModel.pendingPhoneAction = nil
+        viewModel.pendingExplicitMessenger = nil
+        viewModel.pendingFaceTime = false
     }
 
     /// Explicit messenger pick from the long-press menu. Persists the preference

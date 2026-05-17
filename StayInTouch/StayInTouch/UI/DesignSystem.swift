@@ -482,6 +482,7 @@ enum DS {
         case .email: return "envelope.fill"
         case .whatsapp: return "bubble.left.and.bubble.right.fill"
         case .signal: return "lock.message.fill"
+        case .facetime: return "video.fill"
         case .other: return "ellipsis.circle.fill"
         }
     }

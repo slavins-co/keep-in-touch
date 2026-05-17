@@ -43,6 +43,10 @@ final class PersonDetailViewModel: ObservableObject {
     @Published var showEmailPicker = false
     var pendingPhoneAction: QuickActionType?
     var pendingExplicitMessenger: PreferredMessenger?
+    /// True when the phone-picker dialog should route the selected number into
+    /// a FaceTime URL (instead of the default tel: routing). One-shot flag —
+    /// cleared after the picker resolves or cancels.
+    var pendingFaceTime: Bool = false
 
     let mode: Mode
     private let personRepository: PersonRepository
@@ -50,10 +54,16 @@ final class PersonDetailViewModel: ObservableObject {
     private let groupRepository: GroupRepository
     private let touchRepository: TouchEventRepository
     private let messengerAvailability: MessengerAvailabilityChecking
+    private let callerAvailability: CallerAvailabilityChecking
 
     var isPreview: Bool {
         if case .preview = mode { return true }
         return false
+    }
+
+    /// Exposed for the Call long-press menu — whether to surface a FaceTime entry.
+    var isFaceTimeAvailable: Bool {
+        callerAvailability.isFaceTimeAvailable
     }
 
     init(
@@ -63,7 +73,8 @@ final class PersonDetailViewModel: ObservableObject {
         cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
         groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
         touchRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext),
-        messengerAvailability: MessengerAvailabilityChecking = SystemMessengerAvailability()
+        messengerAvailability: MessengerAvailabilityChecking = SystemMessengerAvailability(),
+        callerAvailability: CallerAvailabilityChecking = SystemCallerAvailability()
     ) {
         self.person = person
         self.mode = mode
@@ -72,6 +83,7 @@ final class PersonDetailViewModel: ObservableObject {
         self.groupRepository = groupRepository
         self.touchRepository = touchRepository
         self.messengerAvailability = messengerAvailability
+        self.callerAvailability = callerAvailability
         load()
         if case .normal = mode {
             AnalyticsService.track("person.viewed")
@@ -537,6 +549,47 @@ final class PersonDetailViewModel: ObservableObject {
         case .email:
             return buildEmailURL(email: value)
         }
+    }
+
+    /// Builds a FaceTime URL for the contact's primary phone, or triggers the
+    /// phone-picker dialog if the contact has multiple numbers. The picker
+    /// callback in PersonDetailView reads `pendingFaceTime` to route correctly.
+    /// Returns nil when no phone is available, when a picker is needed, or
+    /// when normalization fails (in which case `quickActionMessage` is set).
+    func openFaceTimeAction() -> URL? {
+        if isPreview { return nil }
+        quickActionMessage = nil
+        if phoneNumbers.count > 1 {
+            pendingPhoneAction = .call
+            pendingFaceTime = true
+            pendingExplicitMessenger = nil
+            showPhonePicker = true
+            return nil
+        }
+        guard let phone else {
+            quickActionMessage = "Whoops — no phone number found."
+            return nil
+        }
+        return buildFaceTimeURL(phone: phone)
+    }
+
+    /// Builds a FaceTime URL for a specific phone value (used after the
+    /// phone-picker dialog resolves).
+    func openFaceTimeActionWithValue(_ value: String) -> URL? {
+        if isPreview { return nil }
+        quickActionMessage = nil
+        return buildFaceTimeURL(phone: value)
+    }
+
+    private func buildFaceTimeURL(phone: String) -> URL? {
+        guard let normalized = PhoneNormalizer.normalize(phone),
+              let encoded = normalized.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let url = URL(string: "facetime://+\(encoded)") else {
+            AppLogger.logWarning("Failed to create facetime URL for contact \(person.id)", category: AppLogger.viewModel)
+            quickActionMessage = "Whoops — couldn't read that phone number."
+            return nil
+        }
+        return url
     }
 
     private func buildMessageURL(phone: String, explicit: PreferredMessenger?) -> URL? {

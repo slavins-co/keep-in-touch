@@ -9,12 +9,13 @@ struct PersonQuickActionsBar: View {
     @ObservedObject var viewModel: PersonDetailViewModel
     var onQuickAction: (QuickActionType) -> Void
     var onMessageWith: (PreferredMessenger) -> Void
+    var onFaceTime: () -> Void
 
     var body: some View {
         VStack(spacing: DS.Spacing.sm) {
             HStack(spacing: DS.Spacing.sm) {
                 messageActionCard
-                actionCard(icon: "phone.fill", label: "Call", enabled: hasPhone) { onQuickAction(.call) }
+                callActionCard
                 actionCard(icon: "envelope.fill", label: "Email", enabled: hasEmail) { onQuickAction(.email) }
             }
 
@@ -39,6 +40,24 @@ struct PersonQuickActionsBar: View {
 
     private var messengerOptions: [PreferredMessenger] {
         viewModel.availableMessengers
+    }
+
+    /// Call card: tap = phone (always), long-press = menu with FaceTime when available.
+    /// No persistent preference, no badge — single-tap behavior is unchanged.
+    @ViewBuilder
+    private var callActionCard: some View {
+        actionCard(icon: "phone.fill", label: "Call", enabled: hasPhone) {
+            onQuickAction(.call)
+        }
+        .contextMenu {
+            if hasPhone && viewModel.isFaceTimeAvailable {
+                Button {
+                    onFaceTime()
+                } label: {
+                    Label("FaceTime", systemImage: "video.fill")
+                }
+            }
+        }
     }
 
     /// Message card: tap = resolved messenger (sticky or iMessage), long-press = picker.

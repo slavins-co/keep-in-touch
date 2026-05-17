@@ -18,6 +18,7 @@
 	<array>
 		<string>whatsapp</string>
 		<string>sgnl</string>
+		<string>facetime</string>
 	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
