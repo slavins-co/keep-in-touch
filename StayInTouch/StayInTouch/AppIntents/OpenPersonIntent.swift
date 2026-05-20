@@ -32,11 +32,15 @@ struct OpenPersonIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         let repository = IntentContainer.current.dependencies.personRepository
         guard repository.fetch(id: person.id) != nil else {
-            // Entity is stale (contact deleted since the shortcut was set
-            // up). Route to Home so the app still surfaces something
-            // useful and let the user re-pick.
-            DeepLinkRouter.shared.pending = .home
-            throw IntentError.personNotFound
+            // Stale id (saved shortcut points at a now-deleted contact).
+            // Re-prompt the user to pick a contact — the picker reads
+            // more naturally than a "this contact was deleted" error,
+            // and lets the user complete the action by choosing someone
+            // else. The framework re-performs `perform()` with the new
+            // value once a choice is made.
+            throw $person.needsValueError(
+                IntentDialog("That contact is no longer in Keep In Touch. Pick another to open.")
+            )
         }
         DeepLinkRouter.shared.pending = .person(person.id)
         return .result()

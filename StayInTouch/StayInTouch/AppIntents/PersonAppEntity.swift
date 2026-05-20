@@ -62,27 +62,6 @@ struct PersonAppEntity: AppEntity, Identifiable {
     }
 }
 
-/// Builds the dialog string shown by query intents (GetOverdue, GetDueSoon).
-/// One place to keep "Nothing's overdue / One contact is overdue: X / N
-/// contacts are overdue" phrasing consistent.
-enum PersonListDialog {
-    static func make(
-        for entities: [PersonAppEntity],
-        emptyMessage: String,
-        singularSuffix: String,
-        pluralPredicate: String
-    ) -> IntentDialog {
-        switch entities.count {
-        case 0:
-            return IntentDialog(stringLiteral: emptyMessage)
-        case 1:
-            return IntentDialog("One contact \(singularSuffix): \(entities[0].displayName).")
-        default:
-            return IntentDialog("\(entities.count) contacts \(pluralPredicate).")
-        }
-    }
-}
-
 struct PersonAppEntityQuery: EntityQuery, EntityStringQuery {
     // Stale ids (snapshots in a saved Shortcut that no longer resolve)
     // are silently dropped — callers (LogTouchIntent, OpenPersonIntent)

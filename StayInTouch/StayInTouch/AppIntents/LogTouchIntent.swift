@@ -11,10 +11,10 @@ import AppIntents
 import Foundation
 
 struct LogTouchIntent: AppIntent {
-    static var title: LocalizedStringResource { "Log Touch" }
+    static var title: LocalizedStringResource { "Log Connection" }
     static var description: IntentDescription {
         IntentDescription(
-            "Log a touch with a contact — the kind of touch (call, text, in person, etc.), optional notes, and the date.",
+            "Log a connection with a contact — the method (call, text, in person, etc.), optional notes, and the date.",
             categoryName: "Logging"
         )
     }
@@ -29,18 +29,18 @@ struct LogTouchIntent: AppIntent {
 
     @Parameter(
         title: "Notes",
-        description: "Optional notes about this touch."
+        description: "Optional notes about this connection."
     )
     var notes: String?
 
     @Parameter(
         title: "Date",
-        description: "When the touch happened. Defaults to now."
+        description: "When the connection happened. Defaults to now."
     )
     var date: Date?
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Log a \(\.$method) with \(\.$person)") {
+        Summary("Log a \(\.$method) connection with \(\.$person)") {
             \.$date
             \.$notes
         }

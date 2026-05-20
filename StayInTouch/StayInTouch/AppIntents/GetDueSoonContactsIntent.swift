@@ -6,6 +6,9 @@
 //  `warningDays` zone before breach. Classification matches the Home tab's
 //  Due Soon section so Shortcut output stays consistent with the app UI.
 //
+//  Intentionally does NOT conform to ProvidesDialog — see header in
+//  GetOverdueContactsIntent.swift for the rationale.
+//
 
 import AppIntents
 import Foundation
@@ -26,7 +29,7 @@ struct GetDueSoonContactsIntent: AppIntent {
     }
 
     @MainActor
-    func perform() async throws -> some IntentResult & ReturnsValue<[PersonAppEntity]> & ProvidesDialog {
+    func perform() async throws -> some IntentResult & ReturnsValue<[PersonAppEntity]> {
         let deps = IntentContainer.current.dependencies
         // Both fetches hit Core Data independently — overlap them so cold
         // Siri launches don't pay the latency twice.
@@ -36,12 +39,6 @@ struct GetDueSoonContactsIntent: AppIntent {
         let cadences = await cadencesTask
         let dueSoon = PersonStatusService().dueSoonPeople(people, cadences: cadences)
         let entities = dueSoon.map(PersonAppEntity.init(person:))
-        let dialog = PersonListDialog.make(
-            for: entities,
-            emptyMessage: "Nothing's coming due in your warning window.",
-            singularSuffix: "is due soon",
-            pluralPredicate: "are due soon"
-        )
-        return .result(value: entities, dialog: dialog)
+        return .result(value: entities)
     }
 }

@@ -24,11 +24,11 @@ struct KeepInTouchShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: LogTouchIntent(),
             phrases: [
-                "Log a touch in \(.applicationName)",
-                "Log touch with \(\.$person) in \(.applicationName)",
-                "Record a touch in \(.applicationName)",
+                "Log a connection in \(.applicationName)",
+                "Log connection with \(\.$person) in \(.applicationName)",
+                "Record a connection in \(.applicationName)",
             ],
-            shortTitle: "Log Touch",
+            shortTitle: "Log Connection",
             systemImageName: "checkmark.circle.fill"
         )
 

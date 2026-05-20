@@ -10,7 +10,7 @@ import AppIntents
 
 extension TouchMethod: AppEnum {
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        TypeDisplayRepresentation(name: "Touch Method")
+        TypeDisplayRepresentation(name: "Connection Method")
     }
 
     static var caseDisplayRepresentations: [TouchMethod: DisplayRepresentation] {

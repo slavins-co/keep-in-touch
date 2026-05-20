@@ -33,7 +33,7 @@ final class OpenPersonIntentTests: XCTestCase {
         XCTAssertEqual(DeepLinkRouter.shared.pending, .person(person.id))
     }
 
-    func testPerformWithStaleEntityRoutesToHomeAndThrows() async {
+    func testPerformWithStaleEntityRePromptsViaNeedsValueError() async {
         harness = IntentTestHarness(people: [])
 
         let intent = OpenPersonIntent()
@@ -46,14 +46,13 @@ final class OpenPersonIntentTests: XCTestCase {
         do {
             _ = try await intent.perform()
             XCTFail("Expected throw")
-        } catch let error as IntentError {
-            if case .personNotFound = error {
-                XCTAssertEqual(DeepLinkRouter.shared.pending, .home)
-            } else {
-                XCTFail("Wrong IntentError: \(error)")
-            }
         } catch {
-            XCTFail("Wrong error: \(error)")
+            // `$person.needsValueError(...)` returns an opaque
+            // AppIntentError whose runtime type is internal. We can't
+            // pattern-match on it; verifying that *some* error is
+            // thrown (and that pending was NOT set to the stale id)
+            // is enough to confirm the re-prompt path.
+            XCTAssertNotEqual(DeepLinkRouter.shared.pending, .person(intent.person.id))
         }
     }
 }
