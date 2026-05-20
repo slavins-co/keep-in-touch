@@ -33,14 +33,13 @@ struct OpenPersonIntent: AppIntent {
         let repository = IntentContainer.current.dependencies.personRepository
         guard repository.fetch(id: person.id) != nil else {
             // Stale id (saved shortcut points at a now-deleted contact).
-            // Re-prompt the user to pick a contact — the picker reads
-            // more naturally than a "this contact was deleted" error,
-            // and lets the user complete the action by choosing someone
-            // else. The framework re-performs `perform()` with the new
-            // value once a choice is made.
-            throw $person.needsValueError(
-                IntentDialog("That contact is no longer in Keep In Touch. Pick another to open.")
-            )
+            // Surface a graceful error dialog rather than re-prompting
+            // via `$person.needsValueError`. The re-prompt path shows a
+            // bare "Contact" picker with no indication why — confusing
+            // UX. A clear "no longer in Keep In Touch" error tells the
+            // user what happened and lets them edit the shortcut to
+            // point at someone else.
+            throw IntentError.personNotFound
         }
         DeepLinkRouter.shared.pending = .person(person.id)
         return .result()
