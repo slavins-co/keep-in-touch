@@ -63,15 +63,32 @@ struct PersonAppEntity: AppEntity, Identifiable {
 }
 
 struct PersonAppEntityQuery: EntityQuery, EntityStringQuery {
-    // Stale ids (snapshots in a saved Shortcut that no longer resolve)
-    // are silently dropped — callers (LogTouchIntent, OpenPersonIntent)
-    // each guard with their own `repository.fetch(id:)` and throw a
-    // user-visible `IntentError.personNotFound`. Returning a strict
-    // subset here matches Apple's documented EntityQuery contract.
+    // Stale ids (saved-shortcut snapshots that no longer resolve) get a
+    // **tombstone** entity — same id, displayName flagging the contact
+    // is gone. We can't return [] (Apple's documented "omit") because
+    // the framework reacts to a missing required-parameter value by
+    // showing the standard contact picker with no explanation of why.
+    // QA on PR #305 confirmed that picker behavior is confusing.
+    //
+    // With a tombstone present, the framework proceeds to `perform()`,
+    // where each intent's `repository.fetch(id: person.id) == nil`
+    // guard fires and surfaces a clear "no longer in Keep In Touch"
+    // error dialog. Bonus: the Shortcut editor row also shows the
+    // tombstone label, so users can spot the staleness without running.
+    static let staleDisplayName = "(no longer in Keep In Touch)"
+
     func entities(for identifiers: [PersonAppEntity.ID]) async throws -> [PersonAppEntity] {
         let repository = IntentContainer.current.dependencies.personRepository
-        return identifiers.compactMap { id in
-            repository.fetch(id: id).map(PersonAppEntity.init(person:))
+        return identifiers.map { id -> PersonAppEntity in
+            if let person = repository.fetch(id: id) {
+                return PersonAppEntity(person: person)
+            }
+            return PersonAppEntity(
+                id: id,
+                displayName: Self.staleDisplayName,
+                nickname: nil,
+                lastTouchAt: nil
+            )
         }
     }
 

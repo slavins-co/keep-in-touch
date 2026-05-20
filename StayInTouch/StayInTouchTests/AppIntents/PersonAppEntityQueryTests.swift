@@ -25,14 +25,17 @@ final class PersonAppEntityQueryTests: XCTestCase {
         XCTAssertEqual(Set(results.map(\.id)), Set([alice.id, bob.id]))
     }
 
-    func testEntitiesForIDsSkipsUnknownIDs() async throws {
+    func testEntitiesForIDsReturnsTombstoneForUnknownIDs() async throws {
         let alice = TestFactory.makePerson(name: "Alice")
         harness = IntentTestHarness(people: [alice])
 
         let unknown = UUID()
         let results = try await PersonAppEntityQuery().entities(for: [alice.id, unknown])
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first?.id, alice.id)
+        // Tombstoning unknowns lets `perform()` run + throw a graceful
+        // error instead of the framework's contextless re-prompt picker.
+        XCTAssertEqual(results.count, 2)
+        XCTAssertEqual(results.first { $0.id == alice.id }?.displayName, "Alice")
+        XCTAssertEqual(results.first { $0.id == unknown }?.displayName, PersonAppEntityQuery.staleDisplayName)
     }
 
     func testEntitiesMatchingFiltersByDisplayName() async throws {
