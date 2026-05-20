@@ -205,8 +205,10 @@ struct HomeView: View {
                 Text(selectionCoordinator.isSelectMode ? "Selecting" : "Select")
                     .font(DS.Typography.filterLabel)
                     .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
-            .frame(maxWidth: .infinity)
+            // Content-sized (no maxWidth: .infinity) so the longer Frequency
+            // and Group chips can flex without truncating.
             .padding(.horizontal, DS.Spacing.sm)
             .padding(.vertical, DS.Spacing.sm)
             .background(selectionCoordinator.isSelectMode ? DS.Colors.filterAccent.opacity(0.08) : Color.clear)

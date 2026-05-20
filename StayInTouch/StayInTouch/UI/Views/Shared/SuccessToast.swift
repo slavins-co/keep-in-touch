@@ -89,6 +89,10 @@ struct SuccessToastModifier: ViewModifier {
                     Text(actionTitle)
                         .font(DS.Typography.metadata.weight(.semibold))
                         .foregroundStyle(.white)
+                        .lineLimit(1)
+                        // fixedSize forces the chip to size to its content
+                        // so "Forgot someone?" can't wrap to two lines.
+                        .fixedSize(horizontal: true, vertical: false)
                         .padding(.horizontal, DS.Spacing.sm)
                         .padding(.vertical, DS.Spacing.xs)
                         .background(Color.white.opacity(0.2))

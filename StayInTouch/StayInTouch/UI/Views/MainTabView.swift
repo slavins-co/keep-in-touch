@@ -12,6 +12,7 @@ struct MainTabView: View {
     @State private var selectedPerson: Person?
     @State private var freshStartReason: FreshStartDetector.Reason?
     @State private var bulkLogState: BulkLogPresentation?
+    @State private var forgotContext: ForgotContext?
     @State private var recentGroups: [RecentGroup] = []
     private let recentGroupsStore = RecentGroupsStore()
     @Environment(\.dependencies) private var dependencies
@@ -57,7 +58,14 @@ struct MainTabView: View {
             if selectionCoordinator.isSelectMode {
                 SelectionActionBar(
                     count: selectionCoordinator.count,
-                    onCancel: { selectionCoordinator.exit() },
+                    subtitle: forgotContextSubtitle,
+                    onCancel: {
+                        // Cancelling a "Forgot?" pass discards the carry-
+                        // forward context but leaves the first-pass writes
+                        // intact (those committed at the prior modal Done).
+                        forgotContext = nil
+                        selectionCoordinator.exit()
+                    },
                     onCommit: { commitBulkLog() }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -162,11 +170,51 @@ struct MainTabView: View {
         var alreadyLoggedIds: Set<UUID> = []
     }
 
+    /// State carried between the first commit and the "Forgot someone?"
+    /// follow-up. Holds the prior group + the form values to pre-fill,
+    /// so the user lands back in the picker (not the modal) and only
+    /// needs to add the missing people.
+    struct ForgotContext {
+        let alreadyLoggedIds: Set<UUID>
+        let alreadyLoggedPeople: [Person]
+        let method: TouchMethod
+        let notes: String
+        let date: Date
+        let timeOfDay: TimeOfDay?
+    }
+
     private func commitBulkLog() {
         guard selectionCoordinator.hasSelection else { return }
         let ids = Array(selectionCoordinator.selection)
         let people = ids.compactMap { dependencies.personRepository.fetch(id: $0) }
-        bulkLogState = BulkLogPresentation(people: people)
+        // In the "Forgot?" pass, carry forward the prior form values and
+        // the alreadyLoggedIds so we don't double-write events for the
+        // original group.
+        if let ctx = forgotContext {
+            bulkLogState = BulkLogPresentation(
+                people: people,
+                method: ctx.method,
+                notes: ctx.notes,
+                date: ctx.date,
+                timeOfDay: ctx.timeOfDay,
+                alreadyLoggedIds: ctx.alreadyLoggedIds
+            )
+        } else {
+            bulkLogState = BulkLogPresentation(people: people)
+        }
+    }
+
+    /// Subtitle shown above the action bar during the "Forgot someone?"
+    /// follow-up. Lists up to 3 names; collapses the rest into "+N others".
+    private var forgotContextSubtitle: String? {
+        guard let ctx = forgotContext else { return nil }
+        let names = ctx.alreadyLoggedPeople.map { $0.displayName }
+        let head = names.prefix(3).joined(separator: ", ")
+        let extra = names.count - 3
+        if extra > 0 {
+            return "Adding to: \(head), +\(extra) \(extra == 1 ? "other" : "others")"
+        }
+        return "Adding to: \(head)"
     }
 
     @ViewBuilder
@@ -246,34 +294,38 @@ struct MainTabView: View {
             }
 
             let allLoggedIds = combined
+            let alreadyLoggedPeople = allLoggedIds.compactMap {
+                dependencies.personRepository.fetch(id: $0)
+            }
             SuccessToastManager.shared.show(
                 message,
                 actionTitle: "Forgot someone?"
             ) {
                 AnalyticsService.track("forgot_someone.tapped")
-                // Carry the same date/method/notes forward and re-enter
-                // selection with the previous group pre-filled.
-                selectionCoordinator.enter(origin: selectionCoordinator.origin)
-                selectionCoordinator.setSelection(Array(allLoggedIds))
+                // Re-enter selection mode with an EMPTY selection so the
+                // user picks NEW people to add. The carry-forward state
+                // (method/notes/date + alreadyLoggedIds) lives in
+                // `forgotContext`; commitBulkLog uses it to seed the
+                // next modal and to skip double-writes for the prior
+                // group. The action bar shows an "Adding to: ..."
+                // subtitle so the user knows which group they're
+                // extending.
+                forgotContext = ForgotContext(
+                    alreadyLoggedIds: allLoggedIds,
+                    alreadyLoggedPeople: alreadyLoggedPeople,
+                    method: method,
+                    notes: notes ?? "",
+                    date: date,
+                    timeOfDay: timeOfDay
+                )
                 bulkLogState = nil
-                // Schedule reopen on next loop so the dismissed sheet
-                // fully tears down before we present a new one.
-                DispatchQueue.main.async {
-                    let people = allLoggedIds.compactMap {
-                        dependencies.personRepository.fetch(id: $0)
-                    }
-                    bulkLogState = BulkLogPresentation(
-                        people: people,
-                        method: method,
-                        notes: notes ?? "",
-                        date: date,
-                        timeOfDay: timeOfDay,
-                        alreadyLoggedIds: allLoggedIds
-                    )
-                }
+                selectionCoordinator.enter(origin: selectionCoordinator.origin)
             }
 
             bulkLogState = nil
+            // Clear forgotContext on a successful commit so the next
+            // fresh selection doesn't inherit stale carry-forward state.
+            forgotContext = nil
             selectionCoordinator.exit()
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "MainTabView.handleBulkSave")
