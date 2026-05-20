@@ -59,19 +59,22 @@ struct MainTabView: View {
                 SelectionActionBar(
                     count: selectionCoordinator.count,
                     subtitle: forgotContextSubtitle,
-                    onCancel: {
-                        // Cancelling a "Forgot?" pass discards the carry-
-                        // forward context but leaves the first-pass writes
-                        // intact (those committed at the prior modal Done).
-                        forgotContext = nil
-                        selectionCoordinator.exit()
-                    },
+                    onCancel: { selectionCoordinator.exit() },
                     onCommit: { commitBulkLog() }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.easeInOut(duration: 0.25), value: selectionCoordinator.isSelectMode)
+        .onChange(of: selectionCoordinator.isSelectMode) { _, isOn in
+            // Any path that exits select mode — action-bar Cancel, the
+            // Home "Selecting" chip toggle, the Contacts "Select" header
+            // button, or post-commit cleanup — must drop the carry-
+            // forward `forgotContext`. Centralizing the invalidation
+            // here keeps every exit site honest without coupling the
+            // coordinator to bulk-log state.
+            if !isOn { forgotContext = nil }
+        }
         .successToast()
         .overlay {
             // Dimming lives here so it fades in place instead of
@@ -323,9 +326,8 @@ struct MainTabView: View {
             }
 
             bulkLogState = nil
-            // Clear forgotContext on a successful commit so the next
-            // fresh selection doesn't inherit stale carry-forward state.
-            forgotContext = nil
+            // `forgotContext` is cleared by the centralized onChange
+            // handler when isSelectMode flips to false on exit().
             selectionCoordinator.exit()
         } catch {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "MainTabView.handleBulkSave")

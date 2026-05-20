@@ -57,7 +57,7 @@ struct SelectionActionBar: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(count == 0)
-                .accessibilityLabel(count == 0 ? "Log connection, no contacts selected" : "Log connection with \(count) contacts")
+                .accessibilityLabel(commitAccessibilityLabel)
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -73,5 +73,15 @@ struct SelectionActionBar: View {
     /// alternate label whenever a subtitle is present.
     private var commitLabel: String {
         subtitle == nil ? "Log Connection" : "Add to group"
+    }
+
+    /// Accessibility label mirrors the visual `commitLabel` so VoiceOver
+    /// announces "Add to group" during the "Forgot?" follow-up instead
+    /// of the default "Log connection" verb.
+    private var commitAccessibilityLabel: String {
+        if count == 0 {
+            return "\(commitLabel), no contacts selected"
+        }
+        return "\(commitLabel) with \(count) \(count == 1 ? "contact" : "contacts")"
     }
 }
