@@ -170,6 +170,146 @@ final class BulkLogTouchUseCaseTests: XCTestCase {
                        "Back-dated touch must NOT silently wipe a future snooze")
     }
 
+    // MARK: - Reconcile (Forgot-someone batch-edit)
+
+    func testReconcileDeletesPriorEventsAndWritesNewOnes() throws {
+        let p1 = TestFactory.makePerson(name: "Alice")
+        let p2 = TestFactory.makePerson(name: "Bob")
+        let p3 = TestFactory.makePerson(name: "Carol")
+        try personRepo.batchSave([p1, p2, p3])
+
+        let first = try sut.execute(
+            personIds: [p1.id, p2.id],
+            method: .irl,
+            notes: "Dinner",
+            date: Date()
+        )
+        XCTAssertEqual(first.writtenEvents.count, 2)
+        let priorEventIds = first.writtenEvents.map(\.id)
+
+        // Edit: remove p2, add p3, keep p1.
+        let result = try sut.reconcile(
+            priorEventIds: priorEventIds,
+            priorPersonIds: [p1.id, p2.id],
+            finalPersonIds: [p1.id, p3.id],
+            method: .irl,
+            notes: "Dinner (edited)",
+            date: Date()
+        )
+
+        XCTAssertEqual(result.writtenEvents.count, 2, "Two fresh events: one for p1 (rewritten), one for p3 (added)")
+        XCTAssertEqual(result.added, 1, "p3 is new")
+        XCTAssertEqual(result.removed, 1, "p2 dropped")
+        XCTAssertEqual(touchRepo.events.count, 2, "Only the two fresh events remain (prior deleted)")
+        for priorId in priorEventIds {
+            XCTAssertNil(touchRepo.fetch(id: priorId), "Prior event \(priorId) should be deleted")
+        }
+    }
+
+    func testReconcileClearsLastTouchForRemovedPersonWithNoOtherEvents() throws {
+        let person = TestFactory.makePerson(name: "Alice")
+        try personRepo.save(person)
+
+        let first = try sut.execute(
+            personIds: [person.id],
+            method: .irl,
+            notes: "Dinner",
+            date: Date()
+        )
+        XCTAssertNotNil(personRepo.fetch(id: person.id)?.lastTouchAt, "Sanity: headline set after first pass")
+
+        _ = try sut.reconcile(
+            priorEventIds: first.writtenEvents.map(\.id),
+            priorPersonIds: [person.id],
+            finalPersonIds: [],
+            method: .irl,
+            notes: nil,
+            date: Date()
+        )
+
+        let updated = personRepo.fetch(id: person.id)
+        XCTAssertNil(updated?.lastTouchAt, "Removing the only event must clear lastTouchAt")
+        XCTAssertNil(updated?.lastTouchMethod)
+        XCTAssertNil(updated?.lastTouchNotes)
+    }
+
+    func testReconcileRollsBackLastTouchToOlderEventWhenBatchEventDeleted() throws {
+        // Person already had an older solo touch; then a back-dated bulk
+        // log was added but didn't bump the headline; now we reconcile
+        // them out of the batch. Their headline should remain on the
+        // older solo touch (their other surviving event), not become nil.
+        let oldDate = Calendar.current.date(byAdding: .day, value: -10, to: Date())!
+        let person = TestFactory.makePerson(name: "Alice", lastTouchAt: oldDate, lastTouchMethod: .text)
+        try personRepo.save(person)
+        let priorSolo = TestFactory.makeTouchEvent(personId: person.id, at: oldDate, method: .text, notes: "Solo")
+        try touchRepo.save(priorSolo)
+
+        // Bulk log on an even older date (so it doesn't bump headline).
+        let bulkDate = Calendar.current.date(byAdding: .day, value: -20, to: Date())!
+        let first = try sut.execute(
+            personIds: [person.id],
+            method: .irl,
+            notes: "Old group dinner",
+            date: bulkDate
+        )
+
+        _ = try sut.reconcile(
+            priorEventIds: first.writtenEvents.map(\.id),
+            priorPersonIds: [person.id],
+            finalPersonIds: [],
+            method: .irl,
+            notes: nil,
+            date: Date()
+        )
+
+        let updated = personRepo.fetch(id: person.id)
+        XCTAssertEqual(updated?.lastTouchAt, oldDate, "Headline rolls back to the surviving solo touch")
+        XCTAssertEqual(updated?.lastTouchMethod, .text)
+    }
+
+    func testReconcileSkipsMissingPersonsButStillDeletesPriorEvents() throws {
+        let p1 = TestFactory.makePerson(name: "Alice")
+        try personRepo.save(p1)
+        let first = try sut.execute(
+            personIds: [p1.id],
+            method: .irl,
+            notes: nil,
+            date: Date()
+        )
+        let ghostId = UUID()
+
+        let result = try sut.reconcile(
+            priorEventIds: first.writtenEvents.map(\.id),
+            priorPersonIds: [p1.id],
+            finalPersonIds: [p1.id, ghostId],
+            method: .irl,
+            notes: nil,
+            date: Date()
+        )
+
+        XCTAssertEqual(result.writtenEvents.count, 1, "Only the surviving person gets a fresh event")
+        XCTAssertEqual(result.skippedPersonIds, [ghostId])
+    }
+
+    func testReconcileWithNoPriorEventsIsEffectivelyAFreshBatch() throws {
+        let p1 = TestFactory.makePerson(name: "Alice")
+        let p2 = TestFactory.makePerson(name: "Bob")
+        try personRepo.batchSave([p1, p2])
+
+        let result = try sut.reconcile(
+            priorEventIds: [],
+            priorPersonIds: [],
+            finalPersonIds: [p1.id, p2.id],
+            method: .irl,
+            notes: "Fresh",
+            date: Date()
+        )
+
+        XCTAssertEqual(result.writtenEvents.count, 2)
+        XCTAssertEqual(result.added, 2)
+        XCTAssertEqual(result.removed, 0)
+    }
+
     // MARK: - applyTouch helper
 
     func testApplyTouchHelperRespectsNewestWins() {

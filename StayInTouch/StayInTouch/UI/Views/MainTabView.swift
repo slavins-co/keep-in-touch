@@ -12,7 +12,7 @@ struct MainTabView: View {
     @State private var selectedPerson: Person?
     @State private var freshStartReason: FreshStartDetector.Reason?
     @State private var bulkLogState: BulkLogPresentation?
-    @State private var forgotContext: ForgotContext?
+    @State private var batchEditContext: BatchEditContext?
     @State private var recentGroups: [RecentGroup] = []
     private let recentGroupsStore = RecentGroupsStore()
     @Environment(\.dependencies) private var dependencies
@@ -58,7 +58,7 @@ struct MainTabView: View {
             if selectionCoordinator.isSelectMode {
                 SelectionActionBar(
                     count: selectionCoordinator.count,
-                    subtitle: forgotContextSubtitle,
+                    subtitle: batchEditSubtitle,
                     onCancel: { selectionCoordinator.exit() },
                     onCommit: { commitBulkLog() }
                 )
@@ -70,10 +70,10 @@ struct MainTabView: View {
             // Any path that exits select mode — action-bar Cancel, the
             // Home "Selecting" chip toggle, the Contacts "Select" header
             // button, or post-commit cleanup — must drop the carry-
-            // forward `forgotContext`. Centralizing the invalidation
+            // forward `batchEditContext`. Centralizing the invalidation
             // here keeps every exit site honest without coupling the
             // coordinator to bulk-log state.
-            if !isOn { forgotContext = nil }
+            if !isOn { batchEditContext = nil }
         }
         .successToast()
         .overlay {
@@ -157,9 +157,9 @@ struct MainTabView: View {
 
     // MARK: - Bulk Log
 
-    /// Snapshot of the bulk-log sheet's pre-fill state. Created once on
-    /// commit and again, with prior method/notes/date carried forward,
-    /// when "Forgot someone?" reopens the picker.
+    /// Snapshot of the bulk-log sheet's pre-fill state. Created on every
+    /// commit (first pass or batch edit). When `batchEditContext` is set,
+    /// the values carry forward from the prior pass.
     struct BulkLogPresentation: Identifiable {
         let id = UUID()
         let people: [Person]
@@ -167,57 +167,52 @@ struct MainTabView: View {
         var notes: String = ""
         var date: Date = Date()
         var timeOfDay: TimeOfDay? = nil
-        /// Person IDs already logged in this round — used by the
-        /// "Forgot someone?" flow so we only write events for newly-added
-        /// people on the second commit.
-        var alreadyLoggedIds: Set<UUID> = []
     }
 
-    /// State carried between the first commit and the "Forgot someone?"
-    /// follow-up. Holds the prior group + the form values to pre-fill,
-    /// so the user lands back in the picker (not the modal) and only
-    /// needs to add the missing people.
-    struct ForgotContext {
-        let alreadyLoggedIds: Set<UUID>
-        let alreadyLoggedPeople: [Person]
+    /// State carried between commits in the "Forgot someone?" batch-edit
+    /// flow. Tapping the toast chip reopens the picker with the prior
+    /// people pre-selected; the user can freely add / remove people, and
+    /// the next commit reconciles against `priorEvents` (deleting events
+    /// for people who got removed, writing fresh events for everyone in
+    /// the new selection).
+    struct BatchEditContext {
+        /// The events committed in the previous pass, keyed by personId.
+        /// On reconcile, every one of these is deleted; new events are
+        /// written for whoever's in the final selection.
+        let priorEvents: [UUID: TouchEvent]
         let method: TouchMethod
         let notes: String
         let date: Date
         let timeOfDay: TimeOfDay?
+
+        var priorPersonIds: [UUID] { Array(priorEvents.keys) }
+        var priorEventIds: [UUID] { priorEvents.values.map(\.id) }
     }
 
     private func commitBulkLog() {
         guard selectionCoordinator.hasSelection else { return }
         let ids = Array(selectionCoordinator.selection)
         let people = ids.compactMap { dependencies.personRepository.fetch(id: $0) }
-        // In the "Forgot?" pass, carry forward the prior form values and
-        // the alreadyLoggedIds so we don't double-write events for the
-        // original group.
-        if let ctx = forgotContext {
+        if let ctx = batchEditContext {
+            // Editing an existing batch — pre-fill form values from the
+            // prior pass so users don't retype.
             bulkLogState = BulkLogPresentation(
                 people: people,
                 method: ctx.method,
                 notes: ctx.notes,
                 date: ctx.date,
-                timeOfDay: ctx.timeOfDay,
-                alreadyLoggedIds: ctx.alreadyLoggedIds
+                timeOfDay: ctx.timeOfDay
             )
         } else {
             bulkLogState = BulkLogPresentation(people: people)
         }
     }
 
-    /// Subtitle shown above the action bar during the "Forgot someone?"
-    /// follow-up. Lists up to 3 names; collapses the rest into "+N others".
-    private var forgotContextSubtitle: String? {
-        guard let ctx = forgotContext else { return nil }
-        let names = ctx.alreadyLoggedPeople.map { $0.displayName }
-        let head = names.prefix(3).joined(separator: ", ")
-        let extra = names.count - 3
-        if extra > 0 {
-            return "Adding to: \(head), +\(extra) \(extra == 1 ? "other" : "others")"
-        }
-        return "Adding to: \(head)"
+    /// Subtle subtitle on the action bar communicating that this commit
+    /// will modify the prior batch rather than create a fresh one.
+    private var batchEditSubtitle: String? {
+        guard batchEditContext != nil else { return nil }
+        return "Editing last batch"
     }
 
     @ViewBuilder
@@ -234,8 +229,7 @@ struct MainTabView: View {
                     notes: notes,
                     date: date,
                     timeOfDay: timeOfDay,
-                    allPersonIds: peopleIds,
-                    alreadyLoggedIds: state.alreadyLoggedIds
+                    finalPersonIds: peopleIds
                 )
             },
             onRemove: { id in
@@ -244,89 +238,120 @@ struct MainTabView: View {
         )
     }
 
+    /// Routes the modal's Done event to either a fresh `execute` (first
+    /// pass) or a `reconcile` (batch edit). Both paths post a success
+    /// toast that offers another "Forgot someone?" round — every commit
+    /// rolls into the next `BatchEditContext`.
     private func handleBulkSave(
         method: TouchMethod,
         notes: String?,
         date: Date,
         timeOfDay: TimeOfDay?,
-        allPersonIds: [UUID],
-        alreadyLoggedIds: Set<UUID>
+        finalPersonIds: [UUID]
     ) {
-        // Only log new (not-already-logged) people on the "Forgot?" pass.
-        let toLog = allPersonIds.filter { !alreadyLoggedIds.contains($0) }
-
-        guard !toLog.isEmpty else {
-            bulkLogState = nil
-            selectionCoordinator.exit()
-            return
-        }
-
         let useCase = BulkLogTouchUseCase(
             personRepository: dependencies.personRepository,
             touchEventRepository: dependencies.touchEventRepository
         )
+        let editing = batchEditContext
+
         do {
-            let result = try useCase.execute(
-                personIds: toLog,
-                method: method,
-                notes: notes,
-                date: date,
-                timeOfDay: timeOfDay
-            )
-            AnalyticsService.track("bulk_log.committed", parameters: [
-                "count": String(result.touchEventsWritten),
-                "method": method.rawValue
-            ])
+            let nextContext: BatchEditContext?
+            let toastMessage: String
+            let skippedCount: Int
 
-            // Persist all logged person IDs (including ones from earlier
-            // pass) as one combined RecentGroup entry.
-            let combined = alreadyLoggedIds.union(toLog)
-            recentGroupsStore.append(personIds: Array(combined))
-            recentGroups = recentGroupsStore.load()
-
-            // HomeView observes `.personDidChange` and reloads — one
-            // post is enough, no need for an extra viewModel.load() here.
-            NotificationCenter.default.post(name: .personDidChange, object: nil)
-
-            // Build the toast message + "Forgot?" hook.
-            let written = result.touchEventsWritten
-            let skipped = result.skippedPersonIds.count
-            var message = "Logged \(written) \(written == 1 ? "connection" : "connections")"
-            if skipped > 0 {
-                message += " (skipped \(skipped))"
-            }
-
-            let allLoggedIds = combined
-            let alreadyLoggedPeople = allLoggedIds.compactMap {
-                dependencies.personRepository.fetch(id: $0)
-            }
-            SuccessToastManager.shared.show(
-                message,
-                actionTitle: "Forgot someone?"
-            ) {
-                AnalyticsService.track("forgot_someone.tapped")
-                // Re-enter selection mode with an EMPTY selection so the
-                // user picks NEW people to add. The carry-forward state
-                // (method/notes/date + alreadyLoggedIds) lives in
-                // `forgotContext`; commitBulkLog uses it to seed the
-                // next modal and to skip double-writes for the prior
-                // group. The action bar shows an "Adding to: ..."
-                // subtitle so the user knows which group they're
-                // extending.
-                forgotContext = ForgotContext(
-                    alreadyLoggedIds: allLoggedIds,
-                    alreadyLoggedPeople: alreadyLoggedPeople,
+            if let editing {
+                // BATCH EDIT pass: delete prior events, write fresh events
+                // for the final selection, recompute lastTouch* for every
+                // person on either side of the delta.
+                let result = try useCase.reconcile(
+                    priorEventIds: editing.priorEventIds,
+                    priorPersonIds: editing.priorPersonIds,
+                    finalPersonIds: finalPersonIds,
                     method: method,
-                    notes: notes ?? "",
+                    notes: notes,
                     date: date,
                     timeOfDay: timeOfDay
                 )
+                AnalyticsService.track("bulk_log.reconciled", parameters: [
+                    "added": String(result.added),
+                    "removed": String(result.removed),
+                    "method": method.rawValue
+                ])
+                nextContext = Self.makeBatchEditContext(
+                    from: result.writtenEvents,
+                    method: method,
+                    notes: notes,
+                    date: date,
+                    timeOfDay: timeOfDay
+                )
+                let n = result.writtenEvents.count
+                toastMessage = "Updated batch — \(n) \(n == 1 ? "connection" : "connections")"
+                skippedCount = result.skippedPersonIds.count
+            } else {
+                // FIRST PASS: write fresh events for the selection. The
+                // returned `writtenEvents` seed the next BatchEditContext.
+                let result = try useCase.execute(
+                    personIds: finalPersonIds,
+                    method: method,
+                    notes: notes,
+                    date: date,
+                    timeOfDay: timeOfDay
+                )
+                AnalyticsService.track("bulk_log.committed", parameters: [
+                    "count": String(result.touchEventsWritten),
+                    "method": method.rawValue
+                ])
+                nextContext = Self.makeBatchEditContext(
+                    from: result.writtenEvents,
+                    method: method,
+                    notes: notes,
+                    date: date,
+                    timeOfDay: timeOfDay
+                )
+                let n = result.touchEventsWritten
+                toastMessage = "Logged \(n) \(n == 1 ? "connection" : "connections")"
+                skippedCount = result.skippedPersonIds.count
+            }
+
+            // RecentGroups always reflects the *final* set of people in
+            // the batch (post-edit), not the cumulative union — that way
+            // if a user starts with [A,B,C,D] then edits to [A,B] the
+            // recent-groups entry is the edited pair, matching their
+            // actual mental model of "the dinner I had".
+            if let nextContext, !nextContext.priorPersonIds.isEmpty {
+                recentGroupsStore.append(personIds: nextContext.priorPersonIds)
+                recentGroups = recentGroupsStore.load()
+            }
+
+            // HomeView observes `.personDidChange` and reloads.
+            NotificationCenter.default.post(name: .personDidChange, object: nil)
+
+            var message = toastMessage
+            if skippedCount > 0 {
+                message += " (skipped \(skippedCount))"
+            }
+
+            // Offer another round of editing only when there's something
+            // to edit (at least one event survived the reconcile).
+            let canOfferAnotherRound = (nextContext?.priorEvents.isEmpty == false)
+            SuccessToastManager.shared.show(
+                message,
+                actionTitle: canOfferAnotherRound ? "Forgot someone?" : nil
+            ) {
+                AnalyticsService.track("forgot_someone.tapped")
+                guard let nextContext else { return }
+                // Re-enter select mode with the FINAL group pre-selected
+                // — the user can now add or remove freely, and the next
+                // commit will reconcile against this batch.
+                batchEditContext = nextContext
                 bulkLogState = nil
                 selectionCoordinator.enter(origin: selectionCoordinator.origin)
+                selectionCoordinator.setSelection(nextContext.priorPersonIds)
             }
 
             bulkLogState = nil
-            // `forgotContext` is cleared by the centralized onChange
+            // `batchEditContext` is cleared by the centralized onChange
             // handler when isSelectMode flips to false on exit().
             selectionCoordinator.exit()
         } catch {
@@ -335,5 +360,30 @@ struct MainTabView: View {
             // Keep the sheet open so the user can retry without losing
             // their typed notes or selection.
         }
+    }
+
+    /// Pure helper: bundles up the just-written events + the current form
+    /// values into a `BatchEditContext` for the next round. Returns nil
+    /// when no events were written so the caller can short-circuit the
+    /// "Forgot?" affordance.
+    private static func makeBatchEditContext(
+        from events: [TouchEvent],
+        method: TouchMethod,
+        notes: String?,
+        date: Date,
+        timeOfDay: TimeOfDay?
+    ) -> BatchEditContext? {
+        guard !events.isEmpty else { return nil }
+        var priorEvents: [UUID: TouchEvent] = [:]
+        for event in events {
+            priorEvents[event.personId] = event
+        }
+        return BatchEditContext(
+            priorEvents: priorEvents,
+            method: method,
+            notes: notes ?? "",
+            date: date,
+            timeOfDay: timeOfDay
+        )
     }
 }

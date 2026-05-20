@@ -13,14 +13,31 @@ import Foundation
 /// solo touch.
 struct BulkLogTouchUseCase {
     struct Result: Equatable {
-        let touchEventsWritten: Int
+        /// Events actually persisted by the operation. The caller stashes
+        /// these on the `BatchEditContext` so a subsequent reconcile knows
+        /// which prior events to delete.
+        let writtenEvents: [TouchEvent]
         let peopleUpdated: Int
+        let skippedPersonIds: [UUID]
+
+        var touchEventsWritten: Int { writtenEvents.count }
+    }
+
+    /// Result of a reconcile (wipe-and-rewrite) pass: how many net events
+    /// were added versus removed from the prior batch, plus the new
+    /// `writtenEvents` so the caller can stash them on a fresh
+    /// `BatchEditContext` for the next round.
+    struct ReconcileResult: Equatable {
+        let writtenEvents: [TouchEvent]
+        let added: Int
+        let removed: Int
         let skippedPersonIds: [UUID]
     }
 
     enum Error: Swift.Error, Equatable {
         case batchSaveFailed
         case personUpdateFailed
+        case reconcileFailed
     }
 
     private let personRepository: PersonRepository
@@ -74,7 +91,7 @@ struct BulkLogTouchUseCase {
         }
 
         guard !touchEvents.isEmpty else {
-            return Result(touchEventsWritten: 0, peopleUpdated: 0, skippedPersonIds: skipped)
+            return Result(writtenEvents: [], peopleUpdated: 0, skippedPersonIds: skipped)
         }
 
         do {
@@ -97,8 +114,112 @@ struct BulkLogTouchUseCase {
 
         WidgetRefresher.reloadAllTimelines()
         return Result(
-            touchEventsWritten: touchEvents.count,
+            writtenEvents: touchEvents,
             peopleUpdated: personUpdates.count,
+            skippedPersonIds: skipped
+        )
+    }
+
+    /// Wipe-and-rewrite reconcile of a previously-committed batch. Used
+    /// by the "Forgot someone?" / batch-edit flow.
+    ///
+    /// Semantics:
+    /// 1. Delete every event in `priorEventIds` (these are the events
+    ///    written by the prior pass we're now editing).
+    /// 2. Write a fresh `TouchEvent` for every person in `finalPersonIds`
+    ///    using the current form values (`method` / `date` / `notes` /
+    ///    `timeOfDay`).
+    /// 3. For every person in the affected set (`priorPersonIds ∪
+    ///    finalPersonIds`), recompute the denormalized `lastTouch*`
+    ///    fields from the now-current event history — newest event wins,
+    ///    or nil if no events remain. This mirrors the recompute logic
+    ///    used by single-event delete in `PersonDetailViewModel`.
+    ///
+    /// People whose record no longer exists are dropped from the rewrite
+    /// (returned in `skippedPersonIds`); their prior events are still
+    /// deleted.
+    @discardableResult
+    func reconcile(
+        priorEventIds: [UUID],
+        priorPersonIds: [UUID],
+        finalPersonIds: [UUID],
+        method: TouchMethod,
+        notes: String?,
+        date: Date,
+        timeOfDay: TimeOfDay? = nil,
+        now: Date = Date()
+    ) throws -> ReconcileResult {
+        // 1. Delete prior events. Best-effort: a missing id (e.g. user
+        // already deleted from history) doesn't fail the reconcile.
+        for id in priorEventIds {
+            try? touchEventRepository.delete(id: id)
+        }
+
+        // 2. Write fresh events for final people who still exist.
+        var writtenEvents: [TouchEvent] = []
+        var skipped: [UUID] = []
+        for personId in finalPersonIds {
+            guard personRepository.fetch(id: personId) != nil else {
+                skipped.append(personId)
+                continue
+            }
+            let event = TouchEvent(
+                id: UUID(),
+                personId: personId,
+                at: date,
+                method: method,
+                notes: notes,
+                timeOfDay: timeOfDay,
+                createdAt: now,
+                modifiedAt: now
+            )
+            writtenEvents.append(event)
+        }
+        if !writtenEvents.isEmpty {
+            do {
+                try touchEventRepository.batchSave(writtenEvents)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.repository, context: "BulkLogTouchUseCase.reconcile.batchSave")
+                throw Error.batchSaveFailed
+            }
+        }
+
+        // 3. Recompute `lastTouch*` for every affected person from their
+        // current event history. Newest event wins; if no events remain,
+        // headline clears to nil (matches PersonDetailViewModel.deleteTouch).
+        let affected = Set(priorPersonIds).union(finalPersonIds)
+        var personUpdates: [Person] = []
+        for personId in affected {
+            guard var person = personRepository.fetch(id: personId) else { continue }
+            let events = touchEventRepository.fetchAll(for: personId).sorted { $0.at > $1.at }
+            if let latest = events.first {
+                person.lastTouchAt = latest.at
+                person.lastTouchMethod = latest.method
+                person.lastTouchNotes = latest.notes
+            } else {
+                person.lastTouchAt = nil
+                person.lastTouchMethod = nil
+                person.lastTouchNotes = nil
+            }
+            person.modifiedAt = now
+            personUpdates.append(person)
+        }
+        if !personUpdates.isEmpty {
+            do {
+                try personRepository.batchSave(personUpdates)
+            } catch {
+                AppLogger.logError(error, category: AppLogger.repository, context: "BulkLogTouchUseCase.reconcile.batchSavePersons")
+                throw Error.personUpdateFailed
+            }
+        }
+
+        WidgetRefresher.reloadAllTimelines()
+
+        let unchangedCount = Set(priorPersonIds).intersection(finalPersonIds).count
+        return ReconcileResult(
+            writtenEvents: writtenEvents,
+            added: writtenEvents.count - unchangedCount,
+            removed: priorEventIds.count - unchangedCount,
             skippedPersonIds: skipped
         )
     }

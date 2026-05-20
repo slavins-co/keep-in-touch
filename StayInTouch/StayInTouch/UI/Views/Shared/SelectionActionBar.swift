@@ -68,15 +68,16 @@ struct SelectionActionBar: View {
         }
     }
 
-    /// "Add to group" reads more naturally than "Log Connection" when
-    /// the user is in the "Forgot someone?" follow-up. Drop in the
-    /// alternate label whenever a subtitle is present.
+    /// "Save changes" reads more naturally than "Log Connection" when
+    /// the user is editing a prior batch via the "Forgot someone?"
+    /// follow-up. Drop in the alternate label whenever a subtitle is
+    /// present.
     private var commitLabel: String {
-        subtitle == nil ? "Log Connection" : "Add to group"
+        subtitle == nil ? "Log Connection" : "Save changes"
     }
 
     /// Accessibility label mirrors the visual `commitLabel` so VoiceOver
-    /// announces "Add to group" during the "Forgot?" follow-up instead
+    /// announces "Save changes" during the batch-edit follow-up instead
     /// of the default "Log connection" verb.
     private var commitAccessibilityLabel: String {
         if count == 0 {
