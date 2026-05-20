@@ -324,11 +324,11 @@ final class PersonDetailViewModel: ObservableObject {
     func logTouch(method: TouchMethod, notes: String?, date: Date, timeOfDay: TimeOfDay? = nil) {
         if isPreview { return }
         AnalyticsService.track("connection.logged", parameters: ["method": method.rawValue])
-        let now = date
+        let now = Date()
         let touch = TouchEvent(
             id: UUID(),
             personId: person.id,
-            at: now,
+            at: date,
             method: method,
             notes: notes,
             timeOfDay: timeOfDay,
@@ -345,13 +345,9 @@ final class PersonDetailViewModel: ObservableObject {
             ErrorToastManager.shared.show(.saveFailed("PersonDetail"))
         }
 
-        var updated = person
-        updated.lastTouchAt = now
-        updated.lastTouchMethod = method
-        updated.lastTouchNotes = notes
-        updated.snoozedUntil = nil
-        updated.customDueDate = nil
-        updated.modifiedAt = now
+        // Newest-wins: a back-dated touch should not overwrite the
+        // denormalized headline if a more recent touch already exists.
+        let updated = BulkLogTouchUseCase.applyTouch(to: person, event: touch, now: now)
         savePerson(updated)
 
         touchEvents = fetchSortedEvents()
@@ -399,17 +395,14 @@ final class PersonDetailViewModel: ObservableObject {
         }
         touchEvents = fetchSortedEvents()
 
-        var updated = person
-        if let latest = touchEvents.first {
-            updated.lastTouchAt = latest.at
-            updated.lastTouchMethod = latest.method
-            updated.lastTouchNotes = latest.notes
-        } else {
-            updated.lastTouchAt = nil
-            updated.lastTouchMethod = nil
-            updated.lastTouchNotes = nil
-        }
-        updated.modifiedAt = Date()
+        // Shared with BulkLogTouchUseCase.reconcile so single-event
+        // undo and bulk batch-edit run through the same headline
+        // recompute logic.
+        let updated = BulkLogTouchUseCase.recomputeLastTouch(
+            for: person,
+            from: touchEvents,
+            now: Date()
+        )
         savePerson(updated)
     }
 

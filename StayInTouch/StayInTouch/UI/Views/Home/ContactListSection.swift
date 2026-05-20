@@ -18,6 +18,10 @@ struct ContactListSection: View {
     let daysOverdueForPerson: (Person) -> Int
     let timeAgoForPerson: (Person) -> String
     let selectPerson: (Person) -> Void
+    /// Shared select-mode coordinator. When `coordinator.isSelectMode` is
+    /// true, rows render with a leading checkmark and taps toggle
+    /// selection instead of opening the detail.
+    @ObservedObject var coordinator: SelectionCoordinator
 
     @Environment(\.colorScheme) private var colorScheme
 
@@ -27,8 +31,14 @@ struct ContactListSection: View {
                 ForEach(Array(people.enumerated()), id: \.element.id) { index, person in
                     let frequencyName = cadencesById[person.cadenceId]?.name ?? "Frequency"
                     let personGroups = person.groupIds.compactMap { groupsById[$0] }
+                    let inSelectMode = coordinator.isSelectMode
+
                     Button {
-                        selectPerson(person)
+                        if inSelectMode {
+                            coordinator.toggleWithHaptic(person.id)
+                        } else {
+                            selectPerson(person)
+                        }
                     } label: {
                         ContactCard(
                             person: person,
@@ -37,11 +47,21 @@ struct ContactListSection: View {
                             daysOverdue: daysOverdueForPerson(person),
                             timeAgo: timeAgoForPerson(person),
                             lastMethod: person.lastTouchMethod,
-                            groups: personGroups
+                            groups: personGroups,
+                            isSelected: inSelectMode ? coordinator.contains(person.id) : nil
                         )
                     }
                     .buttonStyle(.plain)
-                    .accessibilityHint("Opens contact details")
+                    .accessibilityHint(inSelectMode
+                                       ? "Toggles selection"
+                                       : "Opens contact details")
+                    .simultaneousGesture(
+                        LongPressGesture(minimumDuration: 0.4).onEnded { _ in
+                            if !coordinator.isSelectMode {
+                                coordinator.enter(origin: .home, preselect: person.id)
+                            }
+                        }
+                    )
 
                     if index < people.count - 1 {
                         Rectangle()
