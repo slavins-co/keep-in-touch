@@ -30,15 +30,12 @@ struct GetOverdueContactsIntent: AppIntent {
         let repository = IntentContainer.current.dependencies.personRepository
         let people = repository.fetchOverdue(referenceDate: Date())
         let entities = people.map(PersonAppEntity.init(person:))
-        let dialog: IntentDialog
-        switch entities.count {
-        case 0:
-            dialog = IntentDialog("Nothing's overdue right now.")
-        case 1:
-            dialog = IntentDialog("One contact is overdue: \(entities[0].displayName).")
-        default:
-            dialog = IntentDialog("\(entities.count) contacts are overdue.")
-        }
+        let dialog = PersonListDialog.make(
+            for: entities,
+            emptyMessage: "Nothing's overdue right now.",
+            singularSuffix: "is overdue",
+            pluralPredicate: "are overdue"
+        )
         return .result(value: entities, dialog: dialog)
     }
 }

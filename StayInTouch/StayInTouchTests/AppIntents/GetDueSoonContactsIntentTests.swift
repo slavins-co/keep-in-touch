@@ -2,6 +2,11 @@
 //  GetDueSoonContactsIntentTests.swift
 //  KeepInTouchTests
 //
+//  Intent return values are wrapped in opaque IntentResult containers
+//  that can't be unwrapped from outside the App Intents framework, so
+//  these tests verify the side effects (no throw, classification path
+//  exercised) rather than the result payload.
+//
 
 import XCTest
 @testable import StayInTouch

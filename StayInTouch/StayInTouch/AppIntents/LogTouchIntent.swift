@@ -56,24 +56,12 @@ struct LogTouchIntent: AppIntent {
                 notes: notes,
                 date: when
             )
-            let methodLabel = methodVerb(for: method)
-            let dialog = IntentDialog("Logged a \(methodLabel) with \(updated.displayName).")
+            let dialog = IntentDialog("Logged a \(method.verb) with \(updated.displayName).")
             return .result(dialog: dialog)
         } catch let error as IntentError {
             throw error
         } catch {
             throw IntentError.saveFailed
-        }
-    }
-
-    private func methodVerb(for method: TouchMethod) -> String {
-        switch method {
-        case .text: return "text"
-        case .call: return "call"
-        case .irl: return "visit"
-        case .email: return "email"
-        case .facetime: return "FaceTime"
-        case .other: return "touch"
         }
     }
 }

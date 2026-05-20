@@ -62,6 +62,27 @@ struct PersonAppEntity: AppEntity, Identifiable {
     }
 }
 
+/// Builds the dialog string shown by query intents (GetOverdue, GetDueSoon).
+/// One place to keep "Nothing's overdue / One contact is overdue: X / N
+/// contacts are overdue" phrasing consistent.
+enum PersonListDialog {
+    static func make(
+        for entities: [PersonAppEntity],
+        emptyMessage: String,
+        singularSuffix: String,
+        pluralPredicate: String
+    ) -> IntentDialog {
+        switch entities.count {
+        case 0:
+            return IntentDialog(stringLiteral: emptyMessage)
+        case 1:
+            return IntentDialog("One contact \(singularSuffix): \(entities[0].displayName).")
+        default:
+            return IntentDialog("\(entities.count) contacts \(pluralPredicate).")
+        }
+    }
+}
+
 struct PersonAppEntityQuery: EntityQuery, EntityStringQuery {
     // Stale ids (snapshots in a saved Shortcut that no longer resolve)
     // are silently dropped — callers (LogTouchIntent, OpenPersonIntent)
@@ -83,11 +104,18 @@ struct PersonAppEntityQuery: EntityQuery, EntityStringQuery {
         return matches.map(PersonAppEntity.init(person:))
     }
 
+    /// Siri renders the top suggestions inline in its parameter picker, so
+    /// cap the response at a small number of most-recently-touched contacts.
+    /// Sorting all tracked people (potentially hundreds) just to discard most
+    /// of them is wasted work on a Siri-cold-launch path.
+    private static let suggestedEntitiesLimit = 12
+
     func suggestedEntities() async throws -> [PersonAppEntity] {
         let repository = IntentContainer.current.dependencies.personRepository
         let tracked = repository.fetchTracked(includePaused: true)
-        return tracked
+        let topRecent = tracked
             .sorted { ($0.lastTouchAt ?? .distantPast) > ($1.lastTouchAt ?? .distantPast) }
-            .map(PersonAppEntity.init(person:))
+            .prefix(Self.suggestedEntitiesLimit)
+        return topRecent.map(PersonAppEntity.init(person:))
     }
 }

@@ -28,19 +28,20 @@ struct GetDueSoonContactsIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<[PersonAppEntity]> & ProvidesDialog {
         let deps = IntentContainer.current.dependencies
-        let people = deps.personRepository.fetchTracked(includePaused: false)
-        let cadences = deps.cadenceRepository.fetchAll()
+        // Both fetches hit Core Data independently — overlap them so cold
+        // Siri launches don't pay the latency twice.
+        async let peopleTask = Task { deps.personRepository.fetchTracked(includePaused: false) }.value
+        async let cadencesTask = Task { deps.cadenceRepository.fetchAll() }.value
+        let people = await peopleTask
+        let cadences = await cadencesTask
         let dueSoon = PersonStatusService().dueSoonPeople(people, cadences: cadences)
         let entities = dueSoon.map(PersonAppEntity.init(person:))
-        let dialog: IntentDialog
-        switch entities.count {
-        case 0:
-            dialog = IntentDialog("Nothing's coming due in your warning window.")
-        case 1:
-            dialog = IntentDialog("One contact is due soon: \(entities[0].displayName).")
-        default:
-            dialog = IntentDialog("\(entities.count) contacts are due soon.")
-        }
+        let dialog = PersonListDialog.make(
+            for: entities,
+            emptyMessage: "Nothing's coming due in your warning window.",
+            singularSuffix: "is due soon",
+            pluralPredicate: "are due soon"
+        )
         return .result(value: entities, dialog: dialog)
     }
 }
