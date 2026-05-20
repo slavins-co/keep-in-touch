@@ -376,4 +376,46 @@ final class BulkLogTouchUseCaseTests: XCTestCase {
         XCTAssertEqual(result.lastTouchAt, now)
         XCTAssertEqual(result.lastTouchMethod, .text)
     }
+
+    // MARK: - recomputeLastTouch helper
+
+    func testRecomputeLastTouchPicksNewestEvent() {
+        let now = Date()
+        let older = now.addingTimeInterval(-86_400 * 7)
+        let newest = now.addingTimeInterval(-86_400 * 1)
+        let person = TestFactory.makePerson(name: "Alice", lastTouchAt: older, lastTouchMethod: .text)
+
+        let events = [
+            TestFactory.makeTouchEvent(personId: person.id, at: older, method: .text, notes: "Old"),
+            TestFactory.makeTouchEvent(personId: person.id, at: newest, method: .irl, notes: "New"),
+        ]
+
+        let result = BulkLogTouchUseCase.recomputeLastTouch(for: person, from: events, now: now)
+
+        XCTAssertEqual(result.lastTouchAt, newest, "Helper picks the latest event regardless of input order")
+        XCTAssertEqual(result.lastTouchMethod, .irl)
+        XCTAssertEqual(result.lastTouchNotes, "New")
+    }
+
+    func testRecomputeLastTouchClearsHeadlineWhenNoEvents() {
+        let person = TestFactory.makePerson(name: "Alice", lastTouchAt: Date(), lastTouchMethod: .text)
+
+        let result = BulkLogTouchUseCase.recomputeLastTouch(for: person, from: [], now: Date())
+
+        XCTAssertNil(result.lastTouchAt)
+        XCTAssertNil(result.lastTouchMethod)
+        XCTAssertNil(result.lastTouchNotes)
+    }
+
+    func testRecomputeLastTouchDoesNotTouchSnooze() {
+        // Undoing a touch should NOT silently un-snooze the contact.
+        let future = Date().addingTimeInterval(86_400 * 5)
+        var person = TestFactory.makePerson(name: "Alice", lastTouchAt: Date(), snoozedUntil: future)
+        person.customDueDate = future
+
+        let result = BulkLogTouchUseCase.recomputeLastTouch(for: person, from: [], now: Date())
+
+        XCTAssertEqual(result.snoozedUntil, future, "Recompute must preserve snoozedUntil")
+        XCTAssertEqual(result.customDueDate, future, "Recompute must preserve customDueDate")
+    }
 }

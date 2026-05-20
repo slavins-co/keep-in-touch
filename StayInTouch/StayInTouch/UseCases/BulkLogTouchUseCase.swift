@@ -198,24 +198,15 @@ struct BulkLogTouchUseCase {
         }
 
         // 3. Recompute `lastTouch*` for every affected person from their
-        // current event history. Newest event wins; if no events remain,
-        // headline clears to nil (matches PersonDetailViewModel.deleteTouch).
+        // current event history via the shared `recomputeLastTouch`
+        // helper — the same helper PersonDetailViewModel.deleteTouch
+        // uses, so single-event-undo and bulk-reconcile stay aligned.
         let affected = Set(priorPersonIds).union(finalPersonIds)
         var personUpdates: [Person] = []
         for personId in affected {
-            guard var person = personRepository.fetch(id: personId) else { continue }
-            let events = touchEventRepository.fetchAll(for: personId).sorted { $0.at > $1.at }
-            if let latest = events.first {
-                person.lastTouchAt = latest.at
-                person.lastTouchMethod = latest.method
-                person.lastTouchNotes = latest.notes
-            } else {
-                person.lastTouchAt = nil
-                person.lastTouchMethod = nil
-                person.lastTouchNotes = nil
-            }
-            person.modifiedAt = now
-            personUpdates.append(person)
+            guard let person = personRepository.fetch(id: personId) else { continue }
+            let events = touchEventRepository.fetchAll(for: personId)
+            personUpdates.append(Self.recomputeLastTouch(for: person, from: events, now: now))
         }
         if !personUpdates.isEmpty {
             do {
@@ -259,6 +250,32 @@ struct BulkLogTouchUseCase {
             updated.lastTouchNotes = event.notes
             updated.snoozedUntil = nil
             updated.customDueDate = nil
+        }
+        updated.modifiedAt = now
+        return updated
+    }
+
+    /// Pure helper: returns a copy of `person` with denormalized
+    /// `lastTouch*` headline fields set from the newest event in
+    /// `events`, or cleared to nil if `events` is empty.
+    ///
+    /// Used by any operation that REMOVES events (single delete via
+    /// `PersonDetailViewModel.deleteTouch`, bulk reconcile in
+    /// `BulkLogTouchUseCase.reconcile`) so the recompute lives in one
+    /// place. Sorts internally — caller doesn't have to pass a
+    /// pre-sorted array. Does not touch `snoozedUntil` or
+    /// `customDueDate` (matches the prior PersonDetailViewModel
+    /// behavior — undoing a touch doesn't unsnooze).
+    static func recomputeLastTouch(for person: Person, from events: [TouchEvent], now: Date) -> Person {
+        var updated = person
+        if let latest = events.max(by: { $0.at < $1.at }) {
+            updated.lastTouchAt = latest.at
+            updated.lastTouchMethod = latest.method
+            updated.lastTouchNotes = latest.notes
+        } else {
+            updated.lastTouchAt = nil
+            updated.lastTouchMethod = nil
+            updated.lastTouchNotes = nil
         }
         updated.modifiedAt = now
         return updated

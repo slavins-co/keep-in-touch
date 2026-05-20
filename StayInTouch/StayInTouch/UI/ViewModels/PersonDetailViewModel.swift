@@ -395,17 +395,14 @@ final class PersonDetailViewModel: ObservableObject {
         }
         touchEvents = fetchSortedEvents()
 
-        var updated = person
-        if let latest = touchEvents.first {
-            updated.lastTouchAt = latest.at
-            updated.lastTouchMethod = latest.method
-            updated.lastTouchNotes = latest.notes
-        } else {
-            updated.lastTouchAt = nil
-            updated.lastTouchMethod = nil
-            updated.lastTouchNotes = nil
-        }
-        updated.modifiedAt = Date()
+        // Shared with BulkLogTouchUseCase.reconcile so single-event
+        // undo and bulk batch-edit run through the same headline
+        // recompute logic.
+        let updated = BulkLogTouchUseCase.recomputeLastTouch(
+            for: person,
+            from: touchEvents,
+            now: Date()
+        )
         savePerson(updated)
     }
 
