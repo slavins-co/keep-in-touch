@@ -9,6 +9,13 @@
 //  iOS allows ~10 phrases per provider; keep this list focused on the
 //  highest-leverage entry points.
 //
+//  Constraint: each AppShortcut phrase supports ONLY ONE parameter slot.
+//  A phrase like "Log a \(\.$method) with \(\.$person)" fails the
+//  AppIntents metadata processor with "Multiple parameters detected in
+//  phrase." If users want both method and person filled, they enter the
+//  multi-parameter form via the Shortcuts editor; the curated phrases
+//  here pick the single most-useful slot (person for Log Touch).
+//
 
 import AppIntents
 

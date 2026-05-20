@@ -2,23 +2,37 @@
 //  IntentActions.swift
 //  KeepInTouch
 //
-//  Thin facade that intents call. Mirrors the save-path side effects of
-//  `PersonDetailViewModel.logTouch` step-for-step so logging via Siri,
-//  Shortcuts, or the in-app modal produces identical state.
+//  Thin facade that intents call. Reuses the same recompute helper
+//  (`BulkLogTouchUseCase.applyTouch`) that `PersonDetailViewModel.logTouch`
+//  uses, so the headline `lastTouch*` rule and `snoozedUntil` /
+//  `customDueDate` clearing stay in one place.
 //
-//  Specifically: TouchEvent save → BulkLogTouchUseCase.applyTouch →
-//  Person save → `.personDidChange` post. The repository layer handles
-//  WidgetRefresher; the `.personDidChange` post triggers
-//  NotificationScheduler.scheduleAll() asynchronously.
+//  Side-effect sequence: TouchEvent save → applyTouch → Person save →
+//  `.personDidChange` post. The repository layer handles WidgetRefresher;
+//  the `.personDidChange` post triggers NotificationScheduler.scheduleAll().
+//
+//  Two intentional differences from `PersonDetailViewModel.logTouch`:
+//   1. On TouchEvent save failure this throws `IntentError.saveFailed`
+//      and skips the Person update. The UI path shows an error toast
+//      and still attempts the Person update — but Siri/Shortcuts have
+//      no toast surface, so the cleaner fail-fast is preferable.
+//   2. Notes are trimmed (whitespace-only → nil) so Shortcuts users
+//      can pass un-trimmed input from prior actions without polluting
+//      the log.
 //
 
 import Foundation
 
 struct IntentActions {
     let dependencies: AppDependencies
+    let trackAnalytics: (_ signal: String, _ parameters: [String: String]) -> Void
 
-    init(dependencies: AppDependencies = IntentContainer.current.dependencies) {
+    init(
+        dependencies: AppDependencies = IntentContainer.current.dependencies,
+        trackAnalytics: @escaping (String, [String: String]) -> Void = AnalyticsService.track
+    ) {
         self.dependencies = dependencies
+        self.trackAnalytics = trackAnalytics
     }
 
     /// Logs a touch for the given person id. Returns the updated Person
@@ -36,9 +50,9 @@ struct IntentActions {
             throw IntentError.personNotFound
         }
 
-        AnalyticsService.track(
+        trackAnalytics(
             "connection.logged",
-            parameters: ["method": method.rawValue, "source": "siri"]
+            ["method": method.rawValue, "source": "siri"]
         )
 
         let touch = TouchEvent(

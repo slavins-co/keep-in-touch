@@ -25,12 +25,16 @@ struct PersonAppEntity: AppEntity, Identifiable {
     let nickname: String?
     let lastTouchAt: Date?
 
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter
+    }()
+
     var displayRepresentation: DisplayRepresentation {
         let subtitle: LocalizedStringResource?
         if let lastTouchAt {
-            let formatter = RelativeDateTimeFormatter()
-            formatter.unitsStyle = .full
-            let relative = formatter.localizedString(for: lastTouchAt, relativeTo: Date())
+            let relative = Self.relativeFormatter.localizedString(for: lastTouchAt, relativeTo: Date())
             subtitle = "Last touch \(relative)"
         } else {
             subtitle = "No touches yet"
@@ -59,12 +63,15 @@ struct PersonAppEntity: AppEntity, Identifiable {
 }
 
 struct PersonAppEntityQuery: EntityQuery, EntityStringQuery {
+    // Stale ids (snapshots in a saved Shortcut that no longer resolve)
+    // are silently dropped — callers (LogTouchIntent, OpenPersonIntent)
+    // each guard with their own `repository.fetch(id:)` and throw a
+    // user-visible `IntentError.personNotFound`. Returning a strict
+    // subset here matches Apple's documented EntityQuery contract.
     func entities(for identifiers: [PersonAppEntity.ID]) async throws -> [PersonAppEntity] {
         let repository = IntentContainer.current.dependencies.personRepository
-        let set = Set(identifiers)
-        return identifiers.compactMap { id -> PersonAppEntity? in
-            guard set.contains(id), let person = repository.fetch(id: id) else { return nil }
-            return PersonAppEntity(person: person)
+        return identifiers.compactMap { id in
+            repository.fetch(id: id).map(PersonAppEntity.init(person:))
         }
     }
 
