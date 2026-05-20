@@ -37,7 +37,6 @@ struct BulkLogTouchUseCase {
     enum Error: Swift.Error, Equatable {
         case batchSaveFailed
         case personUpdateFailed
-        case reconcileFailed
     }
 
     private let personRepository: PersonRepository
@@ -149,8 +148,12 @@ struct BulkLogTouchUseCase {
         timeOfDay: TimeOfDay? = nil,
         now: Date = Date()
     ) throws -> ReconcileResult {
-        // 1. Delete prior events. Best-effort: a missing id (e.g. user
-        // already deleted from history) doesn't fail the reconcile.
+        // 1. SNAPSHOT prior events before deleting. If step 2 fails we
+        // restore via `batchSave(snapshot)` so the user doesn't lose
+        // their prior batch on a transient Core Data error.
+        let snapshot: [TouchEvent] = priorEventIds.compactMap {
+            touchEventRepository.fetch(id: $0)
+        }
         for id in priorEventIds {
             try? touchEventRepository.delete(id: id)
         }
@@ -180,6 +183,16 @@ struct BulkLogTouchUseCase {
                 try touchEventRepository.batchSave(writtenEvents)
             } catch {
                 AppLogger.logError(error, category: AppLogger.repository, context: "BulkLogTouchUseCase.reconcile.batchSave")
+                // Rollback: re-save the snapshot we deleted in step 1.
+                // Best-effort — if this also fails we have lost data,
+                // but at least we log loudly so the failure is visible.
+                if !snapshot.isEmpty {
+                    do {
+                        try touchEventRepository.batchSave(snapshot)
+                    } catch let rollbackError {
+                        AppLogger.logError(rollbackError, category: AppLogger.repository, context: "BulkLogTouchUseCase.reconcile.rollback.batchSave — DATA LOSS: \(snapshot.count) prior events not restored")
+                    }
+                }
                 throw Error.batchSaveFailed
             }
         }
@@ -209,6 +222,10 @@ struct BulkLogTouchUseCase {
                 try personRepository.batchSave(personUpdates)
             } catch {
                 AppLogger.logError(error, category: AppLogger.repository, context: "BulkLogTouchUseCase.reconcile.batchSavePersons")
+                // Events are already written; we can't cleanly roll back
+                // step 2 without re-introducing the snapshot conflict.
+                // Surface the failure so the caller knows the headline
+                // recompute didn't complete.
                 throw Error.personUpdateFailed
             }
         }

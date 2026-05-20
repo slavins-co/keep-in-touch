@@ -291,6 +291,59 @@ final class BulkLogTouchUseCaseTests: XCTestCase {
         XCTAssertEqual(result.skippedPersonIds, [ghostId])
     }
 
+    func testReconcileRollsBackDeletedPriorEventsWhenNewBatchSaveFails() throws {
+        // Stub repository that throws on the SECOND batchSave call —
+        // step 2 of reconcile, after step 1 has already deleted priors.
+        // The rollback path must re-save the snapshot.
+        final class FailingOnSecondBatchSave: MockTouchEventRepository {
+            var batchSaveCallCount = 0
+            override func batchSave(_ touchEvents: [TouchEvent]) throws {
+                batchSaveCallCount += 1
+                if batchSaveCallCount == 2 {
+                    throw NSError(domain: "TestForcedFailure", code: 1)
+                }
+                try super.batchSave(touchEvents)
+            }
+        }
+
+        let failingRepo = FailingOnSecondBatchSave()
+        let useCase = BulkLogTouchUseCase(personRepository: personRepo, touchEventRepository: failingRepo)
+
+        let p1 = TestFactory.makePerson(name: "Alice")
+        let p2 = TestFactory.makePerson(name: "Bob")
+        try personRepo.batchSave([p1, p2])
+
+        let first = try useCase.execute(
+            personIds: [p1.id, p2.id],
+            method: .irl,
+            notes: "Dinner",
+            date: Date()
+        )
+        XCTAssertEqual(failingRepo.events.count, 2, "First execute writes both events")
+        XCTAssertEqual(failingRepo.batchSaveCallCount, 1, "Sanity: first batchSave succeeded")
+
+        // Reconcile: this should delete the 2 priors (step 1), then fail
+        // when batchSave fires for the new events (step 2 = call #2).
+        XCTAssertThrowsError(try useCase.reconcile(
+            priorEventIds: first.writtenEvents.map(\.id),
+            priorPersonIds: [p1.id, p2.id],
+            finalPersonIds: [p1.id, p2.id],
+            method: .text,
+            notes: "Edited",
+            date: Date()
+        )) { error in
+            XCTAssertEqual(error as? BulkLogTouchUseCase.Error, .batchSaveFailed)
+        }
+
+        // Rollback must have re-saved the snapshot. The 2 prior event
+        // IDs should be back in the repo. (batchSaveCallCount: 1 success
+        // + 1 failure + 1 rollback success = 3.)
+        XCTAssertEqual(failingRepo.events.count, 2, "Snapshot restored after step-2 failure")
+        let restoredIds = Set(failingRepo.events.map(\.id))
+        let priorIds = Set(first.writtenEvents.map(\.id))
+        XCTAssertEqual(restoredIds, priorIds, "The exact prior events are restored, not new ones")
+    }
+
     func testReconcileWithNoPriorEventsIsEffectivelyAFreshBatch() throws {
         let p1 = TestFactory.makePerson(name: "Alice")
         let p2 = TestFactory.makePerson(name: "Bob")

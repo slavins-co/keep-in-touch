@@ -101,7 +101,7 @@ final class MockGroupRepository: GroupRepository {
 
 // MARK: - MockTouchEventRepository
 
-final class MockTouchEventRepository: TouchEventRepository {
+class MockTouchEventRepository: TouchEventRepository {
     var events: [TouchEvent] = []
     var savedEvents: [TouchEvent] = []
     var deletedIds: [UUID] = []
