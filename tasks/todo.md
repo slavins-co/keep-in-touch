@@ -1,7 +1,7 @@
 # TODO - Stay in Touch iOS App
 
-**Project Status:** v0.3.6 (Build 12) — Pre-release Beta
-**Last Updated:** March 20, 2026
+**Project Status:** v0.4.0 (Build 13) — Pre-release Beta
+**Last Updated:** May 19, 2026
 
 > **TestFlight Status:** Code blockers resolved. Manual submission steps remain — see `tasks/testflight-guide.md`.
 > When creating PRs, confirm TestFlight readiness is not regressed (deployment target 17.0, PrivacyInfo.xcprivacy present, UIBackgroundModes declared, build number incremented).
@@ -51,6 +51,34 @@ Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architect
 - [ ] **#68** App Store submission checklist
 - [ ] **#69** TestFlight beta validation plan
 - [ ] **#70** Validate core loop retention during beta
+
+---
+
+## Completed — Session 2026-05-17 → 2026-05-19 (Issue #293: Bulk Log Touch for Group Hangouts)
+
+- [x] **#293** Log one TouchEvent against multiple people in a single flow — PR #303 squash-merged to main as `dc503d9`
+  - Multi-select via "Select" filter chip on Home + "Select" header button on Contacts + long-press on rows/cards (Photos/Mail pattern)
+  - `SelectionCoordinator` shared between Home + Contacts so selection carries across tabs
+  - `BulkLogTouchUseCase.execute()` — fresh-batch path with newest-wins lastTouch* rule + rollback on partial failure
+  - `BulkLogTouchUseCase.reconcile()` — batch-edit path (wipe-and-rewrite): deletes prior events, writes fresh ones, recomputes lastTouch* for affected persons via the shared `recomputeLastTouch` helper, with snapshot rollback if step-2 batchSave throws
+  - `BulkLogTouchModal` with avatar chips (X-to-remove) above a reused single-touch form
+  - `RecentGroupsStore` (UserDefaults) — last 3 distinct selections, one-tap reselection at the top of the picker; stores the *final* batch composition (post-edit), not the cumulative union
+  - Success toast with "Forgot someone?" action chip — reopens picker with prior group pre-selected, carries forward method/notes/date, runs reconcile on second commit. Chained Forgot rounds supported (round 2 → round 3 → ...)
+  - Subtitle "Editing last batch" + commit-label flip "Save changes" so users know they're editing, not creating
+  - Helper `BulkLogTouchUseCase.recomputeLastTouch(for:from:now:)` shared with `PersonDetailViewModel.deleteTouch` — single-event undo and bulk batch-edit now flow through one source of truth
+  - 11 new tests (use case happy paths, newest-wins, missing-person handling, reconcile delta + rollback + skip + edge cases, helper contract, snooze preservation)
+  - 4 analytics events: `bulk_log.opened`, `bulk_log.committed`, `bulk_log.reconciled`, `forgot_someone.tapped`
+- [x] Code review: 4 passes (initial, simplify, QA fixes, reconcile rework, DRY refactor) — all PASS, all sub-70 findings addressed inline
+- [x] Security review: PASS — 0 exploitable findings (10 items considered)
+- [x] Manual QA: 9-scenario matrix + 6 reconcile/batch-edit scenarios including date/notes change during edit pass — all passing
+
+### Follow-ups deferred from #293
+
+- [ ] Move `recomputeLastTouch` onto `Person` as `func recomputingLastTouch(from:now:) -> Person` (Domain layer) — drops PersonDetailViewModel's incidental dependency on BulkLogTouchUseCase. _(Code-review note, sub-70, architectural polish)_
+- [ ] Stable chip ordering in `BulkLogTouchModal` — currently from `Set<UUID>` iteration, unstable between presentations. Fix when next form-field addition forces refactor anyway
+- [ ] Extract shared `LogTouchFormBody` view — `BulkLogTouchModal` and `LogTouchModal` Forms duplicate the method/date/notes layout. Defer until the next form field gets added
+- [ ] UI integration test for happy-path bulk log — deferred pending onboarding-bypass infrastructure
+- [ ] TipKit `BulkSelectTip` for Select-chip discoverability — defer until dogfooding shows the affordance gets missed
 
 ---
 
