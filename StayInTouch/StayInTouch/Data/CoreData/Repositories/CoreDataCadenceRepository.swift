@@ -17,10 +17,7 @@ final class CoreDataCadenceRepository: CadenceRepository {
     func fetch(id: UUID) -> Cadence? {
         var result: Cadence?
         context.performAndWait {
-            let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-            request.fetchLimit = 1
-            result = (try? context.fetch(request))?.first?.toDomain()
+            result = fetchEntityByID(request: GroupEntity.fetchRequest(), id: id, in: context)?.toDomain()
         }
         return result
     }
@@ -47,53 +44,38 @@ final class CoreDataCadenceRepository: CadenceRepository {
     }
 
     func save(_ cadence: Cadence) throws {
-        do {
-            try context.performAndWait {
-                let entity = fetchEntity(id: cadence.id) ?? GroupEntity(context: context)
-                entity.apply(cadence)
-                try context.save()
-            }
-        } catch let error as RepositoryError {
-            throw error
-        } catch {
-            throw RepositoryError.saveFailed(entity: "Cadence", underlying: error)
+        // Cadence mutations do not affect widget content; skip the refresh.
+        try upsertEntity(
+            id: cadence.id,
+            fetchRequest: { GroupEntity.fetchRequest() },
+            entityLabel: "Cadence",
+            in: context,
+            refreshWidgets: false
+        ) { entity in
+            entity.apply(cadence)
         }
     }
 
     func batchSave(_ cadences: [Cadence]) throws {
-        do {
-            try context.performAndWait {
-                for cadence in cadences {
-                    let entity = fetchEntity(id: cadence.id) ?? GroupEntity(context: context)
-                    entity.apply(cadence)
-                }
-                try context.save()
-            }
-        } catch let error as RepositoryError {
-            throw error
-        } catch {
-            throw RepositoryError.saveFailed(entity: "Cadence", underlying: error)
+        try batchUpsertEntities(
+            cadences,
+            id: { $0.id },
+            fetchRequest: { GroupEntity.fetchRequest() },
+            entityLabel: "Cadence",
+            in: context,
+            refreshWidgets: false
+        ) { cadence, entity in
+            entity.apply(cadence)
         }
     }
 
     func delete(id: UUID) throws {
-        do {
-            try context.performAndWait {
-                guard let entity = fetchEntity(id: id) else { return }
-                context.delete(entity)
-                try context.save()
-            }
-        } catch let error as RepositoryError {
-            throw error
-        } catch {
-            throw RepositoryError.deleteFailed(entity: "Cadence", id: id, underlying: error)
-        }
-    }
-
-    private func fetchEntity(id: UUID) -> GroupEntity? {
-        let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-        request.fetchLimit = 1
-        return try? context.fetch(request).first
+        try deleteEntityByID(
+            fetchRequest: { GroupEntity.fetchRequest() },
+            id: id,
+            entityLabel: "Cadence",
+            in: context,
+            refreshWidgets: false
+        )
     }
 }
