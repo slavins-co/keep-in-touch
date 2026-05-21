@@ -40,7 +40,7 @@
 
 ### Tier 4 — Deferred to v0.4+
 
-Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architecture refactors (#203), ~~VoiceOver picker/editor sheets (#197)~~, full VoiceOver audit (#39), widget (#60), ~~Siri Shortcuts (#80)~~ (superseded by #304 — App Intents v1 shipped in PR #305), iCloud sync (#79), iPad layout (#78), localization (#77), stats page (#138), tutorial (#10), UX direction (#45), design polish (#41, #42, #44).
+Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architecture refactors (#203), ~~VoiceOver picker/editor sheets (#197)~~, full VoiceOver audit (#39), widget (#60), ~~Siri Shortcuts (#80)~~ (superseded by #304 — App Intents v1 shipped in PR #305), iCloud sync (#79), iPad layout (#78), localization (#77), ~~stats page (#138)~~ (v1 shipped in PR #306), tutorial (#10), UX direction (#45), design polish (#41, #42, #44).
 
 > **Note:** #34, #37, #231 are CLOSED on GitHub (closed as won't implement in v0.3.x). #214, #215, #216, #168 completed in v0.3.4 work.
 
@@ -51,6 +51,33 @@ Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architect
 - [ ] **#68** App Store submission checklist
 - [ ] **#69** TestFlight beta validation plan
 - [ ] **#70** Validate core loop retention during beta
+
+---
+
+## Completed — Session 2026-05-20 (Issue #138: Stats & Insights v1)
+
+- [x] **#138** Settings → Insights destination with 30d/90d range toggle — PR #306 (pending manual QA / merge)
+  - REDUCE-mode plan-review locked v1 scope to 2 metric families: per-cadence "Performance vs Intent" bars + "How you showed up" method breakdown donut. Streaks, leaderboards, trends-over-time, lifetime totals, per-person momentum, custom date pickers all deferred — file separately if v1 lands
+  - `StatsRange` enum with `startDate(now:)` helper — single source of truth for "events at or after this date are in range." Subtitle copy ties each window to the cadences it best surfaces (30d → Weekly + Biweekly; 90d → Monthly + Quarterly)
+  - `StatsSnapshot` Codable value type — three states (`.empty`, `.emptyForRange`, `.ready`) with `CadenceRow` (id, name, frequencyDays, trackedCount, expected, actual, ratio: Double?) + `MethodRow` (method, count, percent)
+  - `StatsCalculator` — pure use case, no Core Data import. Filters `isTracked && !isPaused` for the expected denominator; returns `ratio = nil` when range < cadence frequency (UI shows "Range too short" instead of fake 0% or 100%). Over-performing ratios (>1.0) preserved in data; only visually capped
+  - `TouchEventRepository.fetchAll(since:)` — new range-scoped fetch, predicate `at >= since`, `fetchBatchSize = 200`, sort descending. Boundary inclusive (`>=`), verified with explicit test
+  - `StatsViewModel` — @MainActor, repo-injected. `fetchTracked(includePaused: false)` (post-simplify) so the calculator doesn't waste work on archived contacts. Reloads on `.onAppear`, on `.onChange(of: range)`, and on `.personDidChange` notification
+  - `StatsView` + `CadencePerformanceChart` (BarMark, range-scaled 0...1, ✓ Ahead pill when over, "Range too short" when nil ratio) + `MethodBreakdownChart` (donut SectorMark with `innerRadius: .ratio(0.6)` + adjacent legend). DS tokens throughout, no `colorScheme` conditionals, no fixed font sizes. Per-row/segment accessibility labels
+  - Empty states use the existing `EmptyStateView` component (caught by simplify pass)
+  - 21 new unit tests: `StatsCalculatorTests` (12) + `StatsViewModelTests` (4) + `CoreDataTouchEventRepositoryTests.fetchAll(since:)` (5)
+- [x] Code review (sub-agent): PASS — 0 blockers. 3 sub-70 informational notes only (unused `LoadState.failed`, unused `convenience init(dependencies:)`, defensive double-filter in calculator). None acted on
+- [x] Simplify pass (sub-agent): 3 changes pushed in commit `93b4e4f` — hoisted range-start math into `StatsRange.startDate(now:)` (was inlined in VM + calculator), reused existing `EmptyStateView` for empty/empty-for-range states, switched VM to `fetchTracked(includePaused: false)` instead of `fetchAll()`. All tests still green after
+- [x] Security review (sub-agent): PASS — 0 findings. Read-only Core Data fetch with parameterized predicate; no new network surface, no external input, no file I/O. Consistent with the "local-only iOS app = PASS by default" precedent
+- [ ] Manual QA — see PR #306 description for the 10-scenario checklist (Brad's morning pass)
+
+### Lessons captured from #138
+
+- **`@MainActor`-isolated init can't be used as a default arg in a non-MainActor struct init** under Swift 6 strict concurrency. SwiftUI `View` structs are NOT implicitly `@MainActor` for default-arg evaluation purposes. Symptom: "call to main actor-isolated initializer in a synchronous nonisolated context" on the View init's signature line. Fix: drop the default value and require callers to pass the VM explicitly — `StatsView(viewModel: StatsViewModel())`. Marking the init `@MainActor` does NOT fix it. `@autoclosure` also doesn't help because the default expression still has to type-check at the call site
+- **Apple Charts (`BarMark` / `SectorMark`) first-time integration**: `import Charts` only; deployment target 17.0 has it built-in. For horizontal bars use `BarMark(xStart:, xEnd:, y:)` + `.chartXScale(domain: 0...1)` to constrain a normalized range. For donut: `SectorMark(angle:innerRadius:)` with `.ratio(0.6)` inner radius reads lighter than a solid pie when paired with an adjacent legend. Per-mark `.foregroundStyle(Color)` works on both. Skip `accessibilityChartDescriptor` for simple charts — per-row/segment `.accessibilityLabel` is enough
+- **Hoist shared range/window math to the value object, not a private helper**: when a `@MainActor` VM and a pure use case both compute the same "rangeStart from now" math, put it on the range enum itself (e.g. `StatsRange.startDate(now:)`) — the use case stays pure, the VM uses it for the repo query, and the enum is the single source of truth. Caught by the simplify pass: don't let me ship the inlined duplicate next time
+- **Empty states have a reusable `EmptyStateView` component** — when a new view needs an empty/null-state placeholder, grep for `EmptyStateView` before building a fresh `VStack { Image; Text; Text }`. Existing component handles centering, padding, and Dynamic Type
+- **`.personDidChange` is the canonical "data may have changed" notification** in this app — posted by every touch-logging flow (`PersonDetailViewModel`, `BulkLogTouchUseCase` via repo, App Intents). Any new view that needs to refresh on touch logging should `.onReceive(NotificationCenter.default.publisher(for: .personDidChange))` — don't invent a new notification or subscribe to Core Data `didSave` directly
 
 ---
 
