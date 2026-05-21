@@ -10,6 +10,7 @@ import Foundation
 protocol TouchEventRepository {
     func fetch(id: UUID) -> TouchEvent?
     func fetchAll(for personId: UUID) -> [TouchEvent]
+    func fetchAll(since: Date?) -> [TouchEvent]
     func fetchMostRecent(for personId: UUID) -> TouchEvent?
     func save(_ touchEvent: TouchEvent) throws
     func batchSave(_ touchEvents: [TouchEvent]) throws
