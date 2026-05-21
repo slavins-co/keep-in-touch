@@ -383,7 +383,7 @@ private extension NotificationScheduler {
         for person in people {
             guard person.birthdayNotificationsEnabled else { continue }
             guard !person.notificationsMuted else { continue }
-            if !ignoreSnoozePause, let snoozedUntil = person.snoozedUntil, snoozedUntil > Date() { continue }
+            if !ignoreSnoozePause, person.isSnoozed() { continue }
 
             // Resolve birthday: stored first, then contact-sourced
             let birthday: Birthday?

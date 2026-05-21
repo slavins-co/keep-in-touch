@@ -147,7 +147,7 @@ struct PersonSettingsSection: View {
                     .font(DS.Typography.settingsRowLabel)
                     .foregroundStyle(DS.Colors.settingsItemLabel)
                 Spacer()
-                if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
+                if viewModel.person.isSnoozed(), let snoozedUntil = viewModel.person.snoozedUntil {
                     Text("Until \(snoozedUntil.formatted(date: .abbreviated, time: .omitted))")
                         .font(DS.Typography.settingsRowLabel)
                         .foregroundStyle(DS.Colors.settingsSnoozeActive)
@@ -160,7 +160,7 @@ struct PersonSettingsSection: View {
                 }
             }
 
-            if !(viewModel.person.snoozedUntil.map { $0 > Date() } ?? false) {
+            if !viewModel.person.isSnoozed() {
                 HStack(spacing: DS.Spacing.sm) {
                     snoozePill("3d") { snooze(days: 3) }
                     snoozePill("7d") { snooze(days: 7) }

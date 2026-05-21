@@ -191,7 +191,7 @@ struct PersonHeroSection: View {
             return "\(cadenceName) \u{00B7} Paused"
         }
 
-        if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
+        if viewModel.person.isSnoozed(), let snoozedUntil = viewModel.person.snoozedUntil {
             let formatted = Self.dueDateFormatter.string(from: snoozedUntil)
             return "\(cadenceName) \u{00B7} Snoozed until \(formatted)"
         }
@@ -218,7 +218,7 @@ struct PersonHeroSection: View {
         if viewModel.person.isPaused {
             return DS.Colors.textMuted
         }
-        if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
+        if viewModel.person.isSnoozed() {
             return DS.Colors.textMuted
         }
         return DS.Colors.statusColor(for: currentStatus)

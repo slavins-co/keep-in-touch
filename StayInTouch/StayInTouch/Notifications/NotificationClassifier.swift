@@ -38,7 +38,7 @@ enum NotificationClassifier {
         let calc = FrequencyCalculator(referenceDate: referenceDate)
         let cal = Calendar.current
 
-        for person in people where !person.isPaused && !person.notificationsMuted && !(person.snoozedUntil.map { $0 > referenceDate } ?? false) {
+        for person in people where !person.isPaused && !person.notificationsMuted && !person.isSnoozed(at: referenceDate) {
             guard let cadence = cadences.first(where: { $0.id == person.cadenceId }) else { continue }
             guard let dueDate = calc.effectiveDueDate(for: person, in: cadences) else { continue }
 

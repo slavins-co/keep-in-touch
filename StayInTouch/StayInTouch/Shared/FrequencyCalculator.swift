@@ -21,7 +21,7 @@ struct FrequencyCalculator {
         in cadences: [C]
     ) -> ContactStatus {
         if person.isPaused { return .onTrack }
-        if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return .onTrack }
+        if person.isSnoozed(at: referenceDate) { return .onTrack }
         guard let cadence = cadences.first(where: { $0.id == person.cadenceId }) else {
             return .onTrack
         }
@@ -45,7 +45,7 @@ struct FrequencyCalculator {
         in cadences: [C]
     ) -> Int {
         if person.isPaused { return 0 }
-        if let snoozedUntil = person.snoozedUntil, snoozedUntil > referenceDate { return 0 }
+        if person.isSnoozed(at: referenceDate) { return 0 }
         guard cadences.first(where: { $0.id == person.cadenceId }) != nil else {
             return 0
         }
