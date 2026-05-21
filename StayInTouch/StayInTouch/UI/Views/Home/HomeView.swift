@@ -115,7 +115,9 @@ struct HomeView: View {
             Text("Enable Contacts access in Settings to import contacts.")
         }
         .onAppear {
-            viewModel.load()
+            // `HomeViewModel.init` already triggers `load()`. Calling it again
+            // here would double-fetch on first cold render. Notification-driven
+            // reloads (`.personDidChange`, `.contactsDidSync`) still fire.
             viewModel.recordAppOpen()
         }
     }
