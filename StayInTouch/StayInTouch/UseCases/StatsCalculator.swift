@@ -18,7 +18,7 @@ struct StatsCalculator {
             return StatsSnapshot(range: range, generatedAt: now, state: .empty)
         }
 
-        let rangeStart = startOfRange(now: now, dayCount: range.dayCount)
+        let rangeStart = range.startDate(now: now)
         let eventsInRange = events.filter { $0.at >= rangeStart }
 
         let cadenceRows = cadences
@@ -47,14 +47,6 @@ struct StatsCalculator {
                 totalEvents: eventsInRange.count
             )
         )
-    }
-
-    // MARK: - Range math
-
-    private func startOfRange(now: Date, dayCount: Int) -> Date {
-        let calendar = Calendar.current
-        let start = calendar.startOfDay(for: now)
-        return calendar.date(byAdding: .day, value: -dayCount + 1, to: start) ?? now
     }
 
     // MARK: - Cadence row

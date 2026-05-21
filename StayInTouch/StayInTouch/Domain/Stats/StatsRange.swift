@@ -34,4 +34,11 @@ enum StatsRange: String, CaseIterable, Codable, Identifiable {
         case .days90: return "Best signal for Monthly and Quarterly cadences"
         }
     }
+
+    /// Inclusive day-aligned start of the range, anchored on `now`.
+    /// Single source of truth for "events at or after this date are in range."
+    func startDate(now: Date, calendar: Calendar = .current) -> Date {
+        let start = calendar.startOfDay(for: now)
+        return calendar.date(byAdding: .day, value: -dayCount + 1, to: start) ?? now
+    }
 }

@@ -63,34 +63,21 @@ struct StatsView: View {
     }
 
     private var emptyAllTime: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Image(systemName: "chart.bar.xaxis")
-                .font(.system(size: 44))
-                .foregroundStyle(DS.Colors.secondaryText)
-            Text("No data yet")
-                .font(DS.Typography.title)
-            Text("Log a few touches and check back \u{2014} insights appear here once you have history to summarize.")
-                .font(DS.Typography.metadata)
-                .foregroundStyle(DS.Colors.secondaryText)
-                .multilineTextAlignment(.center)
-        }
+        EmptyStateView(
+            title: "No data yet",
+            message: "Log a few touches and check back \u{2014} insights appear here once you have history to summarize.",
+            systemImage: "chart.bar.xaxis"
+        )
         .frame(maxWidth: .infinity)
         .padding(.vertical, DS.Spacing.xxxl)
     }
 
     private var emptyForRange: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "calendar.badge.exclamationmark")
-                .font(.system(size: 36))
-                .foregroundStyle(DS.Colors.secondaryText)
-            Text("No touches in this range")
-                .font(DS.Typography.title)
-            if viewModel.range == .days30 {
-                Text("Try expanding to 90 days.")
-                    .font(DS.Typography.metadata)
-                    .foregroundStyle(DS.Colors.secondaryText)
-            }
-        }
+        EmptyStateView(
+            title: "No touches in this range",
+            message: viewModel.range == .days30 ? "Try expanding to 90 days." : "",
+            systemImage: "calendar.badge.exclamationmark"
+        )
         .frame(maxWidth: .infinity)
         .padding(.vertical, DS.Spacing.xxl)
     }

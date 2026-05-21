@@ -53,9 +53,11 @@ final class StatsViewModel: ObservableObject {
     func load() {
         loadState = .loading
         let referenceDate = now()
-        let rangeStart = Calendar.current.date(byAdding: .day, value: -range.dayCount + 1, to: Calendar.current.startOfDay(for: referenceDate))
+        let rangeStart = range.startDate(now: referenceDate)
 
-        let people = personRepository.fetchAll()
+        // Tracked + non-paused only — matches what StatsCalculator scores against
+        // and avoids loading archived/paused contacts we'd just filter out.
+        let people = personRepository.fetchTracked(includePaused: false)
         let cadences = cadenceRepository.fetchAll()
         let events = touchEventRepository.fetchAll(since: rangeStart)
 
