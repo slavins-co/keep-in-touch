@@ -39,6 +39,7 @@ struct SettingsView: View {
             appearanceSection
             peopleSection
             notificationsSection
+            insightsSection
             dataSection
             aboutSection
             dangerZoneSection
@@ -325,6 +326,16 @@ struct SettingsView: View {
         Section("Notifications") {
             NavigationLink(destination: NotificationSettingsView(viewModel: viewModel)) {
                 Label("Notifications", systemImage: "bell.fill")
+            }
+        }
+    }
+
+    private var insightsSection: some View {
+        Section("Insights") {
+            NavigationLink {
+                StatsView(viewModel: StatsViewModel())
+            } label: {
+                Label("Stats & insights", systemImage: "chart.bar")
             }
         }
     }

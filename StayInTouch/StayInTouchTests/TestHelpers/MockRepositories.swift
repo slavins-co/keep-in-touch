@@ -110,6 +110,10 @@ class MockTouchEventRepository: TouchEventRepository {
     func fetchAll(for personId: UUID) -> [TouchEvent] {
         events.filter { $0.personId == personId }
     }
+    func fetchAll(since: Date?) -> [TouchEvent] {
+        let filtered = since.map { date in events.filter { $0.at >= date } } ?? events
+        return filtered.sorted { $0.at > $1.at }
+    }
     func fetchMostRecent(for personId: UUID) -> TouchEvent? {
         events.filter { $0.personId == personId }
             .sorted { $0.at > $1.at }

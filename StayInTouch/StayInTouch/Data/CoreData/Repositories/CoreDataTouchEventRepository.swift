@@ -36,6 +36,20 @@ final class CoreDataTouchEventRepository: TouchEventRepository {
         return results
     }
 
+    func fetchAll(since: Date?) -> [TouchEvent] {
+        var results: [TouchEvent] = []
+        context.performAndWait {
+            let request: NSFetchRequest<TouchEventEntity> = TouchEventEntity.fetchRequest()
+            if let since {
+                request.predicate = NSPredicate(format: "at >= %@", since as NSDate)
+            }
+            request.sortDescriptors = [NSSortDescriptor(key: "at", ascending: false)]
+            request.fetchBatchSize = 200
+            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
+        }
+        return results
+    }
+
     func fetchMostRecent(for personId: UUID) -> TouchEvent? {
         var result: TouchEvent?
         context.performAndWait {

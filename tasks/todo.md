@@ -40,7 +40,7 @@
 
 ### Tier 4 — Deferred to v0.4+
 
-Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architecture refactors (#203), ~~VoiceOver picker/editor sheets (#197)~~, full VoiceOver audit (#39), widget (#60), Siri Shortcuts (#80), iCloud sync (#79), iPad layout (#78), localization (#77), stats page (#138), tutorial (#10), UX direction (#45), design polish (#41, #42, #44).
+Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architecture refactors (#203), ~~VoiceOver picker/editor sheets (#197)~~, full VoiceOver audit (#39), widget (#60), ~~Siri Shortcuts (#80)~~ (superseded by #304 — App Intents v1 shipped in PR #305), iCloud sync (#79), iPad layout (#78), localization (#77), stats page (#138), tutorial (#10), UX direction (#45), design polish (#41, #42, #44).
 
 > **Note:** #34, #37, #231 are CLOSED on GitHub (closed as won't implement in v0.3.x). #214, #215, #216, #168 completed in v0.3.4 work.
 
@@ -51,6 +51,45 @@ Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architect
 - [ ] **#68** App Store submission checklist
 - [ ] **#69** TestFlight beta validation plan
 - [ ] **#70** Validate core loop retention during beta
+
+---
+
+## Completed — Session 2026-05-20 (Issue #304: App Intents v1 for iOS Shortcuts)
+
+- [x] **#304** Expose Keep In Touch's core actions as App Intents — PR #305 (pending manual QA / merge)
+  - `LogTouchIntent` — log a touch via Siri / Shortcuts / Action Button / Spotlight. Reuses `BulkLogTouchUseCase.applyTouch` via a thin `IntentActions` facade — same headline-recompute helper as `PersonDetailViewModel.logTouch`, zero logic duplication
+  - `GetOverdueContactsIntent` / `GetDueSoonContactsIntent` — return `[PersonAppEntity]` for Shortcut chains. Due-soon uses `PersonStatusService.dueSoonPeople` (same classifier as Home tab)
+  - `OpenPersonIntent` — deep-links via existing `DeepLinkRouter.shared.pending`; stale-id fallback routes to Home and throws `IntentError.personNotFound`
+  - `KeepInTouchShortcuts: AppShortcutsProvider` — curated phrases for Spotlight / Siri discoverability (one parameter per phrase per Apple's metadata processor)
+  - `IntentContainer` — lazy DI singleton with `install` / `reset` / `make` test seam. Memberwise init added to `AppDependencies` for mock injection
+  - `PersonAppEntity` + `PersonAppEntityQuery` (`EntityStringQuery`) with capped `suggestedEntities()` (12 most-recent) to keep Siri cold launches snappy
+  - `TouchMethod.verb` lives next to the AppEnum case mapping — single source of truth for "Logged a {verb} with X" dialog phrasing across any future intent
+  - `PersonListDialog.make(...)` — shared zero/one/many phrasing helper for GetOverdue + GetDueSoon, ready for any future query intent
+  - 24 new unit tests: LogTouchIntent (6) + IntentActions (2) + PersonAppEntityQuery (6) + OpenPersonIntent (2) + GetOverdue (3) + GetDueSoon (2) + IntentContainer (3)
+- [x] Code review: PASS — 0 blockers (no 70+ findings). 5 sub-70 polish items fixed inline (redundant Set check, RelativeDateTimeFormatter hoisted to static, analytics test seam, divergence comment honesty, phrase-limit doc)
+- [x] Simplify pass (reuse + quality + efficiency, 3 parallel agents): PASS — 0 blockers. Moved `methodVerb` to `TouchMethod.verb`, extracted `PersonListDialog`, capped `suggestedEntities`, parallelized GetDueSoon's two fetches via `async let`
+- [x] Security review (run via sub-agent wrapper for autonomy resilience): PASS — 0 findings (critical/high/medium/low). All 9 threat-model surfaces cleared
+- [ ] Manual QA — see PR #305 description for the 8-scenario checklist (Brad's morning pass)
+
+### Follow-ups deferred from #304 (v2 candidates)
+
+- [ ] **v2 toggles**: SnoozePerson, PausePerson, ResumePerson, MuteNotifications, UnmuteNotifications — file as one consolidated issue
+- [ ] `SetCustomDueDateIntent`, `AddPersonToGroupIntent` — admin-grade automation; file individually if requested
+- [ ] `MarkContactedTodayIntent` — users can build via `LogTouchIntent` + default method in Shortcuts editor
+- [ ] `GetLastTouchIntent` — `PersonAppEntity.lastTouchAt` already exposed; defer unless users ask
+- [ ] `OpenGroupIntent` — low value; defer
+- [ ] Move `GroupAppEntity` to `Shared/` for both widget + main app — only needed when v2 adds Group-parameter intents
+- [ ] Siri intent **donations** (`IntentDonationManager`) for on-device prediction — file when v1 usage is observed
+- [ ] Custom result snippet views (e.g. streak SwiftUI view in LogTouch confirmation) — defer until dogfooding shows the plain dialog feels thin
+- [ ] Interactive widgets / Control Center controls (issue #24 lives downstream of this)
+- [ ] Focus filter integration, Apple Watch shortcuts, localization beyond English
+
+### Lessons captured from #304
+
+- App Intent phrases support exactly ONE `@Parameter` slot. Multi-parameter invocations must be entered via the Shortcuts editor; the metadata processor errors out at build time. Don't waste a phrase slot on `"Log a {method} with {person}"` — pick the single best slot per phrase
+- Widget refresh is wired at the **repository layer** (`CoreDataPersonRepository.save/batchSave/delete`), not just in `BulkLogTouchUseCase`. Single-touch paths get widget refresh for free — don't add redundant `WidgetRefresher.reloadAllTimelines()` calls at view-model or use-case layer
+- Wrap `/security-review` in a spawned `Agent` sub-agent when running it inside an autonomous loop. The skill has a known failure mode where it exits without posting a PR comment; the parent agent can recover by reading the sub-agent's text result and posting itself
+- Core Data attribute names lag the domain rename: `PersonEntity.cadenceId` is named `groupId` in the .xcdatamodel, and `GroupEntity` (Core Data) maps to domain `Cadence`, while `TagEntity` (Core Data) maps to domain `Group`. Read the mapping files (`Data/CoreData/Mappings/`) before writing predicates against entity names
 
 ---
 

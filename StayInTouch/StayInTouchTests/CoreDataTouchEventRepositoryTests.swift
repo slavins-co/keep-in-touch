@@ -71,6 +71,60 @@ final class CoreDataTouchEventRepositoryTests: XCTestCase {
         XCTAssertNil(repo.fetchMostRecent(for: UUID()))
     }
 
+    // MARK: - fetchAll(since:)
+
+    func testFetchAllSinceNilReturnsAllEvents() throws {
+        let personA = UUID()
+        let personB = UUID()
+        try repo.save(TestFactory.makeTouchEvent(personId: personA, at: Date(timeIntervalSince1970: 1_000_000)))
+        try repo.save(TestFactory.makeTouchEvent(personId: personB, at: Date(timeIntervalSince1970: 2_000_000)))
+
+        let results = repo.fetchAll(since: nil)
+        XCTAssertEqual(results.count, 2)
+    }
+
+    func testFetchAllSinceFiltersOutOlderEvents() throws {
+        let personId = UUID()
+        let oldDate = Date(timeIntervalSince1970: 1_000_000)
+        let newDate = Date(timeIntervalSince1970: 2_000_000)
+        let cutoff = Date(timeIntervalSince1970: 1_500_000)
+
+        try repo.save(TestFactory.makeTouchEvent(personId: personId, at: oldDate))
+        try repo.save(TestFactory.makeTouchEvent(personId: personId, at: newDate))
+
+        let results = repo.fetchAll(since: cutoff)
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first?.at, newDate)
+    }
+
+    func testFetchAllSinceReturnsDescendingByDate() throws {
+        let personId = UUID()
+        let oldest = TestFactory.makeTouchEvent(personId: personId, at: Date(timeIntervalSince1970: 1_000_000))
+        let middle = TestFactory.makeTouchEvent(personId: personId, at: Date(timeIntervalSince1970: 1_500_000))
+        let newest = TestFactory.makeTouchEvent(personId: personId, at: Date(timeIntervalSince1970: 2_000_000))
+
+        try repo.save(middle)
+        try repo.save(newest)
+        try repo.save(oldest)
+
+        let results = repo.fetchAll(since: nil)
+        XCTAssertEqual(results.map(\.at), [newest.at, middle.at, oldest.at])
+    }
+
+    func testFetchAllSinceOnEmptyReturnsEmpty() {
+        XCTAssertTrue(repo.fetchAll(since: nil).isEmpty)
+        XCTAssertTrue(repo.fetchAll(since: Date()).isEmpty)
+    }
+
+    func testFetchAllSinceIncludesEventAtExactBoundary() throws {
+        let personId = UUID()
+        let boundary = Date(timeIntervalSince1970: 1_500_000)
+        try repo.save(TestFactory.makeTouchEvent(personId: personId, at: boundary))
+
+        let results = repo.fetchAll(since: boundary)
+        XCTAssertEqual(results.count, 1, "Predicate is >= so an event at the exact boundary should be included")
+    }
+
     // MARK: - Save / Batch
 
     func testBatchSaveMultipleEvents() throws {
