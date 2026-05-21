@@ -350,7 +350,7 @@ enum DS {
                 return (Color(hex: hex), .white)
             }
 
-            let normalized = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted).uppercased()
+            let normalized = Color.normalize(hex: hex).uppercased()
             switch normalized {
             case "6BCB77":  // Green
                 return (Color(hex: "2D5040"), Color(hex: "4ADE80"))
