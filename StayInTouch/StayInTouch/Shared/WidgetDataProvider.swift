@@ -263,9 +263,7 @@ enum WidgetDataProvider {
         case .overdue:
             return .overdue(daysOverdue: calc.daysOverdue(for: slaPerson, in: cadences))
         case .dueSoon:
-            guard let dueDate = calc.effectiveDueDate(for: slaPerson, in: cadences) else { return nil }
-            let cal = Calendar.current
-            let daysUntil = cal.dateComponents([.day], from: cal.startOfDay(for: now), to: cal.startOfDay(for: dueDate)).day ?? 0
+            guard let daysUntil = calc.daysUntilDue(for: slaPerson, in: cadences) else { return nil }
             return .dueSoon(daysUntilDue: max(0, daysUntil))
         case .onTrack, .unknown:
             return nil

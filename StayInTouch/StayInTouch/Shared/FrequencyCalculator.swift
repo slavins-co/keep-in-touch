@@ -93,7 +93,28 @@ struct FrequencyCalculator {
         return calendarDaysBetween(from: lastTouch, to: referenceDate)
     }
 
-    private func calendarDaysBetween(from: Date, to: Date) -> Int {
+    /// Calendar-day difference between `referenceDate` and the person's
+    /// effective due date. Negative when overdue, zero when due today,
+    /// positive when due in the future. Returns `nil` when no due date can
+    /// be resolved (no matching cadence, no last-touch and no custom date).
+    /// Single source of truth — replaces the inline
+    /// `cal.dateComponents([.day], from: startOfDay(...), to: startOfDay(...))`
+    /// pattern that was duplicated across NotificationClassifier,
+    /// PersonStatusService, WidgetDataProvider, and PersonHeroSection (see
+    /// issue #307, audit finding R3).
+    func daysUntilDue<P: FrequencyCalculatorPerson, C: FrequencyCalculatorCadence>(
+        for person: P,
+        in cadences: [C]
+    ) -> Int? {
+        guard let dueDate = effectiveDueDate(for: person, in: cadences) else { return nil }
+        return calendarDaysBetween(from: referenceDate, to: dueDate)
+    }
+
+    /// Calendar-day difference (startOfDay-aligned) between two dates.
+    /// Promoted from `private` so callers outside `FrequencyCalculator`
+    /// can route through it instead of reimplementing the same
+    /// `dateComponents([.day], …)` boilerplate.
+    func calendarDaysBetween(from: Date, to: Date) -> Int {
         let cal = Calendar.current
         return cal.dateComponents([.day], from: cal.startOfDay(for: from), to: cal.startOfDay(for: to)).day ?? 0
     }

@@ -36,13 +36,11 @@ enum NotificationClassifier {
         var customOverrides: [CustomNotification] = []
 
         let calc = FrequencyCalculator(referenceDate: referenceDate)
-        let cal = Calendar.current
 
         for person in people where !person.isPaused && !person.notificationsMuted && !person.isSnoozed(at: referenceDate) {
             guard let cadence = cadences.first(where: { $0.id == person.cadenceId }) else { continue }
-            guard let dueDate = calc.effectiveDueDate(for: person, in: cadences) else { continue }
+            guard let daysUntilDue = calc.daysUntilDue(for: person, in: cadences) else { continue }
 
-            let daysUntilDue = cal.dateComponents([.day], from: cal.startOfDay(for: referenceDate), to: cal.startOfDay(for: dueDate)).day ?? 0
             let type: DailyNotificationType?
             if daysUntilDue < 0 {
                 type = .overdue
