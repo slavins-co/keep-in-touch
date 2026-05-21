@@ -35,15 +35,6 @@ extension TouchEventEntity {
         }
     }
 
-    /// Returns `value` if non-nil; otherwise logs a data-corruption warning and returns the fallback.
-    private func requiredField<T>(_ value: T?, entity: String, field: String, fallback: @autoclosure () -> T) -> T {
-        guard let value else {
-            AppLogger.logWarning("\(entity) has nil required field '\(field)' — possible data corruption", category: AppLogger.coreData)
-            return fallback()
-        }
-        return value
-    }
-
     func apply(_ touchEvent: TouchEvent) {
         id = touchEvent.id
         personId = touchEvent.personId
