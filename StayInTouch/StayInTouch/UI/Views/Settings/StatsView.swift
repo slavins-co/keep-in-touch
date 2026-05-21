@@ -25,7 +25,11 @@ struct StatsView: View {
         .navigationTitle("Insights")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { viewModel.load() }
-        .onChange(of: viewModel.range) { _, _ in viewModel.load() }
+        .onChange(of: viewModel.range) { _, _ in
+            withAnimation(.easeInOut(duration: 0.35)) {
+                viewModel.load()
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
             viewModel.load()
         }
