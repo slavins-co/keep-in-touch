@@ -69,7 +69,7 @@ struct StatsView: View {
     private var emptyAllTime: some View {
         EmptyStateView(
             title: "No data yet",
-            message: "Log a few touches and check back \u{2014} insights appear here once you have history to summarize.",
+            message: "Log a few connections and check back \u{2014} insights appear here once you have history to summarize.",
             systemImage: "chart.bar.xaxis"
         )
         .frame(maxWidth: .infinity)
@@ -78,7 +78,7 @@ struct StatsView: View {
 
     private var emptyForRange: some View {
         EmptyStateView(
-            title: "No touches in this range",
+            title: "No connections in this range",
             message: viewModel.range == .days30 ? "Try expanding to 90 days." : "",
             systemImage: "calendar.badge.exclamationmark"
         )

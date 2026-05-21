@@ -137,7 +137,7 @@ struct CadencePerformanceChart: View {
     private func accessibilityLabel(for row: StatsSnapshot.CadenceRow) -> String {
         if let ratio = row.ratio, row.expected > 0 {
             let pct = Int((ratio * 100).rounded())
-            return "\(row.name) frequency: \(row.actual) of \(row.expected) expected touches, \(pct) percent"
+            return "\(row.name) frequency: \(row.actual) of \(row.expected) expected connections, \(pct) percent"
         }
         if row.trackedCount == 0 {
             return "\(row.name) frequency: no tracked contacts"

@@ -15,7 +15,7 @@ struct MethodBreakdownChart: View {
             sectionHeader
 
             if rows.isEmpty {
-                Text("No touches in this range.")
+                Text("No connections in this range.")
                     .font(DS.Typography.metadata)
                     .foregroundStyle(DS.Colors.secondaryText)
                     .padding(.vertical, DS.Spacing.md)
@@ -35,7 +35,7 @@ struct MethodBreakdownChart: View {
         VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
             Text("How you showed up")
                 .font(DS.Typography.title)
-            Text("Breakdown of \(totalEvents) touch\(totalEvents == 1 ? "" : "es") by method.")
+            Text("Breakdown of \(totalEvents) connection\(totalEvents == 1 ? "" : "s") by method.")
                 .font(DS.Typography.caption)
                 .foregroundStyle(DS.Colors.secondaryText)
         }
@@ -70,7 +70,7 @@ struct MethodBreakdownChart: View {
                         .foregroundStyle(DS.Colors.secondaryText)
                 }
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(row.method.rawValue): \(row.count) touch\(row.count == 1 ? "" : "es"), \(Int((row.percent * 100).rounded())) percent")
+                .accessibilityLabel("\(row.method.rawValue): \(row.count) connection\(row.count == 1 ? "" : "s"), \(Int((row.percent * 100).rounded())) percent")
             }
         }
     }
