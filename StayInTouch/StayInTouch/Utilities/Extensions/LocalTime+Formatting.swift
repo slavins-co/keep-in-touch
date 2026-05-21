@@ -8,6 +8,16 @@
 import Foundation
 
 extension LocalTime {
+    /// Cached short-time formatter. DateFormatter instances are expensive to
+    /// initialize (~10ms first call); hoisting to a static reuses one instance
+    /// across all `formatted` calls. Safe: we only read (`string(from:)`),
+    /// never mutate configuration after init.
+    private static let shortTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
     func toDate(reference: Date = Date()) -> Date {
         var components = Calendar.current.dateComponents([.year, .month, .day], from: reference)
         components.hour = hour
@@ -21,9 +31,7 @@ extension LocalTime {
     }
 
     var formatted: String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: toDate())
+        Self.shortTimeFormatter.string(from: toDate())
     }
 }
 
