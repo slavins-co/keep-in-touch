@@ -6,11 +6,9 @@
 //
 
 import SwiftUI
-import UIKit
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
-    @Environment(\.openURL) private var openURL
     @StateObject private var viewModel = SettingsViewModel()
 
     @State private var shareItem: ShareItem?
@@ -61,31 +59,11 @@ struct SettingsView: View {
                 }
             }
         }
-        .alert("No New Contacts", isPresented: $showNoNewContactsAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("You're already up to date.")
-        }
-        .alert("Limited Contact Access", isPresented: $showLimitedAccessAlert) {
-            Button("Open Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    openURL(url)
-                }
-            }
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("You've imported all the contacts you gave access to. To add more, open Settings \u{2192} Keep In Touch \u{2192} Contacts and select additional contacts or grant full access.")
-        }
-        .alert("Contacts Access Required", isPresented: $showContactsSettingsAlert) {
-            Button("Open Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    openURL(url)
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Enable Contacts access in Settings to import contacts.")
-        }
+        .contactAccessAlerts(
+            showNoNewContacts: $showNoNewContactsAlert,
+            showLimitedAccess: $showLimitedAccessAlert,
+            showContactsSettings: $showContactsSettingsAlert
+        )
         .alert("Reset Feature Tips?", isPresented: $showResetTipsConfirm) {
             Button("Reset", role: .destructive) { viewModel.resetFeatureTips() }
             Button("Cancel", role: .cancel) {}
