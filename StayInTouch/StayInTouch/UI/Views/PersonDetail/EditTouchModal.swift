@@ -37,17 +37,10 @@ struct EditTouchModal: View {
 
                 TouchMethodPicker(selection: $selectedMethod)
 
-                Picker("Time of Day", selection: $selectedTimeOfDay) {
-                    Text("None").tag(TimeOfDay?.none)
-                    ForEach(TimeOfDay.allCases, id: \.self) { time in
-                        Text(time.rawValue).tag(TimeOfDay?.some(time))
-                    }
-                }
-
-                TextField("Notes", text: $notes, axis: .vertical)
-                    .onChange(of: notes) { _, newValue in
-                        if newValue.count > 500 { notes = String(newValue.prefix(500)) }
-                    }
+                TouchTimeAndNotesFields(
+                    selectedTimeOfDay: $selectedTimeOfDay,
+                    notes: $notes
+                )
 
                 if onDelete != nil {
                     Section {
