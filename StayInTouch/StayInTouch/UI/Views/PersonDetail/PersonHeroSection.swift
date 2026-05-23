@@ -178,10 +178,7 @@ struct PersonHeroSection: View {
 
     private var daysUntilDue: Int {
         guard let cadence = viewModel.cadence else { return 0 }
-        let calculator = FrequencyCalculator()
-        guard let dueDate = calculator.effectiveDueDate(for: viewModel.person, in: [cadence]) else { return 0 }
-        let cal = Calendar.current
-        return max(0, cal.dateComponents([.day], from: cal.startOfDay(for: Date()), to: cal.startOfDay(for: dueDate)).day ?? 0)
+        return max(0, FrequencyCalculator().daysUntilDue(for: viewModel.person, in: [cadence]) ?? 0)
     }
 
     private func statusLabel() -> String {
@@ -191,7 +188,7 @@ struct PersonHeroSection: View {
             return "\(cadenceName) \u{00B7} Paused"
         }
 
-        if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
+        if viewModel.person.isSnoozed(), let snoozedUntil = viewModel.person.snoozedUntil {
             let formatted = Self.dueDateFormatter.string(from: snoozedUntil)
             return "\(cadenceName) \u{00B7} Snoozed until \(formatted)"
         }
@@ -218,7 +215,7 @@ struct PersonHeroSection: View {
         if viewModel.person.isPaused {
             return DS.Colors.textMuted
         }
-        if let snoozedUntil = viewModel.person.snoozedUntil, snoozedUntil > Date() {
+        if viewModel.person.isSnoozed() {
             return DS.Colors.textMuted
         }
         return DS.Colors.statusColor(for: currentStatus)

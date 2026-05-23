@@ -52,8 +52,6 @@ struct PersonStatusService {
     }
 
     private func daysUntilDue(for person: Person, cadences: [Cadence]) -> Int {
-        guard let dueDate = calculator.effectiveDueDate(for: person, in: cadences) else { return Int.max }
-        let cal = Calendar.current
-        return cal.dateComponents([.day], from: cal.startOfDay(for: calculator.referenceDate), to: cal.startOfDay(for: dueDate)).day ?? Int.max
+        calculator.daysUntilDue(for: person, in: cadences) ?? Int.max
     }
 }

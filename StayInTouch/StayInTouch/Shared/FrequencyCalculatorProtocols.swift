@@ -19,6 +19,19 @@ protocol FrequencyCalculatorPerson {
     var cadenceAddedAt: Date? { get }
 }
 
+extension FrequencyCalculatorPerson {
+    /// Whether this person is currently snoozed at the given moment.
+    /// Returns `true` only when `snoozedUntil` is set and is strictly in
+    /// the future relative to `date`. Single source of truth — every
+    /// caller that previously inlined `if let s = snoozedUntil, s > Date()`
+    /// or `snoozedUntil.map { $0 > Date() } ?? false` should route through
+    /// this method (see issue #307, audit finding R4).
+    func isSnoozed(at date: Date = Date()) -> Bool {
+        guard let snoozedUntil else { return false }
+        return snoozedUntil > date
+    }
+}
+
 protocol FrequencyCalculatorCadence {
     var id: UUID { get }
     var frequencyDays: Int { get }

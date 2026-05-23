@@ -9,8 +9,17 @@
 import SwiftUI
 
 extension Color {
+    /// Strips non-alphanumeric characters (e.g. leading `#`, whitespace) from
+    /// a hex color string. Single source of truth — replaces inline
+    /// `hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)` calls
+    /// (see issue #307, audit finding R8). Does NOT change case; callers that
+    /// need uppercase form should chain `.uppercased()` themselves.
+    static func normalize(hex: String) -> String {
+        hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+    }
+
     init(hex: String) {
-        let cleaned = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        let cleaned = Color.normalize(hex: hex)
         var int: UInt64 = 0
         Scanner(string: cleaned).scanHexInt64(&int)
         let a, r, g, b: UInt64

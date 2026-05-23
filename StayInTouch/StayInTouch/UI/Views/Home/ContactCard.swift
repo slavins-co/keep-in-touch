@@ -102,7 +102,7 @@ struct ContactCard: View {
             Label("Paused", systemImage: "moon.fill")
                 .font(DS.Typography.contactCardMeta)
                 .foregroundStyle(Color(.tertiaryLabel))
-        } else if let snoozed = person.snoozedUntil, snoozed > Date() {
+        } else if person.isSnoozed() {
             Text("Snoozed \u{00B7} \(frequencyName)")
                 .font(DS.Typography.contactCardMeta)
                 .foregroundStyle(DS.Colors.textMuted)
@@ -122,7 +122,7 @@ struct ContactCard: View {
             Image(systemName: "moon.fill")
                 .font(.system(size: 12))
                 .foregroundStyle(Color(.tertiaryLabel))
-        } else if let snoozed = person.snoozedUntil, snoozed > Date() {
+        } else if person.isSnoozed() {
             Image(systemName: "clock.fill")
                 .font(.system(size: 12))
                 .foregroundStyle(DS.Colors.textMuted)
@@ -157,7 +157,7 @@ struct ContactCard: View {
 
         if person.isPaused {
             parts.append("paused")
-        } else if let snoozed = person.snoozedUntil, snoozed > Date() {
+        } else if person.isSnoozed() {
             parts.append("snoozed")
         } else {
             switch status {
