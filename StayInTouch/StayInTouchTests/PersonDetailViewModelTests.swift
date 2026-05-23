@@ -558,4 +558,60 @@ final class PersonDetailViewModelTests: XCTestCase {
         XCTAssertNil(previewVM.openEmailAction())
         XCTAssertNil(previewVM.routeActionWithValue(.call, value: "+15551234567"))
     }
+
+    // MARK: - In-Place Updates (Issue #311 / E1)
+
+    /// Simple field mutations (toggle pause, mute notifications, etc.) used to
+    /// trigger a full `load()`, refetching cadences, groups, and touch events.
+    /// In-place updates only touch caches whose inputs actually changed.
+    func test_simpleMutation_doesNotRefetchUnrelatedState() {
+        // Reset counters after init's load() call.
+        cadenceRepo.fetchAllCallCount = 0
+        touchRepo.fetchAllForPersonCallCount = 0
+
+        sut.setNotificationsMuted(true)
+
+        XCTAssertTrue(sut.person.notificationsMuted, "Mutation should still update person in place")
+        XCTAssertEqual(cadenceRepo.fetchAllCallCount, 0,
+            "Toggling notifications-muted should not refetch all cadences")
+        XCTAssertEqual(touchRepo.fetchAllForPersonCallCount, 0,
+            "Toggling notifications-muted should not refetch touch events")
+    }
+
+    func test_togglePause_doesNotRefetchUnrelatedState() {
+        cadenceRepo.fetchAllCallCount = 0
+        touchRepo.fetchAllForPersonCallCount = 0
+
+        sut.togglePause()
+
+        XCTAssertTrue(sut.person.isPaused)
+        XCTAssertEqual(cadenceRepo.fetchAllCallCount, 0)
+        XCTAssertEqual(touchRepo.fetchAllForPersonCallCount, 0)
+    }
+
+    func test_changeCadence_refreshesCadenceCache() {
+        let newCadence = TestFactory.makeCadence(name: "Monthly", frequencyDays: 30)
+        cadenceRepo.cadences.append(newCadence)
+
+        sut.changeCadence(to: newCadence.id)
+
+        // Cadence cache should reflect the new selection without a full reload.
+        XCTAssertEqual(sut.cadence?.id, newCadence.id)
+        XCTAssertEqual(sut.person.cadenceId, newCadence.id)
+    }
+
+    func test_addGroup_refreshesAvailableGroups() {
+        let groupA = TestFactory.makeGroup(name: "A")
+        let groupB = TestFactory.makeGroup(name: "B")
+        groupRepo.groups = [groupA, groupB]
+        sut.load()
+
+        XCTAssertEqual(sut.availableGroups.count, 2)
+
+        sut.addGroup(groupA)
+
+        XCTAssertTrue(sut.person.groupIds.contains(groupA.id))
+        XCTAssertEqual(sut.availableGroups.count, 1, "availableGroups should refresh in-place when groupIds changes")
+        XCTAssertEqual(sut.availableGroups.first?.id, groupB.id)
+    }
 }

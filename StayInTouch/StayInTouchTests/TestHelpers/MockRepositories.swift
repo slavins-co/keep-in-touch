@@ -58,9 +58,13 @@ final class MockPersonRepository: PersonRepository {
 
 final class MockCadenceRepository: CadenceRepository {
     var cadences: [Cadence] = []
+    var fetchAllCallCount = 0
 
     func fetch(id: UUID) -> Cadence? { cadences.first { $0.id == id } }
-    func fetchAll() -> [Cadence] { cadences }
+    func fetchAll() -> [Cadence] {
+        fetchAllCallCount += 1
+        return cadences
+    }
     func fetchDefaultCadences() -> [Cadence] { cadences.filter { $0.isDefault } }
     func save(_ cadence: Cadence) throws {
         if let idx = cadences.firstIndex(where: { $0.id == cadence.id }) {
@@ -105,10 +109,12 @@ class MockTouchEventRepository: TouchEventRepository {
     var events: [TouchEvent] = []
     var savedEvents: [TouchEvent] = []
     var deletedIds: [UUID] = []
+    var fetchAllForPersonCallCount = 0
 
     func fetch(id: UUID) -> TouchEvent? { events.first { $0.id == id } }
     func fetchAll(for personId: UUID) -> [TouchEvent] {
-        events.filter { $0.personId == personId }
+        fetchAllForPersonCallCount += 1
+        return events.filter { $0.personId == personId }
     }
     func fetchAll(since: Date?) -> [TouchEvent] {
         let filtered = since.map { date in events.filter { $0.at >= date } } ?? events
