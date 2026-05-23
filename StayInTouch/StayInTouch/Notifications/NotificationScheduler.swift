@@ -115,17 +115,20 @@ final class NotificationScheduler {
         stopObserving()
         registerCategories()
 
+        // Deliver on .main so scheduleAllDebounced()'s access to the
+        // shared pendingScheduleTask is serialized — observer posts can
+        // originate from any thread, and the debouncer mutates shared state.
         settingsObserver = NotificationCenter.default.addObserver(
             forName: .settingsDidChange,
             object: nil,
-            queue: nil
+            queue: .main
         ) { [weak self] _ in
             self?.scheduleAllDebounced()
         }
         personObserver = NotificationCenter.default.addObserver(
             forName: .personDidChange,
             object: nil,
-            queue: nil
+            queue: .main
         ) { [weak self] _ in
             self?.scheduleAllDebounced()
         }
