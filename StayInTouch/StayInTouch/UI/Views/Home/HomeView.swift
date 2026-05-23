@@ -370,7 +370,7 @@ struct HomeView: View {
                             groupsById: groupsById,
                             statusForPerson: { _ in .overdue },
                             daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
-                            timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
+                            timeAgoForPerson: { calculator.timeAgoText(for: $0) },
                             selectPerson: selectPerson,
                             coordinator: selectionCoordinator
                         )
@@ -384,7 +384,7 @@ struct HomeView: View {
                             groupsById: groupsById,
                             statusForPerson: { _ in .dueSoon },
                             daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
-                            timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
+                            timeAgoForPerson: { calculator.timeAgoText(for: $0) },
                             selectPerson: selectPerson,
                             coordinator: selectionCoordinator
                         )
@@ -399,7 +399,7 @@ struct HomeView: View {
                         groupsById: groupsById,
                         statusForPerson: { _ in .onTrack },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
-                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
+                        timeAgoForPerson: { calculator.timeAgoText(for: $0) },
                         selectPerson: selectPerson,
                         coordinator: selectionCoordinator
                     )
@@ -452,10 +452,4 @@ struct HomeView: View {
         }
     }
 
-    private func timeAgoText(for person: Person, calculator: FrequencyCalculator) -> String {
-        let days = calculator.daysSinceLastTouch(for: person)
-        guard let days else { return "No contact" }
-        if days == 0 { return "Today" }
-        return "\(days)d ago"
-    }
 }

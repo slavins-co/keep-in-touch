@@ -146,7 +146,7 @@ struct ContactsListView: View {
                                         frequencyName: frequencyName,
                                         status: calculator.status(for: person, in: viewModel.cadences),
                                         daysOverdue: calculator.daysOverdue(for: person, in: viewModel.cadences),
-                                        timeAgo: timeAgoText(for: person, calculator: calculator),
+                                        timeAgo: calculator.timeAgoText(for: person),
                                         lastMethod: person.lastTouchMethod,
                                         groups: personGroups,
                                         isSelected: inSelectMode ? selectionCoordinator.contains(person.id) : nil
@@ -225,12 +225,4 @@ struct ContactsListView: View {
         FloatingSearchBar(text: $searchText)
     }
 
-    // MARK: - Helpers
-
-    private func timeAgoText(for person: Person, calculator: FrequencyCalculator) -> String {
-        let days = calculator.daysSinceLastTouch(for: person)
-        guard let days else { return "No contact" }
-        if days == 0 { return "Today" }
-        return "\(days)d ago"
-    }
 }
