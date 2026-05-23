@@ -11,7 +11,6 @@ struct ContactsListView: View {
     var recentGroups: [RecentGroup]
     var selectPerson: (Person) -> Void
     @State private var searchText = ""
-    @FocusState private var isSearchFocused: Bool
 
     // MARK: - Computed Data
 
@@ -223,56 +222,7 @@ struct ContactsListView: View {
     // MARK: - Search Bar
 
     private var contactsSearchBar: some View {
-        VStack(spacing: 0) {
-            LinearGradient(
-                colors: [DS.Colors.pageBg.opacity(0), DS.Colors.pageBg],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 20)
-
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(DS.Colors.searchBarIcon)
-                TextField(
-                    "Search contacts...",
-                    text: $searchText
-                )
-                .textFieldStyle(.plain)
-                .focused($isSearchFocused)
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(DS.Colors.tertiaryText)
-                    }
-                    .accessibilityLabel("Clear search")
-                }
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .background(DS.Colors.searchBarBackground)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(
-                        isSearchFocused
-                            ? DS.Colors.searchBarFocusRing
-                            : DS.Colors.searchBarBorder,
-                        lineWidth: isSearchFocused ? 2 : 1
-                    )
-            )
-            .shadow(
-                color: DS.Colors.searchBarShadow,
-                radius: 8,
-                y: 2
-            )
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.bottom, DS.Spacing.lg)
-            .frame(maxWidth: .infinity)
-            .background(DS.Colors.pageBg)
-        }
+        FloatingSearchBar(text: $searchText)
     }
 
     // MARK: - Helpers

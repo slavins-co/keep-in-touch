@@ -22,7 +22,6 @@ struct HomeView: View {
     @State private var showNoNewContactsAlert = false
     @State private var showLimitedAccessAlert = false
     @State private var showContactsSettingsAlert = false
-    @FocusState private var isSearchFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -312,60 +311,16 @@ struct HomeView: View {
     // MARK: - Search Bar (Floating)
 
     private var floatingSearchBar: some View {
-        VStack(spacing: 0) {
-            LinearGradient(
-                colors: [DS.Colors.pageBg.opacity(0), DS.Colors.pageBg],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 20)
-
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(DS.Colors.searchBarIcon)
-                TextField(
-                    "Search contacts...",
-                    text: Binding(
-                        get: { viewModel.searchText },
-                        set: { viewModel.updateSearchText(String($0.prefix(100))) }
-                    )
-                )
-                .textFieldStyle(.plain)
-                .focused($isSearchFocused)
-                if !viewModel.searchText.isEmpty {
-                    Button {
-                        viewModel.updateSearchText("")
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(DS.Colors.tertiaryText)
-                    }
-                    .accessibilityLabel("Clear search")
-                }
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .background(DS.Colors.searchBarBackground)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(
-                        isSearchFocused
-                            ? DS.Colors.searchBarFocusRing
-                            : DS.Colors.searchBarBorder,
-                        lineWidth: isSearchFocused ? 2 : 1
-                    )
-            )
-            .shadow(
-                color: DS.Colors.searchBarShadow,
-                radius: 8,
-                y: 2
-            )
-            .tutorialAnchor(TutorialAnchor.searchBar)
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.bottom, DS.Spacing.lg)
-            .frame(maxWidth: .infinity)
-            .background(DS.Colors.pageBg)
-        }
+        // Custom binding clamps to 100 chars and routes writes through the
+        // view model so search-text side effects (e.g. analytics, filter
+        // recompute) run on every keystroke — same behavior as pre-#313.
+        FloatingSearchBar(
+            text: Binding(
+                get: { viewModel.searchText },
+                set: { viewModel.updateSearchText(String($0.prefix(100))) }
+            ),
+            tutorialAnchorID: TutorialAnchor.searchBar
+        )
     }
 
     // MARK: - Content
