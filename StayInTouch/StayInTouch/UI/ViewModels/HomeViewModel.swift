@@ -124,22 +124,15 @@ final class HomeViewModel: ObservableObject {
             searchText: searchText
         )
 
+        // Single source of truth: route all three buckets through
+        // PersonStatusService.partition so the "All Good" bucket can't
+        // silently diverge from Overdue/Due Soon (audit R5, #310).
         let service = PersonStatusService(referenceDate: Date())
+        let buckets = service.partition(filtered, cadences: cadences)
 
-        let overdue = service.overduePeople(filtered, cadences: cadences)
-        let dueSoon = service.dueSoonPeople(filtered, cadences: cadences)
-        let allGood = filtered.filter { person in
-            guard !person.isPaused else { return false }
-            let status = FrequencyCalculator().status(for: person, in: cadences)
-            return status == .onTrack
-        }
-        let allGoodByRecency = allGood.sorted {
-            ($0.lastTouchAt ?? .distantPast) > ($1.lastTouchAt ?? .distantPast)
-        }
-
-        overduePeople = overdue
-        dueSoonPeople = dueSoon
-        allGoodPeople = allGoodByRecency
+        overduePeople = buckets.overdue
+        dueSoonPeople = buckets.dueSoon
+        allGoodPeople = buckets.onTrack
 
         evaluateFreshStartPrompt()
     }
