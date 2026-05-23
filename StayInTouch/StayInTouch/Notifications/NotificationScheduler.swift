@@ -63,16 +63,30 @@ final class NotificationScheduler {
     private var settingsObserver: NSObjectProtocol?
     private var personObserver: NSObjectProtocol?
 
+    /// Coalescing window for `.personDidChange` / `.settingsDidChange` bursts.
+    /// A single Person Detail tap (toggle pause, set custom breach time, etc.)
+    /// historically triggered scheduleAll(); rapid succession of edits would
+    /// re-run the entire classification + scheduling pipeline N times. This
+    /// debouncer collapses bursts within `debounceInterval` into one run.
+    /// Set to 1.0s — long enough to absorb typical UI tap bursts, short enough
+    /// that the user-visible reschedule still feels immediate. Direct
+    /// `scheduleAll()` callers (AppDelegate didFinishLaunching, scenePhase
+    /// transitions, background refresh) bypass the debouncer.
+    private let debounceInterval: TimeInterval
+    private var pendingScheduleTask: Task<Void, Never>?
+
     init(
         settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
         cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
-        notificationCenter: UserNotificationCenterProtocol = UNUserNotificationCenter.current()
+        notificationCenter: UserNotificationCenterProtocol = UNUserNotificationCenter.current(),
+        debounceInterval: TimeInterval = 1.0
     ) {
         self.settingsRepository = settingsRepository
         self.personRepository = personRepository
         self.cadenceRepository = cadenceRepository
         self.notificationCenter = notificationCenter
+        self.debounceInterval = debounceInterval
     }
 
     func registerCategories() {
@@ -106,14 +120,14 @@ final class NotificationScheduler {
             object: nil,
             queue: nil
         ) { [weak self] _ in
-            Task { await self?.scheduleAll() }
+            self?.scheduleAllDebounced()
         }
         personObserver = NotificationCenter.default.addObserver(
             forName: .personDidChange,
             object: nil,
             queue: nil
         ) { [weak self] _ in
-            Task { await self?.scheduleAll() }
+            self?.scheduleAllDebounced()
         }
     }
 
@@ -125,6 +139,32 @@ final class NotificationScheduler {
         if let observer = personObserver {
             NotificationCenter.default.removeObserver(observer)
             personObserver = nil
+        }
+        pendingScheduleTask?.cancel()
+        pendingScheduleTask = nil
+    }
+
+    /// Coalesces a burst of `.personDidChange` / `.settingsDidChange` posts into
+    /// a single `scheduleAll()` run. Each call cancels the previous pending
+    /// task (if it has not started its work yet) and queues a fresh sleep +
+    /// scheduleAll. If the sleep is cancelled the task exits without calling
+    /// scheduleAll — the *next* post will schedule again. If the sleep has
+    /// already elapsed and `scheduleAll()` is in flight, we let it complete
+    /// and the new post enqueues a fresh task — no reschedule is ever lost.
+    ///
+    /// This intentionally does NOT change the content, timing, identifier, or
+    /// trigger of the resulting UNNotificationRequests — only *how often*
+    /// scheduleAll runs in response to upstream change posts.
+    func scheduleAllDebounced() {
+        pendingScheduleTask?.cancel()
+        let interval = debounceInterval
+        pendingScheduleTask = Task { [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+            } catch {
+                return  // cancelled before sleep elapsed — newer post will reschedule
+            }
+            await self?.scheduleAll()
         }
     }
 
