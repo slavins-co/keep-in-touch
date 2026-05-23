@@ -17,10 +17,7 @@ final class CoreDataTouchEventRepository: TouchEventRepository {
     func fetch(id: UUID) -> TouchEvent? {
         var result: TouchEvent?
         context.performAndWait {
-            let request: NSFetchRequest<TouchEventEntity> = TouchEventEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-            request.fetchLimit = 1
-            result = (try? context.fetch(request))?.first?.toDomain()
+            result = fetchEntityByID(request: TouchEventEntity.fetchRequest(), id: id, in: context)?.toDomain()
         }
         return result
     }
@@ -63,56 +60,34 @@ final class CoreDataTouchEventRepository: TouchEventRepository {
     }
 
     func save(_ touchEvent: TouchEvent) throws {
-        do {
-            try context.performAndWait {
-                let entity = fetchEntity(id: touchEvent.id) ?? TouchEventEntity(context: context)
-                entity.apply(touchEvent)
-                try context.save()
-            }
-            WidgetRefresher.reloadAllTimelines()
-        } catch let error as RepositoryError {
-            throw error
-        } catch {
-            throw RepositoryError.saveFailed(entity: "TouchEvent", underlying: error)
+        try upsertEntity(
+            id: touchEvent.id,
+            fetchRequest: { TouchEventEntity.fetchRequest() },
+            entityLabel: "TouchEvent",
+            in: context
+        ) { entity in
+            entity.apply(touchEvent)
         }
     }
 
     func batchSave(_ touchEvents: [TouchEvent]) throws {
-        do {
-            try context.performAndWait {
-                for touchEvent in touchEvents {
-                    let entity = fetchEntity(id: touchEvent.id) ?? TouchEventEntity(context: context)
-                    entity.apply(touchEvent)
-                }
-                try context.save()
-            }
-            WidgetRefresher.reloadAllTimelines()
-        } catch let error as RepositoryError {
-            throw error
-        } catch {
-            throw RepositoryError.saveFailed(entity: "TouchEvent", underlying: error)
+        try batchUpsertEntities(
+            touchEvents,
+            id: { $0.id },
+            fetchRequest: { TouchEventEntity.fetchRequest() },
+            entityLabel: "TouchEvent",
+            in: context
+        ) { touchEvent, entity in
+            entity.apply(touchEvent)
         }
     }
 
     func delete(id: UUID) throws {
-        do {
-            try context.performAndWait {
-                guard let entity = fetchEntity(id: id) else { return }
-                context.delete(entity)
-                try context.save()
-            }
-            WidgetRefresher.reloadAllTimelines()
-        } catch let error as RepositoryError {
-            throw error
-        } catch {
-            throw RepositoryError.deleteFailed(entity: "TouchEvent", id: id, underlying: error)
-        }
-    }
-
-    private func fetchEntity(id: UUID) -> TouchEventEntity? {
-        let request: NSFetchRequest<TouchEventEntity> = TouchEventEntity.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-        request.fetchLimit = 1
-        return try? context.fetch(request).first
+        try deleteEntityByID(
+            fetchRequest: { TouchEventEntity.fetchRequest() },
+            id: id,
+            entityLabel: "TouchEvent",
+            in: context
+        )
     }
 }

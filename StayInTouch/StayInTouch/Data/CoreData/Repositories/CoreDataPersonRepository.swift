@@ -17,10 +17,7 @@ final class CoreDataPersonRepository: PersonRepository {
     func fetch(id: UUID) -> Person? {
         var result: Person?
         context.performAndWait {
-            let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-            request.fetchLimit = 1
-            result = (try? context.fetch(request))?.first?.toDomain()
+            result = fetchEntityByID(request: PersonEntity.fetchRequest(), id: id, in: context)?.toDomain()
         }
         return result
     }
@@ -127,57 +124,35 @@ final class CoreDataPersonRepository: PersonRepository {
     }
 
     func save(_ person: Person) throws {
-        do {
-            try context.performAndWait {
-                let entity = fetchEntity(id: person.id) ?? PersonEntity(context: context)
-                entity.apply(person)
-                try context.save()
-            }
-            WidgetRefresher.reloadAllTimelines()
-        } catch let error as RepositoryError {
-            throw error
-        } catch {
-            throw RepositoryError.saveFailed(entity: "Person", underlying: error)
+        try upsertEntity(
+            id: person.id,
+            fetchRequest: { PersonEntity.fetchRequest() },
+            entityLabel: "Person",
+            in: context
+        ) { entity in
+            entity.apply(person)
         }
     }
 
     func batchSave(_ persons: [Person]) throws {
-        do {
-            try context.performAndWait {
-                for person in persons {
-                    let entity = fetchEntity(id: person.id) ?? PersonEntity(context: context)
-                    entity.apply(person)
-                }
-                try context.save()
-            }
-            WidgetRefresher.reloadAllTimelines()
-        } catch let error as RepositoryError {
-            throw error
-        } catch {
-            throw RepositoryError.saveFailed(entity: "Person", underlying: error)
+        try batchUpsertEntities(
+            persons,
+            id: { $0.id },
+            fetchRequest: { PersonEntity.fetchRequest() },
+            entityLabel: "Person",
+            in: context
+        ) { person, entity in
+            entity.apply(person)
         }
     }
 
     func delete(id: UUID) throws {
-        do {
-            try context.performAndWait {
-                guard let entity = fetchEntity(id: id) else { return }
-                context.delete(entity)
-                try context.save()
-            }
-            WidgetRefresher.reloadAllTimelines()
-        } catch let error as RepositoryError {
-            throw error
-        } catch {
-            throw RepositoryError.deleteFailed(entity: "Person", id: id, underlying: error)
-        }
-    }
-
-    private func fetchEntity(id: UUID) -> PersonEntity? {
-        let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-        request.fetchLimit = 1
-        return try? context.fetch(request).first
+        try deleteEntityByID(
+            fetchRequest: { PersonEntity.fetchRequest() },
+            id: id,
+            entityLabel: "Person",
+            in: context
+        )
     }
 
     private func basePredicate(includePaused: Bool) -> NSPredicate {
