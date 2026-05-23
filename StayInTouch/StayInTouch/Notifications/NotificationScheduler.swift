@@ -416,21 +416,34 @@ private extension NotificationScheduler {
         let hideNames = settings.hideContactNamesInNotifications
         let time = settings.birthdayNotificationTime
 
-        // Collect eligible (person, birthday) pairs grouped by calendar date
-        struct BirthdayKey: Hashable { let month: Int; let day: Int }
-        var groups: [BirthdayKey: [(Person, Birthday)]] = [:]
-
+        // First pass: filter eligibility (cheap, in-memory) and collect the
+        // set of `cnIdentifier`s we need to resolve from the Contacts store.
+        // Previously each eligible person without a stored birthday opened a
+        // fresh CNContactStore — N people = N XPC round-trips. Batch them.
+        var eligible: [Person] = []
+        var idsNeedingContactBirthday: [String] = []
         for person in people {
             guard person.birthdayNotificationsEnabled else { continue }
             guard !person.notificationsMuted else { continue }
             if !ignoreSnoozePause, person.isSnoozed() { continue }
+            eligible.append(person)
+            if person.birthday == nil, let cnId = person.cnIdentifier {
+                idsNeedingContactBirthday.append(cnId)
+            }
+        }
 
-            // Resolve birthday: stored first, then contact-sourced
+        let contactBirthdaysById = ContactsFetcher.fetchBirthdays(identifiers: idsNeedingContactBirthday)
+
+        // Second pass: assemble (person, birthday) pairs grouped by calendar date.
+        struct BirthdayKey: Hashable { let month: Int; let day: Int }
+        var groups: [BirthdayKey: [(Person, Birthday)]] = [:]
+
+        for person in eligible {
             let birthday: Birthday?
             if let stored = person.birthday {
                 birthday = stored
             } else if let cnId = person.cnIdentifier {
-                birthday = ContactsFetcher.fetchBirthday(identifier: cnId)
+                birthday = contactBirthdaysById[cnId]
             } else {
                 birthday = nil
             }
