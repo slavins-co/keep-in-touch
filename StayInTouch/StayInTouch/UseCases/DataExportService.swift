@@ -13,6 +13,19 @@ struct DataExportService {
     let groupRepository: GroupRepository
     let touchEventRepository: TouchEventRepository
 
+    /// Cached formatters. Both `DateFormatter` and `ISO8601DateFormatter` are
+    /// expensive to construct (~10ms first init); reusing one instance across
+    /// export calls cuts repeated cold-export cost. Safe: we only call
+    /// `string(from:)` after init, never mutate configuration.
+    private static let exportTimestampFormatter = ISO8601DateFormatter()
+
+    private static let shortDateTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
     func exportJSON() -> [URL] {
         let (people, cadences, groups) = fetchExportData()
 
@@ -29,7 +42,7 @@ struct DataExportService {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         guard let data = try? encoder.encode(exportData) else { return [] }
 
-        let filename = "keepintouch-export-\(ISO8601DateFormatter().string(from: Date())).json"
+        let filename = "keepintouch-export-\(Self.exportTimestampFormatter.string(from: Date())).json"
         guard let url = writeToTempFile(data: data, filename: filename) else { return [] }
         return [url]
     }
@@ -43,11 +56,8 @@ struct DataExportService {
         let groupNameById = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0.name) })
         let calculator = FrequencyCalculator()
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .short
-        dateFormatter.timeStyle = .short
-
-        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let dateFormatter = Self.shortDateTimeFormatter
+        let timestamp = Self.exportTimestampFormatter.string(from: Date())
         var urls: [URL] = []
 
         // Fetch touch events once per person, reuse for both CSVs

@@ -41,9 +41,10 @@ enum TipsDatastore {
             return .datastoreLocation(.applicationDefault)
         }
         let tipsDir = supportRoot.appendingPathComponent("TipKit-v\(currentEpoch)", isDirectory: true)
-        if !fm.fileExists(atPath: tipsDir.path) {
-            try? fm.createDirectory(at: tipsDir, withIntermediateDirectories: true)
-        }
+        // `createDirectory(withIntermediateDirectories: true)` is idempotent:
+        // it silently succeeds if the directory already exists. The previous
+        // `fileExists` precheck was a TOCTOU anti-pattern.
+        try? fm.createDirectory(at: tipsDir, withIntermediateDirectories: true)
         return .datastoreLocation(.url(tipsDir))
     }
 }
