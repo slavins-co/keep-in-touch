@@ -36,10 +36,13 @@ enum NotificationClassifier {
         var customOverrides: [CustomNotification] = []
 
         let calc = FrequencyCalculator(referenceDate: referenceDate)
+        // Build id→cadence once so per-person lookups are O(1) instead of
+        // O(M) (audit E3, #317). Behavior identical — same cadence resolves.
+        let cadencesById = Dictionary(uniqueKeysWithValues: cadences.map { ($0.id, $0) })
 
         for person in people where !person.isPaused && !person.notificationsMuted && !person.isSnoozed(at: referenceDate) {
-            guard let cadence = cadences.first(where: { $0.id == person.cadenceId }) else { continue }
-            guard let daysUntilDue = calc.daysUntilDue(for: person, in: cadences) else { continue }
+            guard let cadence = cadencesById[person.cadenceId] else { continue }
+            guard let daysUntilDue = calc.daysUntilDue(for: person, cadencesById: cadencesById) else { continue }
 
             let type: DailyNotificationType?
             if daysUntilDue < 0 {

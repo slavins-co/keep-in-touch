@@ -20,13 +20,29 @@ struct FrequencyCalculator {
         for person: P,
         in cadences: [C]
     ) -> ContactStatus {
+        status(for: person, cadence: cadences.first(where: { $0.id == person.cadenceId }))
+    }
+
+    /// Dict-based overload. Avoids the O(N) linear scan that the
+    /// `[C]` overload performs per call — at list-render hot paths (Home,
+    /// Contacts) this turns an O(N×M) sweep into O(N) (audit E3, #317).
+    /// Behavior is identical: the same cadence is resolved by id.
+    func status<P: FrequencyCalculatorPerson, C: FrequencyCalculatorCadence>(
+        for person: P,
+        cadencesById: [UUID: C]
+    ) -> ContactStatus {
+        status(for: person, cadence: cadencesById[person.cadenceId])
+    }
+
+    private func status<P: FrequencyCalculatorPerson, C: FrequencyCalculatorCadence>(
+        for person: P,
+        cadence: C?
+    ) -> ContactStatus {
         if person.isPaused { return .onTrack }
         if person.isSnoozed(at: referenceDate) { return .onTrack }
-        guard let cadence = cadences.first(where: { $0.id == person.cadenceId }) else {
-            return .onTrack
-        }
+        guard let cadence else { return .onTrack }
 
-        guard let dueDate = effectiveDueDate(for: person, in: cadences) else {
+        guard let dueDate = effectiveDueDate(for: person, cadence: cadence) else {
             return .unknown
         }
 
@@ -44,13 +60,26 @@ struct FrequencyCalculator {
         for person: P,
         in cadences: [C]
     ) -> Int {
+        daysOverdue(for: person, cadence: cadences.first(where: { $0.id == person.cadenceId }))
+    }
+
+    /// Dict-based overload (see `status(for:cadencesById:)` for rationale).
+    func daysOverdue<P: FrequencyCalculatorPerson, C: FrequencyCalculatorCadence>(
+        for person: P,
+        cadencesById: [UUID: C]
+    ) -> Int {
+        daysOverdue(for: person, cadence: cadencesById[person.cadenceId])
+    }
+
+    private func daysOverdue<P: FrequencyCalculatorPerson, C: FrequencyCalculatorCadence>(
+        for person: P,
+        cadence: C?
+    ) -> Int {
         if person.isPaused { return 0 }
         if person.isSnoozed(at: referenceDate) { return 0 }
-        guard cadences.first(where: { $0.id == person.cadenceId }) != nil else {
-            return 0
-        }
+        guard let cadence else { return 0 }
 
-        guard let dueDate = effectiveDueDate(for: person, in: cadences) else {
+        guard let dueDate = effectiveDueDate(for: person, cadence: cadence) else {
             return 0
         }
 
@@ -62,8 +91,23 @@ struct FrequencyCalculator {
         for person: P,
         in cadences: [C]
     ) -> Date? {
+        effectiveDueDate(for: person, cadence: cadences.first(where: { $0.id == person.cadenceId }))
+    }
+
+    /// Dict-based overload (see `status(for:cadencesById:)` for rationale).
+    func effectiveDueDate<P: FrequencyCalculatorPerson, C: FrequencyCalculatorCadence>(
+        for person: P,
+        cadencesById: [UUID: C]
+    ) -> Date? {
+        effectiveDueDate(for: person, cadence: cadencesById[person.cadenceId])
+    }
+
+    private func effectiveDueDate<P: FrequencyCalculatorPerson, C: FrequencyCalculatorCadence>(
+        for person: P,
+        cadence: C?
+    ) -> Date? {
         let cal = Calendar.current
-        guard let cadence = cadences.first(where: { $0.id == person.cadenceId }) else { return nil }
+        guard let cadence else { return nil }
 
         let cadenceDueDate: Date?
         if let lastTouch = effectiveLastTouchDate(for: person) {
@@ -120,6 +164,15 @@ struct FrequencyCalculator {
         in cadences: [C]
     ) -> Int? {
         guard let dueDate = effectiveDueDate(for: person, in: cadences) else { return nil }
+        return calendarDaysBetween(from: referenceDate, to: dueDate)
+    }
+
+    /// Dict-based overload (see `status(for:cadencesById:)` for rationale).
+    func daysUntilDue<P: FrequencyCalculatorPerson, C: FrequencyCalculatorCadence>(
+        for person: P,
+        cadencesById: [UUID: C]
+    ) -> Int? {
+        guard let dueDate = effectiveDueDate(for: person, cadencesById: cadencesById) else { return nil }
         return calendarDaysBetween(from: referenceDate, to: dueDate)
     }
 
