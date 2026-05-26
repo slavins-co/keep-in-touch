@@ -66,16 +66,30 @@ final class CadenceContactsViewModel: ObservableObject {
 
     func addPeople(_ personIds: [UUID]) {
         let useCase = AssignCadenceUseCase()
-        for person in allPeople where personIds.contains(person.id) {
-            let updated = useCase.assign(person: person, to: cadence.id)
-            do {
-                try personRepository.save(updated)
-            } catch {
-                AppLogger.logError(error, category: AppLogger.viewModel, context: "CadenceContactsViewModel.addPeople")
-                ErrorToastManager.shared.show(.saveFailed("CadenceContacts"))
-            }
-            NotificationCenter.default.post(name: .personDidChange, object: updated.id)
+        // E12: batch the writes into one save + one .personDidChange post.
+        // Prior loop did N saves and posted N notifications — every observer
+        // (HomeView, ContactsListView, SettingsView, StatsView,
+        // NotificationScheduler debouncer) ran N times. All five are "reload
+        // my data" handlers with no per-person dependency, so collapsing to
+        // a single post is safe and strictly fewer reloads. The scheduler's
+        // 1s debouncer would have coalesced anyway; this also covers the
+        // SwiftUI observers that bypass it.
+        let updates = allPeople
+            .filter { personIds.contains($0.id) }
+            .map { useCase.assign(person: $0, to: cadence.id) }
+        guard !updates.isEmpty else {
+            load()
+            return
         }
+        do {
+            try personRepository.batchSave(updates)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.viewModel, context: "CadenceContactsViewModel.addPeople")
+            ErrorToastManager.shared.show(.saveFailed("CadenceContacts"))
+        }
+        // Pass nil as object since the post covers a set of people; observers
+        // ignore the object payload (they reload everything anyway).
+        NotificationCenter.default.post(name: .personDidChange, object: nil)
         load()
     }
 }
