@@ -841,4 +841,67 @@ final class NotificationSchedulerTests: XCTestCase {
         XCTAssertEqual(request.content.categoryIdentifier, NotificationIdentifier.categoryBirthday,
                        "Single-person birthday notification should retain categoryIdentifier for Log Connection action")
     }
+
+    // MARK: - Debounced observer coalescing (Issue #311 / E5)
+
+    /// A burst of `.personDidChange` posts within the debounce window should
+    /// collapse into a single `scheduleAll()` run. Critically — no post is
+    /// allowed to *replace* notifications with stale state: the eventual
+    /// scheduleAll always sees the latest repository contents.
+    func testScheduleAllDebounced_coalescesBurst_intoSingleScheduleAll() async throws {
+        // Short debounce so the test finishes quickly.
+        let debounce: TimeInterval = 0.1
+        sut = NotificationScheduler(
+            settingsRepository: mockSettingsRepo,
+            personRepository: mockPersonRepo,
+            cadenceRepository: mockCadenceRepo,
+            notificationCenter: mockNotificationCenter,
+            debounceInterval: debounce
+        )
+        mockSettingsRepo.settings = makeSettingsWithNotifications()
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makeOverduePerson(name: "Alice")]
+
+        // Fire a burst of 5 change posts.
+        for _ in 0..<5 {
+            sut.scheduleAllDebounced()
+        }
+
+        // Wait long enough for the debounce window + scheduleAll to finish.
+        try await Task.sleep(nanoseconds: UInt64(debounce * 4 * 1_000_000_000))
+
+        // Exactly one removeAll cycle should have run (= one scheduleAll).
+        XCTAssertEqual(mockNotificationCenter.removeAllCallCount, 1,
+            "5 bursty posts should collapse into 1 scheduleAll() run; got \(mockNotificationCenter.removeAllCallCount)")
+        // And the schedule should have produced at least one notification request
+        // (the overdue person), proving the debounced run actually executed.
+        XCTAssertFalse(mockNotificationCenter.addedRequests.isEmpty,
+            "Debounced scheduleAll should still produce notification requests")
+    }
+
+    /// Posts that are spaced *farther apart* than the debounce window must
+    /// each trigger their own scheduleAll — debouncing must not silently
+    /// drop a legitimate reschedule.
+    func testScheduleAllDebounced_postsBeyondWindow_eachTriggerScheduleAll() async throws {
+        let debounce: TimeInterval = 0.05
+        sut = NotificationScheduler(
+            settingsRepository: mockSettingsRepo,
+            personRepository: mockPersonRepo,
+            cadenceRepository: mockCadenceRepo,
+            notificationCenter: mockNotificationCenter,
+            debounceInterval: debounce
+        )
+        mockSettingsRepo.settings = makeSettingsWithNotifications()
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makeOverduePerson(name: "Alice")]
+
+        sut.scheduleAllDebounced()
+        // Sleep > debounce window so the first scheduleAll completes.
+        try await Task.sleep(nanoseconds: UInt64(debounce * 4 * 1_000_000_000))
+        sut.scheduleAllDebounced()
+        try await Task.sleep(nanoseconds: UInt64(debounce * 4 * 1_000_000_000))
+
+        XCTAssertEqual(mockNotificationCenter.removeAllCallCount, 2,
+            "Two posts separated by > debounce window must each trigger their own scheduleAll()")
+    }
 }

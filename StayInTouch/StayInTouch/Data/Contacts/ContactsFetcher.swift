@@ -272,4 +272,53 @@ enum ContactsFetcher {
         }
         return Birthday.from(dateComponents: dateComponents)
     }
+
+    /// Batch-fetches birthdays for many identifiers in a single Contacts XPC
+    /// round-trip. Replaces N invocations of `fetchBirthday(identifier:)`
+    /// (each of which instantiates a fresh `CNContactStore` and crosses the
+    /// XPC boundary) with one `unifiedContacts(matching:keysToFetch:)` call
+    /// using `CNContact.predicateForContacts(withIdentifiers:)`.
+    ///
+    /// Returns a dictionary keyed by `cnIdentifier`. Identifiers with no
+    /// birthday — or that don't resolve to a contact — are simply absent from
+    /// the result (no error). Returns an empty dictionary if Contacts access
+    /// is not authorized or the input is empty.
+    static func fetchBirthdays(identifiers: [String]) -> [String: Birthday] {
+        guard !identifiers.isEmpty else { return [:] }
+
+        let status = CNContactStore.authorizationStatus(for: .contacts)
+        switch status {
+        case .denied, .restricted, .notDetermined:
+            return [:]
+        case .authorized, .limited:
+            break
+        @unknown default:
+            break
+        }
+
+        let store = CNContactStore()
+        let keys: [CNKeyDescriptor] = [
+            CNContactIdentifierKey as CNKeyDescriptor,
+            CNContactBirthdayKey as CNKeyDescriptor
+        ]
+        let predicate = CNContact.predicateForContacts(withIdentifiers: identifiers)
+
+        let contacts: [CNContact]
+        do {
+            contacts = try store.unifiedContacts(matching: predicate, keysToFetch: keys)
+        } catch {
+            AppLogger.logError(error, category: AppLogger.contacts, context: "ContactsFetcher.fetchBirthdays")
+            return [:]
+        }
+
+        var result: [String: Birthday] = [:]
+        for contact in contacts {
+            guard let dateComponents = contact.birthday,
+                  let birthday = Birthday.from(dateComponents: dateComponents) else {
+                continue
+            }
+            result[contact.identifier] = birthday
+        }
+        return result
+    }
 }

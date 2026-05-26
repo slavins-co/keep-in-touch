@@ -63,16 +63,30 @@ final class NotificationScheduler {
     private var settingsObserver: NSObjectProtocol?
     private var personObserver: NSObjectProtocol?
 
+    /// Coalescing window for `.personDidChange` / `.settingsDidChange` bursts.
+    /// A single Person Detail tap (toggle pause, set custom breach time, etc.)
+    /// historically triggered scheduleAll(); rapid succession of edits would
+    /// re-run the entire classification + scheduling pipeline N times. This
+    /// debouncer collapses bursts within `debounceInterval` into one run.
+    /// Set to 1.0s — long enough to absorb typical UI tap bursts, short enough
+    /// that the user-visible reschedule still feels immediate. Direct
+    /// `scheduleAll()` callers (AppDelegate didFinishLaunching, scenePhase
+    /// transitions, background refresh) bypass the debouncer.
+    private let debounceInterval: TimeInterval
+    private var pendingScheduleTask: Task<Void, Never>?
+
     init(
         settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
         personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
         cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
-        notificationCenter: UserNotificationCenterProtocol = UNUserNotificationCenter.current()
+        notificationCenter: UserNotificationCenterProtocol = UNUserNotificationCenter.current(),
+        debounceInterval: TimeInterval = 1.0
     ) {
         self.settingsRepository = settingsRepository
         self.personRepository = personRepository
         self.cadenceRepository = cadenceRepository
         self.notificationCenter = notificationCenter
+        self.debounceInterval = debounceInterval
     }
 
     func registerCategories() {
@@ -101,19 +115,22 @@ final class NotificationScheduler {
         stopObserving()
         registerCategories()
 
+        // Deliver on .main so scheduleAllDebounced()'s access to the
+        // shared pendingScheduleTask is serialized — observer posts can
+        // originate from any thread, and the debouncer mutates shared state.
         settingsObserver = NotificationCenter.default.addObserver(
             forName: .settingsDidChange,
             object: nil,
-            queue: nil
+            queue: .main
         ) { [weak self] _ in
-            Task { await self?.scheduleAll() }
+            self?.scheduleAllDebounced()
         }
         personObserver = NotificationCenter.default.addObserver(
             forName: .personDidChange,
             object: nil,
-            queue: nil
+            queue: .main
         ) { [weak self] _ in
-            Task { await self?.scheduleAll() }
+            self?.scheduleAllDebounced()
         }
     }
 
@@ -125,6 +142,32 @@ final class NotificationScheduler {
         if let observer = personObserver {
             NotificationCenter.default.removeObserver(observer)
             personObserver = nil
+        }
+        pendingScheduleTask?.cancel()
+        pendingScheduleTask = nil
+    }
+
+    /// Coalesces a burst of `.personDidChange` / `.settingsDidChange` posts into
+    /// a single `scheduleAll()` run. Each call cancels the previous pending
+    /// task (if it has not started its work yet) and queues a fresh sleep +
+    /// scheduleAll. If the sleep is cancelled the task exits without calling
+    /// scheduleAll — the *next* post will schedule again. If the sleep has
+    /// already elapsed and `scheduleAll()` is in flight, we let it complete
+    /// and the new post enqueues a fresh task — no reschedule is ever lost.
+    ///
+    /// This intentionally does NOT change the content, timing, identifier, or
+    /// trigger of the resulting UNNotificationRequests — only *how often*
+    /// scheduleAll runs in response to upstream change posts.
+    func scheduleAllDebounced() {
+        pendingScheduleTask?.cancel()
+        let interval = debounceInterval
+        pendingScheduleTask = Task { [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+            } catch {
+                return  // cancelled before sleep elapsed — newer post will reschedule
+            }
+            await self?.scheduleAll()
         }
     }
 
@@ -376,21 +419,34 @@ private extension NotificationScheduler {
         let hideNames = settings.hideContactNamesInNotifications
         let time = settings.birthdayNotificationTime
 
-        // Collect eligible (person, birthday) pairs grouped by calendar date
-        struct BirthdayKey: Hashable { let month: Int; let day: Int }
-        var groups: [BirthdayKey: [(Person, Birthday)]] = [:]
-
+        // First pass: filter eligibility (cheap, in-memory) and collect the
+        // set of `cnIdentifier`s we need to resolve from the Contacts store.
+        // Previously each eligible person without a stored birthday opened a
+        // fresh CNContactStore — N people = N XPC round-trips. Batch them.
+        var eligible: [Person] = []
+        var idsNeedingContactBirthday: [String] = []
         for person in people {
             guard person.birthdayNotificationsEnabled else { continue }
             guard !person.notificationsMuted else { continue }
             if !ignoreSnoozePause, person.isSnoozed() { continue }
+            eligible.append(person)
+            if person.birthday == nil, let cnId = person.cnIdentifier {
+                idsNeedingContactBirthday.append(cnId)
+            }
+        }
 
-            // Resolve birthday: stored first, then contact-sourced
+        let contactBirthdaysById = ContactsFetcher.fetchBirthdays(identifiers: idsNeedingContactBirthday)
+
+        // Second pass: assemble (person, birthday) pairs grouped by calendar date.
+        struct BirthdayKey: Hashable { let month: Int; let day: Int }
+        var groups: [BirthdayKey: [(Person, Birthday)]] = [:]
+
+        for person in eligible {
             let birthday: Birthday?
             if let stored = person.birthday {
                 birthday = stored
             } else if let cnId = person.cnIdentifier {
-                birthday = ContactsFetcher.fetchBirthday(identifier: cnId)
+                birthday = contactBirthdaysById[cnId]
             } else {
                 birthday = nil
             }

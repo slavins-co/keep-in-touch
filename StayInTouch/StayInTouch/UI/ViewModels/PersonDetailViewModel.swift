@@ -190,8 +190,8 @@ final class PersonDetailViewModel: ObservableObject {
     func changeCadence(to cadenceId: UUID) {
         if isPreview { return }
         let updated = AssignCadenceUseCase().assign(person: person, to: cadenceId)
+        // savePerson refreshes the cadence in-place when cadenceId changes.
         savePerson(updated)
-        cadence = cadenceRepository.fetch(id: cadenceId)
     }
 
     func togglePause() {
@@ -308,8 +308,8 @@ final class PersonDetailViewModel: ObservableObject {
         var updated = person
         updated.groupIds.append(group.id)
         updated.modifiedAt = Date()
+        // savePerson refreshes availableGroups in-place when groupIds changes.
         savePerson(updated)
-        availableGroups = groups.filter { !updated.groupIds.contains($0.id) }
     }
 
     func removeGroup(_ group: Group) {
@@ -317,8 +317,8 @@ final class PersonDetailViewModel: ObservableObject {
         var updated = person
         updated.groupIds.removeAll { $0 == group.id }
         updated.modifiedAt = Date()
+        // savePerson refreshes availableGroups in-place when groupIds changes.
         savePerson(updated)
-        availableGroups = groups.filter { !updated.groupIds.contains($0.id) }
     }
 
     func logTouch(method: TouchMethod, notes: String?, date: Date, timeOfDay: TimeOfDay? = nil) {
@@ -595,11 +595,27 @@ final class PersonDetailViewModel: ObservableObject {
         return url
     }
 
+    /// Persists `updated` and refreshes only the derived state whose inputs
+    /// actually changed. Avoids the prior `load()` cascade (refetch of person +
+    /// cadences + groups + touch events) on every keystroke-grade mutation
+    /// (toggle pause, mute, custom breach time, etc.). Posts
+    /// `.personDidChange` so downstream observers (NotificationScheduler,
+    /// HomeView, ContactsListView) still see every mutation — the debounce on
+    /// the scheduler side coalesces bursts without dropping any.
     private func savePerson(_ updated: Person) {
+        let previous = person
         do {
             try personRepository.save(updated)
             person = updated
-            load()
+
+            // Only re-derive caches whose inputs actually changed.
+            if previous.cadenceId != updated.cadenceId {
+                cadence = cadenceRepository.fetch(id: updated.cadenceId)
+            }
+            if previous.groupIds != updated.groupIds {
+                availableGroups = groups.filter { !updated.groupIds.contains($0.id) }
+            }
+
             NotificationCenter.default.post(name: .personDidChange, object: updated.id)
         } catch let error as RepositoryError {
             AppLogger.logError(error, category: AppLogger.viewModel, context: "PersonDetailViewModel.savePerson")
