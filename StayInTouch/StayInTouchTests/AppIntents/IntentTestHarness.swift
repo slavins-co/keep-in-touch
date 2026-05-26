@@ -59,6 +59,7 @@ final class IntentTestPersonRepository: PersonRepository {
         deletedIds.append(id)
         people.removeAll { $0.id == id }
     }
+    func pausedCount() -> Int { people.filter { $0.isTracked && $0.isPaused }.count }
 }
 
 @MainActor

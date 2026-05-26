@@ -310,6 +310,7 @@ private struct StubPersonRepository: PersonRepository {
     func save(_ person: Person) throws {}
     func batchSave(_ persons: [Person]) throws {}
     func delete(id: UUID) throws {}
+    func pausedCount() -> Int { people.filter { $0.isTracked && $0.isPaused }.count }
 }
 
 private struct StubCadenceRepository: CadenceRepository {
@@ -329,6 +330,7 @@ private struct StubGroupRepository: GroupRepository {
     func save(_ group: Group) throws {}
     func batchSave(_ groups: [Group]) throws {}
     func delete(id: UUID) throws {}
+    func count() -> Int { groups.count }
 }
 
 private struct StubSettingsRepository: AppSettingsRepository {

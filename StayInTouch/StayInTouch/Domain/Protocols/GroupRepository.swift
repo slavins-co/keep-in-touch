@@ -13,4 +13,8 @@ protocol GroupRepository {
     func save(_ group: Group) throws
     func batchSave(_ groups: [Group]) throws
     func delete(id: UUID) throws
+
+    /// Returns the total number of groups without faulting any rows into
+    /// memory. Backed by Core Data's `count(for:)` (audit E9, #317).
+    func count() -> Int
 }

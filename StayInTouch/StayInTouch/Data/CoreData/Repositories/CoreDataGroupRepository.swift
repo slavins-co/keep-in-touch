@@ -63,4 +63,17 @@ final class CoreDataGroupRepository: GroupRepository {
             in: context
         )
     }
+
+    func count() -> Int {
+        var count = 0
+        context.performAndWait {
+            let request: NSFetchRequest<TagEntity> = TagEntity.fetchRequest()
+            // `count(for:)` returns the row count without faulting any
+            // managed objects into memory — used by Settings to render
+            // the group count badge without loading every Group (audit
+            // E9, #317).
+            count = (try? context.count(for: request)) ?? 0
+        }
+        return count
+    }
 }

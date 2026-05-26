@@ -155,6 +155,20 @@ final class CoreDataPersonRepository: PersonRepository {
         )
     }
 
+    func pausedCount() -> Int {
+        var count = 0
+        context.performAndWait {
+            let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
+            request.predicate = NSPredicate(format: "isTracked == YES AND isPaused == YES")
+            // `count(for:)` returns the row count from the underlying store
+            // without faulting the matching managed objects into memory.
+            // Equivalent to `fetchTracked(includePaused: true).filter(isPaused).count`
+            // but without the materialization cost (audit E9, #317).
+            count = (try? context.count(for: request)) ?? 0
+        }
+        return count
+    }
+
     private func basePredicate(includePaused: Bool) -> NSPredicate {
         if includePaused {
             return NSPredicate(format: "isTracked == YES")
