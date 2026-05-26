@@ -10,38 +10,11 @@ struct ContactsListView: View {
     @ObservedObject var selectionCoordinator: SelectionCoordinator
     var recentGroups: [RecentGroup]
     var selectPerson: (Person) -> Void
-    @State private var searchText = ""
 
-    // MARK: - Computed Data
-
-    private var filteredPeople: [Person] {
-        let people = viewModel.allPeople
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !query.isEmpty else {
-            return people.sorted {
-                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
-            }
-        }
-        return people.filter {
-            $0.displayName.lowercased().contains(query) ||
-            ($0.nickname?.lowercased().contains(query) ?? false)
-        }.sorted {
-            $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
-        }
-    }
-
-    private var sections: [(letter: String, people: [Person])] {
-        let grouped = Dictionary(grouping: filteredPeople) { person -> String in
-            let first = person.displayName.prefix(1).uppercased()
-            return first.rangeOfCharacter(from: .letters) != nil ? first : "#"
-        }
-        return grouped.sorted { $0.key < $1.key }
-            .map { (letter: $0.key, people: $0.value) }
-    }
-
-    private var sectionLetters: [String] {
-        sections.map(\.letter)
-    }
+    // Derived list state (filteredPeople, sections, sectionLetters) lives on
+    // the view model so it only recomputes when its inputs (allPeople,
+    // searchText) actually change — not on every body render (audit E2, #317).
+    @StateObject private var listViewModel = ContactsListViewModel()
 
     // MARK: - Body
 
@@ -57,7 +30,7 @@ struct ContactsListView: View {
                     systemImage: "person.2.slash"
                 )
                 Spacer()
-            } else if filteredPeople.isEmpty {
+            } else if listViewModel.filteredPeople.isEmpty {
                 Spacer()
                 EmptyStateView(
                     title: "No contacts found",
@@ -73,6 +46,12 @@ struct ContactsListView: View {
                     }
             }
         }
+        .onAppear {
+            // Subscribing here (rather than in `init`) lets the view model
+            // bind to the injected `HomeViewModel` once the view is mounted.
+            // Safe to call repeatedly — `bind` replaces its prior cancellables.
+            listViewModel.bind(to: viewModel)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
             viewModel.load()
         }
@@ -85,7 +64,7 @@ struct ContactsListView: View {
 
     private var contactsHeader: some View {
         HStack {
-            Text("\(filteredPeople.count) Contacts")
+            Text("\(listViewModel.filteredPeople.count) Contacts")
                 .font(DS.Typography.homeSubtitle)
                 .foregroundStyle(Color(.secondaryLabel))
             Spacer()
@@ -114,8 +93,10 @@ struct ContactsListView: View {
 
     private var contactsList: some View {
         let calculator = FrequencyCalculator()
-        let cadencesById = Dictionary(uniqueKeysWithValues: viewModel.cadences.map { ($0.id, $0) })
-        let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
+        // Dict lookups: O(1) per row instead of the previous O(M) linear
+        // scan through `viewModel.cadences`/`groups` per row (audit E3, #317).
+        let cadencesById = viewModel.cadencesById
+        let groupsById = viewModel.groupsById
 
         return ScrollViewReader { proxy in
             ScrollView {
@@ -128,7 +109,7 @@ struct ContactsListView: View {
                         )
                     }
 
-                    ForEach(sections, id: \.letter) { section in
+                    ForEach(listViewModel.sections) { section in
                         Section {
                             ForEach(Array(section.people.enumerated()), id: \.element.id) { index, person in
                                 let frequencyName = cadencesById[person.cadenceId]?.name ?? "Frequency"
@@ -144,8 +125,8 @@ struct ContactsListView: View {
                                     ContactCard(
                                         person: person,
                                         frequencyName: frequencyName,
-                                        status: calculator.status(for: person, in: viewModel.cadences),
-                                        daysOverdue: calculator.daysOverdue(for: person, in: viewModel.cadences),
+                                        status: calculator.status(for: person, cadencesById: cadencesById),
+                                        daysOverdue: calculator.daysOverdue(for: person, cadencesById: cadencesById),
                                         timeAgo: calculator.timeAgoText(for: person),
                                         lastMethod: person.lastTouchMethod,
                                         groups: personGroups,
@@ -187,7 +168,7 @@ struct ContactsListView: View {
             .background(DS.Colors.pageBg)
             .overlay(alignment: .trailing) {
                 if !selectionCoordinator.isSelectMode {
-                    SectionIndexView(sections: sectionLetters) { letter in
+                    SectionIndexView(sections: listViewModel.sectionLetters) { letter in
                         withAnimation {
                             proxy.scrollTo(letter, anchor: .top)
                         }
@@ -222,7 +203,10 @@ struct ContactsListView: View {
     // MARK: - Search Bar
 
     private var contactsSearchBar: some View {
-        FloatingSearchBar(text: $searchText)
+        FloatingSearchBar(text: Binding(
+            get: { listViewModel.searchText },
+            set: { listViewModel.updateSearchText($0) }
+        ))
     }
 
 }
