@@ -180,10 +180,26 @@ final class NotificationScheduler {
 
         await clearAll()
 
-        // Birthday notifications are independent of daily reminders
-        await scheduleBirthdays(settings: settings)
+        // E6: build the entire batch of UNNotificationRequests synchronously
+        // (cheap — random template selection + content/trigger construction),
+        // then issue all `notificationCenter.add(_:)` calls in a single
+        // TaskGroup. Previously each `add` was awaited sequentially even
+        // though every request is independent. The synchronous build phase
+        // preserves the existing relative-order semantics of
+        // `randomElement()` template picks across notification kinds, so the
+        // *set* of scheduled requests is identical to the pre-E6 behavior —
+        // only the I/O issuance overlaps.
+
+        var requests: [UNNotificationRequest] = []
+
+        // Birthday notifications are independent of daily reminders and fire
+        // even when notificationsEnabled is false.
+        requests.append(contentsOf: birthdayRequests(settings: settings))
 
         if !settings.notificationsEnabled {
+            // Still issue any birthday requests built above before resetting
+            // the badge — birthdays are gated on their own setting.
+            await addAll(requests)
             try? await notificationCenter.setBadgeCount(0)
             return
         }
@@ -205,20 +221,30 @@ final class NotificationScheduler {
         let hideNames = settings.hideContactNamesInNotifications
 
         for custom in classified.customOverrides {
-            await scheduleCustomTime(person: custom.person, type: custom.type, time: custom.time, badgeCount: badgeCount, hideNames: hideNames)
+            if let request = customTimeRequest(
+                person: custom.person,
+                type: custom.type,
+                time: custom.time,
+                badgeCount: badgeCount,
+                hideNames: hideNames
+            ) {
+                requests.append(request)
+            }
         }
 
         switch settings.notificationGrouping {
         case .perType:
-            await scheduleDaily(type: .dueToday, people: classified.dueToday, settings: settings, badgeCount: badgeCount)
-            await scheduleDaily(type: .overdue, people: classified.overdue, settings: settings, badgeCount: badgeCount)
-            await scheduleDaily(type: .dueSoon, people: classified.dueSoon, settings: settings, badgeCount: badgeCount)
+            if let r = dailyRequest(type: .dueToday, people: classified.dueToday, settings: settings, badgeCount: badgeCount) { requests.append(r) }
+            if let r = dailyRequest(type: .overdue, people: classified.overdue, settings: settings, badgeCount: badgeCount) { requests.append(r) }
+            if let r = dailyRequest(type: .dueSoon, people: classified.dueSoon, settings: settings, badgeCount: badgeCount) { requests.append(r) }
         case .perDay:
-            await scheduleDailyCombined(people: classified.allNonCustom, settings: settings, badgeCount: badgeCount)
+            if let r = dailyCombinedRequest(people: classified.allNonCustom, settings: settings, badgeCount: badgeCount) {
+                requests.append(r)
+            }
         case .perPerson:
-            await schedulePerPerson(type: .dueToday, people: classified.dueToday, settings: settings, badgeCount: badgeCount)
-            await schedulePerPerson(type: .overdue, people: classified.overdue, settings: settings, badgeCount: badgeCount)
-            await schedulePerPerson(type: .dueSoon, people: classified.dueSoon, settings: settings, badgeCount: badgeCount)
+            requests.append(contentsOf: perPersonRequests(type: .dueToday, people: classified.dueToday, settings: settings, badgeCount: badgeCount))
+            requests.append(contentsOf: perPersonRequests(type: .overdue, people: classified.overdue, settings: settings, badgeCount: badgeCount))
+            requests.append(contentsOf: perPersonRequests(type: .dueSoon, people: classified.dueSoon, settings: settings, badgeCount: badgeCount))
         }
 
         if settings.digestEnabled {
@@ -229,18 +255,52 @@ final class NotificationScheduler {
             // daily alerts are always active at this point.
             let digestPeople = classified.allForDigest
             if digestPeople.count > 1 {
-                await scheduleWeeklyDigest(
+                if let r = weeklyDigestRequest(
                     overdue: digestPeople,
                     dueSoon: [],
                     settings: settings,
                     badgeCount: badgeCount
-                )
+                ) {
+                    requests.append(r)
+                }
+            }
+        }
+
+        await addAll(requests)
+    }
+
+    /// Submits a batch of UNNotificationRequests concurrently. The real
+    /// `UNUserNotificationCenter` is thread-safe and each add is independent
+    /// (different identifier per request), so a TaskGroup is the natural
+    /// fit. Errors are logged per-request and do not abort siblings —
+    /// matches the prior per-call `try? await` semantics.
+    private func addAll(_ requests: [UNNotificationRequest]) async {
+        guard !requests.isEmpty else { return }
+        let center = notificationCenter
+        await withTaskGroup(of: Void.self) { group in
+            for request in requests {
+                let identifier = request.identifier
+                group.addTask {
+                    do {
+                        try await center.add(request)
+                    } catch {
+                        AppLogger.logError(
+                            error,
+                            category: AppLogger.notifications,
+                            context: "NotificationScheduler.addAll(\(identifier))"
+                        )
+                    }
+                }
             }
         }
     }
 
-    private func scheduleDaily(type: DailyNotificationType, people: [Person], settings: AppSettings, badgeCount: Int) async {
-        guard !people.isEmpty else { return }
+    // E6: each `*Request(...)` builder constructs the UNNotificationRequest
+    // synchronously and returns it. `scheduleAll()` collects all requests
+    // and submits them concurrently via `addAll`. Content/trigger
+    // construction is unchanged — only the I/O issuance is parallelized.
+    private func dailyRequest(type: DailyNotificationType, people: [Person], settings: AppSettings, badgeCount: Int) -> UNNotificationRequest? {
+        guard !people.isEmpty else { return nil }
         let triggerDate = nextDailyDate(for: settings.breachTimeOfDay)
 
         let content = UNMutableNotificationContent()
@@ -254,16 +314,11 @@ final class NotificationScheduler {
         }
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
-        let request = UNNotificationRequest(identifier: type.identifier, content: content, trigger: trigger)
-        do {
-            try await notificationCenter.add(request)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.scheduleDaily(\(type.identifier))")
-        }
+        return UNNotificationRequest(identifier: type.identifier, content: content, trigger: trigger)
     }
 
-    private func scheduleDailyCombined(people: [Person], settings: AppSettings, badgeCount: Int) async {
-        guard !people.isEmpty else { return }
+    private func dailyCombinedRequest(people: [Person], settings: AppSettings, badgeCount: Int) -> UNNotificationRequest? {
+        guard !people.isEmpty else { return nil }
         let triggerDate = nextDailyDate(for: settings.breachTimeOfDay)
 
         let content = UNMutableNotificationContent()
@@ -274,21 +329,15 @@ final class NotificationScheduler {
         content.userInfo = ["type": "home", "category": "daily"]
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
-        let request = UNNotificationRequest(identifier: NotificationIdentifier.dailyCombined, content: content, trigger: trigger)
-        do {
-            try await notificationCenter.add(request)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.scheduleDailyCombined")
-        }
+        return UNNotificationRequest(identifier: NotificationIdentifier.dailyCombined, content: content, trigger: trigger)
     }
 
-    private func schedulePerPerson(type: DailyNotificationType, people: [Person], settings: AppSettings, badgeCount: Int) async {
-        guard !people.isEmpty else { return }
+    private func perPersonRequests(type: DailyNotificationType, people: [Person], settings: AppSettings, badgeCount: Int) -> [UNNotificationRequest] {
+        guard !people.isEmpty else { return [] }
         let triggerDate = nextDailyDate(for: settings.breachTimeOfDay)
-
         let hideNames = settings.hideContactNamesInNotifications
 
-        for person in people {
+        return people.map { person in
             let content = UNMutableNotificationContent()
             content.title = type.title
             if hideNames {
@@ -302,18 +351,13 @@ final class NotificationScheduler {
             content.categoryIdentifier = NotificationIdentifier.categoryPerson
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
-            let request = UNNotificationRequest(identifier: "\(type.identifier)_\(person.id.uuidString)", content: content, trigger: trigger)
-            do {
-                try await notificationCenter.add(request)
-            } catch {
-                AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.schedulePerPerson(\(type.identifier), \(person.id))")
-            }
+            return UNNotificationRequest(identifier: "\(type.identifier)_\(person.id.uuidString)", content: content, trigger: trigger)
         }
     }
 
-    private func scheduleWeeklyDigest(overdue: [Person], dueSoon: [Person], settings: AppSettings, badgeCount: Int) async {
+    private func weeklyDigestRequest(overdue: [Person], dueSoon: [Person], settings: AppSettings, badgeCount: Int) -> UNNotificationRequest? {
         let all = overdue + dueSoon
-        guard !all.isEmpty else { return }
+        guard !all.isEmpty else { return nil }
 
         let triggerDate = nextWeeklyDate(day: settings.digestDay, time: settings.digestTime)
 
@@ -325,12 +369,7 @@ final class NotificationScheduler {
         content.userInfo = notificationUserInfo(for: all, type: "digest")
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
-        let request = UNNotificationRequest(identifier: NotificationIdentifier.weeklyDigest, content: content, trigger: trigger)
-        do {
-            try await notificationCenter.add(request)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.scheduleWeeklyDigest")
-        }
+        return UNNotificationRequest(identifier: NotificationIdentifier.weeklyDigest, content: content, trigger: trigger)
     }
 
     private func notificationBody(for people: [Person], hideNames: Bool) -> String {
@@ -388,7 +427,7 @@ final class NotificationScheduler {
 }
 
 private extension NotificationScheduler {
-    func scheduleCustomTime(person: Person, type: DailyNotificationType, time: LocalTime, badgeCount: Int, hideNames: Bool) async {
+    func customTimeRequest(person: Person, type: DailyNotificationType, time: LocalTime, badgeCount: Int, hideNames: Bool) -> UNNotificationRequest? {
         let triggerDate = nextDailyDate(for: time)
         let content = UNMutableNotificationContent()
         content.title = type.title
@@ -403,16 +442,11 @@ private extension NotificationScheduler {
         content.categoryIdentifier = NotificationIdentifier.categoryPerson
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
-        let request = UNNotificationRequest(identifier: "\(type.identifier)_custom_\(person.id.uuidString)", content: content, trigger: trigger)
-        do {
-            try await notificationCenter.add(request)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.notifications, context: "NotificationScheduler.scheduleCustomTime(\(type.identifier), \(person.id))")
-        }
+        return UNNotificationRequest(identifier: "\(type.identifier)_custom_\(person.id.uuidString)", content: content, trigger: trigger)
     }
 
-    func scheduleBirthdays(settings: AppSettings) async {
-        guard settings.birthdayNotificationsEnabled else { return }
+    func birthdayRequests(settings: AppSettings) -> [UNNotificationRequest] {
+        guard settings.birthdayNotificationsEnabled else { return [] }
 
         let ignoreSnoozePause = settings.birthdayIgnoreSnoozePause
         let people = personRepository.fetchTracked(includePaused: ignoreSnoozePause)
@@ -456,16 +490,18 @@ private extension NotificationScheduler {
             groups[key, default: []].append((person, birthday))
         }
 
+        var requests: [UNNotificationRequest] = []
         for (key, pairs) in groups {
             if pairs.count == 1, let (person, birthday) = pairs.first {
-                await scheduleSingleBirthday(person: person, birthday: birthday, time: time, hideNames: hideNames)
+                requests.append(singleBirthdayRequest(person: person, birthday: birthday, time: time, hideNames: hideNames))
             } else {
-                await scheduleGroupedBirthday(people: pairs.map(\.0), month: key.month, day: key.day, time: time, hideNames: hideNames)
+                requests.append(groupedBirthdayRequest(people: pairs.map(\.0), month: key.month, day: key.day, time: time, hideNames: hideNames))
             }
         }
+        return requests
     }
 
-    private func scheduleSingleBirthday(person: Person, birthday: Birthday, time: LocalTime, hideNames: Bool) async {
+    private func singleBirthdayRequest(person: Person, birthday: Birthday, time: LocalTime, hideNames: Bool) -> UNNotificationRequest {
         let content = UNMutableNotificationContent()
         content.title = "Birthday Today 🎂"
         if hideNames {
@@ -494,21 +530,14 @@ private extension NotificationScheduler {
         dateComponents.minute = time.minute
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
-        let request = UNNotificationRequest(
+        return UNNotificationRequest(
             identifier: "\(NotificationIdentifier.birthdayPrefix)\(person.id.uuidString)",
             content: content,
             trigger: trigger
         )
-
-        do {
-            try await notificationCenter.add(request)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.notifications,
-                context: "NotificationScheduler.scheduleSingleBirthday(\(person.id))")
-        }
     }
 
-    private func scheduleGroupedBirthday(people: [Person], month: Int, day: Int, time: LocalTime, hideNames: Bool) async {
+    private func groupedBirthdayRequest(people: [Person], month: Int, day: Int, time: LocalTime, hideNames: Bool) -> UNNotificationRequest {
         let content = UNMutableNotificationContent()
         content.title = "Birthdays Today 🎂"
         content.body = groupedBirthdayBody(for: people, hideNames: hideNames)
@@ -527,18 +556,11 @@ private extension NotificationScheduler {
         dateComponents.minute = time.minute
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
-        let request = UNNotificationRequest(
+        return UNNotificationRequest(
             identifier: "\(NotificationIdentifier.birthdayGroupedPrefix)\(month)_\(day)",
             content: content,
             trigger: trigger
         )
-
-        do {
-            try await notificationCenter.add(request)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.notifications,
-                context: "NotificationScheduler.scheduleGroupedBirthday(\(month)/\(day))")
-        }
     }
 
     private func groupedBirthdayBody(for people: [Person], hideNames: Bool) -> String {
