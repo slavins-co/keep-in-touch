@@ -24,17 +24,10 @@ struct LogTouchModal: View {
 
                 DatePicker("Date", selection: $touchDate, in: ...Date(), displayedComponents: .date)
 
-                Picker("Time of Day", selection: $selectedTimeOfDay) {
-                    Text("None").tag(TimeOfDay?.none)
-                    ForEach(TimeOfDay.allCases, id: \.self) { time in
-                        Text(time.rawValue).tag(TimeOfDay?.some(time))
-                    }
-                }
-
-                TextField("Notes", text: $notes, axis: .vertical)
-                    .onChange(of: notes) { _, newValue in
-                        if newValue.count > 500 { notes = String(newValue.prefix(500)) }
-                    }
+                TouchTimeAndNotesFields(
+                    selectedTimeOfDay: $selectedTimeOfDay,
+                    notes: $notes
+                )
             }
             .navigationTitle("Log Connection")
             .toolbar {

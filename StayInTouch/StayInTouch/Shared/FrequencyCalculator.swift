@@ -93,6 +93,19 @@ struct FrequencyCalculator {
         return calendarDaysBetween(from: lastTouch, to: referenceDate)
     }
 
+    /// Human-readable "time since last touch" label shown in contact rows.
+    /// Returns `"Today"` when the last touch was today, `"\(n)d ago"` for any
+    /// positive day count, and `"No contact"` when no effective last-touch
+    /// date can be resolved. Single source of truth — replaces the inline
+    /// helper that was duplicated across `HomeView` and `ContactsListView`
+    /// (audit finding Q6, issue #313).
+    func timeAgoText<P: FrequencyCalculatorPerson>(for person: P) -> String {
+        let days = daysSinceLastTouch(for: person)
+        guard let days else { return "No contact" }
+        if days == 0 { return "Today" }
+        return "\(days)d ago"
+    }
+
     /// Calendar-day difference between `referenceDate` and the person's
     /// effective due date. Negative when overdue, zero when due today,
     /// positive when due in the future. Returns `nil` when no due date can

@@ -9,7 +9,6 @@ import SwiftUI
 import TipKit
 
 struct HomeView: View {
-    @Environment(\.openURL) private var openURL
     @ObservedObject var viewModel: HomeViewModel
     @ObservedObject var selectionCoordinator: SelectionCoordinator
     var recentGroups: [RecentGroup]
@@ -22,7 +21,6 @@ struct HomeView: View {
     @State private var showNoNewContactsAlert = false
     @State private var showLimitedAccessAlert = false
     @State private var showContactsSettingsAlert = false
-    @FocusState private var isSearchFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -89,31 +87,11 @@ struct HomeView: View {
                 }
             )
         }
-        .alert("No New Contacts", isPresented: $showNoNewContactsAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("You're already up to date.")
-        }
-        .alert("Limited Contact Access", isPresented: $showLimitedAccessAlert) {
-            Button("Open Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    openURL(url)
-                }
-            }
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("You've imported all the contacts you gave access to. To add more, open Settings \u{2192} Keep In Touch \u{2192} Contacts and select additional contacts or grant full access.")
-        }
-        .alert("Contacts Access Required", isPresented: $showContactsSettingsAlert) {
-            Button("Open Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    openURL(url)
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Enable Contacts access in Settings to import contacts.")
-        }
+        .contactAccessAlerts(
+            showNoNewContacts: $showNoNewContactsAlert,
+            showLimitedAccess: $showLimitedAccessAlert,
+            showContactsSettings: $showContactsSettingsAlert
+        )
         .onAppear {
             // `HomeViewModel.init` already triggers `load()`. Calling it again
             // here would double-fetch on first cold render. Notification-driven
@@ -312,60 +290,16 @@ struct HomeView: View {
     // MARK: - Search Bar (Floating)
 
     private var floatingSearchBar: some View {
-        VStack(spacing: 0) {
-            LinearGradient(
-                colors: [DS.Colors.pageBg.opacity(0), DS.Colors.pageBg],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 20)
-
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(DS.Colors.searchBarIcon)
-                TextField(
-                    "Search contacts...",
-                    text: Binding(
-                        get: { viewModel.searchText },
-                        set: { viewModel.updateSearchText(String($0.prefix(100))) }
-                    )
-                )
-                .textFieldStyle(.plain)
-                .focused($isSearchFocused)
-                if !viewModel.searchText.isEmpty {
-                    Button {
-                        viewModel.updateSearchText("")
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(DS.Colors.tertiaryText)
-                    }
-                    .accessibilityLabel("Clear search")
-                }
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .background(DS.Colors.searchBarBackground)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(
-                        isSearchFocused
-                            ? DS.Colors.searchBarFocusRing
-                            : DS.Colors.searchBarBorder,
-                        lineWidth: isSearchFocused ? 2 : 1
-                    )
-            )
-            .shadow(
-                color: DS.Colors.searchBarShadow,
-                radius: 8,
-                y: 2
-            )
-            .tutorialAnchor(TutorialAnchor.searchBar)
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.bottom, DS.Spacing.lg)
-            .frame(maxWidth: .infinity)
-            .background(DS.Colors.pageBg)
-        }
+        // Custom binding clamps to 100 chars and routes writes through the
+        // view model so search-text side effects (e.g. analytics, filter
+        // recompute) run on every keystroke — same behavior as pre-#313.
+        FloatingSearchBar(
+            text: Binding(
+                get: { viewModel.searchText },
+                set: { viewModel.updateSearchText(String($0.prefix(100))) }
+            ),
+            tutorialAnchorID: TutorialAnchor.searchBar
+        )
     }
 
     // MARK: - Content
@@ -415,7 +349,7 @@ struct HomeView: View {
                             groupsById: groupsById,
                             statusForPerson: { _ in .overdue },
                             daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
-                            timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
+                            timeAgoForPerson: { calculator.timeAgoText(for: $0) },
                             selectPerson: selectPerson,
                             coordinator: selectionCoordinator
                         )
@@ -429,7 +363,7 @@ struct HomeView: View {
                             groupsById: groupsById,
                             statusForPerson: { _ in .dueSoon },
                             daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
-                            timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
+                            timeAgoForPerson: { calculator.timeAgoText(for: $0) },
                             selectPerson: selectPerson,
                             coordinator: selectionCoordinator
                         )
@@ -444,7 +378,7 @@ struct HomeView: View {
                         groupsById: groupsById,
                         statusForPerson: { _ in .onTrack },
                         daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
-                        timeAgoForPerson: { timeAgoText(for: $0, calculator: calculator) },
+                        timeAgoForPerson: { calculator.timeAgoText(for: $0) },
                         selectPerson: selectPerson,
                         coordinator: selectionCoordinator
                     )
@@ -497,10 +431,4 @@ struct HomeView: View {
         }
     }
 
-    private func timeAgoText(for person: Person, calculator: FrequencyCalculator) -> String {
-        let days = calculator.daysSinceLastTouch(for: person)
-        guard let days else { return "No contact" }
-        if days == 0 { return "Today" }
-        return "\(days)d ago"
-    }
 }
