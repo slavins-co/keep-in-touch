@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TouchMethod: String, CaseIterable, Codable {
+enum TouchMethod: String, CaseIterable, Codable, Sendable {
     case text = "Text"
     case call = "Call"
     case irl = "IRL"
