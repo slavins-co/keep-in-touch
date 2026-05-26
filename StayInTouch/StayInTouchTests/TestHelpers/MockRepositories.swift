@@ -142,6 +142,14 @@ class MockTouchEventRepository: TouchEventRepository {
         deletedIds.append(id)
         events.removeAll { $0.id == id }
     }
+    var batchDeleteCallCount = 0
+    func batchDelete(ids: [UUID]) throws {
+        batchDeleteCallCount += 1
+        for id in ids {
+            deletedIds.append(id)
+        }
+        events.removeAll { ids.contains($0.id) }
+    }
 }
 
 // MARK: - MockSettingsRepository

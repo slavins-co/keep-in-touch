@@ -118,6 +118,57 @@ func batchUpsertEntities<Entity: NSManagedObject, Domain>(
 
 // MARK: - Delete by id
 
+// MARK: - Batch delete by ids
+
+/// Deletes all entities whose `id` is in the supplied list in a single
+/// `context.save()` and fires one widget refresh at the end. Missing ids
+/// are no-ops (matches the singular `deleteEntityByID` contract). Empty
+/// input is a no-op — no save, no refresh, no error.
+///
+/// Implementation uses an `IN` predicate to fetch the entities in one
+/// round-trip, then `context.delete` each. We do not use
+/// `NSBatchDeleteRequest` here because:
+///   1. The caller hands us a small, known-bounded set of ids (cascade on
+///      person deletion: typically <100 touch events). The fetch+delete
+///      cost is negligible vs the upside of running through the regular
+///      managed-object change-tracking path (which keeps any in-memory
+///      faults / fetched results controllers consistent without the
+///      merge-into-viewContext dance NSBatchDeleteRequest requires).
+///   2. The cost being optimized is N transactions → 1 transaction (the
+///      audit finding), not N object loads → 0 loads.
+func batchDeleteEntitiesByID<Entity: NSManagedObject>(
+    fetchRequest: @escaping () -> NSFetchRequest<Entity>,
+    ids: [UUID],
+    entityLabel: String,
+    in context: NSManagedObjectContext,
+    refreshWidgets: Bool = true
+) throws {
+    guard !ids.isEmpty else { return }
+    do {
+        try context.performAndWait {
+            let request = fetchRequest()
+            request.predicate = NSPredicate(format: "id IN %@", ids as CVarArg)
+            let entities = (try? context.fetch(request)) ?? []
+            guard !entities.isEmpty else { return }
+            for entity in entities {
+                context.delete(entity)
+            }
+            try context.save()
+        }
+        if refreshWidgets {
+            WidgetRefresher.reloadAllTimelines()
+        }
+    } catch let error as RepositoryError {
+        throw error
+    } catch {
+        // Reuse `.deleteFailed` shape — we surface the first id for diagnostics.
+        // Callers don't need per-id failure detail; the whole batch is atomic.
+        throw RepositoryError.deleteFailed(entity: entityLabel, id: ids.first ?? UUID(), underlying: error)
+    }
+}
+
+// MARK: - Delete by id
+
 /// Deletes the entity with the given id, saves, and optionally reloads widget
 /// timelines. A missing entity is a no-op (matches prior behavior — repos do
 /// not throw on delete-of-nonexistent).

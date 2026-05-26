@@ -420,11 +420,13 @@ final class PersonDetailViewModel: ObservableObject {
         if isPreview { return }
         AnalyticsService.track("person.deleted")
         do {
-            // Cascade: delete all TouchEvents for this person first
+            // E8: cascade-delete all TouchEvents for this person in one save
+            // + one widget refresh instead of N transactions / N refreshes.
+            // batchDelete is a no-op when events is empty, matching the
+            // prior loop-with-empty-array behavior.
             let events = touchRepository.fetchAll(for: person.id)
-            for event in events {
-                try touchRepository.delete(id: event.id)
-            }
+            let eventIds = events.map(\.id)
+            try touchRepository.batchDelete(ids: eventIds)
             try personRepository.delete(id: person.id)
             NotificationCenter.default.post(name: .personDidChange, object: person.id)
         } catch let error as RepositoryError {
