@@ -30,7 +30,11 @@ struct ContactsListView: View {
                     systemImage: "person.2.slash"
                 )
                 Spacer()
-            } else if listViewModel.filteredPeople.isEmpty {
+            } else if listViewModel.filteredPeople.isEmpty && !listViewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                // "No contacts found" message only makes sense when actively
+                // searching. Otherwise an empty `filteredPeople` is just the
+                // one-frame gap before `.onAppear` wires the Combine binding
+                // — render the list (which will populate momentarily).
                 Spacer()
                 EmptyStateView(
                     title: "No contacts found",
@@ -63,8 +67,17 @@ struct ContactsListView: View {
     // MARK: - Header
 
     private var contactsHeader: some View {
-        HStack {
-            Text("\(listViewModel.filteredPeople.count) Contacts")
+        // Until the Combine binding wires up (`.onAppear` runs after the
+        // first body render), `listViewModel.filteredPeople` is empty
+        // even though `viewModel.allPeople` has items. Fall back to the
+        // upstream count when there's no active search — same value the
+        // user expects post-bind, just available a frame earlier.
+        let trimmedQuery = listViewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let count = trimmedQuery.isEmpty && listViewModel.filteredPeople.isEmpty
+            ? viewModel.allPeople.count
+            : listViewModel.filteredPeople.count
+        return HStack {
+            Text("\(count) Contacts")
                 .font(DS.Typography.homeSubtitle)
                 .foregroundStyle(Color(.secondaryLabel))
             Spacer()
