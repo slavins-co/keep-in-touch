@@ -88,11 +88,6 @@
 			path = KeepInTouchWidget;
 			sourceTree = "<group>";
 		};
-		A2B4D6E52F9889B50039A003 /* Shared (widget membership) */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = StayInTouch/Shared;
-			sourceTree = "<group>";
-		};
 		A28171DD2F313E65003719BC /* StayInTouch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -109,6 +104,11 @@
 		A28171FA2F313E67003719BC /* StayInTouchUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = StayInTouchUITests;
+			sourceTree = "<group>";
+		};
+		A2B4D6E52F9889B50039A003 /* StayInTouch/Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = StayInTouch/Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -149,6 +149,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A240A4E82FC7F938008D03A9 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				A2B4D6E52F9889B50039A003 /* StayInTouch/Shared */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		A2504FF72F9889B50039A003 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -168,6 +176,7 @@
 				A2504FFC2F9889B50039A003 /* KeepInTouchWidget */,
 				A2504FF72F9889B50039A003 /* Frameworks */,
 				A28171DC2F313E65003719BC /* Products */,
+				A240A4E82FC7F938008D03A9 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -199,7 +208,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A2504FFC2F9889B50039A003 /* KeepInTouchWidget */,
-				A2B4D6E52F9889B50039A003 /* Shared (widget membership) */,
+				A2B4D6E52F9889B50039A003 /* StayInTouch/Shared */,
 			);
 			name = KeepInTouchWidgetExtension;
 			packageProductDependencies = (

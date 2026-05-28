@@ -97,4 +97,80 @@ final class BirthdayTests: XCTestCase {
         let birthday = Birthday(month: today.month!, day: differentDay, year: nil)
         XCTAssertFalse(birthday.isToday)
     }
+
+    // MARK: - nextOccurrence / daysUntil (#329)
+
+    private var gregorian: Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "America/New_York")!
+        return cal
+    }
+
+    private func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
+        gregorian.date(from: DateComponents(year: year, month: month, day: day))!
+    }
+
+    func testDaysUntil_isZero_whenBirthdayIsToday() {
+        let ref = date(2026, 6, 15)
+        let birthday = Birthday(month: 6, day: 15, year: 1990)
+        XCTAssertEqual(birthday.daysUntil(from: ref, calendar: gregorian), 0)
+    }
+
+    func testDaysUntil_isOne_whenBirthdayIsTomorrow() {
+        let ref = date(2026, 6, 15)
+        let birthday = Birthday(month: 6, day: 16, year: nil)
+        XCTAssertEqual(birthday.daysUntil(from: ref, calendar: gregorian), 1)
+    }
+
+    func testDaysUntil_isSeven_whenBirthdayIsAWeekAway() {
+        let ref = date(2026, 6, 15)
+        let birthday = Birthday(month: 6, day: 22, year: nil)
+        XCTAssertEqual(birthday.daysUntil(from: ref, calendar: gregorian), 7)
+    }
+
+    func testDaysUntil_rollsOverYearEnd() {
+        let ref = date(2026, 12, 30)
+        let birthday = Birthday(month: 1, day: 2, year: nil)  // next year
+        XCTAssertEqual(birthday.daysUntil(from: ref, calendar: gregorian), 3)
+        let next = birthday.nextOccurrence(after: ref, calendar: gregorian)
+        XCTAssertEqual(gregorian.dateComponents([.year, .month, .day], from: next).year, 2027)
+    }
+
+    func testDaysUntil_handlesBirthdayEarlierThisYear() {
+        let ref = date(2026, 6, 15)
+        let birthday = Birthday(month: 3, day: 1, year: nil)  // already passed → next year
+        let next = birthday.nextOccurrence(after: ref, calendar: gregorian)
+        let comps = gregorian.dateComponents([.year, .month, .day], from: next)
+        XCTAssertEqual(comps.year, 2027)
+        XCTAssertEqual(comps.month, 3)
+        XCTAssertEqual(comps.day, 1)
+    }
+
+    func testFeb29_fallsBackToMar1_inNonLeapYear() {
+        // 2026 is not a leap year. Feb 29 → Mar 1.
+        let ref = date(2026, 2, 1)
+        let birthday = Birthday(month: 2, day: 29, year: 2000)
+        let next = birthday.nextOccurrence(after: ref, calendar: gregorian)
+        let comps = gregorian.dateComponents([.year, .month, .day], from: next)
+        XCTAssertEqual(comps.year, 2026)
+        XCTAssertEqual(comps.month, 3)
+        XCTAssertEqual(comps.day, 1)
+    }
+
+    func testFeb29_landsOnFeb29_inLeapYear() {
+        // 2028 is a leap year.
+        let ref = date(2028, 2, 1)
+        let birthday = Birthday(month: 2, day: 29, year: nil)
+        let next = birthday.nextOccurrence(after: ref, calendar: gregorian)
+        let comps = gregorian.dateComponents([.month, .day], from: next)
+        XCTAssertEqual(comps.month, 2)
+        XCTAssertEqual(comps.day, 29)
+    }
+
+    func testNextOccurrence_isStartOfDay() {
+        let ref = date(2026, 6, 15).addingTimeInterval(13 * 3600)  // mid-afternoon
+        let birthday = Birthday(month: 6, day: 20, year: nil)
+        let next = birthday.nextOccurrence(after: ref, calendar: gregorian)
+        XCTAssertEqual(next, gregorian.startOfDay(for: next))
+    }
 }
