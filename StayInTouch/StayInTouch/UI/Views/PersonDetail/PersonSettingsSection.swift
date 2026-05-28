@@ -122,8 +122,7 @@ struct PersonSettingsSection: View {
                     .font(DS.Typography.caption)
             } else {
                 Button {
-                    let initialDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
-                    onAction(.customDueDatePicker(initialDate: initialDate))
+                    onAction(.customDueDatePicker(initialDate: .defaultSnoozeStartDate))
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Text("Not set")
@@ -166,8 +165,7 @@ struct PersonSettingsSection: View {
                     snoozePill("7d") { snooze(days: 7) }
                     snoozePill("14d") { snooze(days: 14) }
                     snoozePill("Pick date") {
-                        let initialDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
-                        onAction(.snoozeDatePicker(initialDate: initialDate))
+                        onAction(.snoozeDatePicker(initialDate: .defaultSnoozeStartDate))
                     }
                 }
             }
