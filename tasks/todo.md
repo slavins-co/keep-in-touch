@@ -54,6 +54,34 @@ Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architect
 
 ---
 
+## Completed — Session 2026-05-27 → 2026-05-28 (Issue #302: Tech-debt audit sweep)
+
+Closed the full `/simplify` audit (#302). 13 child issues (#307-#319), 12 substantive PRs + 1 Swift-6 hotfix merged; #319 closed without a PR (findings resolved by prior waves or schema-blocked). North star held: zero observable behavior change, every PR manually QA'd against `main`.
+
+**Execution model:** 5 waves of parallel worktree executor sub-agents (implement → context7 doc check → build/test → review loop → manual QA → squash merge). Reviews ran as sub-agents with a score-70 auto-fix loop.
+
+- [x] **R2, R3, R4, R8** Shared helpers (`Person.isSnoozed`, `FrequencyCalculator.daysUntilDue`, `Color.normalize(hex:)`, `CoreDataMappingHelpers.requiredField`) — PR #322
+- [x] **R1** Repository CRUD base (`CoreDataRepositoryHelpers` free helpers) — PR #323
+- [x] **E10, E15, HomeView dupe fetch** Formatter caching + cold-launch — PR #320
+- [x] **R5** Status drift — `PersonStatusService.partition` unifies Home buckets — PR #321
+- [x] **Swift 6 hotfix** `TouchMethod: Sendable` declared in source (retroactive AppEnum conformance was a strict-mode error) — PR #326
+- [x] **Q5, Q6, Q7, Q8** View component extraction (`FloatingSearchBar`, `timeAgoText`, `TouchTimeAndNotesFields`, `ContactAccessAlerts`) — PR #324
+- [x] **E1, E5, E7** PersonDetailVM in-place updates + NotificationScheduler debounce + batched CNContact fetch — PR #325
+- [x] **E4, E8, E12, E6** Batch saves (ContactsSync, deletePerson cascade, addPeople, TaskGroup notification add) — PR #327
+- [x] **E2, E3, E9, E13** List-render efficiency (`ContactsListViewModel` derived state, dict-based FrequencyCalculator overloads, `count(for:)`) — PR #328
+- [x] **Q13, Q10-12, R7, R9, R12** Stringly + magic numbers (`UserInfoKey`/`UserInfoValue` enums, `DS.Timing`/`DS.Motion` tokens, `PhoneNormalizer.dialableDigits`, `Date.defaultSnoozeStartDate`, unified avatar palette) — PR #330
+- [x] **Q14, Q15, N2** DI / layering (`AppDependencies.shared`, `BackgroundWorkScheduler` protocol restores Domain/Data boundary) — PR #331
+- [x] **Q9** `ViewModelErrorHandling` helper — 9 VMs migrated, ~115 LOC boilerplate removed — PR #332
+- [x] **Q1** Person initializer split — 27 flat params → 4 nested config structs (Identity/TouchState/NotificationConfig/Metadata) — PR #333
+- [x] **Q2, Q3, E14** Tier-3 — closed #319 without a PR: Q2 already consolidated by #324/#325, Q3 resolved by #328/E9, E14 schema-blocked (Transformable `tagIds`, zero production callers)
+
+**Net diff (pre `370dd2a` → post `8f84275`):** 88 Swift files, +2728 / −1473. Source +2075/−1077, tests +653/−396. 10 new abstraction files. `CoreDataStack.shared.viewContext` DI-bypass defaults: 27 → 0. `requiredField` definitions: 4 → 1.
+
+### Deferred (Tier 4, not filed)
+- **E14 join-entity migration** — denormalize `tagIds` into a queryable join entity so `fetchByGroup` can use an SQLite predicate. Requires Core Data schema migration. No production callers today, so low priority.
+
+---
+
 ## Completed — Session 2026-05-20 (Issue #138: Stats & Insights v1)
 
 - [x] **#138** Settings → Insights destination with 30d/90d range toggle — PR #306 (pending manual QA / merge)
