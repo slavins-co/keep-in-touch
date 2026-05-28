@@ -19,7 +19,7 @@ final class IntentContainer {
     private let lock = NSLock()
     private var cached: AppDependencies?
 
-    private init(resolver: @escaping () -> AppDependencies = { AppDependencies(context: CoreDataStack.shared.viewContext) }) {
+    private init(resolver: @escaping () -> AppDependencies = { AppDependencies.shared }) {
         self.resolver = resolver
     }
 

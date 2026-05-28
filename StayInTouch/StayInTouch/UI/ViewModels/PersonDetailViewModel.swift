@@ -61,10 +61,10 @@ final class PersonDetailViewModel: ObservableObject {
     init(
         person: Person,
         mode: Mode = .normal,
-        personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
-        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
-        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
-        touchRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext),
+        personRepository: PersonRepository = AppDependencies.shared.personRepository,
+        cadenceRepository: CadenceRepository = AppDependencies.shared.cadenceRepository,
+        groupRepository: GroupRepository = AppDependencies.shared.groupRepository,
+        touchRepository: TouchEventRepository = AppDependencies.shared.touchEventRepository,
         messengerAvailability: MessengerAvailabilityChecking = SystemMessengerAvailability()
     ) {
         self.person = person

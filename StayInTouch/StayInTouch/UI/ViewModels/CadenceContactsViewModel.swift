@@ -21,8 +21,8 @@ final class CadenceContactsViewModel: ObservableObject {
 
     init(
         cadence: Cadence,
-        personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
-        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext)
+        personRepository: PersonRepository = AppDependencies.shared.personRepository,
+        cadenceRepository: CadenceRepository = AppDependencies.shared.cadenceRepository
     ) {
         self.cadence = cadence
         self.personRepository = personRepository

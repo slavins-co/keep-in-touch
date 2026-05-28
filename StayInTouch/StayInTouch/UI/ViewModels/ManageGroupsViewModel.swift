@@ -16,8 +16,8 @@ final class ManageGroupsViewModel: ObservableObject {
     private let personRepository: PersonRepository
 
     init(
-        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
-        personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext)
+        groupRepository: GroupRepository = AppDependencies.shared.groupRepository,
+        personRepository: PersonRepository = AppDependencies.shared.personRepository
     ) {
         self.groupRepository = groupRepository
         self.personRepository = personRepository

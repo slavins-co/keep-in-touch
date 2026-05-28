@@ -17,8 +17,7 @@ enum AnalyticsService {
             let config = TelemetryDeck.Config(appID: "C41D550D-50EA-40BC-9605-584654EE2D5B")
             TelemetryDeck.initialize(config: config)
             // Read initial analytics setting from Core Data
-            let repo = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext)
-            _isEnabled = repo.fetch()?.analyticsEnabled ?? true
+            _isEnabled = AppDependencies.shared.settingsRepository.fetch()?.analyticsEnabled ?? true
             _isInitialized = true
         }
     }

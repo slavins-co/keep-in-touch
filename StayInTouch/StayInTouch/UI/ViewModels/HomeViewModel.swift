@@ -60,10 +60,10 @@ final class HomeViewModel: ObservableObject {
     private var searchTask: Task<Void, Never>?
 
     init(
-        personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
-        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
-        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
-        settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
+        personRepository: PersonRepository = AppDependencies.shared.personRepository,
+        cadenceRepository: CadenceRepository = AppDependencies.shared.cadenceRepository,
+        groupRepository: GroupRepository = AppDependencies.shared.groupRepository,
+        settingsRepository: AppSettingsRepository = AppDependencies.shared.settingsRepository,
         promptStore: FreshStartPromptStore = FreshStartPromptStore()
     ) {
         self.personRepository = personRepository

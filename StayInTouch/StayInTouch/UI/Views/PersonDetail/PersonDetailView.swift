@@ -11,6 +11,7 @@ struct PersonDetailView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dependencies) private var dependencies
 
     @StateObject private var viewModel: PersonDetailViewModel
 
@@ -505,7 +506,7 @@ struct PersonDetailView: View {
         if let custom = viewModel.person.customBreachTime {
             return custom.toDate()
         }
-        if let settings = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext).fetch() {
+        if let settings = dependencies.settingsRepository.fetch() {
             return settings.breachTimeOfDay.toDate()
         }
         return Date()

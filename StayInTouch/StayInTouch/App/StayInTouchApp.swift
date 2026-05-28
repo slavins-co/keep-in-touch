@@ -35,6 +35,10 @@ struct KeepInTouchApp: App {
             ContentView()
                 .environment(\.managedObjectContext, coreDataStack.viewContext)
                 .environment(\.dependencies, AppDependencies(context: coreDataStack.viewContext))
+                // Note: in `-uiTesting` runs the coreDataStack is in-memory,
+                // so we pass it through explicitly here. Outside tests
+                // `AppDependencies.shared` already resolves to the same
+                // `CoreDataStack.shared.viewContext`.
                 .onAppear {
                     if coreDataStack.migrationFailed {
                         showMigrationAlert = true
