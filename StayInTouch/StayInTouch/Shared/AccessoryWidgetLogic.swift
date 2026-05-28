@@ -109,9 +109,12 @@ enum AccessoryWidgetLogic {
 
     /// The birthday to feature on the rectangular accessory, or nil to fall
     /// back to the overdue/at-risk content. Only the soonest birthday is a
-    /// candidate, and only when it lands within the threshold.
+    /// candidate, only when it lands within the threshold, and only when the
+    /// user hasn't disabled birthday surfacing on widgets (same setting that
+    /// gates the home widget's back-fill).
     static func rectangularBirthday(snapshot: WidgetDataProvider.Snapshot) -> RectangularBirthday? {
         guard
+            snapshot.birthdaysFillWidget,
             let birthday = snapshot.upcomingBirthdays.first,
             birthday.daysUntil <= rectangularBirthdayThresholdDays
         else { return nil }

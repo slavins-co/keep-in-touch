@@ -56,6 +56,7 @@ final class BirthdayCacheRefresherTests: XCTestCase {
                 XCTAssertEqual(ids, ["cn-1"])
                 return ["cn-1": Birthday(month: 5, day: 5, year: nil)]
             },
+            isContactsAuthorized: { true },
             writeCache: { written = $0 },
             reloadWidgets: { reloaded = true }
         )
@@ -64,6 +65,26 @@ final class BirthdayCacheRefresherTests: XCTestCase {
 
         XCTAssertEqual(written?[candidate.id], Birthday(month: 5, day: 5, year: nil))
         XCTAssertTrue(reloaded)
+    }
+
+    func testRefresh_skipsWriteWhenContactsUnauthorized() {
+        let candidate = makePerson(cnIdentifier: "cn-1", birthday: nil, birthdayNotificationsEnabled: true)
+        var wrote = false
+        var reloaded = false
+
+        let sut = BirthdayCacheRefresher(
+            fetchPeople: { [candidate] },
+            fetchContactBirthdays: { _ in XCTFail("Contacts must not be queried when unauthorized"); return [:] },
+            isContactsAuthorized: { false },
+            writeCache: { _ in wrote = true },
+            reloadWidgets: { reloaded = true }
+        )
+
+        sut.refresh()
+
+        // Existing cache is preserved (not overwritten) when access is missing.
+        XCTAssertFalse(wrote)
+        XCTAssertFalse(reloaded)
     }
 
     func testRefresh_excludesStoredBirthdayOptedOutAndNoCnId() {

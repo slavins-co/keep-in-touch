@@ -153,7 +153,7 @@ enum WidgetDataProvider {
             let people = fetchTrackedPeople(context: context, groupFilter: groupFilter)
             let groupsByID = fetchGroupsByID(context: context)
             let themeOverride = fetchAppTheme(context: context)
-            let birthdays = upcomingBirthdaysInContext(context: context, now: now, within: birthdayWindowDays, limit: maxFeaturedPeople)
+            let birthdays = upcomingBirthdaysInContext(context: context, now: now, within: birthdayWindowDays, limit: maxFeaturedPeople, groupFilter: groupFilter)
             let birthdaysFillWidget = fetchBirthdaysFillWidget(context: context)
 
             let atRisk = people
@@ -232,11 +232,12 @@ enum WidgetDataProvider {
         now: Date = Date(),
         within days: Int = birthdayWindowDays,
         limit: Int = maxFeaturedPeople,
+        groupFilter: UUID? = nil,
         calendar: Calendar = .current,
         cache: [UUID: Birthday]? = nil
     ) -> [BirthdaySummary] {
         let resolvedCache = cache ?? BirthdayCache.read()
-        let people = fetchBirthdayCandidates(context: context)
+        let people = fetchBirthdayCandidates(context: context, groupFilter: groupFilter)
 
         var summaries: [BirthdaySummary] = people.compactMap { person in
             guard
@@ -293,9 +294,10 @@ enum WidgetDataProvider {
         context: NSManagedObjectContext,
         now: Date,
         within days: Int,
-        limit: Int
+        limit: Int,
+        groupFilter: UUID?
     ) -> [BirthdaySummary] {
-        upcomingBirthdays(context: context, now: now, within: days, limit: limit)
+        upcomingBirthdays(context: context, now: now, within: days, limit: limit, groupFilter: groupFilter)
     }
 
     /// Overdue people first (oldest overdue first), then due-soon
@@ -339,12 +341,23 @@ enum WidgetDataProvider {
 
     /// Tracked, non-demo people who opted into birthday surfacing. Paused and
     /// snoozed people are still included — a birthday is a birthday; the
-    /// snooze/pause distinction governs SLA reminders, not birthdays.
-    private static func fetchBirthdayCandidates(context: NSManagedObjectContext) -> [PersonEntity] {
+    /// snooze/pause distinction governs SLA reminders, not birthdays. When a
+    /// `groupFilter` is set (group-scoped widget), birthdays are scoped to the
+    /// same group as the overdue list so the two surfaces stay consistent.
+    private static func fetchBirthdayCandidates(
+        context: NSManagedObjectContext,
+        groupFilter: UUID?
+    ) -> [PersonEntity] {
         let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
-        request.predicate = NSPredicate(
-            format: "isTracked == YES AND isDemoData != YES AND birthdayNotificationsEnabled == YES"
-        )
+        var predicates: [NSPredicate] = [
+            NSPredicate(format: "isTracked == YES"),
+            NSPredicate(format: "isDemoData != YES"),
+            NSPredicate(format: "birthdayNotificationsEnabled == YES"),
+        ]
+        if let groupFilter {
+            predicates.append(NSPredicate(format: "groupId == %@", groupFilter as CVarArg))
+        }
+        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         request.fetchBatchSize = 50
         return (try? context.fetch(request)) ?? []
     }

@@ -286,7 +286,15 @@ struct MediumWidgetView: View {
     private var birthdayRows: [BirthdaySummary] {
         guard snapshot.birthdaysFillWidget else { return [] }
         let freeRows = max(0, WidgetDataProvider.maxFeaturedPeople - snapshot.featured.count)
-        return Array(snapshot.upcomingBirthdays.prefix(freeRows))
+        // Don't show a person twice: if someone is both at-risk (a featured
+        // row) and has an upcoming birthday, the at-risk row already covers
+        // them — exclude them from the birthday back-fill.
+        let featuredIDs = Set(snapshot.featured.map(\.id))
+        return Array(
+            snapshot.upcomingBirthdays
+                .filter { !featuredIDs.contains($0.id) }
+                .prefix(freeRows)
+        )
     }
 
     var body: some View {

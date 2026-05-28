@@ -374,6 +374,27 @@ final class WidgetDataProviderTests: XCTestCase {
         XCTAssertEqual(upcoming(limit: 0).count, 5)  // 0 == no cap
     }
 
+    func testUpcomingBirthdays_respectsGroupFilter() {
+        let cadenceA = UUID()
+        let cadenceB = UUID()
+        _ = seedGroup(id: cadenceA, frequencyDays: 30, warningDays: 3)
+        _ = seedGroup(id: cadenceB, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "InGroupA", cadenceId: cadenceA, birthday: Birthday(month: 6, day: 17, year: nil))
+        _ = seedPerson(name: "InGroupB", cadenceId: cadenceB, birthday: Birthday(month: 6, day: 18, year: nil))
+
+        let scopedToA = WidgetDataProvider.upcomingBirthdays(
+            context: context,
+            now: refDate(),
+            within: 7,
+            limit: 3,
+            groupFilter: cadenceA,
+            calendar: gregorian,
+            cache: [:]
+        )
+
+        XCTAssertEqual(scopedToA.map(\.displayName), ["InGroupA"])
+    }
+
     func testSnapshot_birthdaysFillWidget_defaultsTrueWithoutSettings() {
         let snap = WidgetDataProvider.snapshot(context: context)
         XCTAssertTrue(snap.birthdaysFillWidget)
