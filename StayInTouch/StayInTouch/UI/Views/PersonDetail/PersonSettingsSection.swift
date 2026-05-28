@@ -102,7 +102,7 @@ struct PersonSettingsSection: View {
                     .font(.caption)
                     .foregroundStyle(DS.Colors.settingsChevron)
             }
-            .frame(minHeight: 48)
+            .frame(minHeight: DS.Spacing.menuRowHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -137,7 +137,7 @@ struct PersonSettingsSection: View {
                 .buttonStyle(.plain)
             }
         }
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
     private var settingsRowSnooze: some View {
@@ -172,7 +172,7 @@ struct PersonSettingsSection: View {
                 }
             }
         }
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
         .padding(.vertical, DS.Spacing.xs)
     }
 
@@ -198,7 +198,7 @@ struct PersonSettingsSection: View {
                     .font(.caption)
                     .foregroundStyle(DS.Colors.settingsChevron)
             }
-            .frame(minHeight: 48)
+            .frame(minHeight: DS.Spacing.menuRowHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -215,7 +215,7 @@ struct PersonSettingsSection: View {
         }
         .accessibilityLabel("Birthday Notifications for \(viewModel.person.displayName)")
         .accessibilityHint("Sends a reminder on this contact's birthday")
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
     private var settingsRowCadencesGroups: some View {
@@ -253,7 +253,7 @@ struct PersonSettingsSection: View {
                 .accessibilityHint("Opens group manager")
             }
         }
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
     private var settingsRowNotificationTime: some View {
@@ -273,7 +273,7 @@ struct PersonSettingsSection: View {
                         .font(.caption)
                         .foregroundStyle(DS.Colors.settingsChevron)
                 }
-                .frame(minHeight: 48)
+                .frame(minHeight: DS.Spacing.menuRowHeight)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -298,7 +298,7 @@ struct PersonSettingsSection: View {
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsItemLabel)
         }
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
     private var settingsRowPauseTracking: some View {
@@ -316,7 +316,7 @@ struct PersonSettingsSection: View {
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsItemLabel)
         }
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
     private var settingsRowRemoveContact: some View {
@@ -325,7 +325,7 @@ struct PersonSettingsSection: View {
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsRemoveText)
                 .frame(maxWidth: .infinity, alignment: .center)
-                .frame(minHeight: 48)
+                .frame(minHeight: DS.Spacing.menuRowHeight)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

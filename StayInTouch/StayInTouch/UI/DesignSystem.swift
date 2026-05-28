@@ -432,6 +432,11 @@ enum DS {
         static let xxl: CGFloat = 24
         static let xxxl: CGFloat = 32
         static let tapTarget: CGFloat = 44  // Apple HIG minimum tap target
+        /// Settings menu row height — slightly taller than `tapTarget` so the
+        /// row has visual breathing room around its content. **48px is
+        /// intentional and not the same as `tapTarget` (44)** — see PR #312
+        /// Q12 trade-off. Used across PersonSettingsSection rows.
+        static let menuRowHeight: CGFloat = 48
 
         // MARK: Adaptive Layout Values
         // Font sizes and CGFloat values cannot use UIColor trait-based adaptation,
