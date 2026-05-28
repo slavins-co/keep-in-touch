@@ -269,6 +269,116 @@ final class WidgetDataProviderTests: XCTestCase {
         XCTAssertNil(snap.featured.first?.nickname)
     }
 
+    // MARK: - upcomingBirthdays (#329)
+
+    private var gregorian: Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "America/New_York")!
+        return cal
+    }
+
+    private func refDate() -> Date {
+        gregorian.date(from: DateComponents(year: 2026, month: 6, day: 15))!
+    }
+
+    private func upcoming(within days: Int = 7, limit: Int = 3, cache: [UUID: Birthday] = [:]) -> [BirthdaySummary] {
+        WidgetDataProvider.upcomingBirthdays(
+            context: context,
+            now: refDate(),
+            within: days,
+            limit: limit,
+            calendar: gregorian,
+            cache: cache
+        )
+    }
+
+    func testUpcomingBirthdays_storedOnly_filtersWindowAndSorts() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "Today", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 15, year: 1990))
+        _ = seedPerson(name: "InThree", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 18, year: nil))
+        _ = seedPerson(name: "OutOfWindow", cadenceId: cadenceId, birthday: Birthday(month: 7, day: 1, year: nil))
+
+        let result = upcoming()
+        XCTAssertEqual(result.map(\.displayName), ["Today", "InThree"])
+        XCTAssertEqual(result.first?.daysUntil, 0)
+        XCTAssertEqual(result.last?.daysUntil, 3)
+    }
+
+    func testUpcomingBirthdays_cacheSourced_whenNoStoredBirthday() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        let person = seedPerson(name: "ContactOnly", cadenceId: cadenceId, birthday: nil)
+
+        let cache = [person.id!: Birthday(month: 6, day: 17, year: nil)]
+        let result = upcoming(cache: cache)
+
+        XCTAssertEqual(result.map(\.displayName), ["ContactOnly"])
+        XCTAssertEqual(result.first?.daysUntil, 2)
+    }
+
+    func testUpcomingBirthdays_storedTakesPrecedenceOverCache() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        let person = seedPerson(name: "Both", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 16, year: nil))
+
+        // Cache says day 20, but the stored birthday (day 16) must win.
+        let cache = [person.id!: Birthday(month: 6, day: 20, year: nil)]
+        let result = upcoming(cache: cache)
+
+        XCTAssertEqual(result.first?.daysUntil, 1)
+    }
+
+    func testUpcomingBirthdays_excludesBirthdayNotificationsDisabled() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "OptedOut", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 16, year: nil), birthdayNotificationsEnabled: false)
+
+        XCTAssertTrue(upcoming().isEmpty)
+    }
+
+    func testUpcomingBirthdays_excludesDemoData() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "Demo", cadenceId: cadenceId, isDemoData: true, birthday: Birthday(month: 6, day: 16, year: nil))
+
+        XCTAssertTrue(upcoming().isEmpty)
+    }
+
+    func testUpcomingBirthdays_includesPausedAndSnoozed() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "Paused", cadenceId: cadenceId, isPaused: true, birthday: Birthday(month: 6, day: 16, year: nil))
+        _ = seedPerson(name: "Snoozed", cadenceId: cadenceId, snoozedUntil: daysFromNow(30), birthday: Birthday(month: 6, day: 17, year: nil))
+
+        XCTAssertEqual(Set(upcoming().map(\.displayName)), ["Paused", "Snoozed"])
+    }
+
+    func testUpcomingBirthdays_windowBoundary_inclusive() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "Day7", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 22, year: nil))   // exactly 7
+        _ = seedPerson(name: "Day8", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 23, year: nil))   // 8 → excluded
+
+        XCTAssertEqual(upcoming().map(\.displayName), ["Day7"])
+    }
+
+    func testUpcomingBirthdays_respectsLimit() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        for offset in 1...5 {
+            _ = seedPerson(name: "P\(offset)", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 15 + offset, year: nil))
+        }
+
+        XCTAssertEqual(upcoming(limit: 2).count, 2)
+        XCTAssertEqual(upcoming(limit: 0).count, 5)  // 0 == no cap
+    }
+
+    func testSnapshot_birthdaysFillWidget_defaultsTrueWithoutSettings() {
+        let snap = WidgetDataProvider.snapshot(context: context)
+        XCTAssertTrue(snap.birthdaysFillWidget)
+    }
+
     // MARK: - Fixtures
 
     private func makeOverduePerson(name: String, status: WidgetPersonStatus, nickname: String? = nil) -> OverduePerson {
@@ -315,7 +425,9 @@ final class WidgetDataProviderTests: XCTestCase {
         isPaused: Bool = false,
         isTracked: Bool = true,
         isDemoData: Bool = false,
-        nickname: String? = nil
+        nickname: String? = nil,
+        birthday: Birthday? = nil,
+        birthdayNotificationsEnabled: Bool = true
     ) -> PersonEntity {
         let entity = PersonEntity(context: context)
         entity.id = UUID()
@@ -332,7 +444,8 @@ final class WidgetDataProviderTests: XCTestCase {
         entity.isDemoData = isDemoData
         entity.notificationsMuted = false
         entity.contactUnavailable = false
-        entity.birthdayNotificationsEnabled = true
+        entity.birthdayNotificationsEnabled = birthdayNotificationsEnabled
+        entity.birthday = birthday?.toJsonString()
         entity.nickname = nickname
         entity.sortOrder = 0
         entity.createdAt = Date()

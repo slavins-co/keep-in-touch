@@ -290,7 +290,9 @@ final class AccessoryWidgetLogicTests: XCTestCase {
         dueSoonCount: Int,
         featured: [OverduePerson],
         hasTrackedPeople: Bool = true,
-        trackedCount: Int = 5
+        trackedCount: Int = 5,
+        upcomingBirthdays: [BirthdaySummary] = [],
+        birthdaysFillWidget: Bool = true
     ) -> WidgetDataProvider.Snapshot {
         WidgetDataProvider.Snapshot(
             overdueCount: overdueCount,
@@ -298,7 +300,9 @@ final class AccessoryWidgetLogicTests: XCTestCase {
             featured: featured,
             hasTrackedPeople: hasTrackedPeople,
             trackedCount: trackedCount,
-            themeOverride: nil
+            themeOverride: nil,
+            upcomingBirthdays: upcomingBirthdays,
+            birthdaysFillWidget: birthdaysFillWidget
         )
     }
 }

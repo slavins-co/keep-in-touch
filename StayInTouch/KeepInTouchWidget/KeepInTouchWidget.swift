@@ -61,11 +61,15 @@ extension WidgetDataProvider.Snapshot {
         ],
         hasTrackedPeople: true,
         trackedCount: 8,
-        themeOverride: nil
+        themeOverride: nil,
+        upcomingBirthdays: [
+            BirthdaySummary(id: UUID(), displayName: "Mom", nickname: nil, initials: "M", avatarColorHex: "#A78BFA", daysUntil: 1, nextOccurrence: Date()),
+        ],
+        birthdaysFillWidget: true
     )
 
-    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil)
-    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: true, trackedCount: 5, themeOverride: nil)
+    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil, upcomingBirthdays: [], birthdaysFillWidget: true)
+    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: true, trackedCount: 5, themeOverride: nil, upcomingBirthdays: [], birthdaysFillWidget: true)
 }
 
 extension WidgetPersonStatus {

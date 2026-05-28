@@ -70,9 +70,54 @@ extension OverduePerson {
     }
 }
 
+/// Lightweight DTO for an upcoming birthday rendered by the widgets (#329).
+struct BirthdaySummary: Hashable {
+    let id: UUID
+    let displayName: String
+    let nickname: String?
+    let initials: String
+    let avatarColorHex: String
+    /// Whole calendar days until the next occurrence (0 == today).
+    let daysUntil: Int
+    let nextOccurrence: Date
+}
+
+extension BirthdaySummary {
+    /// Short display preference: nickname > first name > displayName.
+    var displayShortName: String {
+        if let nick = nickname?.trimmingCharacters(in: .whitespacesAndNewlines), !nick.isEmpty {
+            return nick
+        }
+        let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let first = trimmed.split(separator: " ").first.map(String.init) ?? ""
+        return first.isEmpty ? trimmed : first
+    }
+
+    /// "Today" / "Tomorrow" / "in N days".
+    var countdownLabel: String {
+        switch daysUntil {
+        case 0: return "Today"
+        case 1: return "Tomorrow"
+        default: return "in \(daysUntil) days"
+        }
+    }
+
+    /// Compact form for constrained surfaces: "today" / "tomorrow" / "Nd".
+    var shortCountdownLabel: String {
+        switch daysUntil {
+        case 0: return "today"
+        case 1: return "tomorrow"
+        default: return "\(daysUntil)d"
+        }
+    }
+}
+
 enum WidgetDataProvider {
 
     static let maxFeaturedPeople = 3
+
+    /// Default lookahead for surfacing upcoming birthdays (#329).
+    static let birthdayWindowDays = 7
 
     struct Snapshot {
         let overdueCount: Int
@@ -85,6 +130,13 @@ enum WidgetDataProvider {
         let trackedCount: Int
         /// Raw AppSettings.theme string: "dark", "light", "system", or nil.
         let themeOverride: String?
+        /// Upcoming birthdays within `birthdayWindowDays`, soonest first,
+        /// capped at `maxFeaturedPeople`. Used by the existing home widget's
+        /// empty-space back-fill.
+        let upcomingBirthdays: [BirthdaySummary]
+        /// AppSettings flag gating whether the home widget back-fills empty
+        /// space with birthdays. Defaults true when no settings row exists.
+        let birthdaysFillWidget: Bool
     }
 
     /// Testable core. `loadSnapshot` in the widget target wraps this
@@ -94,13 +146,15 @@ enum WidgetDataProvider {
         now: Date = Date(),
         groupFilter: UUID? = nil
     ) -> Snapshot {
-        var result = Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil)
+        var result = Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil, upcomingBirthdays: [], birthdaysFillWidget: true)
 
         context.performAndWait {
             let hasTrackedPeople = countTrackedPeople(context: context) > 0
             let people = fetchTrackedPeople(context: context, groupFilter: groupFilter)
             let groupsByID = fetchGroupsByID(context: context)
             let themeOverride = fetchAppTheme(context: context)
+            let birthdays = upcomingBirthdaysInContext(context: context, now: now, within: birthdayWindowDays, limit: maxFeaturedPeople)
+            let birthdaysFillWidget = fetchBirthdaysFillWidget(context: context)
 
             let atRisk = people
                 .compactMap { person -> OverduePerson? in
@@ -144,11 +198,94 @@ enum WidgetDataProvider {
                 featured: featured,
                 hasTrackedPeople: hasTrackedPeople,
                 trackedCount: people.count,
-                themeOverride: themeOverride
+                themeOverride: themeOverride,
+                upcomingBirthdays: birthdays,
+                birthdaysFillWidget: birthdaysFillWidget
             )
         }
 
         return result
+    }
+
+    // MARK: - Upcoming birthdays (#329)
+
+    /// Upcoming birthdays within `days`, soonest first (ties broken by name),
+    /// capped at `limit` (pass `0` for no cap). Resolves each person's
+    /// birthday from the stored `Person.birthday` first, falling back to the
+    /// App Group `BirthdayCache` (contact-sourced, written by the app). Only
+    /// people with `birthdayNotificationsEnabled == true` are considered.
+    ///
+    /// `cache` is injectable for testing; production reads `BirthdayCache`.
+    /// Must be called inside the caller's `context.perform`/`performAndWait`.
+    static func upcomingBirthdays(
+        context: NSManagedObjectContext,
+        now: Date = Date(),
+        within days: Int = birthdayWindowDays,
+        limit: Int = maxFeaturedPeople,
+        calendar: Calendar = .current,
+        cache: [UUID: Birthday]? = nil
+    ) -> [BirthdaySummary] {
+        let resolvedCache = cache ?? BirthdayCache.read()
+        let people = fetchBirthdayCandidates(context: context)
+
+        var summaries: [BirthdaySummary] = people.compactMap { person in
+            guard
+                let id = person.id,
+                let displayName = person.displayName,
+                let initials = person.initials,
+                let avatarColor = person.avatarColor
+            else { return nil }
+
+            let birthday = person.birthday.flatMap(Birthday.from(jsonString:)) ?? resolvedCache[id]
+            guard let birthday else { return nil }
+
+            let daysUntil = birthday.daysUntil(from: now, calendar: calendar)
+            guard daysUntil <= days else { return nil }
+
+            return BirthdaySummary(
+                id: id,
+                displayName: displayName,
+                nickname: person.nickname,
+                initials: initials,
+                avatarColorHex: avatarColor,
+                daysUntil: daysUntil,
+                nextOccurrence: birthday.nextOccurrence(after: now, calendar: calendar)
+            )
+        }
+
+        summaries.sort { lhs, rhs in
+            lhs.daysUntil != rhs.daysUntil
+                ? lhs.daysUntil < rhs.daysUntil
+                : lhs.displayName.localizedCaseInsensitiveCompare(rhs.displayName) == .orderedAscending
+        }
+
+        return limit > 0 ? Array(summaries.prefix(limit)) : summaries
+    }
+
+    /// Wrapper that opens its own `performAndWait` — for the dedicated
+    /// Birthday widget timeline, which fetches birthdays independently of the
+    /// overdue snapshot.
+    static func birthdaysSnapshot(
+        context: NSManagedObjectContext,
+        now: Date = Date(),
+        within days: Int = birthdayWindowDays,
+        limit: Int = 5
+    ) -> [BirthdaySummary] {
+        var result: [BirthdaySummary] = []
+        context.performAndWait {
+            result = upcomingBirthdays(context: context, now: now, within: days, limit: limit)
+        }
+        return result
+    }
+
+    /// Internal variant used inside `snapshot()`'s existing `performAndWait`.
+    private static func upcomingBirthdaysInContext(
+        context: NSManagedObjectContext,
+        now: Date,
+        within days: Int,
+        limit: Int
+    ) -> [BirthdaySummary] {
+        upcomingBirthdays(context: context, now: now, within: days, limit: limit)
     }
 
     /// Overdue people first (oldest overdue first), then due-soon
@@ -172,6 +309,27 @@ enum WidgetDataProvider {
         let request: NSFetchRequest<AppSettingsEntity> = AppSettingsEntity.fetchRequest()
         request.fetchLimit = 1
         return (try? context.fetch(request))?.first?.theme
+    }
+
+    /// Reads the birthdays-fill-widget flag. Defaults to `true` when no
+    /// settings row exists (matches the model's `defaultValueString="YES"`).
+    private static func fetchBirthdaysFillWidget(context: NSManagedObjectContext) -> Bool {
+        let request: NSFetchRequest<AppSettingsEntity> = AppSettingsEntity.fetchRequest()
+        request.fetchLimit = 1
+        guard let settings = (try? context.fetch(request))?.first else { return true }
+        return settings.birthdaysFillWidget
+    }
+
+    /// Tracked, non-demo people who opted into birthday surfacing. Paused and
+    /// snoozed people are still included — a birthday is a birthday; the
+    /// snooze/pause distinction governs SLA reminders, not birthdays.
+    private static func fetchBirthdayCandidates(context: NSManagedObjectContext) -> [PersonEntity] {
+        let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
+        request.predicate = NSPredicate(
+            format: "isTracked == YES AND isDemoData != YES AND birthdayNotificationsEnabled == YES"
+        )
+        request.fetchBatchSize = 50
+        return (try? context.fetch(request)) ?? []
     }
 
     /// Count-only fetch against every tracked non-demo person. Used

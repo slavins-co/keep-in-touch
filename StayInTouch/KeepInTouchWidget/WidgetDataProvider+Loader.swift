@@ -19,7 +19,9 @@ extension WidgetDataProvider {
                 featured: [],
                 hasTrackedPeople: false,
                 trackedCount: 0,
-                themeOverride: nil
+                themeOverride: nil,
+                upcomingBirthdays: [],
+                birthdaysFillWidget: true
             )
         }
         return snapshot(context: context, now: now, groupFilter: groupFilter)
