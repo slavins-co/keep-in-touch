@@ -37,7 +37,7 @@ final class SnoozedContactsViewModelTests: XCTestCase {
             TestFactory.makePerson(name: "Not Snoozed", isTracked: true, snoozedUntil: nil)
         ]
 
-        sut = SnoozedContactsViewModel(personRepository: personRepo, referenceDate: now)
+        sut = SnoozedContactsViewModel(personRepository: personRepo, now: { self.now })
 
         XCTAssertEqual(sut.people.count, 1)
         XCTAssertEqual(sut.people.first?.displayName, "Active Snooze")
@@ -49,7 +49,7 @@ final class SnoozedContactsViewModelTests: XCTestCase {
             TestFactory.makePerson(name: "Alice", isTracked: true, snoozedUntil: future())
         ]
 
-        sut = SnoozedContactsViewModel(personRepository: personRepo, referenceDate: now)
+        sut = SnoozedContactsViewModel(personRepository: personRepo, now: { self.now })
 
         XCTAssertEqual(sut.people.map(\.displayName), ["Alice", "Zara"])
     }
@@ -59,7 +59,7 @@ final class SnoozedContactsViewModelTests: XCTestCase {
     func testUnsnoozeClearsSnoozedUntil() throws {
         let person = TestFactory.makePerson(name: "Snoozed", isTracked: true, snoozedUntil: future())
         personRepo.people = [person]
-        sut = SnoozedContactsViewModel(personRepository: personRepo, referenceDate: now)
+        sut = SnoozedContactsViewModel(personRepository: personRepo, now: { self.now })
 
         sut.unsnooze(person)
 
@@ -71,7 +71,7 @@ final class SnoozedContactsViewModelTests: XCTestCase {
         let p1 = TestFactory.makePerson(name: "Alice", isTracked: true, snoozedUntil: future())
         let p2 = TestFactory.makePerson(name: "Bob", isTracked: true, snoozedUntil: future())
         personRepo.people = [p1, p2]
-        sut = SnoozedContactsViewModel(personRepository: personRepo, referenceDate: now)
+        sut = SnoozedContactsViewModel(personRepository: personRepo, now: { self.now })
         XCTAssertEqual(sut.people.count, 2)
 
         sut.unsnooze([p1, p2])

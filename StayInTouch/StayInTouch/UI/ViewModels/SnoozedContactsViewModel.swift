@@ -13,14 +13,18 @@ final class SnoozedContactsViewModel: ObservableObject, ViewModelErrorHandling {
     @Published private(set) var people: [Person] = []
 
     private let personRepository: PersonRepository
-    private let referenceDate: Date
+    /// Evaluated fresh on every `load()` so a snooze that expires while the
+    /// screen is open drops off on the next `.onAppear`, staying consistent
+    /// with the Settings badge (which reads `Date()` each refresh). Injectable
+    /// for deterministic tests.
+    private let now: () -> Date
 
     init(
         personRepository: PersonRepository = AppDependencies.shared.personRepository,
-        referenceDate: Date = Date()
+        now: @escaping () -> Date = { Date() }
     ) {
         self.personRepository = personRepository
-        self.referenceDate = referenceDate
+        self.now = now
         load()
     }
 
@@ -32,6 +36,7 @@ final class SnoozedContactsViewModel: ObservableObject, ViewModelErrorHandling {
         // Only *actively* snoozed people — an expired snooze is effectively
         // un-snoozed. Paused-and-snoozed people still appear here; snooze is
         // the dimension this screen manages.
+        let referenceDate = now()
         people = personRepository.fetchTracked(includePaused: true)
             .filter { person in
                 guard let snoozedUntil = person.snoozedUntil else { return false }
