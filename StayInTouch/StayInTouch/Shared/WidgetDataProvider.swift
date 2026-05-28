@@ -321,6 +321,13 @@ enum WidgetDataProvider {
         return (try? context.fetch(request))?.first?.theme
     }
 
+    /// Internal accessor for the raw theme override, used by the dedicated
+    /// Birthday widget loader so it can apply the same app-theme treatment
+    /// as the overdue widget. Must be called inside `context.perform`.
+    static func themeOverride(context: NSManagedObjectContext) -> String? {
+        fetchAppTheme(context: context)
+    }
+
     /// Reads the birthdays-fill-widget flag. Defaults to `true` when no
     /// settings row exists (matches the model's `defaultValueString="YES"`).
     private static func fetchBirthdaysFillWidget(context: NSManagedObjectContext) -> Bool {
