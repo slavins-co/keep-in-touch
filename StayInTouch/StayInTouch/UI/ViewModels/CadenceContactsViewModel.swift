@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-final class CadenceContactsViewModel: ObservableObject {
+final class CadenceContactsViewModel: ObservableObject, ViewModelErrorHandling {
     @Published private(set) var people: [Person] = []
     @Published private(set) var available: [Person] = []
     @Published private(set) var otherCadences: [Cadence] = []
@@ -54,11 +54,8 @@ final class CadenceContactsViewModel: ObservableObject {
 
     func movePerson(_ person: Person, to destinationCadenceId: UUID) {
         let updated = AssignCadenceUseCase().assign(person: person, to: destinationCadenceId)
-        do {
+        handleWrite("CadenceContactsViewModel.movePerson", fallback: .saveFailed("CadenceContacts")) {
             try personRepository.save(updated)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "CadenceContactsViewModel.movePerson")
-            ErrorToastManager.shared.show(.saveFailed("CadenceContacts"))
         }
         NotificationCenter.default.post(name: .personDidChange, object: updated.id)
         load()
@@ -81,11 +78,8 @@ final class CadenceContactsViewModel: ObservableObject {
             load()
             return
         }
-        do {
+        handleWrite("CadenceContactsViewModel.addPeople", fallback: .saveFailed("CadenceContacts")) {
             try personRepository.batchSave(updates)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "CadenceContactsViewModel.addPeople")
-            ErrorToastManager.shared.show(.saveFailed("CadenceContacts"))
         }
         // Pass nil as object since the post covers a set of people; observers
         // ignore the object payload (they reload everything anyway).

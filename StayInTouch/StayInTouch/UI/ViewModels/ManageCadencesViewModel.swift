@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-final class ManageCadencesViewModel: ObservableObject {
+final class ManageCadencesViewModel: ObservableObject, ViewModelErrorHandling {
     @Published private(set) var cadences: [Cadence] = []
     @Published private(set) var countsByCadence: [UUID: Int] = [:]
 
@@ -57,27 +57,15 @@ final class ManageCadencesViewModel: ObservableObject {
                 var cleared = existing
                 cleared.isDefault = false
                 cleared.modifiedAt = Date()
-                do {
+                handleRepositoryWrite("ManageCadencesViewModel.save.clearDefault", fallback: .saveFailed("ManageCadences")) {
                     try cadenceRepository.save(cleared)
-                } catch let error as RepositoryError {
-                    AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.save.clearDefault")
-                    ErrorToastManager.shared.show(AppError(message: error.userMessage))
-                } catch {
-                    AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.save.clearDefault (unexpected)")
-                    ErrorToastManager.shared.show(.saveFailed("ManageCadences"))
                 }
             }
             updated.isDefault = true
         }
 
-        do {
+        handleRepositoryWrite("ManageCadencesViewModel.save", fallback: .saveFailed("ManageCadences")) {
             try cadenceRepository.save(updated)
-        } catch let error as RepositoryError {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.save")
-            ErrorToastManager.shared.show(AppError(message: error.userMessage))
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.save (unexpected)")
-            ErrorToastManager.shared.show(.saveFailed("ManageCadences"))
         }
         load()
     }
@@ -88,14 +76,8 @@ final class ManageCadencesViewModel: ObservableObject {
             ?? cadences.first(where: { $0.id != cadence.id }) {
             movePeople(from: cadence, to: fallback)
         }
-        do {
+        handleRepositoryWrite("ManageCadencesViewModel.delete", fallback: .deleteFailed("ManageCadences")) {
             try cadenceRepository.delete(id: cadence.id)
-        } catch let error as RepositoryError {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.delete")
-            ErrorToastManager.shared.show(AppError(message: error.userMessage))
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.delete (unexpected)")
-            ErrorToastManager.shared.show(.deleteFailed("ManageCadences"))
         }
         load()
     }
@@ -111,14 +93,8 @@ final class ManageCadencesViewModel: ObservableObject {
             updated.modifiedAt = now
             return updated
         }
-        do {
+        handleRepositoryWrite("ManageCadencesViewModel.movePeople", fallback: .saveFailed("ManageCadences")) {
             try personRepository.batchSave(updatedPeople)
-        } catch let error as RepositoryError {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.movePeople")
-            ErrorToastManager.shared.show(AppError(message: error.userMessage))
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageCadencesViewModel.movePeople (unexpected)")
-            ErrorToastManager.shared.show(.saveFailed("ManageCadences"))
         }
     }
 

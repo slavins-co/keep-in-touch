@@ -9,7 +9,7 @@
 import Foundation
 
 @MainActor
-final class WalkthroughCoordinator: ObservableObject {
+final class WalkthroughCoordinator: ObservableObject, ViewModelErrorHandling {
     @Published private(set) var currentStep: WalkthroughStep?
     @Published private(set) var isPresentingDemoDetail: Bool = false
     private(set) var stepHistory: [WalkthroughStep] = []
@@ -166,15 +166,8 @@ final class WalkthroughCoordinator: ObservableObject {
         guard var settings = settingsRepository.fetch() else { return }
         settings.tutorialCompleted = true
         settings.tutorialVersion = Self.currentVersion
-        do {
+        handleWrite("WalkthroughCoordinator.saveCompletionFlag", fallback: .saveFailed("Tutorial")) {
             try settingsRepository.save(settings)
-        } catch {
-            AppLogger.logError(
-                error,
-                category: AppLogger.viewModel,
-                context: "WalkthroughCoordinator.saveCompletionFlag"
-            )
-            ErrorToastManager.shared.show(.saveFailed("Tutorial"))
         }
     }
 }
