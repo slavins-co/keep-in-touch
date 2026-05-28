@@ -10,33 +10,41 @@ import CoreData
 extension PersonEntity {
     func toDomain() -> Person {
         Person(
-            id: requiredField(id, entity: "PersonEntity", field: "id", fallback: UUID()),
-            cnIdentifier: cnIdentifier,
-            displayName: requiredField(displayName, entity: "PersonEntity", field: "displayName", fallback: ""),
-            nickname: nickname,
-            initials: requiredField(initials, entity: "PersonEntity", field: "initials", fallback: ""),
-            avatarColor: requiredField(avatarColor, entity: "PersonEntity", field: "avatarColor", fallback: ""),
+            identity: Person.Identity(
+                id: requiredField(id, entity: "PersonEntity", field: "id", fallback: UUID()),
+                cnIdentifier: cnIdentifier,
+                displayName: requiredField(displayName, entity: "PersonEntity", field: "displayName", fallback: ""),
+                nickname: nickname,
+                initials: requiredField(initials, entity: "PersonEntity", field: "initials", fallback: ""),
+                avatarColor: requiredField(avatarColor, entity: "PersonEntity", field: "avatarColor", fallback: "")
+            ),
             cadenceId: requiredField(groupId, entity: "PersonEntity", field: "groupId", fallback: UUID()),
             groupIds: decodeTagIds(tagIds),
-            lastTouchAt: lastTouchAt,
-            lastTouchMethod: lastTouchMethod.flatMap(TouchMethod.init(rawValue:)),
-            lastTouchNotes: lastTouchNotes,
-            nextTouchNotes: nextTouchNotes,
             isPaused: isPaused,
             isTracked: isTracked,
-            notificationsMuted: notificationsMuted,
-            customBreachTime: customBreachTime.flatMap(LocalTime.from(jsonString:)),
-            snoozedUntil: snoozedUntil,
-            customDueDate: customDueDate,
             birthday: birthday.flatMap(Birthday.from(jsonString:)),
-            birthdayNotificationsEnabled: birthdayNotificationsEnabled,
-            contactUnavailable: contactUnavailable,
-            isDemoData: isDemoData,
-            cadenceAddedAt: groupAddedAt,
-            createdAt: requiredField(createdAt, entity: "PersonEntity", field: "createdAt", fallback: Date()),
-            modifiedAt: requiredField(modifiedAt, entity: "PersonEntity", field: "modifiedAt", fallback: Date()),
-            sortOrder: Int(sortOrder),
-            preferredMessenger: preferredMessenger.flatMap(PreferredMessenger.init(rawValue:))
+            touchState: Person.TouchState(
+                lastTouchAt: lastTouchAt,
+                lastTouchMethod: lastTouchMethod.flatMap(TouchMethod.init(rawValue:)),
+                lastTouchNotes: lastTouchNotes,
+                nextTouchNotes: nextTouchNotes,
+                snoozedUntil: snoozedUntil,
+                customDueDate: customDueDate,
+                cadenceAddedAt: groupAddedAt
+            ),
+            notifications: Person.NotificationConfig(
+                notificationsMuted: notificationsMuted,
+                customBreachTime: customBreachTime.flatMap(LocalTime.from(jsonString:)),
+                birthdayNotificationsEnabled: birthdayNotificationsEnabled,
+                preferredMessenger: preferredMessenger.flatMap(PreferredMessenger.init(rawValue:))
+            ),
+            metadata: Person.Metadata(
+                contactUnavailable: contactUnavailable,
+                isDemoData: isDemoData,
+                createdAt: requiredField(createdAt, entity: "PersonEntity", field: "createdAt", fallback: Date()),
+                modifiedAt: requiredField(modifiedAt, entity: "PersonEntity", field: "modifiedAt", fallback: Date()),
+                sortOrder: Int(sortOrder)
+            )
         )
     }
 

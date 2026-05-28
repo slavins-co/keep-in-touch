@@ -197,31 +197,37 @@ enum TestFactory {
         cnIdentifier: String? = nil
     ) -> Person {
         Person(
-            id: id,
-            cnIdentifier: cnIdentifier,
-            displayName: name,
-            initials: String(name.prefix(2)),
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(
+                id: id,
+                cnIdentifier: cnIdentifier,
+                displayName: name,
+                initials: String(name.prefix(2)),
+                avatarColor: "#FF6B6B"
+            ),
             cadenceId: cadenceId,
             groupIds: groupIds,
-            lastTouchAt: lastTouchAt,
-            lastTouchMethod: lastTouchMethod,
-            lastTouchNotes: lastTouchNotes,
-            nextTouchNotes: nil,
             isPaused: isPaused,
             isTracked: isTracked,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: snoozedUntil,
-            customDueDate: customDueDate,
             birthday: birthday,
-            birthdayNotificationsEnabled: birthdayNotificationsEnabled,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: Date(),
-            createdAt: Date(),
-            modifiedAt: Date(),
-            sortOrder: 0
+            touchState: Person.TouchState(
+                lastTouchAt: lastTouchAt,
+                lastTouchMethod: lastTouchMethod,
+                lastTouchNotes: lastTouchNotes,
+                snoozedUntil: snoozedUntil,
+                customDueDate: customDueDate,
+                cadenceAddedAt: Date()
+            ),
+            notifications: Person.NotificationConfig(
+                notificationsMuted: false,
+                birthdayNotificationsEnabled: birthdayNotificationsEnabled
+            ),
+            metadata: Person.Metadata(
+                contactUnavailable: false,
+                isDemoData: false,
+                createdAt: Date(),
+                modifiedAt: Date(),
+                sortOrder: 0
+            )
         )
     }
 

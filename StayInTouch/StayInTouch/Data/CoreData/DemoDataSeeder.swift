@@ -42,31 +42,32 @@ final class DemoDataSeeder {
                 let lastTouch = Calendar.current.date(byAdding: .day, value: -daysAgo, to: now)
 
                 let person = Person(
-                    id: UUID(),
-                    cnIdentifier: nil,
-                    displayName: name,
-                    initials: InitialsBuilder.initials(for: name),
-                    avatarColor: AvatarColors.randomHex(),
+                    identity: Person.Identity(
+                        id: UUID(),
+                        displayName: name,
+                        initials: InitialsBuilder.initials(for: name),
+                        avatarColor: AvatarColors.randomHex()
+                    ),
                     cadenceId: cadenceId,
                     groupIds: groupIds,
-                    lastTouchAt: lastTouch,
-                    lastTouchMethod: .text,
-                    lastTouchNotes: nil,
-                    nextTouchNotes: nil,
                     isPaused: false,
                     isTracked: true,
-                    notificationsMuted: false,
-                    customBreachTime: nil,
-                    snoozedUntil: nil,
-                    customDueDate: nil,
-                    birthday: nil,
-                    birthdayNotificationsEnabled: true,
-                    contactUnavailable: false,
-                    isDemoData: true,
-                    cadenceAddedAt: now,
-                    createdAt: now,
-                    modifiedAt: now,
-                    sortOrder: sortOrder
+                    touchState: Person.TouchState(
+                        lastTouchAt: lastTouch,
+                        lastTouchMethod: .text,
+                        cadenceAddedAt: now
+                    ),
+                    notifications: Person.NotificationConfig(
+                        notificationsMuted: false,
+                        birthdayNotificationsEnabled: true
+                    ),
+                    metadata: Person.Metadata(
+                        contactUnavailable: false,
+                        isDemoData: true,
+                        createdAt: now,
+                        modifiedAt: now,
+                        sortOrder: sortOrder
+                    )
                 )
 
                 let assigned = AssignCadenceUseCase(referenceDate: now).assign(person: person, to: cadenceId)

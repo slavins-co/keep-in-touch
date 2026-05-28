@@ -19,31 +19,14 @@ final class PersonStatusServiceTests: XCTestCase {
         let reference = Calendar.current.date(byAdding: .day, value: 26, to: now) ?? now
 
         let person = Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Alex",
-            initials: "A",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Alex", initials: "A", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: now,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: nil,
-            createdAt: now,
-            modifiedAt: now,
-            sortOrder: 0
+            touchState: Person.TouchState(lastTouchAt: now),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: now, modifiedAt: now, sortOrder: 0)
         )
 
         let cadence = Cadence(
@@ -70,59 +53,25 @@ final class PersonStatusServiceTests: XCTestCase {
         let reference = Calendar.current.date(byAdding: .day, value: 10, to: now) ?? now
 
         let older = Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Bob",
-            initials: "B",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Bob", initials: "B", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: Calendar.current.date(byAdding: .day, value: -10, to: reference),
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: nil,
-            createdAt: now,
-            modifiedAt: now,
-            sortOrder: 0
+            touchState: Person.TouchState(lastTouchAt: Calendar.current.date(byAdding: .day, value: -10, to: reference)),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: now, modifiedAt: now, sortOrder: 0)
         )
 
         let newer = Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Alex",
-            initials: "A",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Alex", initials: "A", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: Calendar.current.date(byAdding: .day, value: -9, to: reference),
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: nil,
-            createdAt: now,
-            modifiedAt: now,
-            sortOrder: 0
+            touchState: Person.TouchState(lastTouchAt: Calendar.current.date(byAdding: .day, value: -9, to: reference)),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: now, modifiedAt: now, sortOrder: 0)
         )
 
         let cadence = Cadence(
@@ -352,31 +301,14 @@ final class PersonStatusServiceTests: XCTestCase {
         cadenceAddedAt: Date? = Date()
     ) -> Person {
         Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: name,
-            initials: String(name.prefix(1)),
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: name, initials: String(name.prefix(1)), avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: lastTouchAt,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: isPaused,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: snoozedUntil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: cadenceAddedAt,
-            createdAt: Date(),
-            modifiedAt: Date(),
-            sortOrder: 0
+            touchState: Person.TouchState(lastTouchAt: lastTouchAt, snoozedUntil: snoozedUntil, cadenceAddedAt: cadenceAddedAt),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: Date(), modifiedAt: Date(), sortOrder: 0)
         )
     }
 }

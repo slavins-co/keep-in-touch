@@ -332,31 +332,31 @@ struct DataImportService {
                 let mappedGroupIds = exportPerson.groupIds.compactMap { preview.groupIdMap[$0] ?? $0 }
 
                 var person = Person(
-                    id: newId,
-                    cnIdentifier: nil,
-                    displayName: exportPerson.displayName,
-                    initials: InitialsBuilder.initials(for: exportPerson.displayName),
-                    avatarColor: AvatarColors.randomHex(),
+                    identity: Person.Identity(
+                        id: newId,
+                        displayName: exportPerson.displayName,
+                        initials: InitialsBuilder.initials(for: exportPerson.displayName),
+                        avatarColor: AvatarColors.randomHex()
+                    ),
                     cadenceId: mappedCadenceId,
                     groupIds: mappedGroupIds,
-                    lastTouchAt: exportPerson.lastTouchAt,
-                    lastTouchMethod: nil,
-                    lastTouchNotes: nil,
-                    nextTouchNotes: nil,
                     isPaused: exportPerson.isPaused,
                     isTracked: true,
-                    notificationsMuted: false,
-                    customBreachTime: nil,
-                    snoozedUntil: nil,
-                    customDueDate: nil,
                     birthday: exportPerson.birthday.flatMap(Birthday.from(jsonString:)),
-                    birthdayNotificationsEnabled: exportPerson.birthdayNotificationsEnabled ?? true,
-                    contactUnavailable: false,
-                    isDemoData: false,
-                    cadenceAddedAt: nil,
-                    createdAt: exportPerson.createdAt,
-                    modifiedAt: now,
-                    sortOrder: sortOrder
+                    touchState: Person.TouchState(
+                        lastTouchAt: exportPerson.lastTouchAt
+                    ),
+                    notifications: Person.NotificationConfig(
+                        notificationsMuted: false,
+                        birthdayNotificationsEnabled: exportPerson.birthdayNotificationsEnabled ?? true
+                    ),
+                    metadata: Person.Metadata(
+                        contactUnavailable: false,
+                        isDemoData: false,
+                        createdAt: exportPerson.createdAt,
+                        modifiedAt: now,
+                        sortOrder: sortOrder
+                    )
                 )
                 person = assignCadence.assign(person: person, to: mappedCadenceId)
                 personsToSave.append(person)

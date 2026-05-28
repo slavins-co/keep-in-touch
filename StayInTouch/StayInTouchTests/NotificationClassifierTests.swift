@@ -107,31 +107,14 @@ final class NotificationClassifierTests: XCTestCase {
         let reference = Date()
         let lastTouch = daysAgo.flatMap { Calendar.current.date(byAdding: .day, value: -$0, to: reference) }
         return Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Test",
-            initials: "T",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Test", initials: "T", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: lastTouch,
-            lastTouchMethod: .text,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: muted,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: lastTouch,
-            createdAt: reference,
-            modifiedAt: reference,
-            sortOrder: 0
+            touchState: Person.TouchState(lastTouchAt: lastTouch, lastTouchMethod: .text, cadenceAddedAt: lastTouch),
+            notifications: Person.NotificationConfig(notificationsMuted: muted, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: reference, modifiedAt: reference, sortOrder: 0)
         )
     }
 }
