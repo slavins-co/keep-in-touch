@@ -47,7 +47,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let userInfo = response.notification.request.content.userInfo
 
         if response.actionIdentifier == NotificationIdentifier.actionLogConnection,
-           let personIdString = userInfo["personId"] as? String,
+           let personIdString = userInfo[NotificationIdentifier.UserInfoKey.personId.rawValue] as? String,
            let personId = UUID(uuidString: personIdString) {
             logConnectionFromNotification(personId: personId)
             completionHandler()
@@ -56,9 +56,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
         // Only forward known fields to prevent untrusted data propagation
         let sanitized: [AnyHashable: Any] = [
-            "type": userInfo["type"] as? String ?? "",
-            "personId": userInfo["personId"] as? String ?? "",
-            "category": userInfo["category"] as? String ?? ""
+            NotificationIdentifier.UserInfoKey.type.rawValue: userInfo[NotificationIdentifier.UserInfoKey.type.rawValue] as? String ?? "",
+            NotificationIdentifier.UserInfoKey.personId.rawValue: userInfo[NotificationIdentifier.UserInfoKey.personId.rawValue] as? String ?? "",
+            NotificationIdentifier.UserInfoKey.category.rawValue: userInfo[NotificationIdentifier.UserInfoKey.category.rawValue] as? String ?? ""
         ]
         DeepLinkRouter.shared.handleNotification(userInfo: sanitized)
         completionHandler()

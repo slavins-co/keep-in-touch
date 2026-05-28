@@ -249,7 +249,10 @@ final class SettingsViewModel: ObservableObject {
         content.title = "Test Notification"
         content.body = "Keep In Touch test notification."
         content.sound = .default
-        content.userInfo = ["type": "home", "category": "test"]
+        content.userInfo = [
+            NotificationIdentifier.UserInfoKey.type.rawValue: NotificationIdentifier.UserInfoValue.home.rawValue,
+            NotificationIdentifier.UserInfoKey.category.rawValue: NotificationIdentifier.UserInfoValue.test.rawValue
+        ]
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false)
         let request = UNNotificationRequest(identifier: "test_notification", content: content, trigger: trigger)
