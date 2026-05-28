@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-final class ManageGroupsViewModel: ObservableObject {
+final class ManageGroupsViewModel: ObservableObject, ViewModelErrorHandling {
     @Published private(set) var groups: [Group] = []
     @Published private(set) var countsByGroup: [UUID: Int] = [:]
 
@@ -50,14 +50,8 @@ final class ManageGroupsViewModel: ObservableObject {
     func save(_ group: Group) {
         var updated = group
         updated.modifiedAt = Date()
-        do {
+        handleRepositoryWrite("ManageGroupsViewModel.save", fallback: .saveFailed("ManageGroups")) {
             try groupRepository.save(updated)
-        } catch let error as RepositoryError {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save")
-            ErrorToastManager.shared.show(AppError(message: error.userMessage))
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.save (unexpected)")
-            ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
         }
         load()
     }
@@ -66,14 +60,8 @@ final class ManageGroupsViewModel: ObservableObject {
         // Remove group references from persons first, then delete entity
         // This order prevents orphaned groupId references on crash
         removeGroupFromPeople(groupId: group.id)
-        do {
+        handleRepositoryWrite("ManageGroupsViewModel.delete", fallback: .deleteFailed("ManageGroups")) {
             try groupRepository.delete(id: group.id)
-        } catch let error as RepositoryError {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.delete")
-            ErrorToastManager.shared.show(AppError(message: error.userMessage))
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.delete (unexpected)")
-            ErrorToastManager.shared.show(.deleteFailed("ManageGroups"))
         }
         load()
     }
@@ -89,14 +77,8 @@ final class ManageGroupsViewModel: ObservableObject {
             updatedPeople.append(updated)
         }
         guard !updatedPeople.isEmpty else { return }
-        do {
+        handleRepositoryWrite("ManageGroupsViewModel.removeGroupFromPeople", fallback: .saveFailed("ManageGroups")) {
             try personRepository.batchSave(updatedPeople)
-        } catch let error as RepositoryError {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.removeGroupFromPeople")
-            ErrorToastManager.shared.show(AppError(message: error.userMessage))
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "ManageGroupsViewModel.removeGroupFromPeople (unexpected)")
-            ErrorToastManager.shared.show(.saveFailed("ManageGroups"))
         }
     }
 }

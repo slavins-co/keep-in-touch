@@ -10,7 +10,7 @@ import UserNotifications
 import Contacts
 
 @MainActor
-final class SettingsViewModel: ObservableObject {
+final class SettingsViewModel: ObservableObject, ViewModelErrorHandling {
     @Published private(set) var settings: AppSettings
     @Published private(set) var allCadences: [Cadence] = []
     @Published private(set) var cadencesCount: Int = 0
@@ -440,14 +440,8 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - Private
 
     private func save() {
-        do {
+        handleRepositoryWrite("SettingsViewModel.save", fallback: .saveFailed("Settings")) {
             try settingsRepository.save(settings)
-        } catch let error as RepositoryError {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.save")
-            ErrorToastManager.shared.show(AppError(message: error.userMessage))
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "SettingsViewModel.save (unexpected)")
-            ErrorToastManager.shared.show(.saveFailed("Settings"))
         }
         NotificationCenter.default.post(name: .settingsDidChange, object: nil)
     }
