@@ -69,30 +69,7 @@ struct BirthdayWidgetEntryView: View {
                 BirthdaySmallView(birthdays: entry.birthdays)
             }
         }
-        .containerBackground(Color(uiColor: resolvedBackgroundColor), for: .widget)
-        .applyBirthdayTheme(entry.themeOverride)
-    }
-
-    private var resolvedBackgroundColor: UIColor {
-        switch entry.themeOverride {
-        case "dark":
-            return UIColor.systemBackground.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
-        case "light":
-            return UIColor.systemBackground.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
-        default:
-            return UIColor.systemBackground
-        }
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func applyBirthdayTheme(_ theme: String?) -> some View {
-        switch theme {
-        case "dark": self.environment(\.colorScheme, .dark)
-        case "light": self.environment(\.colorScheme, .light)
-        default: self
-        }
+        .widgetAppTheme(entry.themeOverride)
     }
 }
 

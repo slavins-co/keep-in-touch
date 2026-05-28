@@ -101,15 +101,6 @@ extension BirthdaySummary {
         default: return "in \(daysUntil) days"
         }
     }
-
-    /// Compact form for constrained surfaces: "today" / "tomorrow" / "Nd".
-    var shortCountdownLabel: String {
-        switch daysUntil {
-        case 0: return "today"
-        case 1: return "tomorrow"
-        default: return "\(daysUntil)d"
-        }
-    }
 }
 
 enum WidgetDataProvider {
@@ -153,7 +144,8 @@ enum WidgetDataProvider {
             let people = fetchTrackedPeople(context: context, groupFilter: groupFilter)
             let groupsByID = fetchGroupsByID(context: context)
             let themeOverride = fetchAppTheme(context: context)
-            let birthdays = upcomingBirthdaysInContext(context: context, now: now, within: birthdayWindowDays, limit: maxFeaturedPeople, groupFilter: groupFilter)
+            // Called inside this performAndWait, as upcomingBirthdays requires.
+            let birthdays = upcomingBirthdays(context: context, now: now, within: birthdayWindowDays, limit: maxFeaturedPeople, groupFilter: groupFilter)
             let birthdaysFillWidget = fetchBirthdaysFillWidget(context: context)
 
             let atRisk = people
@@ -271,33 +263,6 @@ enum WidgetDataProvider {
         }
 
         return limit > 0 ? Array(summaries.prefix(limit)) : summaries
-    }
-
-    /// Wrapper that opens its own `performAndWait` — for the dedicated
-    /// Birthday widget timeline, which fetches birthdays independently of the
-    /// overdue snapshot.
-    static func birthdaysSnapshot(
-        context: NSManagedObjectContext,
-        now: Date = Date(),
-        within days: Int = birthdayWindowDays,
-        limit: Int = 5
-    ) -> [BirthdaySummary] {
-        var result: [BirthdaySummary] = []
-        context.performAndWait {
-            result = upcomingBirthdays(context: context, now: now, within: days, limit: limit)
-        }
-        return result
-    }
-
-    /// Internal variant used inside `snapshot()`'s existing `performAndWait`.
-    private static func upcomingBirthdaysInContext(
-        context: NSManagedObjectContext,
-        now: Date,
-        within days: Int,
-        limit: Int,
-        groupFilter: UUID?
-    ) -> [BirthdaySummary] {
-        upcomingBirthdays(context: context, now: now, within: days, limit: limit, groupFilter: groupFilter)
     }
 
     /// Overdue people first (oldest overdue first), then due-soon

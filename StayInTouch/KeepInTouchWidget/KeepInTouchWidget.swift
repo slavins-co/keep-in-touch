@@ -114,46 +114,47 @@ struct OverdueWidgetEntryView: View {
                 SmallWidgetView(snapshot: entry.snapshot)
             }
         }
-        .containerBackground(Color(uiColor: resolvedBackgroundColor), for: .widget)
-        .applyAppTheme(entry.snapshot.themeOverride)
-    }
-
-    /// Resolves UIColor.systemBackground against either a forced trait
-    /// collection (when the user picked "dark" or "light" in-app) or
-    /// leaves it dynamic (when they chose "system"). Explicit resolution
-    /// is required because `.containerBackground(_:for:)` captures its
-    /// ShapeStyle outside the view's environment — `.fill.tertiary` and
-    /// friends won't flip in response to an `.environment(\.colorScheme)`
-    /// override applied higher up the widget's view tree.
-    private var resolvedBackgroundColor: UIColor {
-        switch entry.snapshot.themeOverride {
-        case "dark":
-            return UIColor.systemBackground.resolvedColor(
-                with: UITraitCollection(userInterfaceStyle: .dark)
-            )
-        case "light":
-            return UIColor.systemBackground.resolvedColor(
-                with: UITraitCollection(userInterfaceStyle: .light)
-            )
-        default:
-            return UIColor.systemBackground
-        }
+        .widgetAppTheme(entry.snapshot.themeOverride)
     }
 }
 
-private extension View {
-    /// Honors the app's Theme setting ("dark"/"light"/"system") from
-    /// AppSettings. Widgets default to following the system — this
-    /// modifier only overrides when the user picked a specific scheme.
-    @ViewBuilder
-    func applyAppTheme(_ theme: String?) -> some View {
+extension View {
+    /// Applies the app's Theme setting ("dark"/"light"/"system") to a widget:
+    /// the themed system-background container plus a matching color-scheme
+    /// override. Shared by every home-screen widget entry view so they render
+    /// with the same scheme the user picked in-app (default: follow system).
+    ///
+    /// The background color is resolved explicitly against a forced trait
+    /// collection because `.containerBackground(_:for:)` captures its
+    /// ShapeStyle outside the view's environment — `.fill.tertiary` and
+    /// friends won't flip in response to an `.environment(\.colorScheme)`
+    /// override applied higher up the widget's view tree.
+    func widgetAppTheme(_ theme: String?) -> some View {
+        let backgroundColor: UIColor
         switch theme {
         case "dark":
-            self.environment(\.colorScheme, .dark)
+            backgroundColor = UIColor.systemBackground.resolvedColor(
+                with: UITraitCollection(userInterfaceStyle: .dark)
+            )
         case "light":
-            self.environment(\.colorScheme, .light)
+            backgroundColor = UIColor.systemBackground.resolvedColor(
+                with: UITraitCollection(userInterfaceStyle: .light)
+            )
         default:
-            self
+            backgroundColor = UIColor.systemBackground
+        }
+
+        return self
+            .containerBackground(Color(uiColor: backgroundColor), for: .widget)
+            .widgetColorScheme(theme)
+    }
+
+    @ViewBuilder
+    private func widgetColorScheme(_ theme: String?) -> some View {
+        switch theme {
+        case "dark": self.environment(\.colorScheme, .dark)
+        case "light": self.environment(\.colorScheme, .light)
+        default: self
         }
     }
 }

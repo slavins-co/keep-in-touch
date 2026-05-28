@@ -223,12 +223,7 @@ struct AccessoryRectangularView: View {
 
     private func rectangularAccessibilityLabel() -> String {
         if let birthday = AccessoryWidgetLogic.rectangularBirthday(snapshot: snapshot) {
-            let when: String
-            switch birthday.daysUntil {
-            case 0: when = "is today"
-            case 1: when = "is tomorrow"
-            default: when = "is in \(birthday.daysUntil) days"
-            }
+            let when = "is \(birthday.dayPhrase)"
             if birthday.overdueCount > 0 {
                 return "Keep In Touch. \(birthday.name)'s birthday \(when). \(birthday.overdueCount) \(birthday.overdueCount == 1 ? "person" : "people") need a reach-out."
             }

@@ -105,6 +105,16 @@ enum AccessoryWidgetLogic {
         let daysUntil: Int
         /// Overdue people to mention as a trailing "· N overdue" suffix.
         let overdueCount: Int
+
+        /// Lowercase day phrase: "today" / "tomorrow" / "in N days". Shared by
+        /// the subtitle and the accessibility label so the two stay in sync.
+        var dayPhrase: String {
+            switch daysUntil {
+            case 0: return "today"
+            case 1: return "tomorrow"
+            default: return "in \(daysUntil) days"
+            }
+        }
     }
 
     /// The birthday to feature on the rectangular accessory, or nil to fall
@@ -130,16 +140,10 @@ enum AccessoryWidgetLogic {
     /// Second line for the rectangular birthday layout, e.g.
     /// "tomorrow · 3 overdue", "today", or "in 2 days".
     static func rectangularBirthdaySubtitle(_ birthday: RectangularBirthday) -> String {
-        let when: String
-        switch birthday.daysUntil {
-        case 0: when = "today"
-        case 1: when = "tomorrow"
-        default: when = "in \(birthday.daysUntil) days"
-        }
         if birthday.overdueCount > 0 {
-            return "\(when) · \(birthday.overdueCount) overdue"
+            return "\(birthday.dayPhrase) · \(birthday.overdueCount) overdue"
         }
-        return when
+        return birthday.dayPhrase
     }
 
     // MARK: - Inline label
