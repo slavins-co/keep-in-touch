@@ -344,34 +344,19 @@ enum DS {
 
         /// Returns muted background and text colors for avatars based on color scheme.
         /// Light mode: stored hex as background, white text.
-        /// Dark mode: muted variants per dark mode addendum spec.
+        /// Dark mode: muted variants per dark mode addendum spec, sourced
+        /// from `AvatarColors.entries` so a new palette color resolves in
+        /// both modes without a parallel edit here. Unknown hexes fall
+        /// back to accent green.
         static func avatarColors(for hex: String, scheme: ColorScheme) -> (background: Color, text: Color) {
             guard scheme == .dark else {
                 return (Color(hex: hex), .white)
             }
-
-            let normalized = Color.normalize(hex: hex).uppercased()
-            switch normalized {
-            case "6BCB77":  // Green
-                return (Color(hex: "2D5040"), Color(hex: "4ADE80"))
-            case "4ECDC4":  // Teal
-                return (Color(hex: "0D3D3D"), Color(hex: "5EEAD4"))
-            case "FF6B6B":  // Red / Orange-ish
-                return (Color(hex: "3D2010"), Color(hex: "FDBA74"))
-            case "F38181":  // Pink-Red
-                return (Color(hex: "3D2010"), Color(hex: "FDBA74"))
-            case "AA96DA":  // Purple
-                return (Color(hex: "2D1B4E"), Color(hex: "D8B4FE"))
-            case "FFD93D":  // Yellow / Amber
-                return (Color(hex: "3D2E10"), Color(hex: "FCD34D"))
-            case "95E1D3":  // Mint
-                return (Color(hex: "0D3D3D"), Color(hex: "5EEAD4"))
-            case "FCBAD3":  // Light Pink
-                return (Color(hex: "2D1B4E"), Color(hex: "D8B4FE"))
-            default:
+            guard let entry = AvatarColors.entry(forLightHex: hex) else {
                 // Accent green fallback
                 return (BrandColors.heroAccentGreen, .white)
             }
+            return (Color(hex: entry.darkBackgroundHex), Color(hex: entry.darkTextHex))
         }
     }
 
