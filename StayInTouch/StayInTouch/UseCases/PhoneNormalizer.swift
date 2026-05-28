@@ -42,6 +42,19 @@ enum PhoneNormalizer {
         return dialingCode + digits
     }
 
+    /// Permissive phone filter that keeps digits and the leading `+`. Used by
+    /// `tel:` and `sms:` URL builders — the native dialer/Messages tolerate
+    /// loose formatting and don't require full E.164 normalization. Returns
+    /// `nil` for inputs that contain no dialable characters at all (so the
+    /// caller can short-circuit URL construction).
+    ///
+    /// **Byte-identical** to the prior inline `phone.filter { $0.isNumber
+    /// || $0 == "+" }` at CallerRouter.telURL and MessengerRouter.url(.iMessage).
+    static func dialableDigits(_ phone: String) -> String? {
+        let digits = phone.filter { $0.isNumber || $0 == "+" }
+        return digits.isEmpty ? nil : digits
+    }
+
     /// Minimal map of common region codes to dialing codes. Add entries as needed.
     private static func dialingCode(forRegion region: String) -> String? {
         switch region {
