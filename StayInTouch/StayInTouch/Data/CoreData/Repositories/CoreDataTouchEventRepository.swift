@@ -90,4 +90,13 @@ final class CoreDataTouchEventRepository: TouchEventRepository {
             in: context
         )
     }
+
+    func batchDelete(ids: [UUID]) throws {
+        try batchDeleteEntitiesByID(
+            fetchRequest: { TouchEventEntity.fetchRequest() },
+            ids: ids,
+            entityLabel: "TouchEvent",
+            in: context
+        )
+    }
 }

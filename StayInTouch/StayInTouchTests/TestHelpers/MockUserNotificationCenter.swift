@@ -14,30 +14,56 @@ final class MockUserNotificationCenter: UserNotificationCenterProtocol, @uncheck
         case setCategories
     }
 
-    var addedRequests: [UNNotificationRequest] = []
-    var categoriesSet: Set<UNNotificationCategory> = []
-    var badgeCounts: [Int] = []
-    var removeAllCallCount = 0
-    private(set) var operations: [Operation] = []
+    // E6 added concurrent `notificationCenter.add` calls via TaskGroup
+    // inside the scheduler. Real `UNUserNotificationCenter` is documented
+    // thread-safe; this mock must be too. Guard all mutable state behind
+    // a lock so parallel `add(_:)` calls cannot race on `Array.append`.
+    private let lock = NSLock()
+    private var _addedRequests: [UNNotificationRequest] = []
+    private var _categoriesSet: Set<UNNotificationCategory> = []
+    private var _badgeCounts: [Int] = []
+    private var _removeAllCallCount = 0
+    private var _operations: [Operation] = []
+
+    var addedRequests: [UNNotificationRequest] {
+        get { lock.lock(); defer { lock.unlock() }; return _addedRequests }
+        set { lock.lock(); defer { lock.unlock() }; _addedRequests = newValue }
+    }
+    var categoriesSet: Set<UNNotificationCategory> {
+        get { lock.lock(); defer { lock.unlock() }; return _categoriesSet }
+    }
+    var badgeCounts: [Int] {
+        get { lock.lock(); defer { lock.unlock() }; return _badgeCounts }
+    }
+    var removeAllCallCount: Int {
+        get { lock.lock(); defer { lock.unlock() }; return _removeAllCallCount }
+    }
+    var operations: [Operation] {
+        get { lock.lock(); defer { lock.unlock() }; return _operations }
+    }
 
     func setNotificationCategories(_ categories: Set<UNNotificationCategory>) {
-        categoriesSet = categories
-        operations.append(.setCategories)
+        lock.lock(); defer { lock.unlock() }
+        _categoriesSet = categories
+        _operations.append(.setCategories)
     }
 
     func add(_ request: UNNotificationRequest) async throws {
-        addedRequests.append(request)
-        operations.append(.add(request))
+        lock.lock(); defer { lock.unlock() }
+        _addedRequests.append(request)
+        _operations.append(.add(request))
     }
 
     func setBadgeCount(_ newBadgeCount: Int) async throws {
-        badgeCounts.append(newBadgeCount)
-        operations.append(.setBadge(newBadgeCount))
+        lock.lock(); defer { lock.unlock() }
+        _badgeCounts.append(newBadgeCount)
+        _operations.append(.setBadge(newBadgeCount))
     }
 
     func removeAllPendingNotificationRequests() {
-        removeAllCallCount += 1
-        addedRequests = []
-        operations.append(.removeAll)
+        lock.lock(); defer { lock.unlock() }
+        _removeAllCallCount += 1
+        _addedRequests = []
+        _operations.append(.removeAll)
     }
 }
