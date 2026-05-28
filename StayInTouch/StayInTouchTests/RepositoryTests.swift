@@ -63,31 +63,13 @@ final class RepositoryTests: XCTestCase {
         let cadenceId = UUID()
         let repo = CoreDataPersonRepository(context: context)
         let person = Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Alex Doe",
-            initials: "AD",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Alex Doe", initials: "AD", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: nil,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: nil,
-            createdAt: Date(),
-            modifiedAt: Date(),
-            sortOrder: 0
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: Date(), modifiedAt: Date(), sortOrder: 0)
         )
 
         try repo.save(person)

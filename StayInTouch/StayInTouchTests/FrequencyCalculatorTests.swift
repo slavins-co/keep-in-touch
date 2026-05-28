@@ -12,31 +12,13 @@ final class FrequencyCalculatorTests: XCTestCase {
     func testNoTouchNoGroupAddedIsUnknown() {
         let cadenceId = UUID()
         let person = Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Joe",
-            initials: "J",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Joe", initials: "J", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: nil,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: nil,
-            createdAt: Date(),
-            modifiedAt: Date(),
-            sortOrder: 0
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: Date(), modifiedAt: Date(), sortOrder: 0)
         )
         let cadence = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
         let status = FrequencyCalculator(referenceDate: Date()).status(for: person, in: [cadence])
@@ -48,31 +30,14 @@ final class FrequencyCalculatorTests: XCTestCase {
         let start = Date()
         let reference = Calendar.current.date(byAdding: .day, value: 7, to: start) ?? start
         let person = Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Joe",
-            initials: "J",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Joe", initials: "J", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: nil,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: start,
-            createdAt: start,
-            modifiedAt: start,
-            sortOrder: 0
+            touchState: Person.TouchState(cadenceAddedAt: start),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: start, modifiedAt: start, sortOrder: 0)
         )
         let cadence = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: start, modifiedAt: start)
         let status = FrequencyCalculator(referenceDate: reference).status(for: person, in: [cadence])
@@ -82,31 +47,13 @@ final class FrequencyCalculatorTests: XCTestCase {
     func testPausedIsAlwaysInSLA() {
         let cadenceId = UUID()
         let person = Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Pat",
-            initials: "P",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Pat", initials: "P", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: nil,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: true,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: nil,
-            createdAt: Date(),
-            modifiedAt: Date(),
-            sortOrder: 0
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: Date(), modifiedAt: Date(), sortOrder: 0)
         )
         let cadence = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
         let status = FrequencyCalculator(referenceDate: Date()).status(for: person, in: [cadence])
@@ -118,31 +65,14 @@ final class FrequencyCalculatorTests: XCTestCase {
         let start = Date()
         let reference = Calendar.current.date(byAdding: .day, value: 10, to: start) ?? start
         let person = Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Joe",
-            initials: "J",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Joe", initials: "J", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: nil,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: start,
-            createdAt: start,
-            modifiedAt: start,
-            sortOrder: 0
+            touchState: Person.TouchState(cadenceAddedAt: start),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: start, modifiedAt: start, sortOrder: 0)
         )
         let cadence = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: start, modifiedAt: start)
         let overdue = FrequencyCalculator(referenceDate: reference).daysOverdue(for: person, in: [cadence])
@@ -159,31 +89,14 @@ final class FrequencyCalculatorTests: XCTestCase {
 
         let cadenceId = UUID()
         let person = Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Eve",
-            initials: "E",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Eve", initials: "E", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: yesterdayAt11PM,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: nil,
-            createdAt: Date(),
-            modifiedAt: Date(),
-            sortOrder: 0
+            touchState: Person.TouchState(lastTouchAt: yesterdayAt11PM),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: Date(), modifiedAt: Date(), sortOrder: 0)
         )
 
         let days = FrequencyCalculator(referenceDate: todayAt8AM).daysSinceLastTouch(for: person)
@@ -198,31 +111,14 @@ final class FrequencyCalculatorTests: XCTestCase {
 
         let cadenceId = UUID()
         let person = Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Sam",
-            initials: "S",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Sam", initials: "S", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: todayAt1AM,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: nil,
-            createdAt: Date(),
-            modifiedAt: Date(),
-            sortOrder: 0
+            touchState: Person.TouchState(lastTouchAt: todayAt1AM),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: Date(), modifiedAt: Date(), sortOrder: 0)
         )
 
         let days = FrequencyCalculator(referenceDate: todayAt11PM).daysSinceLastTouch(for: person)
@@ -238,31 +134,14 @@ final class FrequencyCalculatorTests: XCTestCase {
 
         let cadenceId = UUID()
         let person = Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Alex",
-            initials: "A",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Alex", initials: "A", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: touchDate,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: nil,
-            createdAt: Date(),
-            modifiedAt: Date(),
-            sortOrder: 0
+            touchState: Person.TouchState(lastTouchAt: touchDate),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: Date(), modifiedAt: Date(), sortOrder: 0)
         )
         let cadence = Cadence(id: cadenceId, name: "Weekly", frequencyDays: 7, warningDays: 2, colorHex: nil, isDefault: true, sortOrder: 0, createdAt: Date(), modifiedAt: Date())
 

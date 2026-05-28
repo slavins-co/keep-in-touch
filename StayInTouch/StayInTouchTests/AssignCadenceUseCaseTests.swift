@@ -47,31 +47,14 @@ final class AssignCadenceUseCaseTests: XCTestCase {
 
     private func makePerson(cadenceId: UUID, cadenceAddedAt: Date?) -> Person {
         Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: "Person",
-            initials: "P",
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: "Person", initials: "P", avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: nil,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: cadenceAddedAt,
-            createdAt: Date(),
-            modifiedAt: Date(),
-            sortOrder: 0
+            touchState: Person.TouchState(cadenceAddedAt: cadenceAddedAt),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: Date(), modifiedAt: Date(), sortOrder: 0)
         )
     }
 }

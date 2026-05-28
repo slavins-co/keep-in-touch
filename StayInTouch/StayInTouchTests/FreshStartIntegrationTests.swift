@@ -28,31 +28,17 @@ final class FreshStartIntegrationTests: XCTestCase {
             Calendar.current.date(byAdding: .day, value: -$0, to: now)
         }
         return Person(
-            id: UUID(),
-            cnIdentifier: nil,
-            displayName: name,
-            initials: String(name.prefix(2)),
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: UUID(), displayName: name, initials: String(name.prefix(2)), avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: [],
-            lastTouchAt: lastTouch,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: isPaused,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: isDemoData,
-            cadenceAddedAt: Calendar.current.date(byAdding: .day, value: -60, to: now),
-            createdAt: now,
-            modifiedAt: now,
-            sortOrder: 0
+            touchState: Person.TouchState(
+                lastTouchAt: lastTouch,
+                cadenceAddedAt: Calendar.current.date(byAdding: .day, value: -60, to: now)
+            ),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: isDemoData, createdAt: now, modifiedAt: now, sortOrder: 0)
         )
     }
 

@@ -187,31 +187,14 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
         lastTouchAt: Date? = nil
     ) -> Person {
         Person(
-            id: id,
-            cnIdentifier: nil,
-            displayName: name,
-            initials: String(name.prefix(2)),
-            avatarColor: "#FF6B6B",
+            identity: Person.Identity(id: id, displayName: name, initials: String(name.prefix(2)), avatarColor: "#FF6B6B"),
             cadenceId: cadenceId,
             groupIds: groupIds,
-            lastTouchAt: lastTouchAt,
-            lastTouchMethod: nil,
-            lastTouchNotes: nil,
-            nextTouchNotes: nil,
             isPaused: isPaused,
             isTracked: isTracked,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
-            birthday: nil,
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: Date(),
-            createdAt: Date(),
-            modifiedAt: Date(),
-            sortOrder: 0
+            touchState: Person.TouchState(lastTouchAt: lastTouchAt, cadenceAddedAt: Date()),
+            notifications: Person.NotificationConfig(notificationsMuted: false, birthdayNotificationsEnabled: true),
+            metadata: Person.Metadata(contactUnavailable: false, isDemoData: false, createdAt: Date(), modifiedAt: Date(), sortOrder: 0)
         )
     }
 }
