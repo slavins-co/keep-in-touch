@@ -9,6 +9,14 @@
 //  Resolution is lazy via a function so the container can be swapped
 //  in tests without touching CoreDataStack.shared at import time.
 //
+//  N2 (audit #302) verification: this container does NOT instantiate a
+//  fresh Core Data stack on each intent invocation. The default resolver
+//  returns `AppDependencies.shared`, a process-wide singleton that
+//  resolves once to `CoreDataStack.shared.viewContext`. The first call to
+//  `dependencies` caches the resolved `AppDependencies`; every later
+//  invocation reuses it. Cold-start cost on Siri/Shortcuts runs is the
+//  one-time Core Data stack boot, identical to the UI cold path.
+//
 
 import Foundation
 
