@@ -175,6 +175,28 @@ final class CoreDataPersonRepositoryTests: XCTestCase {
         XCTAssertTrue(results.isEmpty)
     }
 
+    // MARK: - snoozedCount (#334)
+
+    func testSnoozedCountCountsOnlyActiveSnoozes() throws {
+        let now = Date()
+        let future = Calendar.current.date(byAdding: .day, value: 3, to: now)!
+        let past = Calendar.current.date(byAdding: .day, value: -3, to: now)!
+
+        try repo.save(TestFactory.makePerson(name: "ActiveSnooze", isTracked: true, snoozedUntil: future))
+        try repo.save(TestFactory.makePerson(name: "ExpiredSnooze", isTracked: true, snoozedUntil: past))
+        try repo.save(TestFactory.makePerson(name: "NotSnoozed", isTracked: true, snoozedUntil: nil))
+
+        XCTAssertEqual(repo.snoozedCount(referenceDate: now), 1)
+    }
+
+    func testSnoozedCountExcludesUntracked() throws {
+        let now = Date()
+        let future = Calendar.current.date(byAdding: .day, value: 3, to: now)!
+        try repo.save(TestFactory.makePerson(name: "UntrackedSnoozed", isTracked: false, snoozedUntil: future))
+
+        XCTAssertEqual(repo.snoozedCount(referenceDate: now), 0)
+    }
+
     // MARK: - Helpers
 
     private func makePerson(

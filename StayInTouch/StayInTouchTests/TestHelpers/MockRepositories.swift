@@ -58,6 +58,12 @@ final class MockPersonRepository: PersonRepository {
         pausedCountCallCount += 1
         return people.filter { $0.isTracked && $0.isPaused }.count
     }
+
+    var snoozedCountCallCount = 0
+    func snoozedCount(referenceDate: Date) -> Int {
+        snoozedCountCallCount += 1
+        return people.filter { $0.isTracked && ($0.snoozedUntil.map { $0 > referenceDate } ?? false) }.count
+    }
 }
 
 // MARK: - MockCadenceRepository

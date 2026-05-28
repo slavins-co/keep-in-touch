@@ -169,6 +169,22 @@ final class CoreDataPersonRepository: PersonRepository {
         return count
     }
 
+    func snoozedCount(referenceDate: Date = Date()) -> Int {
+        var count = 0
+        context.performAndWait {
+            let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
+            // Only *active* snoozes count — an expired snooze is effectively
+            // un-snoozed. Matches the active-snooze convention used in
+            // fetchOverdue (snoozedUntil <= referenceDate == not snoozed).
+            request.predicate = NSPredicate(
+                format: "isTracked == YES AND snoozedUntil != nil AND snoozedUntil > %@",
+                referenceDate as NSDate
+            )
+            count = (try? context.count(for: request)) ?? 0
+        }
+        return count
+    }
+
     private func basePredicate(includePaused: Bool) -> NSPredicate {
         if includePaused {
             return NSPredicate(format: "isTracked == YES")

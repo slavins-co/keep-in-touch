@@ -25,4 +25,10 @@ protocol PersonRepository {
     /// fetching every tracked person and filtering in Swift just to read
     /// a display count.
     func pausedCount() -> Int
+
+    /// Returns the number of tracked people whose snooze is still active
+    /// (`snoozedUntil > referenceDate`). Takes a reference date because
+    /// "active vs expired" depends on now, unlike `pausedCount()`. Backed
+    /// by `count(for:)` — no row materialization.
+    func snoozedCount(referenceDate: Date) -> Int
 }
