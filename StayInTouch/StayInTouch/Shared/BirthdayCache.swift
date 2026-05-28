@@ -44,7 +44,12 @@ enum BirthdayCache {
         let stringKeyed = Dictionary(uniqueKeysWithValues: birthdays.map { ($0.key.uuidString, $0.value) })
         guard let data = try? JSONEncoder().encode(stringKeyed) else { return false }
         do {
-            try data.write(to: url, options: [.atomic])
+            // Pin the same protection class the Core Data store uses
+            // (completeUntilFirstUserAuthentication) rather than trusting the
+            // OS default: PII at rest stays encrypted, while still being
+            // readable by the widget after first unlock (widgets render on the
+            // lock screen, so stricter `.complete` would break reads).
+            try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
             return true
         } catch {
             return false
