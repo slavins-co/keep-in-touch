@@ -52,62 +52,152 @@ struct Person: Identifiable, Equatable, Hashable {
     /// setting can flip behavior without per-row migration.
     var preferredMessenger: PreferredMessenger?
 
+    // MARK: - Nested Config Structs
+    //
+    // These group the 28 construction parameters into cohesive bundles so
+    // adding a field touches one struct instead of every call site. They are
+    // construction-only sugar: `Person`'s stored properties remain flat and
+    // unchanged, so persistence, `Equatable`, and `Hashable` are unaffected.
+    // Each field's default value matches the value the old flat initializer
+    // used, so a `Person` built via the new init is identical to one built via
+    // the old 28-param init with the same inputs.
+
+    /// "Who is this" core identity.
+    struct Identity {
+        var id: UUID
+        var cnIdentifier: String?
+        var displayName: String
+        var nickname: String?
+        var initials: String
+        var avatarColor: String
+
+        init(
+            id: UUID,
+            cnIdentifier: String? = nil,
+            displayName: String,
+            nickname: String? = nil,
+            initials: String,
+            avatarColor: String
+        ) {
+            self.id = id
+            self.cnIdentifier = cnIdentifier
+            self.displayName = displayName
+            self.nickname = nickname
+            self.initials = initials
+            self.avatarColor = avatarColor
+        }
+    }
+
+    /// Touch history and scheduling state.
+    struct TouchState {
+        var lastTouchAt: Date?
+        var lastTouchMethod: TouchMethod?
+        var lastTouchNotes: String?
+        var nextTouchNotes: String?
+        var snoozedUntil: Date?
+        var customDueDate: Date?
+        var cadenceAddedAt: Date?
+
+        init(
+            lastTouchAt: Date? = nil,
+            lastTouchMethod: TouchMethod? = nil,
+            lastTouchNotes: String? = nil,
+            nextTouchNotes: String? = nil,
+            snoozedUntil: Date? = nil,
+            customDueDate: Date? = nil,
+            cadenceAddedAt: Date? = nil
+        ) {
+            self.lastTouchAt = lastTouchAt
+            self.lastTouchMethod = lastTouchMethod
+            self.lastTouchNotes = lastTouchNotes
+            self.nextTouchNotes = nextTouchNotes
+            self.snoozedUntil = snoozedUntil
+            self.customDueDate = customDueDate
+            self.cadenceAddedAt = cadenceAddedAt
+        }
+    }
+
+    /// Notification / messaging preferences.
+    struct NotificationConfig {
+        var notificationsMuted: Bool
+        var customBreachTime: LocalTime?
+        var birthdayNotificationsEnabled: Bool
+        var preferredMessenger: PreferredMessenger?
+
+        init(
+            notificationsMuted: Bool,
+            customBreachTime: LocalTime? = nil,
+            birthdayNotificationsEnabled: Bool,
+            preferredMessenger: PreferredMessenger? = nil
+        ) {
+            self.notificationsMuted = notificationsMuted
+            self.customBreachTime = customBreachTime
+            self.birthdayNotificationsEnabled = birthdayNotificationsEnabled
+            self.preferredMessenger = preferredMessenger
+        }
+    }
+
+    /// Bookkeeping fields.
+    struct Metadata {
+        var contactUnavailable: Bool
+        var isDemoData: Bool
+        var createdAt: Date
+        var modifiedAt: Date
+        var sortOrder: Int
+
+        init(
+            contactUnavailable: Bool,
+            isDemoData: Bool,
+            createdAt: Date,
+            modifiedAt: Date,
+            sortOrder: Int
+        ) {
+            self.contactUnavailable = contactUnavailable
+            self.isDemoData = isDemoData
+            self.createdAt = createdAt
+            self.modifiedAt = modifiedAt
+            self.sortOrder = sortOrder
+        }
+    }
+
     init(
-        id: UUID,
-        cnIdentifier: String? = nil,
-        displayName: String,
-        nickname: String? = nil,
-        initials: String,
-        avatarColor: String,
+        identity: Identity,
         cadenceId: UUID,
         groupIds: [UUID],
-        lastTouchAt: Date? = nil,
-        lastTouchMethod: TouchMethod? = nil,
-        lastTouchNotes: String? = nil,
-        nextTouchNotes: String? = nil,
         isPaused: Bool,
         isTracked: Bool,
-        notificationsMuted: Bool,
-        customBreachTime: LocalTime? = nil,
-        snoozedUntil: Date? = nil,
-        customDueDate: Date? = nil,
         birthday: Birthday? = nil,
-        birthdayNotificationsEnabled: Bool,
-        contactUnavailable: Bool,
-        isDemoData: Bool,
-        cadenceAddedAt: Date? = nil,
-        createdAt: Date,
-        modifiedAt: Date,
-        sortOrder: Int,
-        preferredMessenger: PreferredMessenger? = nil
+        touchState: TouchState = TouchState(),
+        notifications: NotificationConfig,
+        metadata: Metadata
     ) {
-        self.id = id
-        self.cnIdentifier = cnIdentifier
-        self.displayName = displayName
-        self.nickname = nickname
-        self.initials = initials
-        self.avatarColor = avatarColor
+        self.id = identity.id
+        self.cnIdentifier = identity.cnIdentifier
+        self.displayName = identity.displayName
+        self.nickname = identity.nickname
+        self.initials = identity.initials
+        self.avatarColor = identity.avatarColor
         self.cadenceId = cadenceId
         self.groupIds = groupIds
-        self.lastTouchAt = lastTouchAt
-        self.lastTouchMethod = lastTouchMethod
-        self.lastTouchNotes = lastTouchNotes
-        self.nextTouchNotes = nextTouchNotes
+        self.lastTouchAt = touchState.lastTouchAt
+        self.lastTouchMethod = touchState.lastTouchMethod
+        self.lastTouchNotes = touchState.lastTouchNotes
+        self.nextTouchNotes = touchState.nextTouchNotes
         self.isPaused = isPaused
         self.isTracked = isTracked
-        self.notificationsMuted = notificationsMuted
-        self.customBreachTime = customBreachTime
-        self.snoozedUntil = snoozedUntil
-        self.customDueDate = customDueDate
+        self.notificationsMuted = notifications.notificationsMuted
+        self.customBreachTime = notifications.customBreachTime
+        self.snoozedUntil = touchState.snoozedUntil
+        self.customDueDate = touchState.customDueDate
         self.birthday = birthday
-        self.birthdayNotificationsEnabled = birthdayNotificationsEnabled
-        self.contactUnavailable = contactUnavailable
-        self.isDemoData = isDemoData
-        self.cadenceAddedAt = cadenceAddedAt
-        self.createdAt = createdAt
-        self.modifiedAt = modifiedAt
-        self.sortOrder = sortOrder
-        self.preferredMessenger = preferredMessenger
+        self.birthdayNotificationsEnabled = notifications.birthdayNotificationsEnabled
+        self.contactUnavailable = metadata.contactUnavailable
+        self.isDemoData = metadata.isDemoData
+        self.cadenceAddedAt = touchState.cadenceAddedAt
+        self.createdAt = metadata.createdAt
+        self.modifiedAt = metadata.modifiedAt
+        self.sortOrder = metadata.sortOrder
+        self.preferredMessenger = notifications.preferredMessenger
     }
 
     /// Nickname to display in UI. Returns nil when the stored nickname is
