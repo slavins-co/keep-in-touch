@@ -106,7 +106,7 @@ struct PersonDetailView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .tutorialScrollToAnchor)) { note in
                 guard viewModel.isPreview, let anchor = note.object as? String else { return }
-                withAnimation(.easeInOut(duration: 0.35)) {
+                withAnimation(.easeInOut(duration: DS.Motion.emphasized)) {
                     scrollProxy.scrollTo(anchor, anchor: .center)
                 }
             }
@@ -164,8 +164,8 @@ struct PersonDetailView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: showQuickActionUndo)
-        .animation(.easeInOut(duration: 0.3), value: showRemoveUndo)
+        .animation(.easeInOut(duration: DS.Motion.expressive), value: showQuickActionUndo)
+        .animation(.easeInOut(duration: DS.Motion.expressive), value: showRemoveUndo)
         .onAppear {
             viewModel.load()
         }
@@ -183,7 +183,7 @@ struct PersonDetailView: View {
             if newPhase == .active, pendingQuickActionMethod != nil {
                 showQuickActionUndo = true
                 Task {
-                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    try? await Task.sleep(nanoseconds: DS.nanoseconds(DS.Timing.undoBannerSeconds))
                     dismissQuickActionUndo()
                 }
             }
@@ -485,7 +485,7 @@ struct PersonDetailView: View {
         Haptics.medium()
         showRemoveUndo = true
         pendingRemoveTask = Task {
-            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            try? await Task.sleep(nanoseconds: DS.nanoseconds(DS.Timing.undoBannerSeconds))
             guard !Task.isCancelled else { return }
             showRemoveUndo = false
             viewModel.deletePerson()

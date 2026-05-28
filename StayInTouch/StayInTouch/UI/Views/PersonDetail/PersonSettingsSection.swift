@@ -14,7 +14,7 @@ struct PersonSettingsSection: View {
         VStack(alignment: .leading, spacing: 0) {
             // Collapsible header
             Button {
-                withAnimation(.easeInOut(duration: 0.25)) {
+                withAnimation(.easeInOut(duration: DS.Motion.standard)) {
                     settingsExpanded.toggle()
                 }
             } label: {
@@ -29,7 +29,7 @@ struct PersonSettingsSection: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(DS.Colors.settingsChevron)
                         .rotationEffect(.degrees(settingsExpanded ? 0 : -90))
-                        .animation(.easeInOut(duration: 0.25), value: settingsExpanded)
+                        .animation(.easeInOut(duration: DS.Motion.standard), value: settingsExpanded)
                 }
                 .padding(.vertical, DS.Spacing.md)
                 .contentShape(Rectangle())
@@ -102,7 +102,7 @@ struct PersonSettingsSection: View {
                     .font(.caption)
                     .foregroundStyle(DS.Colors.settingsChevron)
             }
-            .frame(minHeight: 48)
+            .frame(minHeight: DS.Spacing.menuRowHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -122,8 +122,7 @@ struct PersonSettingsSection: View {
                     .font(DS.Typography.caption)
             } else {
                 Button {
-                    let initialDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
-                    onAction(.customDueDatePicker(initialDate: initialDate))
+                    onAction(.customDueDatePicker(initialDate: .defaultSnoozeStartDate))
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Text("Not set")
@@ -137,7 +136,7 @@ struct PersonSettingsSection: View {
                 .buttonStyle(.plain)
             }
         }
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
     private var settingsRowSnooze: some View {
@@ -166,13 +165,12 @@ struct PersonSettingsSection: View {
                     snoozePill("7d") { snooze(days: 7) }
                     snoozePill("14d") { snooze(days: 14) }
                     snoozePill("Pick date") {
-                        let initialDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
-                        onAction(.snoozeDatePicker(initialDate: initialDate))
+                        onAction(.snoozeDatePicker(initialDate: .defaultSnoozeStartDate))
                     }
                 }
             }
         }
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
         .padding(.vertical, DS.Spacing.xs)
     }
 
@@ -198,7 +196,7 @@ struct PersonSettingsSection: View {
                     .font(.caption)
                     .foregroundStyle(DS.Colors.settingsChevron)
             }
-            .frame(minHeight: 48)
+            .frame(minHeight: DS.Spacing.menuRowHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -215,7 +213,7 @@ struct PersonSettingsSection: View {
         }
         .accessibilityLabel("Birthday Notifications for \(viewModel.person.displayName)")
         .accessibilityHint("Sends a reminder on this contact's birthday")
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
     private var settingsRowCadencesGroups: some View {
@@ -253,7 +251,7 @@ struct PersonSettingsSection: View {
                 .accessibilityHint("Opens group manager")
             }
         }
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
     private var settingsRowNotificationTime: some View {
@@ -273,7 +271,7 @@ struct PersonSettingsSection: View {
                         .font(.caption)
                         .foregroundStyle(DS.Colors.settingsChevron)
                 }
-                .frame(minHeight: 48)
+                .frame(minHeight: DS.Spacing.menuRowHeight)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -298,7 +296,7 @@ struct PersonSettingsSection: View {
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsItemLabel)
         }
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
     private var settingsRowPauseTracking: some View {
@@ -316,7 +314,7 @@ struct PersonSettingsSection: View {
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsItemLabel)
         }
-        .frame(minHeight: 48)
+        .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
     private var settingsRowRemoveContact: some View {
@@ -325,7 +323,7 @@ struct PersonSettingsSection: View {
                 .font(DS.Typography.settingsRowLabel)
                 .foregroundStyle(DS.Colors.settingsRemoveText)
                 .frame(maxWidth: .infinity, alignment: .center)
-                .frame(minHeight: 48)
+                .frame(minHeight: DS.Spacing.menuRowHeight)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

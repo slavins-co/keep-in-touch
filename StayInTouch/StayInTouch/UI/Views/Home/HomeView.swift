@@ -40,7 +40,7 @@ struct HomeView: View {
             if newValue != nil {
                 AnalyticsService.track("filter.applied", parameters: ["type": "cadence"])
             }
-            withAnimation(.easeInOut(duration: 0.25)) {
+            withAnimation(.easeInOut(duration: DS.Motion.standard)) {
                 viewModel.applyFilters()
             }
         }
@@ -48,7 +48,7 @@ struct HomeView: View {
             if newValue != nil {
                 AnalyticsService.track("filter.applied", parameters: ["type": "group"])
             }
-            withAnimation(.easeInOut(duration: 0.25)) {
+            withAnimation(.easeInOut(duration: DS.Motion.standard)) {
                 viewModel.applyFilters()
             }
         }
@@ -56,11 +56,11 @@ struct HomeView: View {
             let isSearching = !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             if isSearching && savedCollapsedSections == nil {
                 savedCollapsedSections = collapsedSections
-                withAnimation(.easeInOut(duration: 0.25)) {
+                withAnimation(.easeInOut(duration: DS.Motion.standard)) {
                     collapsedSections = []
                 }
             } else if !isSearching, let saved = savedCollapsedSections {
-                withAnimation(.easeInOut(duration: 0.25)) {
+                withAnimation(.easeInOut(duration: DS.Motion.standard)) {
                     collapsedSections = saved
                 }
                 savedCollapsedSections = nil
@@ -405,7 +405,7 @@ struct HomeView: View {
     // MARK: - Helpers
 
     private func toggleSection(_ key: String) {
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(.easeInOut(duration: DS.Motion.expressive)) {
             if collapsedSections.contains(key) {
                 collapsedSections.remove(key)
             } else {

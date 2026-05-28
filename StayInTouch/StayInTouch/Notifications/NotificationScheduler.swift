@@ -326,7 +326,10 @@ final class NotificationScheduler {
         content.body = notificationBody(for: people, hideNames: settings.hideContactNamesInNotifications)
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
-        content.userInfo = ["type": "home", "category": "daily"]
+        content.userInfo = [
+            NotificationIdentifier.UserInfoKey.type.rawValue: NotificationIdentifier.UserInfoValue.home.rawValue,
+            NotificationIdentifier.UserInfoKey.category.rawValue: NotificationIdentifier.UserInfoValue.daily.rawValue
+        ]
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         return UNNotificationRequest(identifier: NotificationIdentifier.dailyCombined, content: content, trigger: trigger)
@@ -347,7 +350,11 @@ final class NotificationScheduler {
             }
             content.sound = .default
             content.badge = NSNumber(value: badgeCount)
-            content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
+            content.userInfo = [
+                NotificationIdentifier.UserInfoKey.type.rawValue: NotificationIdentifier.UserInfoValue.person.rawValue,
+                NotificationIdentifier.UserInfoKey.personId.rawValue: person.id.uuidString,
+                NotificationIdentifier.UserInfoKey.category.rawValue: type.userInfoType
+            ]
             content.categoryIdentifier = NotificationIdentifier.categoryPerson
 
             let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
@@ -366,7 +373,7 @@ final class NotificationScheduler {
         content.body = notificationBody(for: all, hideNames: settings.hideContactNamesInNotifications)
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
-        content.userInfo = notificationUserInfo(for: all, type: "digest")
+        content.userInfo = notificationUserInfo(for: all, type: NotificationIdentifier.UserInfoValue.digest.rawValue)
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
         return UNNotificationRequest(identifier: NotificationIdentifier.weeklyDigest, content: content, trigger: trigger)
@@ -393,9 +400,16 @@ final class NotificationScheduler {
 
     private func notificationUserInfo(for people: [Person], type: String) -> [AnyHashable: Any] {
         if people.count == 1, let person = people.first {
-            return ["type": "person", "personId": person.id.uuidString, "category": type]
+            return [
+                NotificationIdentifier.UserInfoKey.type.rawValue: NotificationIdentifier.UserInfoValue.person.rawValue,
+                NotificationIdentifier.UserInfoKey.personId.rawValue: person.id.uuidString,
+                NotificationIdentifier.UserInfoKey.category.rawValue: type
+            ]
         }
-        return ["type": "home", "category": type]
+        return [
+            NotificationIdentifier.UserInfoKey.type.rawValue: NotificationIdentifier.UserInfoValue.home.rawValue,
+            NotificationIdentifier.UserInfoKey.category.rawValue: type
+        ]
     }
 
     private func firstName(from displayName: String) -> String {
@@ -438,7 +452,11 @@ private extension NotificationScheduler {
         }
         content.sound = .default
         content.badge = NSNumber(value: badgeCount)
-        content.userInfo = ["type": "person", "personId": person.id.uuidString, "category": type.userInfoType]
+        content.userInfo = [
+            NotificationIdentifier.UserInfoKey.type.rawValue: NotificationIdentifier.UserInfoValue.person.rawValue,
+            NotificationIdentifier.UserInfoKey.personId.rawValue: person.id.uuidString,
+            NotificationIdentifier.UserInfoKey.category.rawValue: type.userInfoType
+        ]
         content.categoryIdentifier = NotificationIdentifier.categoryPerson
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: triggerDate, repeats: true)
@@ -518,9 +536,9 @@ private extension NotificationScheduler {
         content.threadIdentifier = "birthday"
         content.categoryIdentifier = NotificationIdentifier.categoryBirthday
         content.userInfo = [
-            "type": "person",
-            "personId": person.id.uuidString,
-            "category": "birthday"
+            NotificationIdentifier.UserInfoKey.type.rawValue: NotificationIdentifier.UserInfoValue.person.rawValue,
+            NotificationIdentifier.UserInfoKey.personId.rawValue: person.id.uuidString,
+            NotificationIdentifier.UserInfoKey.category.rawValue: NotificationIdentifier.UserInfoValue.birthday.rawValue
         ]
 
         var dateComponents = DateComponents()
@@ -547,7 +565,10 @@ private extension NotificationScheduler {
         // attaching the BIRTHDAY_REMINDER category (which includes a "Log Connection"
         // action) would silently do nothing when tapped. Leave unset so no action
         // button appears.
-        content.userInfo = ["type": "home", "category": "birthday"]
+        content.userInfo = [
+            NotificationIdentifier.UserInfoKey.type.rawValue: NotificationIdentifier.UserInfoValue.home.rawValue,
+            NotificationIdentifier.UserInfoKey.category.rawValue: NotificationIdentifier.UserInfoValue.birthday.rawValue
+        ]
 
         var dateComponents = DateComponents()
         dateComponents.month = month
@@ -621,6 +642,30 @@ enum NotificationIdentifier {
     static let birthdayPrefix = "birthday_"
     static let birthdayGroupedPrefix = "birthday_grouped_"
     static let categoryBirthday = "BIRTHDAY_REMINDER"
+
+    /// Typed keys for `UNNotificationContent.userInfo`. Raw values are the
+    /// stringly-typed keys preserved byte-identical from prior call sites so
+    /// in-flight notifications and DeepLinkRouter parsing keep working.
+    enum UserInfoKey: String {
+        case type
+        case personId
+        case category
+    }
+
+    /// Typed values used under `UserInfoKey.type` (the "kind" of notification)
+    /// and `UserInfoKey.category` (the bucket it belongs to). Raw values match
+    /// the prior string literals byte-identical.
+    enum UserInfoValue: String {
+        // type values
+        case home
+        case person
+        // category values
+        case daily
+        case digest
+        case birthday
+        // SettingsViewModel.sendTestNotification uses this category
+        case test
+    }
 }
 
 private extension DayOfWeek {

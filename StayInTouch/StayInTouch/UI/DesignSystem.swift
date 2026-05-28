@@ -344,34 +344,19 @@ enum DS {
 
         /// Returns muted background and text colors for avatars based on color scheme.
         /// Light mode: stored hex as background, white text.
-        /// Dark mode: muted variants per dark mode addendum spec.
+        /// Dark mode: muted variants per dark mode addendum spec, sourced
+        /// from `AvatarColors.entries` so a new palette color resolves in
+        /// both modes without a parallel edit here. Unknown hexes fall
+        /// back to accent green.
         static func avatarColors(for hex: String, scheme: ColorScheme) -> (background: Color, text: Color) {
             guard scheme == .dark else {
                 return (Color(hex: hex), .white)
             }
-
-            let normalized = Color.normalize(hex: hex).uppercased()
-            switch normalized {
-            case "6BCB77":  // Green
-                return (Color(hex: "2D5040"), Color(hex: "4ADE80"))
-            case "4ECDC4":  // Teal
-                return (Color(hex: "0D3D3D"), Color(hex: "5EEAD4"))
-            case "FF6B6B":  // Red / Orange-ish
-                return (Color(hex: "3D2010"), Color(hex: "FDBA74"))
-            case "F38181":  // Pink-Red
-                return (Color(hex: "3D2010"), Color(hex: "FDBA74"))
-            case "AA96DA":  // Purple
-                return (Color(hex: "2D1B4E"), Color(hex: "D8B4FE"))
-            case "FFD93D":  // Yellow / Amber
-                return (Color(hex: "3D2E10"), Color(hex: "FCD34D"))
-            case "95E1D3":  // Mint
-                return (Color(hex: "0D3D3D"), Color(hex: "5EEAD4"))
-            case "FCBAD3":  // Light Pink
-                return (Color(hex: "2D1B4E"), Color(hex: "D8B4FE"))
-            default:
+            guard let entry = AvatarColors.entry(forLightHex: hex) else {
                 // Accent green fallback
                 return (BrandColors.heroAccentGreen, .white)
             }
+            return (Color(hex: entry.darkBackgroundHex), Color(hex: entry.darkTextHex))
         }
     }
 
@@ -432,6 +417,11 @@ enum DS {
         static let xxl: CGFloat = 24
         static let xxxl: CGFloat = 32
         static let tapTarget: CGFloat = 44  // Apple HIG minimum tap target
+        /// Settings menu row height — slightly taller than `tapTarget` so the
+        /// row has visual breathing room around its content. **48px is
+        /// intentional and not the same as `tapTarget` (44)** — see PR #312
+        /// Q12 trade-off. Used across PersonSettingsSection rows.
+        static let menuRowHeight: CGFloat = 48
 
         // MARK: Adaptive Layout Values
         // Font sizes and CGFloat values cannot use UIColor trait-based adaptation,
@@ -470,6 +460,45 @@ enum DS {
         static let cardColor = Color.black.opacity(0.05)
         static let cardRadius: CGFloat = 2
         static let cardY: CGFloat = 1
+    }
+
+    // MARK: - Motion
+
+    /// Animation durations for SwiftUI transitions. Values are seconds.
+    /// **Byte-identical** to the literals they replace — see callsite audit
+    /// in PR #312. Names describe usage, not aesthetic intent: `standard`
+    /// is the most common (settings expand, filter pills, etc.); `expressive`
+    /// is reserved for transient banners; `emphasized` is the long pull-to-
+    /// reveal action.
+    enum Motion {
+        /// Most common — 0.25s. Settings expand/collapse, filter pills.
+        static let standard: TimeInterval = 0.25
+        /// Slightly longer — 0.3s. Undo/quick-action banners and any
+        /// transition where the user benefits from a moment to react.
+        static let expressive: TimeInterval = 0.3
+        /// Longest — 0.35s. PersonDetailView's pull-to-reveal action.
+        static let emphasized: TimeInterval = 0.35
+    }
+
+    // MARK: - Timing
+
+    /// Timeouts for transient UI affordances (undo windows, auto-dismiss
+    /// banners). Values are seconds. **Byte-identical** to the literals they
+    /// replace — do not change without a UX review.
+    enum Timing {
+        /// Grace period for undoable destructive actions (remove contact,
+        /// pending quick action, post-import success banner). 5 s.
+        static let undoBannerSeconds: TimeInterval = 5.0
+
+        /// Auto-dismiss for the error toast. Intentionally shorter than
+        /// `undoBannerSeconds` — error toasts don't need user action, just
+        /// surface failure briefly. 4 s.
+        static let errorToastSeconds: TimeInterval = 4.0
+    }
+
+    /// Convenience: nanoseconds for `Task.sleep(nanoseconds:)`.
+    static func nanoseconds(_ seconds: TimeInterval) -> UInt64 {
+        UInt64(seconds * 1_000_000_000)
     }
 
     // MARK: - Touch Method Icons

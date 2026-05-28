@@ -16,7 +16,7 @@ final class ErrorToastManager: ObservableObject {
     func show(_ error: AppError) {
         currentError = error
         Task {
-            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            try? await Task.sleep(nanoseconds: DS.nanoseconds(DS.Timing.errorToastSeconds))
             if currentError?.id == error.id {
                 currentError = nil
             }

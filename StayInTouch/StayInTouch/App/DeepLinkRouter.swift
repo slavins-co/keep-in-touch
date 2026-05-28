@@ -19,12 +19,12 @@ final class DeepLinkRouter: ObservableObject {
 
     /// Parse notification userInfo and set the pending destination.
     nonisolated func handleNotification(userInfo: [AnyHashable: Any]) {
-        let type = userInfo["type"] as? String
-        if type == "person",
-           let idString = userInfo["personId"] as? String,
+        let type = userInfo[NotificationIdentifier.UserInfoKey.type.rawValue] as? String
+        if type == NotificationIdentifier.UserInfoValue.person.rawValue,
+           let idString = userInfo[NotificationIdentifier.UserInfoKey.personId.rawValue] as? String,
            let id = UUID(uuidString: idString) {
             Task { @MainActor in self.pending = .person(id) }
-        } else if type == "home" {
+        } else if type == NotificationIdentifier.UserInfoValue.home.rawValue {
             Task { @MainActor in self.pending = .home }
         }
     }

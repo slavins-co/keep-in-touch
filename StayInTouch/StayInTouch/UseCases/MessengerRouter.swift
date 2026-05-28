@@ -30,8 +30,7 @@ enum MessengerRouter {
         switch messenger {
         case .iMessage:
             // Native sms: tolerates loose formatting; no E.164 normalization.
-            let digits = phone.filter { $0.isNumber || $0 == "+" }
-            guard !digits.isEmpty,
+            guard let digits = PhoneNormalizer.dialableDigits(phone),
                   let encoded = digits.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
                 return nil
             }

@@ -14,8 +14,7 @@ import Foundation
 enum CallerRouter {
     /// Builds a `tel:<digits>` URL for the native phone dialer.
     static func telURL(phone: String) -> URL? {
-        let digits = phone.filter { $0.isNumber || $0 == "+" }
-        guard !digits.isEmpty,
+        guard let digits = PhoneNormalizer.dialableDigits(phone),
               let encoded = digits.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
             return nil
         }
