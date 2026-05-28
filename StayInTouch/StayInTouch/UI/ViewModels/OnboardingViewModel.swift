@@ -10,7 +10,7 @@ import Foundation
 import UserNotifications
 
 @MainActor
-final class OnboardingViewModel: ObservableObject {
+final class OnboardingViewModel: ObservableObject, ViewModelErrorHandling {
     enum Step {
         case welcome
         case contactsPermission
@@ -261,11 +261,8 @@ final class OnboardingViewModel: ObservableObject {
     private func updateNotificationsEnabled(_ enabled: Bool) {
         guard var settings else { return }
         settings.notificationsEnabled = enabled
-        do {
+        handleWrite("OnboardingViewModel.updateNotificationsEnabled", fallback: .saveFailed("Onboarding")) {
             try settingsRepository.save(settings)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "OnboardingViewModel.updateNotificationsEnabled")
-            ErrorToastManager.shared.show(.saveFailed("Onboarding"))
         }
         self.settings = settings
     }
@@ -273,11 +270,8 @@ final class OnboardingViewModel: ObservableObject {
     private func seedDemoData() {
         guard var settings else { return }
         settings.demoModeEnabled = true
-        do {
+        handleWrite("OnboardingViewModel.seedDemoData", fallback: .saveFailed("Onboarding")) {
             try settingsRepository.save(settings)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "OnboardingViewModel.seedDemoData")
-            ErrorToastManager.shared.show(.saveFailed("Onboarding"))
         }
         self.settings = settings
 
@@ -292,11 +286,8 @@ final class OnboardingViewModel: ObservableObject {
         AnalyticsService.track("onboarding.completed")
         guard var settings else { return }
         settings.onboardingCompleted = true
-        do {
+        handleWrite("OnboardingViewModel.completeOnboarding", fallback: .saveFailed("Onboarding")) {
             try settingsRepository.save(settings)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "OnboardingViewModel.completeOnboarding")
-            ErrorToastManager.shared.show(.saveFailed("Onboarding"))
         }
         self.settings = settings
 

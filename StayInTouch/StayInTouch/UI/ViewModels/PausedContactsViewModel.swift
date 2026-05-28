@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-final class PausedContactsViewModel: ObservableObject {
+final class PausedContactsViewModel: ObservableObject, ViewModelErrorHandling {
     @Published private(set) var people: [Person] = []
 
     private let personRepository: PersonRepository
@@ -35,11 +35,8 @@ final class PausedContactsViewModel: ObservableObject {
             updated.lastTouchAt = lastTouchAt
         }
         updated.modifiedAt = Date()
-        do {
+        handleWrite("PausedContactsViewModel.resume", fallback: .saveFailed("PausedContacts")) {
             try personRepository.save(updated)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "PausedContactsViewModel.resume")
-            ErrorToastManager.shared.show(.saveFailed("PausedContacts"))
         }
         NotificationCenter.default.post(name: .personDidChange, object: updated.id)
     }

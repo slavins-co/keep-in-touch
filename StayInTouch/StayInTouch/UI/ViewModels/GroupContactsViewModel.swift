@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-final class GroupContactsViewModel: ObservableObject {
+final class GroupContactsViewModel: ObservableObject, ViewModelErrorHandling {
     @Published private(set) var people: [Person] = []
     @Published private(set) var available: [Person] = []
 
@@ -37,11 +37,8 @@ final class GroupContactsViewModel: ObservableObject {
         var updated = person
         updated.groupIds = updated.groupIds.filter { $0 != group.id }
         updated.modifiedAt = Date()
-        do {
+        handleWrite("GroupContactsViewModel.removeGroup", fallback: .saveFailed("GroupContacts")) {
             try personRepository.save(updated)
-        } catch {
-            AppLogger.logError(error, category: AppLogger.viewModel, context: "GroupContactsViewModel.removeGroup")
-            ErrorToastManager.shared.show(.saveFailed("GroupContacts"))
         }
         NotificationCenter.default.post(name: .personDidChange, object: updated.id)
         load()
@@ -54,11 +51,8 @@ final class GroupContactsViewModel: ObservableObject {
                 updated.groupIds.append(group.id)
             }
             updated.modifiedAt = Date()
-            do {
+            handleWrite("GroupContactsViewModel.addGroup", fallback: .saveFailed("GroupContacts")) {
                 try personRepository.save(updated)
-            } catch {
-                AppLogger.logError(error, category: AppLogger.viewModel, context: "GroupContactsViewModel.addGroup")
-                ErrorToastManager.shared.show(.saveFailed("GroupContacts"))
             }
             NotificationCenter.default.post(name: .personDidChange, object: updated.id)
         }
