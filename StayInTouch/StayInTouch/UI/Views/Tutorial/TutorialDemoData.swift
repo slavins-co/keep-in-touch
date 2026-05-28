@@ -55,32 +55,35 @@ enum TutorialDemoData {
         let calendar = Calendar.current
         let tenDaysAgo = calendar.date(byAdding: .day, value: -10, to: Date()) ?? Date()
         return Person(
-            id: personID,
-            cnIdentifier: nil,
-            displayName: "Alex Rivera",
-            nickname: "Lex",
-            initials: "AR",
-            avatarColor: "6BCB77",
+            identity: Person.Identity(
+                id: personID,
+                displayName: "Alex Rivera",
+                nickname: "Lex",
+                initials: "AR",
+                avatarColor: "6BCB77"
+            ),
             cadenceId: cadenceID,
             groupIds: [tagCollegeID, tagTravelID],
-            lastTouchAt: tenDaysAgo,
-            lastTouchMethod: .text,
-            lastTouchNotes: "Caught up about his Tokyo trip",
-            nextTouchNotes: "Ask about Tokyo photos",
             isPaused: false,
             isTracked: true,
-            notificationsMuted: false,
-            customBreachTime: nil,
-            snoozedUntil: nil,
-            customDueDate: nil,
             birthday: Birthday(month: 11, day: 15, year: nil),
-            birthdayNotificationsEnabled: true,
-            contactUnavailable: false,
-            isDemoData: false,
-            cadenceAddedAt: nil,
-            createdAt: Date(),
-            modifiedAt: Date(),
-            sortOrder: 0
+            touchState: Person.TouchState(
+                lastTouchAt: tenDaysAgo,
+                lastTouchMethod: .text,
+                lastTouchNotes: "Caught up about his Tokyo trip",
+                nextTouchNotes: "Ask about Tokyo photos"
+            ),
+            notifications: Person.NotificationConfig(
+                notificationsMuted: false,
+                birthdayNotificationsEnabled: true
+            ),
+            metadata: Person.Metadata(
+                contactUnavailable: false,
+                isDemoData: false,
+                createdAt: Date(),
+                modifiedAt: Date(),
+                sortOrder: 0
+            )
         )
     }
 

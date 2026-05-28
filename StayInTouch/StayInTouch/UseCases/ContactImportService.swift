@@ -92,32 +92,33 @@ struct ContactImportService {
 
                 let personId = UUID()
                 let person = Person(
-                    id: personId,
-                    cnIdentifier: summary.identifier,
-                    displayName: summary.displayName,
-                    nickname: summary.nickname,
-                    initials: summary.initials,
-                    avatarColor: AvatarColors.randomHex(),
+                    identity: Person.Identity(
+                        id: personId,
+                        cnIdentifier: summary.identifier,
+                        displayName: summary.displayName,
+                        nickname: summary.nickname,
+                        initials: summary.initials,
+                        avatarColor: AvatarColors.randomHex()
+                    ),
                     cadenceId: cadenceId,
                     groupIds: [],
-                    lastTouchAt: seedDate,
-                    lastTouchMethod: seedDate != nil ? .other : nil,
-                    lastTouchNotes: nil,
-                    nextTouchNotes: nil,
                     isPaused: false,
                     isTracked: true,
-                    notificationsMuted: false,
-                    customBreachTime: nil,
-                    snoozedUntil: nil,
-                    customDueDate: nil,
-                    birthday: nil,
-                    birthdayNotificationsEnabled: true,
-                    contactUnavailable: false,
-                    isDemoData: false,
-                    cadenceAddedAt: nil,
-                    createdAt: now,
-                    modifiedAt: now,
-                    sortOrder: sortOrder
+                    touchState: Person.TouchState(
+                        lastTouchAt: seedDate,
+                        lastTouchMethod: seedDate != nil ? .other : nil
+                    ),
+                    notifications: Person.NotificationConfig(
+                        notificationsMuted: false,
+                        birthdayNotificationsEnabled: true
+                    ),
+                    metadata: Person.Metadata(
+                        contactUnavailable: false,
+                        isDemoData: false,
+                        createdAt: now,
+                        modifiedAt: now,
+                        sortOrder: sortOrder
+                    )
                 )
 
                 personsToSave.append(AssignCadenceUseCase(referenceDate: now).assign(person: person, to: cadenceId))
