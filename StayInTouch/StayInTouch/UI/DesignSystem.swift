@@ -472,6 +472,24 @@ enum DS {
         static let cardY: CGFloat = 1
     }
 
+    // MARK: - Motion
+
+    /// Animation durations for SwiftUI transitions. Values are seconds.
+    /// **Byte-identical** to the literals they replace — see callsite audit
+    /// in PR #312. Names describe usage, not aesthetic intent: `standard`
+    /// is the most common (settings expand, filter pills, etc.); `expressive`
+    /// is reserved for transient banners; `emphasized` is the long pull-to-
+    /// reveal action.
+    enum Motion {
+        /// Most common — 0.25s. Settings expand/collapse, filter pills.
+        static let standard: TimeInterval = 0.25
+        /// Slightly longer — 0.3s. Undo/quick-action banners and any
+        /// transition where the user benefits from a moment to react.
+        static let expressive: TimeInterval = 0.3
+        /// Longest — 0.35s. PersonDetailView's pull-to-reveal action.
+        static let emphasized: TimeInterval = 0.35
+    }
+
     // MARK: - Timing
 
     /// Timeouts for transient UI affordances (undo windows, auto-dismiss

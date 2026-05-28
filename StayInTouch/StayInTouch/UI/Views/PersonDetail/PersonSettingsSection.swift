@@ -14,7 +14,7 @@ struct PersonSettingsSection: View {
         VStack(alignment: .leading, spacing: 0) {
             // Collapsible header
             Button {
-                withAnimation(.easeInOut(duration: 0.25)) {
+                withAnimation(.easeInOut(duration: DS.Motion.standard)) {
                     settingsExpanded.toggle()
                 }
             } label: {
@@ -29,7 +29,7 @@ struct PersonSettingsSection: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(DS.Colors.settingsChevron)
                         .rotationEffect(.degrees(settingsExpanded ? 0 : -90))
-                        .animation(.easeInOut(duration: 0.25), value: settingsExpanded)
+                        .animation(.easeInOut(duration: DS.Motion.standard), value: settingsExpanded)
                 }
                 .padding(.vertical, DS.Spacing.md)
                 .contentShape(Rectangle())
