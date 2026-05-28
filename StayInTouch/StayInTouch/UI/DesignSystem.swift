@@ -472,6 +472,27 @@ enum DS {
         static let cardY: CGFloat = 1
     }
 
+    // MARK: - Timing
+
+    /// Timeouts for transient UI affordances (undo windows, auto-dismiss
+    /// banners). Values are seconds. **Byte-identical** to the literals they
+    /// replace — do not change without a UX review.
+    enum Timing {
+        /// Grace period for undoable destructive actions (remove contact,
+        /// pending quick action, post-import success banner). 5 s.
+        static let undoBannerSeconds: TimeInterval = 5.0
+
+        /// Auto-dismiss for the error toast. Intentionally shorter than
+        /// `undoBannerSeconds` — error toasts don't need user action, just
+        /// surface failure briefly. 4 s.
+        static let errorToastSeconds: TimeInterval = 4.0
+    }
+
+    /// Convenience: nanoseconds for `Task.sleep(nanoseconds:)`.
+    static func nanoseconds(_ seconds: TimeInterval) -> UInt64 {
+        UInt64(seconds * 1_000_000_000)
+    }
+
     // MARK: - Touch Method Icons
 
     static func touchMethodIcon(_ method: TouchMethod) -> String {

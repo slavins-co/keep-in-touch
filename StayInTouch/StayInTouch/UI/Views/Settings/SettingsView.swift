@@ -78,7 +78,7 @@ struct SettingsView: View {
                 showImportSuccessBanner = true
                 importBannerTask?.cancel()
                 importBannerTask = Task {
-                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    try? await Task.sleep(nanoseconds: DS.nanoseconds(DS.Timing.undoBannerSeconds))
                     guard !Task.isCancelled else { return }
                     showImportSuccessBanner = false
                     importSuccessCount = 0

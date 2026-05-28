@@ -183,7 +183,7 @@ struct PersonDetailView: View {
             if newPhase == .active, pendingQuickActionMethod != nil {
                 showQuickActionUndo = true
                 Task {
-                    try? await Task.sleep(nanoseconds: 5_000_000_000)
+                    try? await Task.sleep(nanoseconds: DS.nanoseconds(DS.Timing.undoBannerSeconds))
                     dismissQuickActionUndo()
                 }
             }
@@ -485,7 +485,7 @@ struct PersonDetailView: View {
         Haptics.medium()
         showRemoveUndo = true
         pendingRemoveTask = Task {
-            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            try? await Task.sleep(nanoseconds: DS.nanoseconds(DS.Timing.undoBannerSeconds))
             guard !Task.isCancelled else { return }
             showRemoveUndo = false
             viewModel.deletePerson()
