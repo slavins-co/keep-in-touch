@@ -187,8 +187,14 @@ struct AccessoryRectangularView: View {
 
     var body: some View {
         let additionalAtRisk = max(0, snapshot.overdueCount + snapshot.dueSoonCount - 1)
+        let birthday = AccessoryWidgetLogic.rectangularBirthday(snapshot: snapshot)
         Group {
-            if let featured = snapshot.featured.first {
+            if let birthday {
+                // An imminent birthday outranks the overdue line. Tap routes
+                // directly to that person's detail page.
+                birthdayContent(birthday)
+                    .widgetURL(DeepLinkRoute.person(birthday.id).url())
+            } else if let featured = snapshot.featured.first {
                 featuredContent(featured)
                     // When there are more at-risk people beyond the
                     // featured one, route taps to the overdue list so
@@ -216,6 +222,18 @@ struct AccessoryRectangularView: View {
     }
 
     private func rectangularAccessibilityLabel() -> String {
+        if let birthday = AccessoryWidgetLogic.rectangularBirthday(snapshot: snapshot) {
+            let when: String
+            switch birthday.daysUntil {
+            case 0: when = "is today"
+            case 1: when = "is tomorrow"
+            default: when = "is in \(birthday.daysUntil) days"
+            }
+            if birthday.overdueCount > 0 {
+                return "Keep In Touch. \(birthday.name)'s birthday \(when). \(birthday.overdueCount) \(birthday.overdueCount == 1 ? "person" : "people") need a reach-out."
+            }
+            return "Keep In Touch. \(birthday.name)'s birthday \(when)."
+        }
         if let featured = snapshot.featured.first {
             let additional = max(0, snapshot.overdueCount + snapshot.dueSoonCount - 1)
             let primary: String
@@ -236,6 +254,25 @@ struct AccessoryRectangularView: View {
             return "Keep In Touch. All caught up."
         }
         return "Keep In Touch. Add someone to track."
+    }
+
+    private func birthdayContent(_ birthday: AccessoryWidgetLogic.RectangularBirthday) -> some View {
+        let subtitle = AccessoryWidgetLogic.rectangularBirthdaySubtitle(birthday)
+        return HStack(alignment: .center, spacing: 5) {
+            Image(systemName: "birthday.cake.fill")
+                .imageScale(.medium)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(birthday.name)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+            }
+        }
     }
 
     private func featuredContent(_ featured: OverduePerson) -> some View {

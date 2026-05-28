@@ -379,6 +379,25 @@ final class WidgetDataProviderTests: XCTestCase {
         XCTAssertTrue(snap.birthdaysFillWidget)
     }
 
+    // MARK: - nextLocalMidnight (#329)
+
+    func testNextLocalMidnight_isStartOfTomorrow() {
+        let ref = gregorian.date(from: DateComponents(year: 2026, month: 6, day: 15, hour: 14, minute: 30))!
+        let midnight = WidgetDataProvider.nextLocalMidnight(after: ref, calendar: gregorian)
+        let comps = gregorian.dateComponents([.year, .month, .day, .hour, .minute], from: midnight)
+        XCTAssertEqual(comps.year, 2026)
+        XCTAssertEqual(comps.month, 6)
+        XCTAssertEqual(comps.day, 16)
+        XCTAssertEqual(comps.hour, 0)
+        XCTAssertEqual(comps.minute, 0)
+    }
+
+    func testNextLocalMidnight_isStrictlyAfterEvenAtMidnight() {
+        let midnightExact = gregorian.startOfDay(for: gregorian.date(from: DateComponents(year: 2026, month: 6, day: 15))!)
+        let next = WidgetDataProvider.nextLocalMidnight(after: midnightExact, calendar: gregorian)
+        XCTAssertEqual(gregorian.dateComponents([.day], from: next).day, 16)
+    }
+
     // MARK: - Fixtures
 
     private func makeOverduePerson(name: String, status: WidgetPersonStatus, nickname: String? = nil) -> OverduePerson {

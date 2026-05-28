@@ -207,6 +207,16 @@ enum WidgetDataProvider {
         return result
     }
 
+    /// The next local midnight strictly after `date`. Widget timelines emit
+    /// an entry at this boundary so day-relative copy ("tomorrow" → "today",
+    /// daysOverdue increments) rolls over without waiting on a periodic
+    /// refresh (#329).
+    static func nextLocalMidnight(after date: Date, calendar: Calendar = .current) -> Date {
+        let startOfToday = calendar.startOfDay(for: date)
+        return calendar.date(byAdding: .day, value: 1, to: startOfToday)
+            ?? date.addingTimeInterval(24 * 60 * 60)
+    }
+
     // MARK: - Upcoming birthdays (#329)
 
     /// Upcoming birthdays within `days`, soonest first (ties broken by name),

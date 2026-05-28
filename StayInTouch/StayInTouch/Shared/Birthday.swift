@@ -51,11 +51,18 @@ extension Birthday {
     ///
     /// - Year is ignored (a birthday recurs annually).
     /// - Year-rollover is handled naturally by searching forward.
-    /// - Feb 29 in a non-leap year falls back to Mar 1 (`.nextTime`
-    ///   matching policy), matching the iOS Reminders / Calendar convention
-    ///   for non-existent recurrence dates.
+    /// - Feb 29 in a non-leap year falls back to **Feb 28** (the last day of
+    ///   February), so the countdown lands on the same month rather than
+    ///   slipping into March. Leap years still resolve to Feb 29. We resolve
+    ///   the concrete day per candidate year instead of relying on
+    ///   `Calendar`'s matching policy, which would roll forward to Mar 1.
     func nextOccurrence(after referenceDate: Date, calendar: Calendar = .current) -> Date {
         let startOfReference = calendar.startOfDay(for: referenceDate)
+
+        if month == 2, day == 29 {
+            return nextFeb29Occurrence(onOrAfter: startOfReference, calendar: calendar)
+        }
+
         // Search from one second before the start of the reference day so a
         // birthday that is *today* resolves to today, not next year.
         let searchStart = startOfReference.addingTimeInterval(-1)
@@ -69,6 +76,40 @@ extension Birthday {
             direction: .forward
         )
         return calendar.startOfDay(for: next ?? startOfReference)
+    }
+
+    /// Resolves a Feb 29 birthday to its observed day per candidate year:
+    /// Feb 29 in leap years, otherwise Feb 28. Returns the first such day on
+    /// or after `start`.
+    private func nextFeb29Occurrence(onOrAfter start: Date, calendar: Calendar) -> Date {
+        let referenceYear = calendar.component(.year, from: start)
+        for year in referenceYear...(referenceYear + 8) {
+            let observedDay = februaryHasLeapDay(year: year, calendar: calendar) ? 29 : 28
+            var components = DateComponents()
+            components.year = year
+            components.month = 2
+            components.day = observedDay
+            guard let candidate = calendar.date(from: components) else { continue }
+            let candidateStart = calendar.startOfDay(for: candidate)
+            if candidateStart >= start {
+                return candidateStart
+            }
+        }
+        return start
+    }
+
+    /// True when the given year's February has 29 days (calendar-correct
+    /// leap check rather than hardcoded Gregorian arithmetic).
+    private func februaryHasLeapDay(year: Int, calendar: Calendar) -> Bool {
+        var components = DateComponents()
+        components.year = year
+        components.month = 2
+        components.day = 1
+        guard
+            let feb1 = calendar.date(from: components),
+            let range = calendar.range(of: .day, in: .month, for: feb1)
+        else { return false }
+        return range.count == 29
     }
 
     /// Whole calendar days from `referenceDate` until the next occurrence of

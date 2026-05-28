@@ -146,15 +146,27 @@ final class BirthdayTests: XCTestCase {
         XCTAssertEqual(comps.day, 1)
     }
 
-    func testFeb29_fallsBackToMar1_inNonLeapYear() {
-        // 2026 is not a leap year. Feb 29 → Mar 1.
+    func testFeb29_fallsBackToFeb28_inNonLeapYear() {
+        // 2026 is not a leap year. Feb 29 → Feb 28 (same month, not Mar 1).
         let ref = date(2026, 2, 1)
         let birthday = Birthday(month: 2, day: 29, year: 2000)
         let next = birthday.nextOccurrence(after: ref, calendar: gregorian)
         let comps = gregorian.dateComponents([.year, .month, .day], from: next)
         XCTAssertEqual(comps.year, 2026)
-        XCTAssertEqual(comps.month, 3)
-        XCTAssertEqual(comps.day, 1)
+        XCTAssertEqual(comps.month, 2)
+        XCTAssertEqual(comps.day, 28)
+    }
+
+    func testFeb29_afterFeb28_inNonLeapYear_rollsToNextYear() {
+        // Reference is Mar 1 2026 — this year's Feb 28 already passed, so the
+        // next observed birthday is Feb 28 2027 (2027 also non-leap).
+        let ref = date(2026, 3, 1)
+        let birthday = Birthday(month: 2, day: 29, year: nil)
+        let next = birthday.nextOccurrence(after: ref, calendar: gregorian)
+        let comps = gregorian.dateComponents([.year, .month, .day], from: next)
+        XCTAssertEqual(comps.year, 2027)
+        XCTAssertEqual(comps.month, 2)
+        XCTAssertEqual(comps.day, 28)
     }
 
     func testFeb29_landsOnFeb29_inLeapYear() {

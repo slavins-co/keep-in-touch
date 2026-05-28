@@ -92,6 +92,53 @@ enum AccessoryWidgetLogic {
         return primary
     }
 
+    // MARK: - Rectangular birthday precedence (#329)
+
+    /// A birthday at or within this many days outranks the overdue line on
+    /// the rectangular accessory — an imminent birthday is the more
+    /// time-sensitive reach-out, and the lock screen has room for only one.
+    static let rectangularBirthdayThresholdDays = 2
+
+    struct RectangularBirthday: Equatable {
+        let id: UUID
+        let name: String
+        let daysUntil: Int
+        /// Overdue people to mention as a trailing "· N overdue" suffix.
+        let overdueCount: Int
+    }
+
+    /// The birthday to feature on the rectangular accessory, or nil to fall
+    /// back to the overdue/at-risk content. Only the soonest birthday is a
+    /// candidate, and only when it lands within the threshold.
+    static func rectangularBirthday(snapshot: WidgetDataProvider.Snapshot) -> RectangularBirthday? {
+        guard
+            let birthday = snapshot.upcomingBirthdays.first,
+            birthday.daysUntil <= rectangularBirthdayThresholdDays
+        else { return nil }
+
+        return RectangularBirthday(
+            id: birthday.id,
+            name: birthday.displayShortName,
+            daysUntil: birthday.daysUntil,
+            overdueCount: snapshot.overdueCount
+        )
+    }
+
+    /// Second line for the rectangular birthday layout, e.g.
+    /// "tomorrow · 3 overdue", "today", or "in 2 days".
+    static func rectangularBirthdaySubtitle(_ birthday: RectangularBirthday) -> String {
+        let when: String
+        switch birthday.daysUntil {
+        case 0: when = "today"
+        case 1: when = "tomorrow"
+        default: when = "in \(birthday.daysUntil) days"
+        }
+        if birthday.overdueCount > 0 {
+            return "\(when) · \(birthday.overdueCount) overdue"
+        }
+        return when
+    }
+
     // MARK: - Inline label
 
     struct InlineLabel: Equatable {
