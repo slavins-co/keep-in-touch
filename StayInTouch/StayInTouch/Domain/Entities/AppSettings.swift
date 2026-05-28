@@ -30,6 +30,11 @@ struct AppSettings: Identifiable, Equatable {
     var birthdayNotificationTime: LocalTime
     var birthdayIgnoreSnoozePause: Bool
 
+    /// When true, the home-screen widget back-fills empty space with
+    /// upcoming birthdays once the overdue/due-soon list no longer fills it.
+    /// Defaulted so existing `AppSettings(...)` call sites are unaffected.
+    var birthdaysFillWidget: Bool = true
+
     var lastContactsSyncAt: Date?
     var onboardingCompleted: Bool
     var appVersion: String

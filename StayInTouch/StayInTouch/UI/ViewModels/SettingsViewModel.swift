@@ -176,6 +176,12 @@ final class SettingsViewModel: ObservableObject, ViewModelErrorHandling {
         save()
     }
 
+    func setBirthdaysFillWidget(_ enabled: Bool) {
+        AnalyticsService.track("settings.birthdaysFillWidget.toggled", parameters: ["enabled": String(enabled)])
+        settings.birthdaysFillWidget = enabled
+        save()
+    }
+
     func setAnalyticsEnabled(_ enabled: Bool) {
         settings.analyticsEnabled = enabled
         save()
