@@ -16,7 +16,7 @@ final class GroupContactsViewModel: ObservableObject {
     private let personRepository: PersonRepository
     private var allPeople: [Person] = []
 
-    init(group: Group, personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext)) {
+    init(group: Group, personRepository: PersonRepository = AppDependencies.shared.personRepository) {
         self.group = group
         self.personRepository = personRepository
         load()

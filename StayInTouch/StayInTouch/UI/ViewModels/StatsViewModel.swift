@@ -26,9 +26,9 @@ final class StatsViewModel: ObservableObject {
     private let now: () -> Date
 
     init(
-        personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
-        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
-        touchEventRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext),
+        personRepository: PersonRepository = AppDependencies.shared.personRepository,
+        cadenceRepository: CadenceRepository = AppDependencies.shared.cadenceRepository,
+        touchEventRepository: TouchEventRepository = AppDependencies.shared.touchEventRepository,
         calculator: StatsCalculator = StatsCalculator(),
         range: StatsRange = .days30,
         now: @escaping () -> Date = Date.init

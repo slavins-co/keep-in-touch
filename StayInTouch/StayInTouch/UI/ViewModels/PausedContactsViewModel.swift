@@ -13,7 +13,7 @@ final class PausedContactsViewModel: ObservableObject {
 
     private let personRepository: PersonRepository
 
-    init(personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext)) {
+    init(personRepository: PersonRepository = AppDependencies.shared.personRepository) {
         self.personRepository = personRepository
         load()
     }

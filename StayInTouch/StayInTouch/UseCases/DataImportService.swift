@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CoreData
 import Contacts
 
 struct DataImportService {
@@ -14,7 +13,12 @@ struct DataImportService {
     let cadenceRepository: CadenceRepository
     let groupRepository: GroupRepository
     let touchEventRepository: TouchEventRepository
-    var backgroundContextProvider: (() -> NSManagedObjectContext)? = nil
+    /// Background persistence scope. Production callers wire the Core Data
+    /// implementation from the composition root; tests inject a scheduler
+    /// bound to an in-memory context so the import path can be exercised
+    /// without touching the real store. UseCases never reference Core Data
+    /// types directly — the scheduler protocol is the seam.
+    let backgroundWorkScheduler: BackgroundWorkScheduler
 
     static func touchEventDedupKey(personId: UUID, date: Date, method: TouchMethod, notes: String?, calendar: Calendar) -> String {
         let dayKey = Int(calendar.startOfDay(for: date).timeIntervalSince1970)
@@ -246,12 +250,11 @@ struct DataImportService {
     func executeImport(_ preview: ImportPreview) async -> ImportResult {
         var importedNewPeople: [(id: UUID, displayName: String)] = []
 
-        let backgroundContext = backgroundContextProvider?() ?? CoreDataStack.shared.newBackgroundContext()
-        await backgroundContext.perform {
-            let peopleRepo = CoreDataPersonRepository(context: backgroundContext)
-            let touchRepo = CoreDataTouchEventRepository(context: backgroundContext)
-            let cadenceRepo = CoreDataCadenceRepository(context: backgroundContext)
-            let groupRepo = CoreDataGroupRepository(context: backgroundContext)
+        await backgroundWorkScheduler.perform { scope in
+            let peopleRepo = scope.personRepository
+            let touchRepo = scope.touchEventRepository
+            let cadenceRepo = scope.cadenceRepository
+            let groupRepo = scope.groupRepository
 
             let now = Date()
 

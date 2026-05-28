@@ -76,9 +76,9 @@ final class NotificationScheduler {
     private var pendingScheduleTask: Task<Void, Never>?
 
     init(
-        settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
-        personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
-        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
+        settingsRepository: AppSettingsRepository = AppDependencies.shared.settingsRepository,
+        personRepository: PersonRepository = AppDependencies.shared.personRepository,
+        cadenceRepository: CadenceRepository = AppDependencies.shared.cadenceRepository,
         notificationCenter: UserNotificationCenterProtocol = UNUserNotificationCenter.current(),
         debounceInterval: TimeInterval = 1.0
     ) {

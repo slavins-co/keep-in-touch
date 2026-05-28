@@ -16,8 +16,8 @@ final class ManageCadencesViewModel: ObservableObject {
     private let personRepository: PersonRepository
 
     init(
-        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
-        personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext)
+        cadenceRepository: CadenceRepository = AppDependencies.shared.cadenceRepository,
+        personRepository: PersonRepository = AppDependencies.shared.personRepository
     ) {
         self.cadenceRepository = cadenceRepository
         self.personRepository = personRepository

@@ -9,6 +9,7 @@ struct PersonSettingsSection: View {
     @ObservedObject var viewModel: PersonDetailViewModel
     @Binding var settingsExpanded: Bool
     var onAction: (PersonSettingsAction) -> Void
+    @Environment(\.dependencies) private var dependencies
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -346,7 +347,7 @@ struct PersonSettingsSection: View {
         if let custom = viewModel.person.customBreachTime {
             return custom.formatted
         }
-        if let settings = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext).fetch() {
+        if let settings = dependencies.settingsRepository.fetch() {
             return settings.breachTimeOfDay.formatted
         }
         return "Default"

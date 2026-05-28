@@ -35,11 +35,11 @@ final class SettingsViewModel: ObservableObject {
 
     init(
         coreDataStack: CoreDataStack = .shared,
-        settingsRepository: AppSettingsRepository = CoreDataAppSettingsRepository(context: CoreDataStack.shared.viewContext),
-        cadenceRepository: CadenceRepository = CoreDataCadenceRepository(context: CoreDataStack.shared.viewContext),
-        groupRepository: GroupRepository = CoreDataGroupRepository(context: CoreDataStack.shared.viewContext),
-        personRepository: PersonRepository = CoreDataPersonRepository(context: CoreDataStack.shared.viewContext),
-        touchEventRepository: TouchEventRepository = CoreDataTouchEventRepository(context: CoreDataStack.shared.viewContext)
+        settingsRepository: AppSettingsRepository = AppDependencies.shared.settingsRepository,
+        cadenceRepository: CadenceRepository = AppDependencies.shared.cadenceRepository,
+        groupRepository: GroupRepository = AppDependencies.shared.groupRepository,
+        personRepository: PersonRepository = AppDependencies.shared.personRepository,
+        touchEventRepository: TouchEventRepository = AppDependencies.shared.touchEventRepository
     ) {
         self.settingsRepository = settingsRepository
         self.cadenceRepository = cadenceRepository
@@ -57,7 +57,10 @@ final class SettingsViewModel: ObservableObject {
             personRepository: personRepository,
             cadenceRepository: cadenceRepository,
             groupRepository: groupRepository,
-            touchEventRepository: touchEventRepository
+            touchEventRepository: touchEventRepository,
+            backgroundWorkScheduler: CoreDataBackgroundWorkScheduler(
+                contextFactory: { coreDataStack.newBackgroundContext() }
+            )
         )
         self.contactImportService = ContactImportService(
             personRepository: personRepository,
