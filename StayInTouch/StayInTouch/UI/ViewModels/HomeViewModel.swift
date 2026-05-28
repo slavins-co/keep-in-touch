@@ -18,6 +18,15 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var groups: [Group] = []
     @Published private(set) var settings: AppSettings?
 
+    /// Derived id→entity dictionaries kept in sync with `cadences`/`groups`
+    /// in `load()`. Previously HomeView built these inside `body` on every
+    /// render, which is wasteful on a 60-FPS hot path with 100+ contacts
+    /// (audit E13, #317). The only inputs are `cadences` and `groups`, both
+    /// of which are only mutated by `load()`, so rebuilding there is
+    /// behavior-preserving — the dicts cannot drift from their source arrays.
+    @Published private(set) var cadencesById: [UUID: Cadence] = [:]
+    @Published private(set) var groupsById: [UUID: Group] = [:]
+
     @Published private(set) var overduePeople: [Person] = []
     @Published private(set) var dueSoonPeople: [Person] = []
     @Published private(set) var allGoodPeople: [Person] = []
@@ -79,6 +88,12 @@ final class HomeViewModel: ObservableObject {
         cadences = cadenceRepository.fetchAll()
         groups = groupRepository.fetchAll()
         allPeople = personRepository.fetchTracked(includePaused: true)
+
+        // Rebuild derived id→entity dicts whenever their inputs change.
+        // `cadences`/`groups` are only mutated here, so this is the
+        // single sync point (audit E13, #317).
+        cadencesById = Dictionary(uniqueKeysWithValues: cadences.map { ($0.id, $0) })
+        groupsById = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0) })
 
         applyFilters()
         refreshToken = UUID()

@@ -18,4 +18,11 @@ protocol PersonRepository {
     func save(_ person: Person) throws
     func batchSave(_ persons: [Person]) throws
     func delete(id: UUID) throws
+
+    /// Returns the number of currently-paused tracked people without
+    /// faulting the matching rows into memory. Backed by Core Data's
+    /// `count(for:)` (audit E9, #317) — orders of magnitude cheaper than
+    /// fetching every tracked person and filtering in Swift just to read
+    /// a display count.
+    func pausedCount() -> Int
 }

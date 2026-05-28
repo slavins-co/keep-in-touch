@@ -306,8 +306,12 @@ struct HomeView: View {
 
     private var content: some View {
         let calculator = FrequencyCalculator()
-        let cadencesById = Dictionary(uniqueKeysWithValues: viewModel.cadences.map { ($0.id, $0) })
-        let groupsById = Dictionary(uniqueKeysWithValues: viewModel.groups.map { ($0.id, $0) })
+        // Dicts now live on the view model as `@Published` derived state
+        // synced inside `load()`. Reading them here is O(1) instead of
+        // rebuilding two `Dictionary(uniqueKeysWithValues:)` walks per
+        // body render (audit E13, #317).
+        let cadencesById = viewModel.cadencesById
+        let groupsById = viewModel.groupsById
 
         return ScrollView {
             LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
@@ -348,7 +352,7 @@ struct HomeView: View {
                             cadencesById: cadencesById,
                             groupsById: groupsById,
                             statusForPerson: { _ in .overdue },
-                            daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
+                            daysOverdueForPerson: { calculator.daysOverdue(for: $0, cadencesById: cadencesById) },
                             timeAgoForPerson: { calculator.timeAgoText(for: $0) },
                             selectPerson: selectPerson,
                             coordinator: selectionCoordinator
@@ -362,7 +366,7 @@ struct HomeView: View {
                             cadencesById: cadencesById,
                             groupsById: groupsById,
                             statusForPerson: { _ in .dueSoon },
-                            daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
+                            daysOverdueForPerson: { calculator.daysOverdue(for: $0, cadencesById: cadencesById) },
                             timeAgoForPerson: { calculator.timeAgoText(for: $0) },
                             selectPerson: selectPerson,
                             coordinator: selectionCoordinator
@@ -377,7 +381,7 @@ struct HomeView: View {
                         cadencesById: cadencesById,
                         groupsById: groupsById,
                         statusForPerson: { _ in .onTrack },
-                        daysOverdueForPerson: { calculator.daysOverdue(for: $0, in: viewModel.cadences) },
+                        daysOverdueForPerson: { calculator.daysOverdue(for: $0, cadencesById: cadencesById) },
                         timeAgoForPerson: { calculator.timeAgoText(for: $0) },
                         selectPerson: selectPerson,
                         coordinator: selectionCoordinator

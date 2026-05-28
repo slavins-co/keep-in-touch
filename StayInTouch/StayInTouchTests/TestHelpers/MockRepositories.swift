@@ -52,6 +52,12 @@ final class MockPersonRepository: PersonRepository {
         deletedIds.append(id)
         people.removeAll { $0.id == id }
     }
+
+    var pausedCountCallCount = 0
+    func pausedCount() -> Int {
+        pausedCountCallCount += 1
+        return people.filter { $0.isTracked && $0.isPaused }.count
+    }
 }
 
 // MARK: - MockCadenceRepository
@@ -100,6 +106,12 @@ final class MockGroupRepository: GroupRepository {
     }
     func delete(id: UUID) throws {
         groups.removeAll { $0.id == id }
+    }
+
+    var countCallCount = 0
+    func count() -> Int {
+        countCallCount += 1
+        return groups.count
     }
 }
 

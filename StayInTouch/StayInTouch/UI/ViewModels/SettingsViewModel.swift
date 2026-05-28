@@ -83,10 +83,18 @@ final class SettingsViewModel: ObservableObject {
 
     func load() {
         settings = settingsRepository.fetch() ?? AppSettingsDefaults.defaultSettings()
+        // `allCadences` is needed downstream (Settings passes it into the
+        // cadence manager), so we still materialize the list. `cadencesCount`
+        // is derived from it for free.
         allCadences = cadenceRepository.fetchAll()
         cadencesCount = allCadences.count
-        groupsCount = groupRepository.fetchAll().count
-        pausedCount = personRepository.fetchTracked(includePaused: true).filter { $0.isPaused }.count
+        // Groups and paused-people counts are display-only — read them via
+        // `count(for:)` instead of fetching every row and counting in
+        // Swift (audit E9, #317). For typical cellars this is the same
+        // value; for large datasets it avoids loading hundreds of
+        // managed objects just to render two badges.
+        groupsCount = groupRepository.count()
+        pausedCount = personRepository.pausedCount()
     }
 
     func setTheme(_ theme: Theme) {
