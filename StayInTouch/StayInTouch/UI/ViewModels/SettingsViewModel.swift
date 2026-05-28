@@ -57,7 +57,10 @@ final class SettingsViewModel: ObservableObject {
             personRepository: personRepository,
             cadenceRepository: cadenceRepository,
             groupRepository: groupRepository,
-            touchEventRepository: touchEventRepository
+            touchEventRepository: touchEventRepository,
+            backgroundWorkScheduler: CoreDataBackgroundWorkScheduler(
+                contextFactory: { coreDataStack.newBackgroundContext() }
+            )
         )
         self.contactImportService = ContactImportService(
             personRepository: personRepository,

@@ -31,7 +31,9 @@ final class DataImportServiceIntegrationTests: XCTestCase {
             cadenceRepository: cadenceRepo,
             groupRepository: groupRepo,
             touchEventRepository: touchRepo,
-            backgroundContextProvider: { [unowned self] in self.context }
+            backgroundWorkScheduler: CoreDataBackgroundWorkScheduler(
+                contextFactory: { [unowned self] in self.context }
+            )
         )
     }
 
