@@ -45,6 +45,7 @@ struct BirthdayCacheRefresher {
     func refresh() {
         let candidates = fetchPeople().filter { person in
             person.birthdayNotificationsEnabled
+                && !person.isDemoData  // keep fake data out of the shared App Group cache
                 && person.birthday == nil
                 && !(person.cnIdentifier ?? "").isEmpty
         }

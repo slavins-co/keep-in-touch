@@ -193,8 +193,9 @@ enum WidgetDataProvider {
         /// Raw AppSettings.theme string: "dark", "light", "system", or nil.
         let themeOverride: String?
         /// Upcoming birthdays within `birthdayWindowDays`, soonest first,
-        /// capped at `maxFeaturedPeople`. Used by the existing home widget's
-        /// empty-space back-fill.
+        /// capped at `birthdayFetchLimit` (kept larger than any display cap so
+        /// same-day "+N" counts stay accurate). Empty when `birthdaysFillWidget`
+        /// is off. Used by the home widget's empty-space back-fill.
         let upcomingBirthdays: [BirthdaySummary]
         /// AppSettings flag gating whether the home widget back-fills empty
         /// space with birthdays. Defaults true when no settings row exists.
@@ -216,8 +217,12 @@ enum WidgetDataProvider {
             let people = fetchTrackedPeople(context: context, groupFilter: groupFilter)
             let groupsByID = fetchGroupsByID(context: context)
             let themeOverride = fetchAppTheme(context: context)
+            // Skip the birthday fetch + cache read entirely when the widget
+            // back-fill is off — nothing downstream reads it then.
             // Called inside this performAndWait, as upcomingBirthdays requires.
-            let birthdays = upcomingBirthdays(context: context, now: now, within: birthdayWindowDays, limit: birthdayFetchLimit, groupFilter: groupFilter)
+            let birthdays = showBirthdays
+                ? upcomingBirthdays(context: context, now: now, within: birthdayWindowDays, limit: birthdayFetchLimit, groupFilter: groupFilter)
+                : []
 
             let atRisk = people
                 .compactMap { person -> OverduePerson? in
@@ -313,7 +318,11 @@ enum WidgetDataProvider {
             let birthday = person.birthday.flatMap(Birthday.from(jsonString:)) ?? resolvedCache[id]
             guard let birthday else { return nil }
 
-            let daysUntil = birthday.daysUntil(from: now, calendar: calendar)
+            // Resolve the next occurrence once and derive daysUntil from it —
+            // Birthday.daysUntil() would otherwise recompute nextOccurrence
+            // internally, doubling the calendar-heavy work per person.
+            let nextOccurrence = birthday.nextOccurrence(after: now, calendar: calendar)
+            let daysUntil = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: nextOccurrence).day ?? 0
             guard daysUntil <= days else { return nil }
 
             return BirthdaySummary(
@@ -323,7 +332,7 @@ enum WidgetDataProvider {
                 initials: initials,
                 avatarColorHex: avatarColor,
                 daysUntil: daysUntil,
-                nextOccurrence: birthday.nextOccurrence(after: now, calendar: calendar)
+                nextOccurrence: nextOccurrence
             )
         }
 

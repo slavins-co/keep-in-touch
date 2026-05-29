@@ -115,6 +115,12 @@ enum AccessoryWidgetLogic {
             sameDayAdditional > 0 ? "\(name) +\(sameDayAdditional)" : name
         }
 
+        /// Tap target — the person when alone, the overview when several share
+        /// the day (mirrors `BirthdayCohort.tapURL` so all surfaces agree).
+        var tapURL: URL {
+            sameDayAdditional > 0 ? DeepLinkRoute.overdue.url() : DeepLinkRoute.person(id).url()
+        }
+
         /// Lowercase day phrase: "today" / "tomorrow" / "in N days". Shared by
         /// the subtitle and the accessibility label so the two stay in sync.
         var dayPhrase: String {

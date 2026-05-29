@@ -190,10 +190,10 @@ struct AccessoryRectangularView: View {
         let birthday = AccessoryWidgetLogic.rectangularBirthday(snapshot: snapshot)
         Group {
             if let birthday {
-                // An imminent birthday outranks the overdue line. Tap routes
-                // directly to that person's detail page.
+                // An imminent birthday outranks the overdue line. Tap routes to
+                // that person — or the overview when several share the day.
                 birthdayContent(birthday)
-                    .widgetURL(DeepLinkRoute.person(birthday.id).url())
+                    .widgetURL(birthday.tapURL)
             } else if let featured = snapshot.featured.first {
                 featuredContent(featured)
                     // When there are more at-risk people beyond the
