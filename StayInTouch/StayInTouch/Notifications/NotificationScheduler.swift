@@ -555,12 +555,35 @@ private extension NotificationScheduler {
             return (UNCalendarNotificationTrigger(dateMatching: components, repeats: true), false)
         }
 
-        let nextDate = Birthday(month: 2, day: 29, year: nil).nextOccurrence(after: now)
-        var components = Calendar.current.dateComponents([.year, .month, .day], from: nextDate)
-        components.hour = time.hour
-        components.minute = time.minute
-        let isFallback = (components.day == 28)
-        return (UNCalendarNotificationTrigger(dateMatching: components, repeats: false), isFallback)
+        // NOTE: a one-shot trigger relies on scheduleAll() (launch, foreground,
+        // BGAppRefresh) re-arming it each year. Unlike a repeating trigger, a
+        // leap-day birthday won't fire if the app is never opened or
+        // background-refreshed across a full year — an accepted tradeoff,
+        // since Feb 28/29 alternation can't be expressed by one repeating
+        // trigger.
+        let calendar = Calendar.current
+        let leapBirthday = Birthday(month: 2, day: 29, year: nil)
+
+        func components(forObservedDayAfter reference: Date) -> DateComponents {
+            let observed = leapBirthday.nextOccurrence(after: reference)
+            var comps = calendar.dateComponents([.year, .month, .day], from: observed)
+            comps.hour = time.hour
+            comps.minute = time.minute
+            return comps
+        }
+
+        var comps = components(forObservedDayAfter: now)
+        // If the observed day is today but the configured time has already
+        // passed, the year-pinned non-repeating trigger would be in the past
+        // (iOS would never deliver it). Roll forward to next year's observed
+        // day so re-running on the birthday evening still arms next year.
+        if let fireDate = calendar.date(from: comps), fireDate <= now {
+            let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+            comps = components(forObservedDayAfter: startOfTomorrow)
+        }
+
+        let isFallback = (comps.day == 28)
+        return (UNCalendarNotificationTrigger(dateMatching: comps, repeats: false), isFallback)
     }
 
     private func singleBirthdayRequest(person: Person, birthday: Birthday, time: LocalTime, hideNames: Bool, now: Date) -> UNNotificationRequest {

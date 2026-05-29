@@ -529,6 +529,24 @@ final class NotificationSchedulerTests: XCTestCase {
         XCTAssertEqual(request.content.title, "Birthday Today 🎂", "Leap year uses the standard birthday copy")
     }
 
+    func testBirthday_feb29_observedDayAfterConfiguredTime_rollsToNextYear() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday(birthday: Birthday(month: 2, day: 29, year: nil))]
+
+        // Feb 28 2026 (non-leap) at 10:00 — past the 09:00 birthday time, so
+        // arming today would be a dead past trigger; it must roll to 2027.
+        let now = Calendar.current.date(from: DateComponents(year: 2026, month: 2, day: 28, hour: 10, minute: 0))!
+        await sut.scheduleAll(now: now)
+
+        let request = try birthdayRequest(in: mockNotificationCenter)
+        let trigger = try XCTUnwrap(request.trigger as? UNCalendarNotificationTrigger)
+        XCTAssertEqual(trigger.dateComponents.year, 2027, "A past observed time today rolls to next year's observed day")
+        XCTAssertEqual(trigger.dateComponents.month, 2)
+        XCTAssertEqual(trigger.dateComponents.day, 28)
+        XCTAssertFalse(trigger.repeats)
+    }
+
     func testBirthday_normalDate_keepsRepeatingTrigger() async throws {
         mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
         seedWeeklyGroup()
