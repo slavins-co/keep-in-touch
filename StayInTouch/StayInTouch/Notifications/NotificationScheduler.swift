@@ -56,6 +56,20 @@ final class NotificationScheduler {
         "Time to send birthday wishes!",
     ]
 
+    /// Playful copy for a Feb 29 birthday observed on Feb 28 in a non-leap
+    /// year — the leap-day baby's "real" date is taking the year off.
+    static let leapDayBirthdayTemplates: [String] = [
+        "Leap-day baby alert! No Feb 29 this year, so celebrate %@ today 🎂",
+        "%@ is a leap-year legend — their birthday is skipping town this year, so wish them well today!",
+        "Technically %@'s birthday doesn't exist this year. Don't tell them that — say happy birthday today 🎂",
+        "Feb 29 took the year off, but %@ still deserves a birthday hello today!",
+    ]
+
+    static let privateLeapDayBirthdayTemplates: [String] = [
+        "A leap-day birthday lands today (Feb 29 is skipping this year)!",
+        "Someone's leap-year birthday is observed today — send a little love!",
+    ]
+
     private let settingsRepository: AppSettingsRepository
     private let personRepository: PersonRepository
     private let cadenceRepository: CadenceRepository
@@ -175,7 +189,7 @@ final class NotificationScheduler {
         stopObserving()
     }
 
-    func scheduleAll() async {
+    func scheduleAll(now: Date = Date()) async {
         guard let settings = settingsRepository.fetch() else { return }
 
         await clearAll()
@@ -194,7 +208,7 @@ final class NotificationScheduler {
 
         // Birthday notifications are independent of daily reminders and fire
         // even when notificationsEnabled is false.
-        requests.append(contentsOf: birthdayRequests(settings: settings))
+        requests.append(contentsOf: birthdayRequests(settings: settings, now: now))
 
         if !settings.notificationsEnabled {
             // Still issue any birthday requests built above before resetting
@@ -204,7 +218,6 @@ final class NotificationScheduler {
             return
         }
 
-        let now = Date()
         let cadences = cadenceRepository.fetchAll()
         let people = personRepository.fetchTracked(includePaused: false)
         let classified = NotificationClassifier.classify(people: people, cadences: cadences, referenceDate: now)
@@ -463,7 +476,7 @@ private extension NotificationScheduler {
         return UNNotificationRequest(identifier: "\(type.identifier)_custom_\(person.id.uuidString)", content: content, trigger: trigger)
     }
 
-    func birthdayRequests(settings: AppSettings) -> [UNNotificationRequest] {
+    func birthdayRequests(settings: AppSettings, now: Date = Date()) -> [UNNotificationRequest] {
         guard settings.birthdayNotificationsEnabled else { return [] }
 
         let ignoreSnoozePause = settings.birthdayIgnoreSnoozePause
@@ -511,24 +524,57 @@ private extension NotificationScheduler {
         var requests: [UNNotificationRequest] = []
         for (key, pairs) in groups {
             if pairs.count == 1, let (person, birthday) = pairs.first {
-                requests.append(singleBirthdayRequest(person: person, birthday: birthday, time: time, hideNames: hideNames))
+                requests.append(singleBirthdayRequest(person: person, birthday: birthday, time: time, hideNames: hideNames, now: now))
             } else {
-                requests.append(groupedBirthdayRequest(people: pairs.map(\.0), month: key.month, day: key.day, time: time, hideNames: hideNames))
+                requests.append(groupedBirthdayRequest(people: pairs.map(\.0), month: key.month, day: key.day, time: time, hideNames: hideNames, now: now))
             }
         }
         return requests
     }
 
-    private func singleBirthdayRequest(person: Person, birthday: Birthday, time: LocalTime, hideNames: Bool) -> UNNotificationRequest {
+    /// Builds the calendar trigger for a birthday. Normal birthdays repeat
+    /// annually on their month/day. Feb 29 is special: a repeating Feb-29
+    /// trigger only fires in leap years (~every 4 years), so we instead
+    /// schedule a *non-repeating* trigger for the next observed occurrence —
+    /// Feb 28 in common years, Feb 29 in leap years — and rely on
+    /// `scheduleAll()` (launch + foreground) to re-arm it each cycle.
+    /// `isLeapDayFallback` is true only when firing on Feb 28 (so the caller
+    /// can swap in playful copy).
+    private func birthdayTrigger(
+        month: Int,
+        day: Int,
+        time: LocalTime,
+        now: Date
+    ) -> (trigger: UNCalendarNotificationTrigger, isLeapDayFallback: Bool) {
+        guard month == 2, day == 29 else {
+            var components = DateComponents()
+            components.month = month
+            components.day = day
+            components.hour = time.hour
+            components.minute = time.minute
+            return (UNCalendarNotificationTrigger(dateMatching: components, repeats: true), false)
+        }
+
+        let nextDate = Birthday(month: 2, day: 29, year: nil).nextOccurrence(after: now)
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: nextDate)
+        components.hour = time.hour
+        components.minute = time.minute
+        let isFallback = (components.day == 28)
+        return (UNCalendarNotificationTrigger(dateMatching: components, repeats: false), isFallback)
+    }
+
+    private func singleBirthdayRequest(person: Person, birthday: Birthday, time: LocalTime, hideNames: Bool, now: Date) -> UNNotificationRequest {
+        let (trigger, isLeapDayFallback) = birthdayTrigger(month: birthday.month, day: birthday.day, time: time, now: now)
+
         let content = UNMutableNotificationContent()
-        content.title = "Birthday Today 🎂"
+        content.title = isLeapDayFallback ? "Leap-Day Birthday 🎂" : "Birthday Today 🎂"
         if hideNames {
-            content.body = Self.privateBirthdayTemplates.randomElement()
-                ?? "A contact has a birthday today!"
+            let templates = isLeapDayFallback ? Self.privateLeapDayBirthdayTemplates : Self.privateBirthdayTemplates
+            content.body = templates.randomElement() ?? "A contact has a birthday today!"
         } else {
+            let templates = isLeapDayFallback ? Self.leapDayBirthdayTemplates : Self.birthdayTemplates
             content.body = String(
-                format: Self.birthdayTemplates.randomElement()
-                    ?? "It's %@'s birthday today!",
+                format: templates.randomElement() ?? "It's %@'s birthday today!",
                 person.displayName
             )
         }
@@ -541,13 +587,6 @@ private extension NotificationScheduler {
             NotificationIdentifier.UserInfoKey.category.rawValue: NotificationIdentifier.UserInfoValue.birthday.rawValue
         ]
 
-        var dateComponents = DateComponents()
-        dateComponents.month = birthday.month
-        dateComponents.day = birthday.day
-        dateComponents.hour = time.hour
-        dateComponents.minute = time.minute
-
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
         return UNNotificationRequest(
             identifier: "\(NotificationIdentifier.birthdayPrefix)\(person.id.uuidString)",
             content: content,
@@ -555,10 +594,12 @@ private extension NotificationScheduler {
         )
     }
 
-    private func groupedBirthdayRequest(people: [Person], month: Int, day: Int, time: LocalTime, hideNames: Bool) -> UNNotificationRequest {
+    private func groupedBirthdayRequest(people: [Person], month: Int, day: Int, time: LocalTime, hideNames: Bool, now: Date) -> UNNotificationRequest {
+        let (trigger, isLeapDayFallback) = birthdayTrigger(month: month, day: day, time: time, now: now)
+
         let content = UNMutableNotificationContent()
-        content.title = "Birthdays Today 🎂"
-        content.body = groupedBirthdayBody(for: people, hideNames: hideNames)
+        content.title = isLeapDayFallback ? "Leap-Day Birthdays 🎂" : "Birthdays Today 🎂"
+        content.body = groupedBirthdayBody(for: people, hideNames: hideNames, isLeapDayFallback: isLeapDayFallback)
         content.sound = .default
         content.threadIdentifier = "birthday"
         // No categoryIdentifier: grouped notifications have no single personId, so
@@ -570,13 +611,6 @@ private extension NotificationScheduler {
             NotificationIdentifier.UserInfoKey.category.rawValue: NotificationIdentifier.UserInfoValue.birthday.rawValue
         ]
 
-        var dateComponents = DateComponents()
-        dateComponents.month = month
-        dateComponents.day = day
-        dateComponents.hour = time.hour
-        dateComponents.minute = time.minute
-
-        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
         return UNNotificationRequest(
             identifier: "\(NotificationIdentifier.birthdayGroupedPrefix)\(month)_\(day)",
             content: content,
@@ -584,17 +618,21 @@ private extension NotificationScheduler {
         )
     }
 
-    private func groupedBirthdayBody(for people: [Person], hideNames: Bool) -> String {
+    private func groupedBirthdayBody(for people: [Person], hideNames: Bool, isLeapDayFallback: Bool) -> String {
         guard !hideNames else {
-            return "Multiple contacts have birthdays today!"
+            return isLeapDayFallback
+                ? "Multiple leap-day birthdays are observed today!"
+                : "Multiple contacts have birthdays today!"
         }
         let firstNames = people.map { firstName(from: $0.displayName) }
+        // Leap-day babies celebrating on Feb 28 in a common year.
+        let suffix = isLeapDayFallback ? "have leap-day birthdays — celebrate today!" : "have birthdays today!"
         switch firstNames.count {
         case 2:
-            return "\(firstNames[0]) and \(firstNames[1]) have birthdays today!"
+            return "\(firstNames[0]) and \(firstNames[1]) \(suffix)"
         default:
             let othersCount = firstNames.count - 2
-            return "\(firstNames[0]), \(firstNames[1]), and \(othersCount) \(othersCount == 1 ? "other" : "others") have birthdays today!"
+            return "\(firstNames[0]), \(firstNames[1]), and \(othersCount) \(othersCount == 1 ? "other" : "others") \(suffix)"
         }
     }
 }

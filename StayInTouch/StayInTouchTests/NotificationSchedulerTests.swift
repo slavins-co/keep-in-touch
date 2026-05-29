@@ -483,6 +483,64 @@ final class NotificationSchedulerTests: XCTestCase {
         XCTAssertTrue(trigger.repeats, "Birthday trigger should repeat yearly")
     }
 
+    // MARK: - Feb 29 birthdays (#329/#335)
+
+    private func gregorianDate(_ year: Int, _ month: Int, _ day: Int) -> Date {
+        Calendar.current.date(from: DateComponents(year: year, month: month, day: day))!
+    }
+
+    private func birthdayRequest(in center: MockUserNotificationCenter) throws -> UNNotificationRequest {
+        try XCTUnwrap(center.addedRequests.first { $0.identifier.hasPrefix(NotificationIdentifier.birthdayPrefix) })
+    }
+
+    func testBirthday_feb29_nonLeapYear_observesFeb28_nonRepeating_playfulCopy() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        let person = makePersonWithBirthday(name: "Leapling", birthday: Birthday(month: 2, day: 29, year: 2000))
+        mockPersonRepo.people = [person]
+
+        // 2026 is not a leap year.
+        await sut.scheduleAll(now: gregorianDate(2026, 2, 1))
+
+        let request = try birthdayRequest(in: mockNotificationCenter)
+        let trigger = try XCTUnwrap(request.trigger as? UNCalendarNotificationTrigger)
+        XCTAssertEqual(trigger.dateComponents.month, 2)
+        XCTAssertEqual(trigger.dateComponents.day, 28, "Feb 29 birthday observes on Feb 28 in a non-leap year")
+        XCTAssertFalse(trigger.repeats, "Leap-day birthday uses a one-shot trigger re-armed by scheduleAll()")
+        XCTAssertEqual(request.content.title, "Leap-Day Birthday 🎂")
+        XCTAssertTrue(
+            NotificationScheduler.leapDayBirthdayTemplates.contains { request.content.body == String(format: $0, person.displayName) },
+            "Non-leap-year Feb 29 birthday should use playful leap-day copy"
+        )
+    }
+
+    func testBirthday_feb29_leapYear_observesFeb29_standardCopy() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday(name: "Leapling", birthday: Birthday(month: 2, day: 29, year: nil))]
+
+        // 2028 is a leap year.
+        await sut.scheduleAll(now: gregorianDate(2028, 2, 1))
+
+        let request = try birthdayRequest(in: mockNotificationCenter)
+        let trigger = try XCTUnwrap(request.trigger as? UNCalendarNotificationTrigger)
+        XCTAssertEqual(trigger.dateComponents.month, 2)
+        XCTAssertEqual(trigger.dateComponents.day, 29, "In a leap year the birthday fires on the real Feb 29")
+        XCTAssertEqual(request.content.title, "Birthday Today 🎂", "Leap year uses the standard birthday copy")
+    }
+
+    func testBirthday_normalDate_keepsRepeatingTrigger() async throws {
+        mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
+        seedWeeklyGroup()
+        mockPersonRepo.people = [makePersonWithBirthday(birthday: Birthday(month: 7, day: 4, year: nil))]
+
+        await sut.scheduleAll(now: gregorianDate(2026, 1, 1))
+
+        let request = try birthdayRequest(in: mockNotificationCenter)
+        let trigger = try XCTUnwrap(request.trigger as? UNCalendarNotificationTrigger)
+        XCTAssertTrue(trigger.repeats, "Non-leap-day birthdays still use a yearly repeating trigger")
+    }
+
     func testBirthday_perPersonDisabled_skips() async {
         mockSettingsRepo.settings = makeSettingsWithNotifications(birthdayNotificationsEnabled: true)
         seedWeeklyGroup()
