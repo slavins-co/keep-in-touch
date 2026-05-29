@@ -80,31 +80,32 @@ struct BirthdaySmallView: View {
 
     var body: some View {
         if let cohort = WidgetDataProvider.soonestBirthdayCohort(from: birthdays) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top) {
                     Image(systemName: "birthday.cake.fill")
-                        .font(.system(size: 32))
+                        .font(.system(size: 30))
                         .foregroundStyle(BrandColors.heroAccentGreen)
                     Spacer()
                     Text(cohort.primary.countdownLabel.lowercased())
                         .font(.caption2)
                         .fontWeight(.medium)
                         .foregroundStyle(.secondary)
-                        .padding(.top, 8)
+                        .padding(.top, 6)
                 }
                 Spacer(minLength: 0)
-                HStack(spacing: 8) {
-                    BirthdayCohortAvatars(cohort: cohort, diameter: 32)
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(cohort.smallWidgetName)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .lineLimit(1)
-                        Text("birthday")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                // Avatars on their own line, then the name full-width below, so
+                // long names ("Daniel +2") aren't squeezed by the avatar stack
+                // and the vertical space gets used.
+                BirthdayCohortAvatars(cohort: cohort, diameter: 40)
+                    .padding(.bottom, 6)
+                Text(cohort.smallWidgetName)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text("birthday")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .widgetURL(cohort.tapURL)
@@ -119,7 +120,9 @@ struct BirthdaySmallView: View {
 struct BirthdayMediumView: View {
     let birthdays: [BirthdaySummary]
 
-    private var rows: [BirthdaySummary] { Array(birthdays.prefix(4)) }
+    private static let maxRows = 3
+    private var rows: [BirthdaySummary] { Array(birthdays.prefix(Self.maxRows)) }
+    private var overflow: Int { max(0, birthdays.count - Self.maxRows) }
 
     var body: some View {
         if rows.isEmpty {
@@ -142,7 +145,14 @@ struct BirthdayMediumView: View {
                             row(birthday)
                         }
                     }
-                    if rows.count < 4 {
+                    if overflow > 0 {
+                        Text("+\(overflow) more")
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 40)  // align under names, past the avatar
+                    } else if rows.count < Self.maxRows {
                         Spacer(minLength: 0)
                     }
                 }

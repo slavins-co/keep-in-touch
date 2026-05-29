@@ -472,6 +472,35 @@ final class WidgetDataProviderTests: XCTestCase {
         XCTAssertEqual(cohort?.smallWidgetName, "A +4")
     }
 
+    func testCohortsByDay_groupsConsecutiveSameDay() {
+        let cohorts = WidgetDataProvider.birthdayCohortsByDay(from: [
+            summary("Daniel", daysUntil: 1),
+            summary("Hank", daysUntil: 1),
+            summary("Kate", daysUntil: 1),
+            summary("John", daysUntil: 5),
+        ])
+        XCTAssertEqual(cohorts.count, 2, "Two distinct days → two cohorts")
+        XCTAssertEqual(cohorts[0].primary.displayName, "Daniel")
+        XCTAssertEqual(cohorts[0].additionalCount, 2, "Hank + Kate share Daniel's day")
+        XCTAssertEqual(cohorts[0].smallWidgetName, "Daniel +2")
+        XCTAssertEqual(cohorts[1].primary.displayName, "John")
+        XCTAssertEqual(cohorts[1].additionalCount, 0)
+    }
+
+    func testCohortsByDay_emptyInput() {
+        XCTAssertTrue(WidgetDataProvider.birthdayCohortsByDay(from: []).isEmpty)
+    }
+
+    func testCohortsByDay_allDistinctDays() {
+        let cohorts = WidgetDataProvider.birthdayCohortsByDay(from: [
+            summary("A", daysUntil: 0),
+            summary("B", daysUntil: 2),
+            summary("C", daysUntil: 4),
+        ])
+        XCTAssertEqual(cohorts.count, 3)
+        XCTAssertTrue(cohorts.allSatisfy { $0.additionalCount == 0 })
+    }
+
     func testCohort_tapURL_personWhenAloneOverviewWhenShared() {
         let alone = WidgetDataProvider.soonestBirthdayCohort(from: [summary("Mom", daysUntil: 1)])!
         XCTAssertEqual(alone.tapURL, DeepLinkRoute.person(alone.primary.id).url())

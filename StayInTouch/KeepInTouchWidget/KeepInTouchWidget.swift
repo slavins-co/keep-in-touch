@@ -280,22 +280,24 @@ struct MediumWidgetView: View {
     /// Birthdays that back-fill the empty rows below the at-risk list, gated
     /// by the user's setting. Capped to whatever row budget the at-risk list
     /// leaves free (total rows ≤ maxFeaturedPeople).
-    private var birthdayRows: [BirthdaySummary] {
+    /// Birthdays that back-fill the empty rows below the at-risk list, gated by
+    /// the user's setting and grouped by day. Each free row shows one day's
+    /// cohort ("Hank +1 · Birthday tomorrow") so a single leftover slot still
+    /// conveys everyone whose birthday lands that day, rather than just one.
+    private var birthdayCohorts: [BirthdayCohort] {
         guard snapshot.birthdaysFillWidget else { return [] }
         let freeRows = max(0, WidgetDataProvider.maxFeaturedPeople - snapshot.featured.count)
+        guard freeRows > 0 else { return [] }
         // Don't show a person twice: if someone is both at-risk (a featured
         // row) and has an upcoming birthday, the at-risk row already covers
         // them — exclude them from the birthday back-fill.
         let featuredIDs = Set(snapshot.featured.map(\.id))
-        return Array(
-            snapshot.upcomingBirthdays
-                .filter { !featuredIDs.contains($0.id) }
-                .prefix(freeRows)
-        )
+        let remaining = snapshot.upcomingBirthdays.filter { !featuredIDs.contains($0.id) }
+        return Array(WidgetDataProvider.birthdayCohortsByDay(from: remaining).prefix(freeRows))
     }
 
     var body: some View {
-        if snapshot.featured.isEmpty && birthdayRows.isEmpty {
+        if snapshot.featured.isEmpty && birthdayCohorts.isEmpty {
             EmptyStateView(hasTrackedPeople: snapshot.hasTrackedPeople)
                 .widgetURL(DeepLinkRoute.overdue.url())
         } else {
@@ -313,12 +315,12 @@ struct MediumWidgetView: View {
                             personRow(person)
                         }
                     }
-                    ForEach(birthdayRows, id: \.id) { birthday in
-                        Link(destination: DeepLinkRoute.person(birthday.id).url()) {
-                            birthdayRow(birthday)
+                    ForEach(birthdayCohorts, id: \.primary.id) { cohort in
+                        Link(destination: cohort.tapURL) {
+                            birthdayCohortRow(cohort)
                         }
                     }
-                    if snapshot.featured.count + birthdayRows.count < WidgetDataProvider.maxFeaturedPeople {
+                    if snapshot.featured.count + birthdayCohorts.count < WidgetDataProvider.maxFeaturedPeople {
                         Spacer(minLength: 0)
                     }
                 }
@@ -338,21 +340,16 @@ struct MediumWidgetView: View {
         }
     }
 
-    private func birthdayRow(_ birthday: BirthdaySummary) -> some View {
+    private func birthdayCohortRow(_ cohort: BirthdayCohort) -> some View {
         HStack(spacing: 10) {
-            WidgetAvatarView(
-                initials: birthday.initials,
-                colorHex: birthday.avatarColorHex,
-                statusRingColor: BrandColors.heroAccentGreen,
-                diameter: 32
-            )
+            BirthdayCohortAvatars(cohort: cohort, diameter: 32)
             VStack(alignment: .leading, spacing: 1) {
-                Text(birthday.displayName)
+                Text(cohort.smallWidgetName)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
-                Text("Birthday \(birthday.countdownLabel)")
+                Text("Birthday \(cohort.primary.countdownLabel)")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }

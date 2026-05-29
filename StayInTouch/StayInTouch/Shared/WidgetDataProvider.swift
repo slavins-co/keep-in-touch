@@ -152,6 +152,21 @@ enum WidgetDataProvider {
         return BirthdayCohort(primary: primary, sameDay: sameDay)
     }
 
+    /// Groups a `daysUntil`-ascending birthday list into one cohort per
+    /// distinct day, preserving order. Used by space-constrained surfaces that
+    /// render one row per day ("Daniel +2 · tomorrow") rather than per person.
+    static func birthdayCohortsByDay(from birthdays: [BirthdaySummary]) -> [BirthdayCohort] {
+        var cohorts: [BirthdayCohort] = []
+        var index = 0
+        while index < birthdays.count {
+            let day = birthdays[index].daysUntil
+            let group = Array(birthdays[index...].prefix { $0.daysUntil == day })
+            cohorts.append(BirthdayCohort(primary: group[0], sameDay: group))
+            index += group.count
+        }
+        return cohorts
+    }
+
     struct Snapshot {
         let overdueCount: Int
         let dueSoonCount: Int
