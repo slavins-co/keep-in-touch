@@ -277,23 +277,22 @@ struct SmallWidgetView: View {
 struct MediumWidgetView: View {
     let snapshot: WidgetDataProvider.Snapshot
 
-    /// Birthdays that back-fill the empty rows below the at-risk list, gated
-    /// by the user's setting. Capped to whatever row budget the at-risk list
-    /// leaves free (total rows ≤ maxFeaturedPeople).
     /// Birthdays that back-fill the empty rows below the at-risk list, gated by
     /// the user's setting and grouped by day. Each free row shows one day's
-    /// cohort ("Hank +1 · Birthday tomorrow") so a single leftover slot still
-    /// conveys everyone whose birthday lands that day, rather than just one.
+    /// cohort ("Daniel +2 · Birthday tomorrow", stacked avatars) so a single
+    /// leftover slot conveys everyone whose birthday lands that day.
+    ///
+    /// We deliberately do NOT exclude people already shown as at-risk: the
+    /// cohort is a "birthdays that day" group (a different fact than the SLA
+    /// rows), so its count must reflect *all* same-day birthdays. Filtering out
+    /// a featured person both undercounted the badge and, when that person was
+    /// the only one on the soonest day, skipped the cohort to a later day with
+    /// the wrong names.
     private var birthdayCohorts: [BirthdayCohort] {
         guard snapshot.birthdaysFillWidget else { return [] }
         let freeRows = max(0, WidgetDataProvider.maxFeaturedPeople - snapshot.featured.count)
         guard freeRows > 0 else { return [] }
-        // Don't show a person twice: if someone is both at-risk (a featured
-        // row) and has an upcoming birthday, the at-risk row already covers
-        // them — exclude them from the birthday back-fill.
-        let featuredIDs = Set(snapshot.featured.map(\.id))
-        let remaining = snapshot.upcomingBirthdays.filter { !featuredIDs.contains($0.id) }
-        return Array(WidgetDataProvider.birthdayCohortsByDay(from: remaining).prefix(freeRows))
+        return Array(WidgetDataProvider.birthdayCohortsByDay(from: snapshot.upcomingBirthdays).prefix(freeRows))
     }
 
     var body: some View {
