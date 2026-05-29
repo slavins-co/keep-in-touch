@@ -130,6 +130,20 @@ struct BirthdayCohort: Equatable {
     var tapURL: URL {
         additionalCount > 0 ? DeepLinkRoute.overdue.url() : DeepLinkRoute.person(primary.id).url()
     }
+
+    /// Headline for the small Birthday widget: "Birthday tomorrow",
+    /// "Birthdays today", "Birthday upcoming", etc. Plural when more than one
+    /// person shares the soonest day; "upcoming" for anything past tomorrow.
+    var birthdayHeadline: String {
+        let noun = sameDay.count > 1 ? "Birthdays" : "Birthday"
+        let when: String
+        switch primary.daysUntil {
+        case 0: when = "today"
+        case 1: when = "tomorrow"
+        default: when = "upcoming"
+        }
+        return "\(noun) \(when)"
+    }
 }
 
 enum WidgetDataProvider {

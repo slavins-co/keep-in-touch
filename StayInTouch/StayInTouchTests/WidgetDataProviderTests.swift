@@ -487,6 +487,19 @@ final class WidgetDataProviderTests: XCTestCase {
         XCTAssertEqual(cohorts[1].additionalCount, 0)
     }
 
+    func testCohort_birthdayHeadline() {
+        func headline(_ days: Int, count: Int) -> String {
+            let list = (0..<count).map { summary("P\($0)", daysUntil: days) }
+            return WidgetDataProvider.soonestBirthdayCohort(from: list)!.birthdayHeadline
+        }
+        XCTAssertEqual(headline(0, count: 1), "Birthday today")
+        XCTAssertEqual(headline(1, count: 1), "Birthday tomorrow")
+        XCTAssertEqual(headline(5, count: 1), "Birthday upcoming")
+        XCTAssertEqual(headline(1, count: 2), "Birthdays tomorrow")
+        XCTAssertEqual(headline(0, count: 3), "Birthdays today")
+        XCTAssertEqual(headline(6, count: 2), "Birthdays upcoming")
+    }
+
     func testCohortsByDay_emptyInput() {
         XCTAssertTrue(WidgetDataProvider.birthdayCohortsByDay(from: []).isEmpty)
     }

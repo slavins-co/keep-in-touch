@@ -81,31 +81,29 @@ struct BirthdaySmallView: View {
     var body: some View {
         if let cohort = WidgetDataProvider.soonestBirthdayCohort(from: birthdays) {
             VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .top) {
-                    Image(systemName: "birthday.cake.fill")
-                        .font(.system(size: 30))
-                        .foregroundStyle(BrandColors.heroAccentGreen)
-                    Spacer()
-                    Text(cohort.primary.countdownLabel.lowercased())
-                        .font(.caption2)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 6)
-                }
+                // Top: cake + descriptive headline ("Birthdays tomorrow") — the
+                // "what + when", reading naturally instead of a stray lowercase
+                // "birthday" under the name.
+                Image(systemName: "birthday.cake.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(BrandColors.heroAccentGreen)
+                Text(cohort.birthdayHeadline)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .padding(.top, 4)
                 Spacer(minLength: 0)
-                // Avatars on their own line, then the name full-width below, so
-                // long names ("Daniel +2") aren't squeezed by the avatar stack
-                // and the vertical space gets used.
-                BirthdayCohortAvatars(cohort: cohort, diameter: 40)
+                // Bottom: who. Avatars on their own line, name full-width below
+                // so "Daniel +2" isn't squeezed by the avatar stack.
+                BirthdayCohortAvatars(cohort: cohort, diameter: 38)
                     .padding(.bottom, 6)
                 Text(cohort.smallWidgetName)
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                Text("birthday")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .widgetURL(cohort.tapURL)
@@ -122,7 +120,15 @@ struct BirthdayMediumView: View {
 
     private static let maxRows = 3
     private var rows: [BirthdaySummary] { Array(birthdays.prefix(Self.maxRows)) }
-    private var overflow: Int { max(0, birthdays.count - Self.maxRows) }
+
+    /// Only surface "+N more" when every upcoming birthday falls on the same
+    /// day — otherwise a later-date birthday cut by the 3-row cap would render
+    /// as "+N more" directly under same-day rows, implying it shares their day.
+    private var overflow: Int {
+        guard let first = birthdays.first,
+              birthdays.allSatisfy({ $0.daysUntil == first.daysUntil }) else { return 0 }
+        return max(0, birthdays.count - Self.maxRows)
+    }
 
     var body: some View {
         if rows.isEmpty {
