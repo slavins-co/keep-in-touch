@@ -18,11 +18,11 @@ Privacy-first iOS app that tracks "last touch" dates, organizes contacts into SL
 ## Build & Test
 
 ```sh
-# Build
-xcodebuild -scheme StayInTouch -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' -sdk iphonesimulator build
+# Build (run from repo root; -project is required since the project lives in StayInTouch/)
+xcodebuild -project StayInTouch/StayInTouch.xcodeproj -scheme StayInTouch -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' -sdk iphonesimulator build
 
 # Test (316+ unit tests)
-xcodebuild -scheme StayInTouch -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' -sdk iphonesimulator test
+xcodebuild -project StayInTouch/StayInTouch.xcodeproj -scheme StayInTouch -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' -sdk iphonesimulator test
 ```
 
 Background task ID: `com.slavins.keepintouch.refresh`
