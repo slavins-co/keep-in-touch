@@ -11,7 +11,7 @@ import CoreData
 import Foundation
 
 extension WidgetDataProvider {
-    static func loadSnapshot(now: Date = Date(), groupFilter: UUID? = nil) -> Snapshot {
+    static func loadSnapshot(now: Date = Date(), groupFilter: UUID? = nil, showBirthdays: Bool = true) -> Snapshot {
         guard let context = WidgetCoreData.shared?.viewContext else {
             return Snapshot(
                 overdueCount: 0,
@@ -21,10 +21,10 @@ extension WidgetDataProvider {
                 trackedCount: 0,
                 themeOverride: nil,
                 upcomingBirthdays: [],
-                birthdaysFillWidget: true
+                birthdaysFillWidget: showBirthdays
             )
         }
-        return snapshot(context: context, now: now, groupFilter: groupFilter)
+        return snapshot(context: context, now: now, groupFilter: groupFilter, showBirthdays: showBirthdays)
     }
 
     /// Loads upcoming birthdays for the dedicated Birthday widget, plus the

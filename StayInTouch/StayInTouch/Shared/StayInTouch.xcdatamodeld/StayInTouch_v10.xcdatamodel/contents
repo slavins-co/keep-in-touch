@@ -78,7 +78,6 @@
         <attribute name="birthdayNotificationsEnabled" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="birthdayNotificationTime" optional="YES" attributeType="String"/>
         <attribute name="birthdayIgnoreSnoozePause" optional="YES" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
-        <attribute name="birthdaysFillWidget" optional="YES" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
         <attribute name="tutorialCompleted" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="tutorialVersion" optional="YES" attributeType="String"/>
         <attribute name="lastSeenAppVersion" optional="YES" attributeType="String"/>

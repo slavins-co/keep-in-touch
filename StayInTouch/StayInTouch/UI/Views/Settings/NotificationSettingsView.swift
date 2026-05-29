@@ -193,15 +193,6 @@ struct NotificationSettingsView: View {
                 .accessibilityHint("Sends birthday reminders even for snoozed or paused contacts")
                 .padding(.leading, DS.Spacing.lg)
             }
-
-            Toggle(isOn: Binding(
-                get: { viewModel.settings.birthdaysFillWidget },
-                set: { viewModel.setBirthdaysFillWidget($0) }
-            )) {
-                Label("Show Birthdays on Widget", systemImage: "rectangle.stack.badge.person.crop")
-            }
-            .accessibilityLabel("Show birthdays on the home screen widget")
-            .accessibilityHint("Fills empty widget space with upcoming birthdays when no one is overdue or due soon")
         }
     }
 

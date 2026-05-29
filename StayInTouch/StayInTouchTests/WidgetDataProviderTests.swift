@@ -395,9 +395,11 @@ final class WidgetDataProviderTests: XCTestCase {
         XCTAssertEqual(scopedToA.map(\.displayName), ["InGroupA"])
     }
 
-    func testSnapshot_birthdaysFillWidget_defaultsTrueWithoutSettings() {
-        let snap = WidgetDataProvider.snapshot(context: context)
-        XCTAssertTrue(snap.birthdaysFillWidget)
+    func testSnapshot_birthdaysFillWidget_reflectsShowBirthdaysParameter() {
+        // Driven by the widget-configuration toggle (showBirthdays), not app settings.
+        XCTAssertTrue(WidgetDataProvider.snapshot(context: context).birthdaysFillWidget)
+        XCTAssertTrue(WidgetDataProvider.snapshot(context: context, showBirthdays: true).birthdaysFillWidget)
+        XCTAssertFalse(WidgetDataProvider.snapshot(context: context, showBirthdays: false).birthdaysFillWidget)
     }
 
     // MARK: - nextLocalMidnight (#329)

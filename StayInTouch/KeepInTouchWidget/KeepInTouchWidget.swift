@@ -27,13 +27,14 @@ struct OverdueTimelineProvider: AppIntentTimelineProvider {
         OverdueEntry(
             date: Date(),
             configuration: configuration,
-            snapshot: WidgetDataProvider.loadSnapshot(groupFilter: configuredFilter(configuration))
+            snapshot: WidgetDataProvider.loadSnapshot(groupFilter: configuredFilter(configuration), showBirthdays: configuration.showBirthdays)
         )
     }
 
     func timeline(for configuration: OverdueWidgetConfigurationIntent, in context: Context) async -> Timeline<OverdueEntry> {
         let now = Date()
         let filter = configuredFilter(configuration)
+        let showBirthdays = configuration.showBirthdays
         let midnight = WidgetDataProvider.nextLocalMidnight(after: now)
 
         // Two entries: now, and the next local midnight (with its snapshot
@@ -44,12 +45,12 @@ struct OverdueTimelineProvider: AppIntentTimelineProvider {
             OverdueEntry(
                 date: now,
                 configuration: configuration,
-                snapshot: WidgetDataProvider.loadSnapshot(now: now, groupFilter: filter)
+                snapshot: WidgetDataProvider.loadSnapshot(now: now, groupFilter: filter, showBirthdays: showBirthdays)
             ),
             OverdueEntry(
                 date: midnight,
                 configuration: configuration,
-                snapshot: WidgetDataProvider.loadSnapshot(now: midnight, groupFilter: filter)
+                snapshot: WidgetDataProvider.loadSnapshot(now: midnight, groupFilter: filter, showBirthdays: showBirthdays)
             ),
         ]
         return Timeline(entries: entries, policy: .after(midnight))

@@ -26,7 +26,6 @@ extension AppSettingsEntity {
             birthdayNotificationsEnabled: birthdayNotificationsEnabled,
             birthdayNotificationTime: birthdayNotificationTime.flatMap(LocalTime.from(jsonString:)) ?? LocalTime(hour: 9, minute: 0),
             birthdayIgnoreSnoozePause: birthdayIgnoreSnoozePause,
-            birthdaysFillWidget: birthdaysFillWidget,
             lastContactsSyncAt: lastContactsSyncAt,
             onboardingCompleted: onboardingCompleted,
             appVersion: appVersion ?? "",
@@ -53,7 +52,6 @@ extension AppSettingsEntity {
         birthdayNotificationsEnabled = settings.birthdayNotificationsEnabled
         birthdayNotificationTime = settings.birthdayNotificationTime.toJsonString()
         birthdayIgnoreSnoozePause = settings.birthdayIgnoreSnoozePause
-        birthdaysFillWidget = settings.birthdaysFillWidget
         lastContactsSyncAt = settings.lastContactsSyncAt
         onboardingCompleted = settings.onboardingCompleted
         appVersion = settings.appVersion

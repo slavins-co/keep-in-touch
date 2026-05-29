@@ -135,9 +135,10 @@ enum WidgetDataProvider {
     static func snapshot(
         context: NSManagedObjectContext,
         now: Date = Date(),
-        groupFilter: UUID? = nil
+        groupFilter: UUID? = nil,
+        showBirthdays: Bool = true
     ) -> Snapshot {
-        var result = Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil, upcomingBirthdays: [], birthdaysFillWidget: true)
+        var result = Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil, upcomingBirthdays: [], birthdaysFillWidget: showBirthdays)
 
         context.performAndWait {
             let hasTrackedPeople = countTrackedPeople(context: context) > 0
@@ -146,7 +147,6 @@ enum WidgetDataProvider {
             let themeOverride = fetchAppTheme(context: context)
             // Called inside this performAndWait, as upcomingBirthdays requires.
             let birthdays = upcomingBirthdays(context: context, now: now, within: birthdayWindowDays, limit: maxFeaturedPeople, groupFilter: groupFilter)
-            let birthdaysFillWidget = fetchBirthdaysFillWidget(context: context)
 
             let atRisk = people
                 .compactMap { person -> OverduePerson? in
@@ -192,7 +192,7 @@ enum WidgetDataProvider {
                 trackedCount: people.count,
                 themeOverride: themeOverride,
                 upcomingBirthdays: birthdays,
-                birthdaysFillWidget: birthdaysFillWidget
+                birthdaysFillWidget: showBirthdays
             )
         }
 
@@ -293,15 +293,6 @@ enum WidgetDataProvider {
     /// as the overdue widget. Must be called inside `context.perform`.
     static func themeOverride(context: NSManagedObjectContext) -> String? {
         fetchAppTheme(context: context)
-    }
-
-    /// Reads the birthdays-fill-widget flag. Defaults to `true` when no
-    /// settings row exists (matches the model's `defaultValueString="YES"`).
-    private static func fetchBirthdaysFillWidget(context: NSManagedObjectContext) -> Bool {
-        let request: NSFetchRequest<AppSettingsEntity> = AppSettingsEntity.fetchRequest()
-        request.fetchLimit = 1
-        guard let settings = (try? context.fetch(request))?.first else { return true }
-        return settings.birthdaysFillWidget
     }
 
     /// Tracked, non-demo people who opted into birthday surfacing. Paused and
