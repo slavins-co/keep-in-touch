@@ -36,6 +36,9 @@ struct SnoozedContactsView: View {
             }
         }
         .navigationTitle("Snoozed Contacts")
+        // Hide the tab bar on this pushed sub-screen so the bottom-bar bulk
+        // actions aren't obscured by the floating tab bar (iOS 26).
+        .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 EditButton()
