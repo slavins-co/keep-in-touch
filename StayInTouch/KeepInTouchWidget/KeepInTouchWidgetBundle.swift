@@ -11,5 +11,6 @@ struct KeepInTouchWidgetBundle: WidgetBundle {
     var body: some Widget {
         OverdueWidget()
         OverdueLockScreenWidget()
+        BirthdayWidget()
     }
 }

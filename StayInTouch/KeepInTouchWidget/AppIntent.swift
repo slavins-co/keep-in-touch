@@ -12,4 +12,11 @@ struct OverdueWidgetConfigurationIntent: WidgetConfigurationIntent {
 
     @Parameter(title: "Group")
     var group: GroupAppEntity?
+
+    @Parameter(
+        title: "Show Birthdays",
+        description: "Fill empty space with upcoming birthdays when no one is overdue or due soon.",
+        default: true
+    )
+    var showBirthdays: Bool
 }

@@ -285,12 +285,88 @@ final class AccessoryWidgetLogicTests: XCTestCase {
         )
     }
 
+    // MARK: - Rectangular birthday precedence (#329)
+
+    func testRectangularBirthday_nil_whenNoBirthdays() {
+        let snap = makeSnapshot(overdueCount: 3, dueSoonCount: 0, featured: [])
+        XCTAssertNil(AccessoryWidgetLogic.rectangularBirthday(snapshot: snap))
+    }
+
+    func testRectangularBirthday_nil_whenBeyondThreshold() {
+        let snap = makeSnapshot(
+            overdueCount: 1, dueSoonCount: 0, featured: [],
+            upcomingBirthdays: [makeBirthday(name: "Mom", daysUntil: 3)]
+        )
+        XCTAssertNil(AccessoryWidgetLogic.rectangularBirthday(snapshot: snap), "3 days out is beyond the 2-day threshold")
+    }
+
+    func testRectangularBirthday_returnedWithinThreshold() {
+        for days in 0...2 {
+            let snap = makeSnapshot(
+                overdueCount: 4, dueSoonCount: 0, featured: [],
+                upcomingBirthdays: [makeBirthday(name: "Mom", daysUntil: days)]
+            )
+            let result = AccessoryWidgetLogic.rectangularBirthday(snapshot: snap)
+            XCTAssertEqual(result?.name, "Mom")
+            XCTAssertEqual(result?.daysUntil, days)
+            XCTAssertEqual(result?.overdueCount, 4)
+        }
+    }
+
+    func testRectangularBirthdaySubtitle_composition() {
+        let today = AccessoryWidgetLogic.RectangularBirthday(id: UUID(), name: "Mom", daysUntil: 0, overdueCount: 0, sameDayAdditional: 0)
+        XCTAssertEqual(AccessoryWidgetLogic.rectangularBirthdaySubtitle(today), "today")
+
+        let tomorrowWithOverdue = AccessoryWidgetLogic.RectangularBirthday(id: UUID(), name: "Mom", daysUntil: 1, overdueCount: 3, sameDayAdditional: 0)
+        XCTAssertEqual(AccessoryWidgetLogic.rectangularBirthdaySubtitle(tomorrowWithOverdue), "tomorrow · 3 overdue")
+
+        let inTwo = AccessoryWidgetLogic.RectangularBirthday(id: UUID(), name: "Mom", daysUntil: 2, overdueCount: 0, sameDayAdditional: 0)
+        XCTAssertEqual(AccessoryWidgetLogic.rectangularBirthdaySubtitle(inTwo), "in 2 days")
+    }
+
+    func testRectangularBirthday_displayName_appendsPlusNForSameDay() {
+        let alone = AccessoryWidgetLogic.RectangularBirthday(id: UUID(), name: "Mom", daysUntil: 0, overdueCount: 0, sameDayAdditional: 0)
+        XCTAssertEqual(alone.displayName, "Mom")
+
+        let shared = AccessoryWidgetLogic.RectangularBirthday(id: UUID(), name: "Mom", daysUntil: 0, overdueCount: 0, sameDayAdditional: 2)
+        XCTAssertEqual(shared.displayName, "Mom +2")
+    }
+
+    func testRectangularBirthday_countsSameDayCohort() {
+        let snap = makeSnapshot(
+            overdueCount: 0, dueSoonCount: 0, featured: [],
+            upcomingBirthdays: [
+                makeBirthday(name: "Mom", daysUntil: 1),
+                makeBirthday(name: "Kate", daysUntil: 1),
+                makeBirthday(name: "John", daysUntil: 5),  // different day — excluded from cohort
+            ]
+        )
+        let result = AccessoryWidgetLogic.rectangularBirthday(snapshot: snap)
+        XCTAssertEqual(result?.name, "Mom")
+        XCTAssertEqual(result?.sameDayAdditional, 1, "Kate shares the day; John does not")
+        XCTAssertEqual(result?.displayName, "Mom +1")
+    }
+
+    private func makeBirthday(name: String, daysUntil: Int) -> BirthdaySummary {
+        BirthdaySummary(
+            id: UUID(),
+            displayName: name,
+            nickname: nil,
+            initials: String(name.prefix(2)),
+            avatarColorHex: "#A78BFA",
+            daysUntil: daysUntil,
+            nextOccurrence: Date()
+        )
+    }
+
     private func makeSnapshot(
         overdueCount: Int,
         dueSoonCount: Int,
         featured: [OverduePerson],
         hasTrackedPeople: Bool = true,
-        trackedCount: Int = 5
+        trackedCount: Int = 5,
+        upcomingBirthdays: [BirthdaySummary] = [],
+        birthdaysFillWidget: Bool = true
     ) -> WidgetDataProvider.Snapshot {
         WidgetDataProvider.Snapshot(
             overdueCount: overdueCount,
@@ -298,7 +374,9 @@ final class AccessoryWidgetLogicTests: XCTestCase {
             featured: featured,
             hasTrackedPeople: hasTrackedPeople,
             trackedCount: trackedCount,
-            themeOverride: nil
+            themeOverride: nil,
+            upcomingBirthdays: upcomingBirthdays,
+            birthdaysFillWidget: birthdaysFillWidget
         )
     }
 }

@@ -22,12 +22,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         registerBackgroundTasks()
         PrivacyOverlayManager.shared.start()
         Task { await NotificationScheduler.shared.scheduleAll() }
+        BirthdayCacheRefresher.refreshInBackground()
         return true
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
         AnalyticsService.track("app.foregrounded")
         Task { await NotificationScheduler.shared.scheduleAll() }
+        BirthdayCacheRefresher.refreshInBackground()
     }
 
     func userNotificationCenter(

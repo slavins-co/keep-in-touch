@@ -269,6 +269,261 @@ final class WidgetDataProviderTests: XCTestCase {
         XCTAssertNil(snap.featured.first?.nickname)
     }
 
+    // MARK: - upcomingBirthdays (#329)
+
+    private var gregorian: Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "America/New_York")!
+        return cal
+    }
+
+    private func refDate() -> Date {
+        gregorian.date(from: DateComponents(year: 2026, month: 6, day: 15))!
+    }
+
+    private func upcoming(within days: Int = 7, limit: Int = 3, cache: [UUID: Birthday] = [:]) -> [BirthdaySummary] {
+        WidgetDataProvider.upcomingBirthdays(
+            context: context,
+            now: refDate(),
+            within: days,
+            limit: limit,
+            calendar: gregorian,
+            cache: cache
+        )
+    }
+
+    func testUpcomingBirthdays_storedOnly_filtersWindowAndSorts() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "Today", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 15, year: 1990))
+        _ = seedPerson(name: "InThree", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 18, year: nil))
+        _ = seedPerson(name: "OutOfWindow", cadenceId: cadenceId, birthday: Birthday(month: 7, day: 1, year: nil))
+
+        let result = upcoming()
+        XCTAssertEqual(result.map(\.displayName), ["Today", "InThree"])
+        XCTAssertEqual(result.first?.daysUntil, 0)
+        XCTAssertEqual(result.last?.daysUntil, 3)
+    }
+
+    func testUpcomingBirthdays_cacheSourced_whenNoStoredBirthday() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        let person = seedPerson(name: "ContactOnly", cadenceId: cadenceId, birthday: nil)
+
+        let cache = [person.id!: Birthday(month: 6, day: 17, year: nil)]
+        let result = upcoming(cache: cache)
+
+        XCTAssertEqual(result.map(\.displayName), ["ContactOnly"])
+        XCTAssertEqual(result.first?.daysUntil, 2)
+    }
+
+    func testUpcomingBirthdays_storedTakesPrecedenceOverCache() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        let person = seedPerson(name: "Both", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 16, year: nil))
+
+        // Cache says day 20, but the stored birthday (day 16) must win.
+        let cache = [person.id!: Birthday(month: 6, day: 20, year: nil)]
+        let result = upcoming(cache: cache)
+
+        XCTAssertEqual(result.first?.daysUntil, 1)
+    }
+
+    func testUpcomingBirthdays_excludesBirthdayNotificationsDisabled() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "OptedOut", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 16, year: nil), birthdayNotificationsEnabled: false)
+
+        XCTAssertTrue(upcoming().isEmpty)
+    }
+
+    func testUpcomingBirthdays_excludesDemoData() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "Demo", cadenceId: cadenceId, isDemoData: true, birthday: Birthday(month: 6, day: 16, year: nil))
+
+        XCTAssertTrue(upcoming().isEmpty)
+    }
+
+    func testUpcomingBirthdays_includesPausedAndSnoozed() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "Paused", cadenceId: cadenceId, isPaused: true, birthday: Birthday(month: 6, day: 16, year: nil))
+        _ = seedPerson(name: "Snoozed", cadenceId: cadenceId, snoozedUntil: daysFromNow(30), birthday: Birthday(month: 6, day: 17, year: nil))
+
+        XCTAssertEqual(Set(upcoming().map(\.displayName)), ["Paused", "Snoozed"])
+    }
+
+    func testUpcomingBirthdays_windowBoundary_inclusive() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "Day7", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 22, year: nil))   // exactly 7
+        _ = seedPerson(name: "Day8", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 23, year: nil))   // 8 → excluded
+
+        XCTAssertEqual(upcoming().map(\.displayName), ["Day7"])
+    }
+
+    func testUpcomingBirthdays_respectsLimit() {
+        let cadenceId = UUID()
+        _ = seedGroup(id: cadenceId, frequencyDays: 30, warningDays: 3)
+        for offset in 1...5 {
+            _ = seedPerson(name: "P\(offset)", cadenceId: cadenceId, birthday: Birthday(month: 6, day: 15 + offset, year: nil))
+        }
+
+        XCTAssertEqual(upcoming(limit: 2).count, 2)
+        XCTAssertEqual(upcoming(limit: 0).count, 5)  // 0 == no cap
+    }
+
+    func testUpcomingBirthdays_respectsGroupFilter() {
+        let cadenceA = UUID()
+        let cadenceB = UUID()
+        _ = seedGroup(id: cadenceA, frequencyDays: 30, warningDays: 3)
+        _ = seedGroup(id: cadenceB, frequencyDays: 30, warningDays: 3)
+        _ = seedPerson(name: "InGroupA", cadenceId: cadenceA, birthday: Birthday(month: 6, day: 17, year: nil))
+        _ = seedPerson(name: "InGroupB", cadenceId: cadenceB, birthday: Birthday(month: 6, day: 18, year: nil))
+
+        let scopedToA = WidgetDataProvider.upcomingBirthdays(
+            context: context,
+            now: refDate(),
+            within: 7,
+            limit: 3,
+            groupFilter: cadenceA,
+            calendar: gregorian,
+            cache: [:]
+        )
+
+        XCTAssertEqual(scopedToA.map(\.displayName), ["InGroupA"])
+    }
+
+    func testSnapshot_birthdaysFillWidget_reflectsShowBirthdaysParameter() {
+        // Driven by the widget-configuration toggle (showBirthdays), not app settings.
+        XCTAssertTrue(WidgetDataProvider.snapshot(context: context).birthdaysFillWidget)
+        XCTAssertTrue(WidgetDataProvider.snapshot(context: context, showBirthdays: true).birthdaysFillWidget)
+        XCTAssertFalse(WidgetDataProvider.snapshot(context: context, showBirthdays: false).birthdaysFillWidget)
+    }
+
+    // MARK: - nextLocalMidnight (#329)
+
+    func testNextLocalMidnight_isStartOfTomorrow() {
+        let ref = gregorian.date(from: DateComponents(year: 2026, month: 6, day: 15, hour: 14, minute: 30))!
+        let midnight = WidgetDataProvider.nextLocalMidnight(after: ref, calendar: gregorian)
+        let comps = gregorian.dateComponents([.year, .month, .day, .hour, .minute], from: midnight)
+        XCTAssertEqual(comps.year, 2026)
+        XCTAssertEqual(comps.month, 6)
+        XCTAssertEqual(comps.day, 16)
+        XCTAssertEqual(comps.hour, 0)
+        XCTAssertEqual(comps.minute, 0)
+    }
+
+    func testNextLocalMidnight_isStrictlyAfterEvenAtMidnight() {
+        let midnightExact = gregorian.startOfDay(for: gregorian.date(from: DateComponents(year: 2026, month: 6, day: 15))!)
+        let next = WidgetDataProvider.nextLocalMidnight(after: midnightExact, calendar: gregorian)
+        XCTAssertEqual(gregorian.dateComponents([.day], from: next).day, 16)
+    }
+
+    // MARK: - soonestBirthdayCohort (#329)
+
+    private func summary(_ name: String, daysUntil: Int) -> BirthdaySummary {
+        BirthdaySummary(
+            id: UUID(),
+            displayName: name,
+            nickname: nil,
+            initials: String(name.prefix(2)),
+            avatarColorHex: "#FF6B6B",
+            daysUntil: daysUntil,
+            nextOccurrence: Date()
+        )
+    }
+
+    func testCohort_nilWhenEmpty() {
+        XCTAssertNil(WidgetDataProvider.soonestBirthdayCohort(from: []))
+    }
+
+    func testCohort_singlePerson() {
+        let cohort = WidgetDataProvider.soonestBirthdayCohort(from: [summary("Mom", daysUntil: 1)])
+        XCTAssertEqual(cohort?.additionalCount, 0)
+        XCTAssertEqual(cohort?.stackedAvatars.count, 1)
+        XCTAssertEqual(cohort?.smallWidgetName, "Mom")
+    }
+
+    func testCohort_groupsOnlySameDayAsSoonest() {
+        // Sorted ascending, as upcomingBirthdays returns it.
+        let cohort = WidgetDataProvider.soonestBirthdayCohort(from: [
+            summary("Mom", daysUntil: 1),
+            summary("Kate", daysUntil: 1),
+            summary("John", daysUntil: 5),
+        ])
+        XCTAssertEqual(cohort?.primary.displayName, "Mom")
+        XCTAssertEqual(cohort?.sameDay.count, 2, "Only Mom + Kate share day 1; John is day 5")
+        XCTAssertEqual(cohort?.additionalCount, 1)
+        XCTAssertEqual(cohort?.smallWidgetName, "Mom +1")
+    }
+
+    func testCohort_avatarsCapAtThreeButCountIsFull() {
+        let cohort = WidgetDataProvider.soonestBirthdayCohort(from: [
+            summary("A", daysUntil: 0),
+            summary("B", daysUntil: 0),
+            summary("C", daysUntil: 0),
+            summary("D", daysUntil: 0),
+            summary("E", daysUntil: 0),
+        ])
+        XCTAssertEqual(cohort?.stackedAvatars.count, 3, "Avatars cap at 3")
+        XCTAssertEqual(cohort?.additionalCount, 4, "But +N reflects the true extra count")
+        XCTAssertEqual(cohort?.smallWidgetName, "A +4")
+    }
+
+    func testCohortsByDay_groupsConsecutiveSameDay() {
+        let cohorts = WidgetDataProvider.birthdayCohortsByDay(from: [
+            summary("Daniel", daysUntil: 1),
+            summary("Hank", daysUntil: 1),
+            summary("Kate", daysUntil: 1),
+            summary("John", daysUntil: 5),
+        ])
+        XCTAssertEqual(cohorts.count, 2, "Two distinct days → two cohorts")
+        XCTAssertEqual(cohorts[0].primary.displayName, "Daniel")
+        XCTAssertEqual(cohorts[0].additionalCount, 2, "Hank + Kate share Daniel's day")
+        XCTAssertEqual(cohorts[0].smallWidgetName, "Daniel +2")
+        XCTAssertEqual(cohorts[1].primary.displayName, "John")
+        XCTAssertEqual(cohorts[1].additionalCount, 0)
+    }
+
+    func testCohort_birthdayHeadline() {
+        func headline(_ days: Int, count: Int) -> String {
+            let list = (0..<count).map { summary("P\($0)", daysUntil: days) }
+            return WidgetDataProvider.soonestBirthdayCohort(from: list)!.birthdayHeadline
+        }
+        XCTAssertEqual(headline(0, count: 1), "Birthday today")
+        XCTAssertEqual(headline(1, count: 1), "Birthday tomorrow")
+        XCTAssertEqual(headline(5, count: 1), "Birthday upcoming")
+        XCTAssertEqual(headline(1, count: 2), "Birthdays tomorrow")
+        XCTAssertEqual(headline(0, count: 3), "Birthdays today")
+        XCTAssertEqual(headline(6, count: 2), "Birthdays upcoming")
+    }
+
+    func testCohortsByDay_emptyInput() {
+        XCTAssertTrue(WidgetDataProvider.birthdayCohortsByDay(from: []).isEmpty)
+    }
+
+    func testCohortsByDay_allDistinctDays() {
+        let cohorts = WidgetDataProvider.birthdayCohortsByDay(from: [
+            summary("A", daysUntil: 0),
+            summary("B", daysUntil: 2),
+            summary("C", daysUntil: 4),
+        ])
+        XCTAssertEqual(cohorts.count, 3)
+        XCTAssertTrue(cohorts.allSatisfy { $0.additionalCount == 0 })
+    }
+
+    func testCohort_tapURL_personWhenAloneOverviewWhenShared() {
+        let alone = WidgetDataProvider.soonestBirthdayCohort(from: [summary("Mom", daysUntil: 1)])!
+        XCTAssertEqual(alone.tapURL, DeepLinkRoute.person(alone.primary.id).url())
+
+        let shared = WidgetDataProvider.soonestBirthdayCohort(from: [
+            summary("Mom", daysUntil: 1), summary("Kate", daysUntil: 1),
+        ])!
+        XCTAssertEqual(shared.tapURL, DeepLinkRoute.overdue.url())
+    }
+
     // MARK: - Fixtures
 
     private func makeOverduePerson(name: String, status: WidgetPersonStatus, nickname: String? = nil) -> OverduePerson {
@@ -315,7 +570,9 @@ final class WidgetDataProviderTests: XCTestCase {
         isPaused: Bool = false,
         isTracked: Bool = true,
         isDemoData: Bool = false,
-        nickname: String? = nil
+        nickname: String? = nil,
+        birthday: Birthday? = nil,
+        birthdayNotificationsEnabled: Bool = true
     ) -> PersonEntity {
         let entity = PersonEntity(context: context)
         entity.id = UUID()
@@ -332,7 +589,8 @@ final class WidgetDataProviderTests: XCTestCase {
         entity.isDemoData = isDemoData
         entity.notificationsMuted = false
         entity.contactUnavailable = false
-        entity.birthdayNotificationsEnabled = true
+        entity.birthdayNotificationsEnabled = birthdayNotificationsEnabled
+        entity.birthday = birthday?.toJsonString()
         entity.nickname = nickname
         entity.sortOrder = 0
         entity.createdAt = Date()

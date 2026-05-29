@@ -92,6 +92,76 @@ enum AccessoryWidgetLogic {
         return primary
     }
 
+    // MARK: - Rectangular birthday precedence (#329)
+
+    /// A birthday at or within this many days outranks the overdue line on
+    /// the rectangular accessory — an imminent birthday is the more
+    /// time-sensitive reach-out, and the lock screen has room for only one.
+    static let rectangularBirthdayThresholdDays = 2
+
+    struct RectangularBirthday: Equatable {
+        let id: UUID
+        let name: String
+        let daysUntil: Int
+        /// Overdue people to mention as a trailing "· N overdue" suffix.
+        let overdueCount: Int
+        /// Others sharing the same day — rendered as a "+N" on the name. The
+        /// monochrome rectangular accessory has no avatars, so the count is
+        /// text-only here (the home small widgets stack avatars instead).
+        let sameDayAdditional: Int
+
+        /// Name line: "Hank" alone, "Hank +1" when others share the day.
+        var displayName: String {
+            sameDayAdditional > 0 ? "\(name) +\(sameDayAdditional)" : name
+        }
+
+        /// Tap target — the person when alone, the overview when several share
+        /// the day (mirrors `BirthdayCohort.tapURL` so all surfaces agree).
+        var tapURL: URL {
+            sameDayAdditional > 0 ? DeepLinkRoute.overdue.url() : DeepLinkRoute.person(id).url()
+        }
+
+        /// Lowercase day phrase: "today" / "tomorrow" / "in N days". Shared by
+        /// the subtitle and the accessibility label so the two stay in sync.
+        var dayPhrase: String {
+            switch daysUntil {
+            case 0: return "today"
+            case 1: return "tomorrow"
+            default: return "in \(daysUntil) days"
+            }
+        }
+    }
+
+    /// The birthday to feature on the rectangular accessory, or nil to fall
+    /// back to the overdue/at-risk content. Only the soonest birthday is a
+    /// candidate, only when it lands within the threshold, and only when the
+    /// user hasn't disabled birthday surfacing on widgets (same setting that
+    /// gates the home widget's back-fill).
+    static func rectangularBirthday(snapshot: WidgetDataProvider.Snapshot) -> RectangularBirthday? {
+        guard
+            snapshot.birthdaysFillWidget,
+            let cohort = WidgetDataProvider.soonestBirthdayCohort(from: snapshot.upcomingBirthdays),
+            cohort.primary.daysUntil <= rectangularBirthdayThresholdDays
+        else { return nil }
+
+        return RectangularBirthday(
+            id: cohort.primary.id,
+            name: cohort.primary.displayShortName,
+            daysUntil: cohort.primary.daysUntil,
+            overdueCount: snapshot.overdueCount,
+            sameDayAdditional: cohort.additionalCount
+        )
+    }
+
+    /// Second line for the rectangular birthday layout, e.g.
+    /// "tomorrow · 3 overdue", "today", or "in 2 days".
+    static func rectangularBirthdaySubtitle(_ birthday: RectangularBirthday) -> String {
+        if birthday.overdueCount > 0 {
+            return "\(birthday.dayPhrase) · \(birthday.overdueCount) overdue"
+        }
+        return birthday.dayPhrase
+    }
+
     // MARK: - Inline label
 
     struct InlineLabel: Equatable {

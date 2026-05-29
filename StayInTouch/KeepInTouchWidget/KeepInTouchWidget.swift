@@ -27,19 +27,33 @@ struct OverdueTimelineProvider: AppIntentTimelineProvider {
         OverdueEntry(
             date: Date(),
             configuration: configuration,
-            snapshot: WidgetDataProvider.loadSnapshot(groupFilter: configuredFilter(configuration))
+            snapshot: WidgetDataProvider.loadSnapshot(groupFilter: configuredFilter(configuration), showBirthdays: configuration.showBirthdays)
         )
     }
 
     func timeline(for configuration: OverdueWidgetConfigurationIntent, in context: Context) async -> Timeline<OverdueEntry> {
         let now = Date()
-        let entry = OverdueEntry(
-            date: now,
-            configuration: configuration,
-            snapshot: WidgetDataProvider.loadSnapshot(now: now, groupFilter: configuredFilter(configuration))
-        )
-        let nextRefresh = Calendar.current.date(byAdding: .minute, value: 30, to: now) ?? now
-        return Timeline(entries: [entry], policy: .after(nextRefresh))
+        let filter = configuredFilter(configuration)
+        let showBirthdays = configuration.showBirthdays
+        let midnight = WidgetDataProvider.nextLocalMidnight(after: now)
+
+        // Two entries: now, and the next local midnight (with its snapshot
+        // computed as-of midnight so day-relative copy — "tomorrow" → "today",
+        // daysOverdue increments, a birthday entering the window — rolls over
+        // exactly at midnight). Reload after midnight to recompute the next day.
+        let entries = [
+            OverdueEntry(
+                date: now,
+                configuration: configuration,
+                snapshot: WidgetDataProvider.loadSnapshot(now: now, groupFilter: filter, showBirthdays: showBirthdays)
+            ),
+            OverdueEntry(
+                date: midnight,
+                configuration: configuration,
+                snapshot: WidgetDataProvider.loadSnapshot(now: midnight, groupFilter: filter, showBirthdays: showBirthdays)
+            ),
+        ]
+        return Timeline(entries: entries, policy: .after(midnight))
     }
 
     private func configuredFilter(_ configuration: OverdueWidgetConfigurationIntent) -> UUID? {
@@ -61,11 +75,15 @@ extension WidgetDataProvider.Snapshot {
         ],
         hasTrackedPeople: true,
         trackedCount: 8,
-        themeOverride: nil
+        themeOverride: nil,
+        upcomingBirthdays: [
+            BirthdaySummary(id: UUID(), displayName: "Mom", nickname: nil, initials: "M", avatarColorHex: "#A78BFA", daysUntil: 1, nextOccurrence: Date()),
+        ],
+        birthdaysFillWidget: true
     )
 
-    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil)
-    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: true, trackedCount: 5, themeOverride: nil)
+    static let empty = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil, upcomingBirthdays: [], birthdaysFillWidget: true)
+    static let allCaughtUp = WidgetDataProvider.Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: true, trackedCount: 5, themeOverride: nil, upcomingBirthdays: [], birthdaysFillWidget: true)
 }
 
 extension WidgetPersonStatus {
@@ -97,46 +115,47 @@ struct OverdueWidgetEntryView: View {
                 SmallWidgetView(snapshot: entry.snapshot)
             }
         }
-        .containerBackground(Color(uiColor: resolvedBackgroundColor), for: .widget)
-        .applyAppTheme(entry.snapshot.themeOverride)
-    }
-
-    /// Resolves UIColor.systemBackground against either a forced trait
-    /// collection (when the user picked "dark" or "light" in-app) or
-    /// leaves it dynamic (when they chose "system"). Explicit resolution
-    /// is required because `.containerBackground(_:for:)` captures its
-    /// ShapeStyle outside the view's environment — `.fill.tertiary` and
-    /// friends won't flip in response to an `.environment(\.colorScheme)`
-    /// override applied higher up the widget's view tree.
-    private var resolvedBackgroundColor: UIColor {
-        switch entry.snapshot.themeOverride {
-        case "dark":
-            return UIColor.systemBackground.resolvedColor(
-                with: UITraitCollection(userInterfaceStyle: .dark)
-            )
-        case "light":
-            return UIColor.systemBackground.resolvedColor(
-                with: UITraitCollection(userInterfaceStyle: .light)
-            )
-        default:
-            return UIColor.systemBackground
-        }
+        .widgetAppTheme(entry.snapshot.themeOverride)
     }
 }
 
-private extension View {
-    /// Honors the app's Theme setting ("dark"/"light"/"system") from
-    /// AppSettings. Widgets default to following the system — this
-    /// modifier only overrides when the user picked a specific scheme.
-    @ViewBuilder
-    func applyAppTheme(_ theme: String?) -> some View {
+extension View {
+    /// Applies the app's Theme setting ("dark"/"light"/"system") to a widget:
+    /// the themed system-background container plus a matching color-scheme
+    /// override. Shared by every home-screen widget entry view so they render
+    /// with the same scheme the user picked in-app (default: follow system).
+    ///
+    /// The background color is resolved explicitly against a forced trait
+    /// collection because `.containerBackground(_:for:)` captures its
+    /// ShapeStyle outside the view's environment — `.fill.tertiary` and
+    /// friends won't flip in response to an `.environment(\.colorScheme)`
+    /// override applied higher up the widget's view tree.
+    func widgetAppTheme(_ theme: String?) -> some View {
+        let backgroundColor: UIColor
         switch theme {
         case "dark":
-            self.environment(\.colorScheme, .dark)
+            backgroundColor = UIColor.systemBackground.resolvedColor(
+                with: UITraitCollection(userInterfaceStyle: .dark)
+            )
         case "light":
-            self.environment(\.colorScheme, .light)
+            backgroundColor = UIColor.systemBackground.resolvedColor(
+                with: UITraitCollection(userInterfaceStyle: .light)
+            )
         default:
-            self
+            backgroundColor = UIColor.systemBackground
+        }
+
+        return self
+            .containerBackground(Color(uiColor: backgroundColor), for: .widget)
+            .widgetColorScheme(theme)
+    }
+
+    @ViewBuilder
+    private func widgetColorScheme(_ theme: String?) -> some View {
+        switch theme {
+        case "dark": self.environment(\.colorScheme, .dark)
+        case "light": self.environment(\.colorScheme, .light)
+        default: self
         }
     }
 }
@@ -146,56 +165,110 @@ private extension View {
 struct SmallWidgetView: View {
     let snapshot: WidgetDataProvider.Snapshot
 
+    /// The soonest-day birthday cohort to surface, when the setting is on.
+    private var birthdayCohort: BirthdayCohort? {
+        guard snapshot.birthdaysFillWidget else { return nil }
+        return WidgetDataProvider.soonestBirthdayCohort(from: snapshot.upcomingBirthdays)
+    }
+
     var body: some View {
         Group {
             if let first = snapshot.featured.first {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(alignment: .top) {
-                        if snapshot.overdueCount > 0 {
-                            Text("\(snapshot.overdueCount)")
-                                .font(.system(size: 40, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.red)
-                            Spacer()
-                            Text("overdue")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 12)
-                        } else {
-                            Text("\(snapshot.dueSoonCount)")
-                                .font(.system(size: 40, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.orange)
-                            Spacer()
-                            Text("due soon")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 12)
-                        }
-                    }
-                    Spacer(minLength: 0)
-                    HStack(spacing: 8) {
-                        WidgetAvatarView(
-                            initials: first.initials,
-                            colorHex: first.avatarColorHex,
-                            statusRingColor: first.status.ringColor,
-                            diameter: 32
-                        )
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(first.displayName)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .lineLimit(1)
-                            Text(first.status.shortSubtitle)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                atRiskLayout(first)
+                    .widgetURL(DeepLinkRoute.overdue.url())
+            } else if let cohort = birthdayCohort {
+                birthdayLayout(cohort)
+                    .widgetURL(cohort.tapURL)
             } else {
                 EmptyStateView(hasTrackedPeople: snapshot.hasTrackedPeople)
+                    .widgetURL(DeepLinkRoute.overdue.url())
             }
         }
-        .widgetURL(DeepLinkRoute.overdue.url())
+    }
+
+    private func atRiskLayout(_ first: OverduePerson) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .top) {
+                if snapshot.overdueCount > 0 {
+                    Text("\(snapshot.overdueCount)")
+                        .font(.system(size: 40, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.red)
+                    Spacer()
+                    countLabelStack("overdue")
+                } else {
+                    Text("\(snapshot.dueSoonCount)")
+                        .font(.system(size: 40, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.orange)
+                    Spacer()
+                    countLabelStack("due soon")
+                }
+            }
+            Spacer(minLength: 0)
+            HStack(spacing: 8) {
+                WidgetAvatarView(
+                    initials: first.initials,
+                    colorHex: first.avatarColorHex,
+                    statusRingColor: first.status.ringColor,
+                    diameter: 32
+                )
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(first.displayName)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .lineLimit(1)
+                    Text(first.status.shortSubtitle)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    /// The count's trailing label, badged with a cake glyph when a birthday
+    /// is within the window (the small widget can't list it, so the badge
+    /// signals "tap through, a birthday is coming").
+    private func countLabelStack(_ text: String) -> some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            if birthdayCohort != nil {
+                Image(systemName: "birthday.cake.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(BrandColors.heroAccentGreen)
+            }
+            Text(text)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.top, 12)
+    }
+
+    private func birthdayLayout(_ cohort: BirthdayCohort) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .top) {
+                Image(systemName: "birthday.cake.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(BrandColors.heroAccentGreen)
+                Spacer()
+                Text(cohort.primary.countdownLabel.lowercased())
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 8)
+            }
+            Spacer(minLength: 0)
+            HStack(spacing: 8) {
+                BirthdayCohortAvatars(cohort: cohort, diameter: 32)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(cohort.smallWidgetName)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .lineLimit(1)
+                    Text("birthday")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -204,8 +277,26 @@ struct SmallWidgetView: View {
 struct MediumWidgetView: View {
     let snapshot: WidgetDataProvider.Snapshot
 
+    /// Birthdays that back-fill the empty rows below the at-risk list, gated by
+    /// the user's setting and grouped by day. Each free row shows one day's
+    /// cohort ("Daniel +2 · Birthday tomorrow", stacked avatars) so a single
+    /// leftover slot conveys everyone whose birthday lands that day.
+    ///
+    /// We deliberately do NOT exclude people already shown as at-risk: the
+    /// cohort is a "birthdays that day" group (a different fact than the SLA
+    /// rows), so its count must reflect *all* same-day birthdays. Filtering out
+    /// a featured person both undercounted the badge and, when that person was
+    /// the only one on the soonest day, skipped the cohort to a later day with
+    /// the wrong names.
+    private var birthdayCohorts: [BirthdayCohort] {
+        guard snapshot.birthdaysFillWidget else { return [] }
+        let freeRows = max(0, WidgetDataProvider.maxFeaturedPeople - snapshot.featured.count)
+        guard freeRows > 0 else { return [] }
+        return Array(WidgetDataProvider.birthdayCohortsByDay(from: snapshot.upcomingBirthdays).prefix(freeRows))
+    }
+
     var body: some View {
-        if snapshot.featured.isEmpty {
+        if snapshot.featured.isEmpty && birthdayCohorts.isEmpty {
             EmptyStateView(hasTrackedPeople: snapshot.hasTrackedPeople)
                 .widgetURL(DeepLinkRoute.overdue.url())
         } else {
@@ -223,7 +314,12 @@ struct MediumWidgetView: View {
                             personRow(person)
                         }
                     }
-                    if snapshot.featured.count < 3 {
+                    ForEach(birthdayCohorts, id: \.primary.id) { cohort in
+                        Link(destination: cohort.tapURL) {
+                            birthdayCohortRow(cohort)
+                        }
+                    }
+                    if snapshot.featured.count + birthdayCohorts.count < WidgetDataProvider.maxFeaturedPeople {
                         Spacer(minLength: 0)
                     }
                 }
@@ -236,10 +332,32 @@ struct MediumWidgetView: View {
         let overdue = snapshot.overdueCount
         let dueSoon = snapshot.dueSoonCount
         switch (overdue, dueSoon) {
+        case (0, 0): return "Upcoming birthdays"
         case (0, _): return "\(dueSoon) due soon"
         case (_, 0): return "\(overdue) overdue"
         default: return "\(overdue) overdue · \(dueSoon) due soon"
         }
+    }
+
+    private func birthdayCohortRow(_ cohort: BirthdayCohort) -> some View {
+        HStack(spacing: 10) {
+            BirthdayCohortAvatars(cohort: cohort, diameter: 32)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(cohort.smallWidgetName)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text("Birthday \(cohort.primary.countdownLabel)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "birthday.cake.fill")
+                .font(.system(size: 14))
+                .foregroundStyle(BrandColors.heroAccentGreen)
+        }
+        .contentShape(Rectangle())
     }
 
     private func personRow(_ person: OverduePerson) -> some View {
