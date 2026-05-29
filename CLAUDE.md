@@ -27,6 +27,13 @@ xcodebuild -project StayInTouch/StayInTouch.xcodeproj -scheme StayInTouch -desti
 
 Background task ID: `com.slavins.keepintouch.refresh`
 
+### Cutting a release
+
+The displayed app version comes from **build settings, not the git tag**. To release, global-replace both in `project.pbxproj` (each appears 8x: Debug/Release × App/Widget/Tests/UITests), then tag:
+- `MARKETING_VERSION` → e.g. `0.5.0` (drives `CFBundleShortVersionString`, shown in Xcode Organizer + App Store Connect)
+- `CURRENT_PROJECT_VERSION` → bump to a unique higher number (drives `CFBundleVersion`; must not collide with a prior TestFlight build)
+- Then `git tag vX.Y.Z && git push origin vX.Y.Z`. The tag only feeds the in-app About-screen label (`GeneratedVersion.swift`) - it does **not** set the archive version.
+
 ## Architecture
 
 Four layers, dependency inward only:
