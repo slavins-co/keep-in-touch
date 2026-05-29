@@ -60,6 +60,7 @@ final class IntentTestPersonRepository: PersonRepository {
         people.removeAll { $0.id == id }
     }
     func pausedCount() -> Int { people.filter { $0.isTracked && $0.isPaused }.count }
+    func snoozedCount(referenceDate: Date) -> Int { people.filter { $0.isTracked && ($0.snoozedUntil.map { $0 > referenceDate } ?? false) }.count }
 }
 
 @MainActor

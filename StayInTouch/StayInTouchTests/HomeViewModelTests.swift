@@ -321,6 +321,7 @@ final class HomeViewModelTests: XCTestCase {
         func batchSave(_ persons: [Person]) throws {}
         func delete(id: UUID) throws {}
         func pausedCount() -> Int { people.filter { $0.isTracked && $0.isPaused }.count }
+        func snoozedCount(referenceDate: Date) -> Int { people.filter { $0.isTracked && ($0.snoozedUntil.map { $0 > referenceDate } ?? false) }.count }
     }
 
     private struct InMemoryCadenceRepository: CadenceRepository {

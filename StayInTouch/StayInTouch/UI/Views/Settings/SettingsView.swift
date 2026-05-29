@@ -266,6 +266,19 @@ struct SettingsView: View {
                 }
             }
 
+            NavigationLink {
+                SnoozedContactsView()
+            } label: {
+                HStack {
+                    Image(systemName: "moon.zzz.fill")
+                        .foregroundStyle(DS.Colors.secondaryText)
+                    Text("Snoozed Contacts")
+                    Spacer()
+                    Text("\(viewModel.snoozedCount)")
+                        .foregroundStyle(DS.Colors.secondaryText)
+                }
+            }
+
             Button {
                 Task {
                     let count = await viewModel.findNewContacts()
