@@ -421,6 +421,67 @@ final class WidgetDataProviderTests: XCTestCase {
         XCTAssertEqual(gregorian.dateComponents([.day], from: next).day, 16)
     }
 
+    // MARK: - soonestBirthdayCohort (#329)
+
+    private func summary(_ name: String, daysUntil: Int) -> BirthdaySummary {
+        BirthdaySummary(
+            id: UUID(),
+            displayName: name,
+            nickname: nil,
+            initials: String(name.prefix(2)),
+            avatarColorHex: "#FF6B6B",
+            daysUntil: daysUntil,
+            nextOccurrence: Date()
+        )
+    }
+
+    func testCohort_nilWhenEmpty() {
+        XCTAssertNil(WidgetDataProvider.soonestBirthdayCohort(from: []))
+    }
+
+    func testCohort_singlePerson() {
+        let cohort = WidgetDataProvider.soonestBirthdayCohort(from: [summary("Mom", daysUntil: 1)])
+        XCTAssertEqual(cohort?.additionalCount, 0)
+        XCTAssertEqual(cohort?.stackedAvatars.count, 1)
+        XCTAssertEqual(cohort?.smallWidgetName, "Mom")
+    }
+
+    func testCohort_groupsOnlySameDayAsSoonest() {
+        // Sorted ascending, as upcomingBirthdays returns it.
+        let cohort = WidgetDataProvider.soonestBirthdayCohort(from: [
+            summary("Mom", daysUntil: 1),
+            summary("Kate", daysUntil: 1),
+            summary("John", daysUntil: 5),
+        ])
+        XCTAssertEqual(cohort?.primary.displayName, "Mom")
+        XCTAssertEqual(cohort?.sameDay.count, 2, "Only Mom + Kate share day 1; John is day 5")
+        XCTAssertEqual(cohort?.additionalCount, 1)
+        XCTAssertEqual(cohort?.smallWidgetName, "Mom +1")
+    }
+
+    func testCohort_avatarsCapAtThreeButCountIsFull() {
+        let cohort = WidgetDataProvider.soonestBirthdayCohort(from: [
+            summary("A", daysUntil: 0),
+            summary("B", daysUntil: 0),
+            summary("C", daysUntil: 0),
+            summary("D", daysUntil: 0),
+            summary("E", daysUntil: 0),
+        ])
+        XCTAssertEqual(cohort?.stackedAvatars.count, 3, "Avatars cap at 3")
+        XCTAssertEqual(cohort?.additionalCount, 4, "But +N reflects the true extra count")
+        XCTAssertEqual(cohort?.smallWidgetName, "A +4")
+    }
+
+    func testCohort_tapURL_personWhenAloneOverviewWhenShared() {
+        let alone = WidgetDataProvider.soonestBirthdayCohort(from: [summary("Mom", daysUntil: 1)])!
+        XCTAssertEqual(alone.tapURL, DeepLinkRoute.person(alone.primary.id).url())
+
+        let shared = WidgetDataProvider.soonestBirthdayCohort(from: [
+            summary("Mom", daysUntil: 1), summary("Kate", daysUntil: 1),
+        ])!
+        XCTAssertEqual(shared.tapURL, DeepLinkRoute.overdue.url())
+    }
+
     // MARK: - Fixtures
 
     private func makeOverduePerson(name: String, status: WidgetPersonStatus, nickname: String? = nil) -> OverduePerson {

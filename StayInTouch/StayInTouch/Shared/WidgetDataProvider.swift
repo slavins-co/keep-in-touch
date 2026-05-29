@@ -103,12 +103,54 @@ extension BirthdaySummary {
     }
 }
 
+/// The cohort of people whose birthday falls on the soonest upcoming day,
+/// used by single-slot widget surfaces that can show only one name but want to
+/// signal "+N more" when several share the day (#329).
+struct BirthdayCohort: Equatable {
+    /// The soonest birthday; its name is the one shown.
+    let primary: BirthdaySummary
+    /// Everyone on the same day as `primary` (including `primary`), sorted.
+    let sameDay: [BirthdaySummary]
+
+    /// People sharing the day beyond `primary` — the "+N" badge value.
+    var additionalCount: Int { max(0, sameDay.count - 1) }
+    /// Avatars to stack, capped at 3 for layout.
+    var stackedAvatars: [BirthdaySummary] { Array(sameDay.prefix(3)) }
+
+    /// Name line for single-slot surfaces: full name when alone, short name +
+    /// "+N" when others share the day.
+    var smallWidgetName: String {
+        additionalCount > 0
+            ? "\(primary.displayShortName) +\(additionalCount)"
+            : primary.displayName
+    }
+
+    /// Tap target: the person when alone; the app overview when several share
+    /// the day (a single-person link would be ambiguous).
+    var tapURL: URL {
+        additionalCount > 0 ? DeepLinkRoute.overdue.url() : DeepLinkRoute.person(primary.id).url()
+    }
+}
+
 enum WidgetDataProvider {
 
     static let maxFeaturedPeople = 3
 
     /// Default lookahead for surfacing upcoming birthdays (#329).
     static let birthdayWindowDays = 7
+
+    /// Upper bound on birthdays fetched per snapshot — larger than any single
+    /// widget renders, so same-day cohort counts ("+N") stay accurate instead
+    /// of being clipped by the display cap.
+    static let birthdayFetchLimit = 10
+
+    /// The soonest-day cohort from a `daysUntil`-ascending birthday list, or
+    /// nil if empty. Same `daysUntil` == same calendar day.
+    static func soonestBirthdayCohort(from birthdays: [BirthdaySummary]) -> BirthdayCohort? {
+        guard let primary = birthdays.first else { return nil }
+        let sameDay = birthdays.filter { $0.daysUntil == primary.daysUntil }
+        return BirthdayCohort(primary: primary, sameDay: sameDay)
+    }
 
     struct Snapshot {
         let overdueCount: Int
@@ -146,7 +188,7 @@ enum WidgetDataProvider {
             let groupsByID = fetchGroupsByID(context: context)
             let themeOverride = fetchAppTheme(context: context)
             // Called inside this performAndWait, as upcomingBirthdays requires.
-            let birthdays = upcomingBirthdays(context: context, now: now, within: birthdayWindowDays, limit: maxFeaturedPeople, groupFilter: groupFilter)
+            let birthdays = upcomingBirthdays(context: context, now: now, within: birthdayWindowDays, limit: birthdayFetchLimit, groupFilter: groupFilter)
 
             let atRisk = people
                 .compactMap { person -> OverduePerson? in

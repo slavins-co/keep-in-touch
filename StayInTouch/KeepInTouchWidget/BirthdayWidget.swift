@@ -47,7 +47,7 @@ struct BirthdayTimelineProvider: TimelineProvider {
     }
 
     private func loadEntry(now: Date) -> BirthdayEntry {
-        let loaded = WidgetDataProvider.loadBirthdays(now: now, limit: 5)
+        let loaded = WidgetDataProvider.loadBirthdays(now: now, limit: WidgetDataProvider.birthdayFetchLimit)
         return BirthdayEntry(date: now, birthdays: loaded.birthdays, themeOverride: loaded.theme)
     }
 }
@@ -79,14 +79,14 @@ struct BirthdaySmallView: View {
     let birthdays: [BirthdaySummary]
 
     var body: some View {
-        if let next = birthdays.first {
+        if let cohort = WidgetDataProvider.soonestBirthdayCohort(from: birthdays) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .top) {
                     Image(systemName: "birthday.cake.fill")
                         .font(.system(size: 32))
                         .foregroundStyle(BrandColors.heroAccentGreen)
                     Spacer()
-                    Text(next.countdownLabel.lowercased())
+                    Text(cohort.primary.countdownLabel.lowercased())
                         .font(.caption2)
                         .fontWeight(.medium)
                         .foregroundStyle(.secondary)
@@ -94,14 +94,9 @@ struct BirthdaySmallView: View {
                 }
                 Spacer(minLength: 0)
                 HStack(spacing: 8) {
-                    WidgetAvatarView(
-                        initials: next.initials,
-                        colorHex: next.avatarColorHex,
-                        statusRingColor: BrandColors.heroAccentGreen,
-                        diameter: 32
-                    )
+                    BirthdayCohortAvatars(cohort: cohort, diameter: 32)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(next.displayName)
+                        Text(cohort.smallWidgetName)
                             .font(.caption)
                             .fontWeight(.medium)
                             .lineLimit(1)
@@ -112,7 +107,7 @@ struct BirthdaySmallView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .widgetURL(DeepLinkRoute.person(next.id).url())
+            .widgetURL(cohort.tapURL)
         } else {
             BirthdayEmptyView()
         }

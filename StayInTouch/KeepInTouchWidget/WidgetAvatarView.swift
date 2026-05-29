@@ -43,3 +43,47 @@ struct WidgetAvatarView: View {
             )
     }
 }
+
+/// Overlapping avatar coins for people sharing the same day (#329). Renders up
+/// to 3; the primary (first) sits on top-left and reads first. A background-
+/// colored separator ring keeps overlapping coins distinct.
+struct StackedAvatarsView: View {
+    let avatars: [(initials: String, colorHex: String)]
+    var diameter: CGFloat = 32
+
+    var body: some View {
+        let shown = Array(avatars.prefix(3))
+        HStack(spacing: -diameter * 0.42) {
+            ForEach(Array(shown.enumerated()), id: \.offset) { index, avatar in
+                WidgetAvatarView(initials: avatar.initials, colorHex: avatar.colorHex, diameter: diameter)
+                    .overlay(
+                        Circle().stroke(Color(uiColor: .systemBackground), lineWidth: 1.5)
+                    )
+                    .zIndex(Double(shown.count - index))  // primary on top
+            }
+        }
+    }
+}
+
+/// Avatar treatment for a birthday cohort on single-slot surfaces: a single
+/// ringed avatar when alone, overlapping coins when several share the day.
+struct BirthdayCohortAvatars: View {
+    let cohort: BirthdayCohort
+    var diameter: CGFloat = 32
+
+    var body: some View {
+        if cohort.additionalCount > 0 {
+            StackedAvatarsView(
+                avatars: cohort.stackedAvatars.map { ($0.initials, $0.avatarColorHex) },
+                diameter: diameter
+            )
+        } else {
+            WidgetAvatarView(
+                initials: cohort.primary.initials,
+                colorHex: cohort.primary.avatarColorHex,
+                statusRingColor: BrandColors.heroAccentGreen,
+                diameter: diameter
+            )
+        }
+    }
+}

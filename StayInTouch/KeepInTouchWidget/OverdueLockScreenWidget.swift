@@ -223,11 +223,17 @@ struct AccessoryRectangularView: View {
 
     private func rectangularAccessibilityLabel() -> String {
         if let birthday = AccessoryWidgetLogic.rectangularBirthday(snapshot: snapshot) {
-            let when = "is \(birthday.dayPhrase)"
-            if birthday.overdueCount > 0 {
-                return "Keep In Touch. \(birthday.name)'s birthday \(when). \(birthday.overdueCount) \(birthday.overdueCount == 1 ? "person" : "people") need a reach-out."
+            let subject: String
+            if birthday.sameDayAdditional > 0 {
+                let others = birthday.sameDayAdditional
+                subject = "\(birthday.name) and \(others) \(others == 1 ? "other" : "others") have birthdays \(birthday.dayPhrase)"
+            } else {
+                subject = "\(birthday.name)'s birthday is \(birthday.dayPhrase)"
             }
-            return "Keep In Touch. \(birthday.name)'s birthday \(when)."
+            if birthday.overdueCount > 0 {
+                return "Keep In Touch. \(subject). \(birthday.overdueCount) \(birthday.overdueCount == 1 ? "person" : "people") need a reach-out."
+            }
+            return "Keep In Touch. \(subject)."
         }
         if let featured = snapshot.featured.first {
             let additional = max(0, snapshot.overdueCount + snapshot.dueSoonCount - 1)
@@ -257,7 +263,7 @@ struct AccessoryRectangularView: View {
             Image(systemName: "birthday.cake.fill")
                 .imageScale(.medium)
             VStack(alignment: .leading, spacing: 1) {
-                Text(birthday.name)
+                Text(birthday.displayName)
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)

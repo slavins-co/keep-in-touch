@@ -105,6 +105,15 @@ enum AccessoryWidgetLogic {
         let daysUntil: Int
         /// Overdue people to mention as a trailing "· N overdue" suffix.
         let overdueCount: Int
+        /// Others sharing the same day — rendered as a "+N" on the name. The
+        /// monochrome rectangular accessory has no avatars, so the count is
+        /// text-only here (the home small widgets stack avatars instead).
+        let sameDayAdditional: Int
+
+        /// Name line: "Hank" alone, "Hank +1" when others share the day.
+        var displayName: String {
+            sameDayAdditional > 0 ? "\(name) +\(sameDayAdditional)" : name
+        }
 
         /// Lowercase day phrase: "today" / "tomorrow" / "in N days". Shared by
         /// the subtitle and the accessibility label so the two stay in sync.
@@ -125,15 +134,16 @@ enum AccessoryWidgetLogic {
     static func rectangularBirthday(snapshot: WidgetDataProvider.Snapshot) -> RectangularBirthday? {
         guard
             snapshot.birthdaysFillWidget,
-            let birthday = snapshot.upcomingBirthdays.first,
-            birthday.daysUntil <= rectangularBirthdayThresholdDays
+            let cohort = WidgetDataProvider.soonestBirthdayCohort(from: snapshot.upcomingBirthdays),
+            cohort.primary.daysUntil <= rectangularBirthdayThresholdDays
         else { return nil }
 
         return RectangularBirthday(
-            id: birthday.id,
-            name: birthday.displayShortName,
-            daysUntil: birthday.daysUntil,
-            overdueCount: snapshot.overdueCount
+            id: cohort.primary.id,
+            name: cohort.primary.displayShortName,
+            daysUntil: cohort.primary.daysUntil,
+            overdueCount: snapshot.overdueCount,
+            sameDayAdditional: cohort.additionalCount
         )
     }
 

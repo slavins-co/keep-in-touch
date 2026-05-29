@@ -165,10 +165,10 @@ extension View {
 struct SmallWidgetView: View {
     let snapshot: WidgetDataProvider.Snapshot
 
-    /// The soonest upcoming birthday to surface, when the setting is on.
-    private var upcomingBirthday: BirthdaySummary? {
+    /// The soonest-day birthday cohort to surface, when the setting is on.
+    private var birthdayCohort: BirthdayCohort? {
         guard snapshot.birthdaysFillWidget else { return nil }
-        return snapshot.upcomingBirthdays.first
+        return WidgetDataProvider.soonestBirthdayCohort(from: snapshot.upcomingBirthdays)
     }
 
     var body: some View {
@@ -176,9 +176,9 @@ struct SmallWidgetView: View {
             if let first = snapshot.featured.first {
                 atRiskLayout(first)
                     .widgetURL(DeepLinkRoute.overdue.url())
-            } else if let birthday = upcomingBirthday {
-                birthdayLayout(birthday)
-                    .widgetURL(DeepLinkRoute.person(birthday.id).url())
+            } else if let cohort = birthdayCohort {
+                birthdayLayout(cohort)
+                    .widgetURL(cohort.tapURL)
             } else {
                 EmptyStateView(hasTrackedPeople: snapshot.hasTrackedPeople)
                     .widgetURL(DeepLinkRoute.overdue.url())
@@ -230,7 +230,7 @@ struct SmallWidgetView: View {
     /// signals "tap through, a birthday is coming").
     private func countLabelStack(_ text: String) -> some View {
         VStack(alignment: .trailing, spacing: 2) {
-            if upcomingBirthday != nil {
+            if birthdayCohort != nil {
                 Image(systemName: "birthday.cake.fill")
                     .font(.system(size: 12))
                     .foregroundStyle(BrandColors.heroAccentGreen)
@@ -242,32 +242,27 @@ struct SmallWidgetView: View {
         .padding(.top, 12)
     }
 
-    private func birthdayLayout(_ birthday: BirthdaySummary) -> some View {
+    private func birthdayLayout(_ cohort: BirthdayCohort) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top) {
                 Image(systemName: "birthday.cake.fill")
                     .font(.system(size: 32))
                     .foregroundStyle(BrandColors.heroAccentGreen)
                 Spacer()
-                Text("birthday")
+                Text(cohort.primary.countdownLabel.lowercased())
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .padding(.top, 8)
             }
             Spacer(minLength: 0)
             HStack(spacing: 8) {
-                WidgetAvatarView(
-                    initials: birthday.initials,
-                    colorHex: birthday.avatarColorHex,
-                    statusRingColor: BrandColors.heroAccentGreen,
-                    diameter: 32
-                )
+                BirthdayCohortAvatars(cohort: cohort, diameter: 32)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(birthday.displayName)
+                    Text(cohort.smallWidgetName)
                         .font(.caption)
                         .fontWeight(.medium)
                         .lineLimit(1)
-                    Text(birthday.countdownLabel)
+                    Text("birthday")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
