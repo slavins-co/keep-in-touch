@@ -4,9 +4,10 @@
 
 **App Name:** Keep In Touch (internally "StayInTouch" - module, directories, Core Data model all use the old name)
 **Bundle ID:** `slavins.co.KeepInTouch`
-**Platform:** iOS 17.0+ | Swift + SwiftUI | No external dependencies
+**Platform:** iOS 17.0+ | Swift + SwiftUI | One external dependency (TelemetryDeck via SPM)
+**Language mode:** Swift 5 (`SWIFT_VERSION = 5.0`, no `SWIFT_STRICT_CONCURRENCY`). Do NOT claim Swift 6 compliance in docs or PRs; strict-concurrency adoption is a staged post-launch plan (see tasks/ARCHITECTURE-REVIEW.md section 3.4)
 **Architecture:** Clean Architecture with Repository Pattern
-**Persistence:** Core Data (V1), NSPersistentCloudKitContainer (V2)
+**Persistence:** Core Data (V1); CloudKit sync is a deferred V2 plan (#79), not implemented
 
 Privacy-first iOS app that tracks "last touch" dates, organizes contacts into SLA cadence groups, and provides gentle reminders when relationships need attention.
 
@@ -53,17 +54,21 @@ Four layers, dependency inward only:
 
 Repository pattern: protocol in Domain, Core Data implementation in Data. UUID foreign keys (not NSManagedObject relationships) in V1.
 
+**Core Data ↔ domain naming quirk** (predates the #241 rename; read `Data/CoreData/Mappings/` before writing predicates): Core Data entity `Group`/`GroupEntity` = domain `Cadence`; Core Data entity `Tag`/`TagEntity` = domain `Group`; `PersonEntity.groupId` = domain `Person.cadenceId`; `PersonEntity.tagIds` = domain `Person.groupIds`.
+
 ## Core Data Schema
 
-**Person** - `id: UUID`, `cnIdentifier: String?`, `displayName: String`, `nickname: String?`, `initials: String`, `avatarColor: String`, `groupId: UUID`, `tagIds: Transformable ([UUID])`, `lastTouchAt: Date?`, `lastTouchMethod: String?`, `lastTouchNotes: String?`, `nextTouchNotes: String?`, `isPaused: Bool`, `isTracked: Bool`, `notificationsMuted: Bool`, `customBreachTime: String?` (LocalTime JSON), `snoozedUntil: Date?`, `customDueDate: Date?`, `birthday: String?`, `birthdayNotificationsEnabled: Bool`, `groupAddedAt: Date?`, `contactUnavailable: Bool`, `isDemoData: Bool`, `createdAt: Date`, `modifiedAt: Date`, `sortOrder: Int64`
+Current model version: **v10** (`Shared/StayInTouch.xcdatamodeld`; v1-v10 retained for lightweight migration). Entity names below are the **Core Data** names - see the naming quirk above for domain equivalents. This section mirrors the live `.xcdatamodel`; when adding attributes, update both.
 
-**Group** - `id: UUID`, `name: String`, `frequencyDays: Int64`, `warningDays: Int64`, `colorHex: String?`, `isDefault: Bool`, `sortOrder: Int64`, `createdAt: Date`, `modifiedAt: Date`
+**Person** (domain `Person`) - `id: UUID`, `cnIdentifier: String?`, `displayName: String`, `nickname: String?`, `initials: String`, `avatarColor: String`, `groupId: UUID` (cadence FK), `tagIds: Transformable ([UUID]`, domain `groupIds)`, `lastTouchAt: Date?`, `lastTouchMethod: String?`, `lastTouchNotes: String?`, `nextTouchNotes: String?`, `isPaused: Bool`, `isTracked: Bool`, `notificationsMuted: Bool`, `customBreachTime: String?` (LocalTime JSON), `snoozedUntil: Date?`, `customDueDate: Date?`, `birthday: String?` (Birthday JSON), `birthdayNotificationsEnabled: Bool` (default YES), `groupAddedAt: Date?`, `contactUnavailable: Bool`, `isDemoData: Bool`, `createdAt: Date`, `modifiedAt: Date`, `sortOrder: Int64`, `preferredMessenger: String?`
 
-**Tag** - `id: UUID`, `name: String`, `colorHex: String`, `sortOrder: Int64`, `createdAt: Date`, `modifiedAt: Date`
+**Group** (domain `Cadence`) - `id: UUID`, `name: String`, `frequencyDays: Int64` (renamed from `slaDays`, renamingIdentifier set), `warningDays: Int64`, `colorHex: String?`, `isDefault: Bool`, `sortOrder: Int64`, `createdAt: Date`, `modifiedAt: Date`
 
-**TouchEvent** - `id: UUID`, `personId: UUID`, `at: Date`, `method: String`, `notes: String?`, `createdAt: Date`, `modifiedAt: Date`
+**Tag** (domain `Group`) - `id: UUID`, `name: String`, `colorHex: String`, `sortOrder: Int64`, `createdAt: Date`, `modifiedAt: Date`
 
-**AppSettings** (singleton) - `id: UUID`, `theme: String`, `notificationsEnabled: Bool`, `breachTimeOfDay: String` (LocalTime JSON), `digestEnabled: Bool`, `digestDay: String`, `digestTime: String` (LocalTime JSON), `dueSoonWindowDays: Int64`, `demoModeEnabled: Bool`, `lastContactsSyncAt: Date?`, `onboardingCompleted: Bool`, `appVersion: String`
+**TouchEvent** - `id: UUID`, `personId: UUID`, `at: Date`, `method: String`, `notes: String?`, `timeOfDay: String?`, `createdAt: Date`, `modifiedAt: Date`
+
+**AppSettings** (singleton row) - `id: UUID`, `theme: String`, `notificationsEnabled: Bool`, `breachTimeOfDay: String` (LocalTime JSON), `digestEnabled: Bool`, `digestDay: String`, `digestTime: String` (LocalTime JSON), `notificationGrouping: String?`, `badgeCountShowDueSoon: Bool` (default NO), `dueSoonWindowDays: Int64`, `demoModeEnabled: Bool`, `analyticsEnabled: Bool` (default YES), `lastContactsSyncAt: Date?`, `onboardingCompleted: Bool`, `appVersion: String`, `hideContactNamesInNotifications: Bool` (default NO), `birthdayNotificationsEnabled: Bool` (default NO), `birthdayNotificationTime: String?` (LocalTime JSON), `birthdayIgnoreSnoozePause: Bool` (default YES), `tutorialCompleted: Bool` (default NO), `tutorialVersion: String?`, `lastSeenAppVersion: String?`
 
 ## Coding Conventions
 
@@ -80,7 +85,7 @@ Repository pattern: protocol in Domain, Core Data implementation in Data. UUID f
 
 ## Dependencies
 
-Built-in only: SwiftUI, Core Data, Contacts (CNContactStore), UserNotifications, BackgroundTasks (BGTaskScheduler). No CocoaPods, no SPM.
+Apple frameworks: SwiftUI, Core Data, Contacts (CNContactStore), UserNotifications, BackgroundTasks (BGTaskScheduler), WidgetKit, AppIntents, TipKit, Charts. One third-party dependency: **TelemetryDeck SwiftSDK** (SPM, `upToNextMajor` from 2.11.0, app target only) for anonymous analytics. No CocoaPods.
 
 ## Apple Framework APIs
 
@@ -89,8 +94,8 @@ Built-in only: SwiftUI, Core Data, Contacts (CNContactStore), UserNotifications,
 
 ## Testing
 
-- **Unit tests**: Repository implementations (in-memory Core Data), use case logic, view model state changes
-- **UI tests**: Critical flows (onboarding, log touch, delete touch), navigation paths, empty states
+- **Unit tests** (665 as of v0.5.0): repository implementations (in-memory Core Data), use cases, view models, notification scheduling, entity mappings, App Intents (via `IntentTestHarness`), widget snapshot logic
+- **UI tests**: 3 launch-only smoke/perf tests (`-uiTesting` flag → in-memory store). Flow coverage (onboarding, log touch) does NOT exist yet - planned, see tasks/ARCHITECTURE-REVIEW.md step A5
 - **Manual QA**: See FINAL-PRD.md section 7
 
 ## Accessibility
@@ -108,9 +113,10 @@ Built-in only: SwiftUI, Core Data, Contacts (CNContactStore), UserNotifications,
 
 ## Privacy
 
-- All data local in Core Data (encrypted at rest by iOS). No network, no analytics, no crash reporting in V1.
-- Contacts/Notifications: request once, graceful degradation if denied
-- Demo mode isolates fake data from real data
+- All user data local in Core Data (App Group container, `completeUntilFirstUserAuthentication` file protection). No cloud sync, no crash reporting.
+- Only network egress: **TelemetryDeck** anonymous analytics (signal names + enum/count parameters, no PII). Opt-out via `AppSettings.analyticsEnabled` (default on); declared in `PrivacyInfo.xcprivacy` (ProductInteraction / Analytics / not linked / no tracking).
+- Contacts/Notifications: request once, graceful degradation if denied. Phone/email never persisted - fetched on demand via `cnIdentifier`.
+- Demo mode isolates fake data per-row via `isDemoData` flag (same store)
 
 ## Lessons File Maintenance
 
