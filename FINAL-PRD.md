@@ -1347,8 +1347,8 @@ if person.history.isEmpty {
 ### 9.2 Prohibited
 
 - Private APIs for iMessage/SMS/call logs
-- Third-party analytics SDKs
-- Network requests (except future CloudKit)
+- Third-party analytics SDKs *(amended post-v0.3: TelemetryDeck anonymous analytics shipped with in-app opt-out - see CLAUDE.md Privacy)*
+- Network requests (except future CloudKit and TelemetryDeck analytics)
 - Server backend
 - Storing raw phone numbers/emails (fetch on-demand only)
 
@@ -1396,8 +1396,8 @@ All major decisions resolved via user confirmation.
 - <5% bounce rate (delete within 7 days)
 
 **Measurement:**
-- V1: No analytics (privacy-first)
-- V2: On-device analytics only (no external services)
+- V1 (as shipped): TelemetryDeck anonymous usage analytics, opt-out in Settings *(amended from the original no-analytics plan)*
+- No PII in analytics; signals are event names + enum/count parameters
 - User feedback via App Store reviews + TestFlight feedback
 
 ---
