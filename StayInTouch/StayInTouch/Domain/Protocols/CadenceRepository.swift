@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol CadenceRepository {
+protocol CadenceRepository: Sendable {
     func fetch(id: UUID) -> Cadence?
     func fetchAll() -> [Cadence]
     func fetchDefaultCadences() -> [Cadence]

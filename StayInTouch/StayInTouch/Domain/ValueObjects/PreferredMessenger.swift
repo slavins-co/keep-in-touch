@@ -7,7 +7,7 @@ import Foundation
 
 /// User's preferred messenger app for the Message quick action, per contact.
 /// Stored on `Person.preferredMessenger`. `nil` means "use app default" (iMessage in v1).
-enum PreferredMessenger: String, CaseIterable, Codable {
+enum PreferredMessenger: String, CaseIterable, Codable, Sendable {
     case iMessage
     case whatsapp
     case signal

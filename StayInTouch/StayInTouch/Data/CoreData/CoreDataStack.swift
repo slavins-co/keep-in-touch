@@ -19,7 +19,12 @@ enum CoreDataStackError: LocalizedError {
     }
 }
 
-final class CoreDataStack: ObservableObject {
+/// `@unchecked Sendable`: `NSPersistentContainer` is thread-safe, and the
+/// mutable load/migration flags (`loadError`, `isLoaded`, `migrationFailed`)
+/// are written only during init and the user-confirmed `resetStore` (both on
+/// the main startup path), then read benignly. Contexts are confined to their
+/// own queues by callers via `perform`/`performAndWait`.
+final class CoreDataStack: ObservableObject, @unchecked Sendable {
     static let shared = CoreDataStack()
 
     /// Set once the app has successfully opened the persistent store at the

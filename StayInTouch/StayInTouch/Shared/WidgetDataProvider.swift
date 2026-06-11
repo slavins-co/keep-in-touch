@@ -210,8 +210,6 @@ enum WidgetDataProvider {
         groupFilter: UUID? = nil,
         showBirthdays: Bool = true
     ) -> Snapshot {
-        var result = Snapshot(overdueCount: 0, dueSoonCount: 0, featured: [], hasTrackedPeople: false, trackedCount: 0, themeOverride: nil, upcomingBirthdays: [], birthdaysFillWidget: showBirthdays)
-
         context.performAndWait {
             let hasTrackedPeople = countTrackedPeople(context: context) > 0
             let people = fetchTrackedPeople(context: context, groupFilter: groupFilter)
@@ -260,7 +258,7 @@ enum WidgetDataProvider {
             }
             let featured = Array(atRisk.prefix(maxFeaturedPeople))
 
-            result = Snapshot(
+            return Snapshot(
                 overdueCount: overdueCount,
                 dueSoonCount: dueSoonCount,
                 featured: featured,
@@ -271,8 +269,6 @@ enum WidgetDataProvider {
                 birthdaysFillWidget: showBirthdays
             )
         }
-
-        return result
     }
 
     /// The next local midnight strictly after `date`. Widget timelines emit

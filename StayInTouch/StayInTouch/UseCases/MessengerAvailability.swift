@@ -41,7 +41,9 @@ struct SystemMessengerAvailability: MessengerAvailabilityChecking {
     private func canOpen(_ scheme: String) -> Bool {
         #if canImport(UIKit)
         guard let url = URL(string: scheme) else { return false }
-        return UIApplication.shared.canOpenURL(url)
+        // `canOpenURL` is main-actor-isolated; availability is only ever
+        // checked from the (MainActor) UI, so asserting isolation is safe.
+        return MainActor.assumeIsolated { UIApplication.shared.canOpenURL(url) }
         #else
         return false
         #endif

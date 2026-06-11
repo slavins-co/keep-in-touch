@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum ContactStatus: String, CaseIterable, Codable {
+enum ContactStatus: String, CaseIterable, Codable, Sendable {
     case onTrack
     case dueSoon
     case overdue

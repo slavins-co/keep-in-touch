@@ -7,7 +7,10 @@
 
 import CoreData
 
-final class CoreDataPersonRepository: PersonRepository {
+// @unchecked Sendable: `context` is confined to its own queue — every access goes
+// through `performAndWait`, which serializes on that queue. No `context` or
+// managed object escapes a perform block.
+final class CoreDataPersonRepository: PersonRepository, @unchecked Sendable {
     private let context: NSManagedObjectContext
 
     init(context: NSManagedObjectContext) {
@@ -15,38 +18,31 @@ final class CoreDataPersonRepository: PersonRepository {
     }
 
     func fetch(id: UUID) -> Person? {
-        var result: Person?
         context.performAndWait {
-            result = fetchEntityByID(request: PersonEntity.fetchRequest(), id: id, in: context)?.toDomain()
+            fetchEntityByID(request: PersonEntity.fetchRequest(), id: id, in: context)?.toDomain()
         }
-        return result
     }
 
     func fetchAll() -> [Person] {
-        var results: [Person] = []
         context.performAndWait {
             let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
             request.fetchBatchSize = 50
-            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
+            return (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
-        return results
     }
 
     func fetchTracked(includePaused: Bool) -> [Person] {
-        var results: [Person] = []
         context.performAndWait {
             let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
             request.predicate = basePredicate(includePaused: includePaused)
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
             request.fetchBatchSize = 50
-            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
+            return (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
-        return results
     }
 
     func fetchByCadence(id: UUID, includePaused: Bool) -> [Person] {
-        var results: [Person] = []
         context.performAndWait {
             let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
             request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
@@ -55,9 +51,8 @@ final class CoreDataPersonRepository: PersonRepository {
             ])
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
             request.fetchBatchSize = 50
-            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
+            return (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
-        return results
     }
 
     func fetchByGroup(id: UUID, includePaused: Bool) -> [Person] {
@@ -66,7 +61,6 @@ final class CoreDataPersonRepository: PersonRepository {
     }
 
     func searchByName(_ query: String, includePaused: Bool) -> [Person] {
-        var results: [Person] = []
         context.performAndWait {
             let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
             let namePredicate = NSPredicate(format: "displayName CONTAINS[cd] %@", query)
@@ -76,18 +70,16 @@ final class CoreDataPersonRepository: PersonRepository {
             ])
             request.sortDescriptors = [NSSortDescriptor(key: "displayName", ascending: true)]
             request.fetchBatchSize = 50
-            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
+            return (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
-        return results
     }
 
     func fetchOverdue(referenceDate: Date) -> [Person] {
-        var results: [Person] = []
         context.performAndWait {
             // Fetch all groups to build per-group cutoff predicates
             let groupRequest: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
             let groups = (try? context.fetch(groupRequest))?.map { $0.toDomain() } ?? []
-            guard !groups.isEmpty else { return }
+            guard !groups.isEmpty else { return [] }
 
             // Build a predicate per group: person's effective last-touch is before the cutoff
             let calendar = Calendar.current
@@ -118,9 +110,8 @@ final class CoreDataPersonRepository: PersonRepository {
             ])
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
             request.fetchBatchSize = 50
-            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
+            return (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
-        return results
     }
 
     func save(_ person: Person) throws {
@@ -156,7 +147,6 @@ final class CoreDataPersonRepository: PersonRepository {
     }
 
     func pausedCount() -> Int {
-        var count = 0
         context.performAndWait {
             let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
             request.predicate = NSPredicate(format: "isTracked == YES AND isPaused == YES")
@@ -164,13 +154,11 @@ final class CoreDataPersonRepository: PersonRepository {
             // without faulting the matching managed objects into memory.
             // Equivalent to `fetchTracked(includePaused: true).filter(isPaused).count`
             // but without the materialization cost (audit E9, #317).
-            count = (try? context.count(for: request)) ?? 0
+            return (try? context.count(for: request)) ?? 0
         }
-        return count
     }
 
     func snoozedCount(referenceDate: Date = Date()) -> Int {
-        var count = 0
         context.performAndWait {
             let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
             // Only *active* snoozes count — an expired snooze is effectively
@@ -180,9 +168,8 @@ final class CoreDataPersonRepository: PersonRepository {
                 format: "isTracked == YES AND snoozedUntil != nil AND snoozedUntil > %@",
                 referenceDate as NSDate
             )
-            count = (try? context.count(for: request)) ?? 0
+            return (try? context.count(for: request)) ?? 0
         }
-        return count
     }
 
     private func basePredicate(includePaused: Bool) -> NSPredicate {

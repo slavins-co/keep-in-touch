@@ -13,6 +13,7 @@ import SwiftUI
 /// issue where the picker's auto-dismiss propagates up and closes
 /// parent sheets.
 enum ContactPickerPresenter {
+    @MainActor
     static func present(onSelect: @escaping (String) -> Void) {
         guard let windowScene = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene }).first,
@@ -37,7 +38,8 @@ enum ContactPickerPresenter {
     }
 
     private final class PickerDelegate: NSObject, CNContactPickerDelegate {
-        static var associatedKey: UInt8 = 0
+        // Address-only sentinel for objc_setAssociatedObject; never read as a value.
+        nonisolated(unsafe) static var associatedKey: UInt8 = 0
 
         let onSelect: (String) -> Void
 

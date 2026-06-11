@@ -17,7 +17,9 @@ struct DataExportService {
     /// expensive to construct (~10ms first init); reusing one instance across
     /// export calls cuts repeated cold-export cost. Safe: we only call
     /// `string(from:)` after init, never mutate configuration.
-    private static let exportTimestampFormatter = ISO8601DateFormatter()
+    // Immutable after init (only string(from:) called thereafter); ISO8601DateFormatter
+    // is not Sendable, so nonisolated(unsafe) documents the manual guarantee.
+    nonisolated(unsafe) private static let exportTimestampFormatter = ISO8601DateFormatter()
 
     private static let shortDateTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()

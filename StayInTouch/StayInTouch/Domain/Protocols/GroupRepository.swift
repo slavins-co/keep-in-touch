@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol GroupRepository {
+protocol GroupRepository: Sendable {
     func fetch(id: UUID) -> Group?
     func fetchAll() -> [Group]
     func save(_ group: Group) throws

@@ -7,7 +7,10 @@
 
 import CoreData
 
-final class CoreDataTouchEventRepository: TouchEventRepository {
+// @unchecked Sendable: `context` is confined to its own queue — every access goes
+// through `performAndWait`, which serializes on that queue. No `context` or
+// managed object escapes a perform block.
+final class CoreDataTouchEventRepository: TouchEventRepository, @unchecked Sendable {
     private let context: NSManagedObjectContext
 
     init(context: NSManagedObjectContext) {
@@ -15,26 +18,21 @@ final class CoreDataTouchEventRepository: TouchEventRepository {
     }
 
     func fetch(id: UUID) -> TouchEvent? {
-        var result: TouchEvent?
         context.performAndWait {
-            result = fetchEntityByID(request: TouchEventEntity.fetchRequest(), id: id, in: context)?.toDomain()
+            fetchEntityByID(request: TouchEventEntity.fetchRequest(), id: id, in: context)?.toDomain()
         }
-        return result
     }
 
     func fetchAll(for personId: UUID) -> [TouchEvent] {
-        var results: [TouchEvent] = []
         context.performAndWait {
             let request: NSFetchRequest<TouchEventEntity> = TouchEventEntity.fetchRequest()
             request.predicate = NSPredicate(format: "personId == %@", personId as CVarArg)
             request.sortDescriptors = [NSSortDescriptor(key: "at", ascending: false)]
-            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
+            return (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
-        return results
     }
 
     func fetchAll(since: Date?) -> [TouchEvent] {
-        var results: [TouchEvent] = []
         context.performAndWait {
             let request: NSFetchRequest<TouchEventEntity> = TouchEventEntity.fetchRequest()
             if let since {
@@ -42,21 +40,18 @@ final class CoreDataTouchEventRepository: TouchEventRepository {
             }
             request.sortDescriptors = [NSSortDescriptor(key: "at", ascending: false)]
             request.fetchBatchSize = 200
-            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
+            return (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
-        return results
     }
 
     func fetchMostRecent(for personId: UUID) -> TouchEvent? {
-        var result: TouchEvent?
         context.performAndWait {
             let request: NSFetchRequest<TouchEventEntity> = TouchEventEntity.fetchRequest()
             request.predicate = NSPredicate(format: "personId == %@", personId as CVarArg)
             request.sortDescriptors = [NSSortDescriptor(key: "at", ascending: false)]
             request.fetchLimit = 1
-            result = (try? context.fetch(request))?.first?.toDomain()
+            return (try? context.fetch(request))?.first?.toDomain()
         }
-        return result
     }
 
     func save(_ touchEvent: TouchEvent) throws {

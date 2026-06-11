@@ -7,7 +7,10 @@
 
 import CoreData
 
-final class CoreDataAppSettingsRepository: AppSettingsRepository {
+// @unchecked Sendable: `context` is confined to its own queue — every access goes
+// through `performAndWait`, which serializes on that queue. No `context` or
+// managed object escapes a perform block.
+final class CoreDataAppSettingsRepository: AppSettingsRepository, @unchecked Sendable {
     private let context: NSManagedObjectContext
 
     init(context: NSManagedObjectContext) {
@@ -15,13 +18,11 @@ final class CoreDataAppSettingsRepository: AppSettingsRepository {
     }
 
     func fetch() -> AppSettings? {
-        var result: AppSettings?
         context.performAndWait {
             let request: NSFetchRequest<AppSettingsEntity> = AppSettingsEntity.fetchRequest()
             request.fetchLimit = 1
-            result = (try? context.fetch(request))?.first?.toDomain()
+            return (try? context.fetch(request))?.first?.toDomain()
         }
-        return result
     }
 
     func save(_ settings: AppSettings) throws {

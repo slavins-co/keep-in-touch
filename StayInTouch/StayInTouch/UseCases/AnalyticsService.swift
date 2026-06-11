@@ -8,8 +8,11 @@ import TelemetryDeck
 
 enum AnalyticsService {
     private static let lock = NSLock()
-    private static var _isInitialized = false
-    private static var _isEnabled = true
+    // Guarded by `lock` on every access (see initialize/track/updateEnabled),
+    // so concurrent access is serialized. `nonisolated(unsafe)` documents that
+    // the synchronization is manual rather than actor-provided.
+    nonisolated(unsafe) private static var _isInitialized = false
+    nonisolated(unsafe) private static var _isEnabled = true
 
     static func initialize() {
         lock.withLock {

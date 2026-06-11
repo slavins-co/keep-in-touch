@@ -5,7 +5,7 @@
 
 import Foundation
 
-enum LastTouchOption: String, CaseIterable, Codable {
+enum LastTouchOption: String, CaseIterable, Codable, Sendable {
     case thisWeek = "This week"
     case withinTwoWeeks = "Within 2 weeks"
     case thisMonth = "This month"

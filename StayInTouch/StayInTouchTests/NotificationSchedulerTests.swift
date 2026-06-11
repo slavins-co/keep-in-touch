@@ -6,6 +6,7 @@
 import XCTest
 @testable import StayInTouch
 
+@MainActor
 final class NotificationSchedulerTests: XCTestCase {
 
     private var mockNotificationCenter: MockUserNotificationCenter!

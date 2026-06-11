@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct AppSettings: Identifiable, Equatable {
+struct AppSettings: Identifiable, Equatable, Sendable {
     static let singletonId = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
 
     let id: UUID

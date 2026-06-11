@@ -19,16 +19,16 @@ struct CoreDataBackgroundWorkScheduler: BackgroundWorkScheduler {
         self.contextFactory = contextFactory
     }
 
-    func perform(_ work: @escaping (BackgroundRepositoryScope) -> Void) async {
+    func perform<T: Sendable>(_ work: @escaping @Sendable (BackgroundRepositoryScope) -> T) async -> T {
         let context = contextFactory()
-        await context.perform {
+        return await context.perform {
             let scope = BackgroundRepositoryScope(
                 personRepository: CoreDataPersonRepository(context: context),
                 cadenceRepository: CoreDataCadenceRepository(context: context),
                 groupRepository: CoreDataGroupRepository(context: context),
                 touchEventRepository: CoreDataTouchEventRepository(context: context)
             )
-            work(scope)
+            return work(scope)
         }
     }
 }
