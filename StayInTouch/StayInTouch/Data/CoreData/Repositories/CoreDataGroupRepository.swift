@@ -18,7 +18,7 @@ final class CoreDataGroupRepository: GroupRepository, @unchecked Sendable {
     }
 
     func fetch(id: UUID) -> Group? {
-        context.performAndWait {
+        return context.performAndWait {
             fetchEntityByID(request: TagEntity.fetchRequest(), id: id, in: context)?.toDomain()
         }
     }

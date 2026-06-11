@@ -18,7 +18,7 @@ final class CoreDataTouchEventRepository: TouchEventRepository, @unchecked Senda
     }
 
     func fetch(id: UUID) -> TouchEvent? {
-        context.performAndWait {
+        return context.performAndWait {
             fetchEntityByID(request: TouchEventEntity.fetchRequest(), id: id, in: context)?.toDomain()
         }
     }

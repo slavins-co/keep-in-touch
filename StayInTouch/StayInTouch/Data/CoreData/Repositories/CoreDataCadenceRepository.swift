@@ -18,7 +18,7 @@ final class CoreDataCadenceRepository: CadenceRepository, @unchecked Sendable {
     }
 
     func fetch(id: UUID) -> Cadence? {
-        context.performAndWait {
+        return context.performAndWait {
             fetchEntityByID(request: GroupEntity.fetchRequest(), id: id, in: context)?.toDomain()
         }
     }
