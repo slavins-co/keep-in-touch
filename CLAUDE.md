@@ -21,7 +21,7 @@ Privacy-first iOS app that tracks "last touch" dates, organizes contacts into SL
 # Build (run from repo root; -project is required since the project lives in StayInTouch/)
 xcodebuild -project StayInTouch/StayInTouch.xcodeproj -scheme StayInTouch -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' -sdk iphonesimulator build
 
-# Test (316+ unit tests)
+# Test
 xcodebuild -project StayInTouch/StayInTouch.xcodeproj -scheme StayInTouch -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.3.1' -sdk iphonesimulator test
 ```
 
@@ -33,6 +33,15 @@ The displayed app version comes from **build settings, not the git tag**. To rel
 - `MARKETING_VERSION` → e.g. `0.5.0` (drives `CFBundleShortVersionString`, shown in Xcode Organizer + App Store Connect)
 - `CURRENT_PROJECT_VERSION` → bump to a unique higher number (drives `CFBundleVersion`; must not collide with a prior TestFlight build)
 - Then `git tag vX.Y.Z && git push origin vX.Y.Z`. The tag only feeds the in-app About-screen label (`GeneratedVersion.swift`) - it does **not** set the archive version.
+
+## Git & Build Mechanics
+
+- **Build-stamp noise before git ops** - Xcode can leave a "Recovered References" group in `project.pbxproj`, dirtying the tree before a checkout/merge/commit. Clear it first: `git checkout HEAD -- StayInTouch/StayInTouch/Utilities/GeneratedVersion.swift StayInTouch/StayInTouch.xcodeproj/project.pbxproj`. (`GeneratedVersion.swift` itself no longer churns per-commit - the build phase derives its build number from `CURRENT_PROJECT_VERSION`, not the git commit count.)
+- **Read the PR base before git ops** - get it from `gh pr view --json baseRefName` before rebasing/merging/committing; don't assume `main`.
+- **`tasks/` is gitignored** (`.gitignore` line 45). `tasks/todo.md` and `tasks/lessons.md` are already tracked and commit normally, but any NEW file under `tasks/` is ignored and needs `git add -f`. After a stash/pop across branch switches, take the target branch's version if these files conflict.
+- **Crash + background-build diagnostics** - for an iOS crash, read `~/Library/Logs/DiagnosticReports/*.ips` for the exact file+line instead of chasing `simctl log show`. When running `xcodebuild` in the background, don't pipe through `tail` - tail's exit 0 masks xcodebuild's real status; capture xcodebuild's own exit code or read the result file.
+- **xcodebuild fails right after an Xcode update** - the matching simulator runtime is likely uninstalled; install it (Xcode > Settings > Components, or `xcodebuild -downloadPlatform iOS`) before debugging further. Use the canonical `-project StayInTouch/StayInTouch.xcodeproj` command from Build & Test above.
+- **Run review skills directly, not nested** - run `/code-review` and `/security-review` in the main session, never inside a sub-agent (nesting silently drops the parallel-reviewer fan-out and can exit without posting the PR comment). In a worktree, confirm `pwd` is inside the worktree before each edit.
 
 ## Architecture
 
@@ -72,6 +81,11 @@ Repository pattern: protocol in Domain, Core Data implementation in Data. UUID f
 ## Dependencies
 
 Built-in only: SwiftUI, Core Data, Contacts (CNContactStore), UserNotifications, BackgroundTasks (BGTaskScheduler). No CocoaPods, no SPM.
+
+## Apple Framework APIs
+
+- **Docs-first, never from memory** - before writing any SwiftUI/UIKit/WidgetKit/App Intents symbol into a spec or code, confirm the exact name, availability, and return type via Context7 (`resolve-library-id` + `query-docs`) or Apple docs. Past misses (`.foregroundColor` vs `.foregroundStyle`, the widget accent modifiers, cross-window blur) surfaced only at build/review.
+- **Lifecycle gotchas (App Intents, TipKit, SwiftUI, WidgetKit): see [docs/apple-framework-gotchas.md](docs/apple-framework-gotchas.md)** - when a framework fix isn't taking after one attempt, suspect wrong-lifecycle-point before iterating.
 
 ## Testing
 
