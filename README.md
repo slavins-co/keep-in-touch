@@ -3,7 +3,7 @@
 > Privacy-first iOS app to maintain friendships through gentle reminders and relationship tracking.
 
 [![Platform](https://img.shields.io/badge/platform-iOS%2017.0%2B-blue.svg)](https://developer.apple.com/ios/)
-[![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
+[![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey.svg)](LICENSE)
 
 **Version:** 0.5.0 (Build 14) | **Status:** Pre-release Beta

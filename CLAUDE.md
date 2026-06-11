@@ -5,7 +5,7 @@
 **App Name:** Keep In Touch (internally "StayInTouch" - module, directories, Core Data model all use the old name)
 **Bundle ID:** `slavins.co.KeepInTouch`
 **Platform:** iOS 17.0+ | Swift + SwiftUI | One external dependency (TelemetryDeck via SPM)
-**Language mode:** Swift 5 (`SWIFT_VERSION = 5.0`, no `SWIFT_STRICT_CONCURRENCY`). Do NOT claim Swift 6 compliance in docs or PRs; strict-concurrency adoption is a staged post-launch plan (see tasks/ARCHITECTURE-REVIEW.md section 3.4)
+**Language mode:** Swift 6 (`SWIFT_VERSION = 6.0`, `SWIFT_STRICT_CONCURRENCY = complete` on all targets, since #344). Data-race-safe; keep it that way - new code must compile clean under strict concurrency. Core Data repos are `@unchecked Sendable` (context confined to `performAndWait`); UI/singletons are `@MainActor`; lower layers stay nonisolated. `MainActor` default-isolation was evaluated and rejected for this single mixed-layer target (issue #344; tasks/ARCHITECTURE-REVIEW.md section 3.4)
 **Architecture:** Clean Architecture with Repository Pattern
 **Persistence:** Core Data (V1); CloudKit sync is a deferred V2 plan (#79), not implemented
 
