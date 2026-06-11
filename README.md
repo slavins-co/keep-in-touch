@@ -3,7 +3,7 @@
 > Privacy-first iOS app to maintain friendships through gentle reminders and relationship tracking.
 
 [![Platform](https://img.shields.io/badge/platform-iOS%2017.0%2B-blue.svg)](https://developer.apple.com/ios/)
-[![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)](https://swift.org)
+[![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/license-Proprietary-lightgrey.svg)](LICENSE)
 
 **Version:** 0.5.0 (Build 14) | **Status:** Pre-release Beta
@@ -23,7 +23,7 @@ Never lose track of the people who matter. Keep In Touch helps you maintain frie
 
 ## Current Status
 
-V0.5.0 is the biggest release yet. Connection logging now works hands-free through **Siri Shortcuts and App Intents** ("Log a call with Sarah"), a new **Stats & Insights** dashboard shows how your real behavior compares to your intentions, and **Lock Screen + StandBy widgets** (plus upcoming birthdays in the widget family) keep relationships visible at a glance. A **self-guided tutorial** walks new users through the core flow, **group hangouts** can be logged for everyone at once, and a dedicated **Snoozed Contacts** view makes paused relationships easy to manage. Under the hood, a sweeping tech-debt audit (15+ PRs) delivered faster cold launches, batched saves, unified status logic, and Swift 6 readiness.
+V0.5.0 is the biggest release yet. Connection logging now works hands-free through **Siri Shortcuts and App Intents** ("Log a call with Sarah"), a new **Stats & Insights** dashboard shows how your real behavior compares to your intentions, and **Lock Screen + StandBy widgets** (plus upcoming birthdays in the widget family) keep relationships visible at a glance. A **self-guided tutorial** walks new users through the core flow, **group hangouts** can be logged for everyone at once, and a dedicated **Snoozed Contacts** view makes paused relationships easy to manage. Under the hood, a sweeping tech-debt audit (15+ PRs) delivered faster cold launches, batched saves, unified status logic, and concurrency-warning cleanup.
 
 **Up next:** App Store submission. See [open issues](https://github.com/slavins-co/keep-in-touch/issues) and [release history](https://github.com/slavins-co/keep-in-touch/releases) for details.
 
@@ -74,7 +74,7 @@ V0.5.0 is the biggest release yet. Connection logging now works hands-free throu
 - No cloud sync, no advertising, no cross-app tracking
 - Anonymous usage analytics via [TelemetryDeck](https://telemetrydeck.com) (opt-out in Settings)
 - Read-only Contacts access (fetched on-demand, never stored externally)
-- No external dependencies - built entirely with Apple frameworks
+- One third-party dependency (TelemetryDeck); everything else is Apple frameworks
 - [Privacy policy](docs/privacy-policy.md)
 
 ---

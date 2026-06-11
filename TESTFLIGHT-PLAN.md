@@ -486,8 +486,9 @@ PERFECT FOR
 YOUR DATA, YOUR DEVICE
 
 Keep In Touch uses Apple's Contacts framework to help you select people to
-track, but all data stays on your device. No analytics, no tracking, no
-external servers.
+track, but all your data stays on your device. No tracking, no accounts, no
+external servers storing your data. Anonymous, opt-out usage analytics
+(TelemetryDeck) help improve the app.
 
 VERSION 1.0
 
