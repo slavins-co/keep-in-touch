@@ -18,7 +18,7 @@ final class CoreDataPersonRepository: PersonRepository, @unchecked Sendable {
     }
 
     func fetch(id: UUID) -> Person? {
-        context.performAndWait {
+        return context.performAndWait {
             fetchEntityByID(request: PersonEntity.fetchRequest(), id: id, in: context)?.toDomain()
         }
     }
