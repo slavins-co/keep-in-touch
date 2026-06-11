@@ -9,7 +9,7 @@
 
 import Foundation
 
-enum DeepLinkRoute: Equatable {
+enum DeepLinkRoute: Equatable, Sendable {
     case overdue
     case person(UUID)
 

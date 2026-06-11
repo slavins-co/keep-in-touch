@@ -20,7 +20,7 @@
 
 import Foundation
 
-final class IntentContainer {
+final class IntentContainer: @unchecked Sendable {
     static let shared = IntentContainer()
 
     private let resolver: () -> AppDependencies
@@ -54,7 +54,7 @@ final class IntentContainer {
 
     // MARK: - Test override plumbing
 
-    private static var sharedOverride: IntentContainer?
+    nonisolated(unsafe) private static var sharedOverride: IntentContainer?
 
     static var current: IntentContainer {
         sharedOverride ?? shared

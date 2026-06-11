@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TimeOfDay: String, CaseIterable, Codable {
+enum TimeOfDay: String, CaseIterable, Codable, Sendable {
     case morning = "Morning"
     case afternoon = "Afternoon"
     case evening = "Evening"

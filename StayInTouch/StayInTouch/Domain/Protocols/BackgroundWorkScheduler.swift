@@ -18,7 +18,7 @@ import Foundation
 /// Bundle of repository references scoped to a single background unit
 /// of work. All repositories in the scope share the same private context
 /// so saves coalesce into a single persistent-store write.
-struct BackgroundRepositoryScope {
+struct BackgroundRepositoryScope: Sendable {
     let personRepository: PersonRepository
     let cadenceRepository: CadenceRepository
     let groupRepository: GroupRepository
@@ -33,5 +33,5 @@ protocol BackgroundWorkScheduler {
     /// Run `work` on a fresh background scope, awaiting completion. The
     /// closure is serialized on the scope's underlying context, so all
     /// repository calls inside it are thread-safe.
-    func perform(_ work: @escaping (BackgroundRepositoryScope) -> Void) async
+    func perform<T: Sendable>(_ work: @escaping @Sendable (BackgroundRepositoryScope) -> T) async -> T
 }

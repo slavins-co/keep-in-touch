@@ -7,7 +7,8 @@
 
 import CoreData
 
-final class DefaultDataSeeder {
+// @unchecked Sendable: context confined to performAndWait (see repository note).
+final class DefaultDataSeeder: @unchecked Sendable {
     private let context: NSManagedObjectContext
 
     init(context: NSManagedObjectContext) {

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Cadence: Identifiable, Equatable {
+struct Cadence: Identifiable, Equatable, Sendable {
     let id: UUID
     var name: String
     var frequencyDays: Int

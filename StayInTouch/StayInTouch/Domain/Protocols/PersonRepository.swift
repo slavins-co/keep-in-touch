@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol PersonRepository {
+protocol PersonRepository: Sendable {
     func fetch(id: UUID) -> Person?
     func fetchAll() -> [Person]
     func fetchTracked(includePaused: Bool) -> [Person]

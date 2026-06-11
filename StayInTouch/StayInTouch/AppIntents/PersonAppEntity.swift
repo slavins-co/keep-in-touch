@@ -18,14 +18,14 @@ struct PersonAppEntity: AppEntity, Identifiable {
         TypeDisplayRepresentation(name: "Contact")
     }
 
-    static var defaultQuery = PersonAppEntityQuery()
+    static let defaultQuery = PersonAppEntityQuery()
 
     let id: UUID
     let displayName: String
     let nickname: String?
     let lastTouchAt: Date?
 
-    private static let relativeFormatter: RelativeDateTimeFormatter = {
+    nonisolated(unsafe) private static let relativeFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
         return formatter

@@ -8,6 +8,7 @@
 import Contacts
 import Foundation
 
+@MainActor
 final class ContactsChangeObserver {
     static let shared = ContactsChangeObserver()
 
@@ -23,9 +24,11 @@ final class ContactsChangeObserver {
         observer = NotificationCenter.default.addObserver(
             forName: .CNContactStoreDidChange,
             object: nil,
-            queue: nil
+            queue: .main
         ) { [weak self] _ in
-            self?.scheduleSync()
+            MainActor.assumeIsolated {
+                self?.scheduleSync()
+            }
         }
     }
 
@@ -52,7 +55,8 @@ final class ContactsChangeObserver {
         }
     }
 
-    deinit {
+    // `isolated deinit` (SE-0371): cleanup touches MainActor-isolated state.
+    isolated deinit {
         stop()
     }
 }

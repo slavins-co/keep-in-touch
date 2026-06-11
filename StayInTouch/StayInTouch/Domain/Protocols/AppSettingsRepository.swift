@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol AppSettingsRepository {
+protocol AppSettingsRepository: Sendable {
     func fetch() -> AppSettings?
     func save(_ settings: AppSettings) throws
 }
