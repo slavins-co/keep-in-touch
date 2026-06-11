@@ -3,6 +3,7 @@
 //  KeepInTouchTests
 //
 
+import CoreData
 import XCTest
 @testable import StayInTouch
 

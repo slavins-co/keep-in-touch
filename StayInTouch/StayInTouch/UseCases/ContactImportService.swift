@@ -5,8 +5,9 @@
 //  Handles importing contacts from the device's address book (CNContactStore).
 //
 
-import Foundation
 import Contacts
+import CoreData
+import Foundation
 
 struct ContactImportService {
     let personRepository: PersonRepository

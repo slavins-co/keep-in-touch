@@ -8,6 +8,7 @@
 //  rather than the result payload.
 //
 
+import CoreData
 import XCTest
 @testable import StayInTouch
 

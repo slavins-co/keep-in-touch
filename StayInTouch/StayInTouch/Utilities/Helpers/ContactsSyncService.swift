@@ -5,6 +5,7 @@
 //  Created by Codex on 2/3/26.
 //
 
+import CoreData
 import Foundation
 
 enum ContactsSyncService {
