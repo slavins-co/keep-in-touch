@@ -5,6 +5,7 @@
 //  Created by Codex on 2/2/26.
 //
 
+import CoreData
 import XCTest
 @testable import StayInTouch
 

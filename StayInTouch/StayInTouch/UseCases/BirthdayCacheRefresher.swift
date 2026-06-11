@@ -15,6 +15,7 @@
 //
 
 import Contacts
+import CoreData
 import Foundation
 
 struct BirthdayCacheRefresher {

@@ -5,6 +5,7 @@
 //  Created by Bradley Slavin on 2/2/26.
 //
 
+import CoreData
 import SwiftUI
 import TipKit
 

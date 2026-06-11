@@ -5,6 +5,7 @@
 //  Created by Claude on 2/24/26.
 //
 
+import Combine
 import SwiftUI
 
 @MainActor

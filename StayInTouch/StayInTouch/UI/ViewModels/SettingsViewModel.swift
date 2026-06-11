@@ -5,9 +5,11 @@
 //  Created by Codex on 2/3/26.
 //
 
+import Combine
+import Contacts
+import CoreData
 import Foundation
 import UserNotifications
-import Contacts
 
 @MainActor
 final class SettingsViewModel: ObservableObject, ViewModelErrorHandling {
