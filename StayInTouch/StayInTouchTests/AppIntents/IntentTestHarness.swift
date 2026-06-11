@@ -14,7 +14,7 @@ import Foundation
 /// and matches nicknames in `searchByName`. The shared `MockPersonRepository`
 /// returns [] for fetchOverdue and ignores nicknames — both insufficient
 /// for intent coverage.
-final class IntentTestPersonRepository: PersonRepository {
+final class IntentTestPersonRepository: PersonRepository, @unchecked Sendable {
     var people: [Person] = []
     var overdue: [Person] = []
     var savedPersons: [Person] = []

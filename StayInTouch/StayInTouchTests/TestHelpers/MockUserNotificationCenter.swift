@@ -49,15 +49,19 @@ final class MockUserNotificationCenter: UserNotificationCenterProtocol, @uncheck
     }
 
     func add(_ request: UNNotificationRequest) async throws {
-        lock.lock(); defer { lock.unlock() }
-        _addedRequests.append(request)
-        _operations.append(.add(request))
+        // Swift 6 forbids NSLock.lock()/unlock() in async contexts (deadlock
+        // risk across suspension); use scoped withLock instead.
+        lock.withLock {
+            _addedRequests.append(request)
+            _operations.append(.add(request))
+        }
     }
 
     func setBadgeCount(_ newBadgeCount: Int) async throws {
-        lock.lock(); defer { lock.unlock() }
-        _badgeCounts.append(newBadgeCount)
-        _operations.append(.setBadge(newBadgeCount))
+        lock.withLock {
+            _badgeCounts.append(newBadgeCount)
+            _operations.append(.setBadge(newBadgeCount))
+        }
     }
 
     func removeAllPendingNotificationRequests() {
