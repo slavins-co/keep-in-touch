@@ -10,7 +10,9 @@ import Foundation
 
 // MARK: - MockPersonRepository
 
-final class MockPersonRepository: PersonRepository {
+// @unchecked Sendable: single-threaded test double; mutable stub state is
+// only touched from the test that owns it.
+final class MockPersonRepository: PersonRepository, @unchecked Sendable {
     var people: [Person] = []
     var savedPersons: [Person] = []
     var deletedIds: [UUID] = []
@@ -68,7 +70,7 @@ final class MockPersonRepository: PersonRepository {
 
 // MARK: - MockCadenceRepository
 
-final class MockCadenceRepository: CadenceRepository {
+final class MockCadenceRepository: CadenceRepository, @unchecked Sendable {
     var cadences: [Cadence] = []
     var fetchAllCallCount = 0
 
@@ -95,7 +97,7 @@ final class MockCadenceRepository: CadenceRepository {
 
 // MARK: - MockGroupRepository
 
-final class MockGroupRepository: GroupRepository {
+final class MockGroupRepository: GroupRepository, @unchecked Sendable {
     var groups: [Group] = []
 
     func fetch(id: UUID) -> Group? { groups.first { $0.id == id } }
@@ -123,7 +125,7 @@ final class MockGroupRepository: GroupRepository {
 
 // MARK: - MockTouchEventRepository
 
-class MockTouchEventRepository: TouchEventRepository {
+class MockTouchEventRepository: TouchEventRepository, @unchecked Sendable {
     var events: [TouchEvent] = []
     var savedEvents: [TouchEvent] = []
     var deletedIds: [UUID] = []
@@ -172,7 +174,7 @@ class MockTouchEventRepository: TouchEventRepository {
 
 // MARK: - MockSettingsRepository
 
-final class MockSettingsRepository: AppSettingsRepository {
+final class MockSettingsRepository: AppSettingsRepository, @unchecked Sendable {
     var settings: AppSettings?
     var saveCount = 0
 
