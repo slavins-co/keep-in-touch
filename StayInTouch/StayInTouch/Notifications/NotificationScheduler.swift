@@ -6,8 +6,9 @@
 //
 
 import Foundation
-import UserNotifications
+@preconcurrency import UserNotifications
 
+@MainActor
 final class NotificationScheduler {
     static let shared = NotificationScheduler()
 
@@ -137,14 +138,14 @@ final class NotificationScheduler {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.scheduleAllDebounced()
+            MainActor.assumeIsolated { self?.scheduleAllDebounced() }
         }
         personObserver = NotificationCenter.default.addObserver(
             forName: .personDidChange,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.scheduleAllDebounced()
+            MainActor.assumeIsolated { self?.scheduleAllDebounced() }
         }
     }
 
@@ -185,7 +186,10 @@ final class NotificationScheduler {
         }
     }
 
-    deinit {
+    // `isolated deinit` (SE-0371): run cleanup on the MainActor so it can touch
+    // the actor-isolated observer/task state. Matters for test-created instances;
+    // the `shared` singleton lives for the process lifetime.
+    isolated deinit {
         stopObserving()
     }
 

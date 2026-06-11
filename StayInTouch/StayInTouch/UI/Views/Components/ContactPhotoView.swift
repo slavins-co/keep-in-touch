@@ -68,7 +68,8 @@ struct ContactPhotoView: View {
 }
 
 private enum ContactPhotoCache {
-    static let shared = NSCache<NSString, UIImage>()
+    // NSCache is documented thread-safe by Apple; not formally Sendable.
+    nonisolated(unsafe) static let shared = NSCache<NSString, UIImage>()
 
     static func image(for identifier: String) -> UIImage? {
         shared.object(forKey: identifier as NSString)

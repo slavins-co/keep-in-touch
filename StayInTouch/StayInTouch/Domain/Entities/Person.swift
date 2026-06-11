@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Person: Identifiable, Equatable, Hashable {
+struct Person: Identifiable, Equatable, Hashable, Sendable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }

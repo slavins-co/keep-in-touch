@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol TouchEventRepository {
+protocol TouchEventRepository: Sendable {
     func fetch(id: UUID) -> TouchEvent?
     func fetchAll(for personId: UUID) -> [TouchEvent]
     func fetchAll(since: Date?) -> [TouchEvent]

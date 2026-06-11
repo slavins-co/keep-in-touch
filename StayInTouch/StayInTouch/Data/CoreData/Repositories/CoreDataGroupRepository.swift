@@ -7,7 +7,10 @@
 
 import CoreData
 
-final class CoreDataGroupRepository: GroupRepository {
+// @unchecked Sendable: `context` is confined to its own queue — every access goes
+// through `performAndWait`, which serializes on that queue. No `context` or
+// managed object escapes a perform block.
+final class CoreDataGroupRepository: GroupRepository, @unchecked Sendable {
     private let context: NSManagedObjectContext
 
     init(context: NSManagedObjectContext) {
@@ -15,21 +18,17 @@ final class CoreDataGroupRepository: GroupRepository {
     }
 
     func fetch(id: UUID) -> Group? {
-        var result: Group?
-        context.performAndWait {
-            result = fetchEntityByID(request: TagEntity.fetchRequest(), id: id, in: context)?.toDomain()
+        return context.performAndWait {
+            fetchEntityByID(request: TagEntity.fetchRequest(), id: id, in: context)?.toDomain()
         }
-        return result
     }
 
     func fetchAll() -> [Group] {
-        var results: [Group] = []
         context.performAndWait {
             let request: NSFetchRequest<TagEntity> = TagEntity.fetchRequest()
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
-            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
+            return (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
-        return results
     }
 
     func save(_ group: Group) throws {
@@ -65,15 +64,13 @@ final class CoreDataGroupRepository: GroupRepository {
     }
 
     func count() -> Int {
-        var count = 0
         context.performAndWait {
             let request: NSFetchRequest<TagEntity> = TagEntity.fetchRequest()
             // `count(for:)` returns the row count without faulting any
             // managed objects into memory — used by Settings to render
             // the group count badge without loading every Group (audit
             // E9, #317).
-            count = (try? context.count(for: request)) ?? 0
+            return (try? context.count(for: request)) ?? 0
         }
-        return count
     }
 }

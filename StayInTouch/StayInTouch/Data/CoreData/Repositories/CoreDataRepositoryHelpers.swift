@@ -62,11 +62,11 @@ func fetchEntityByID<Entity: NSManagedObject>(
 ///   - apply: Closure that copies domain state onto a freshly-fetched-or-created entity.
 func upsertEntity<Entity: NSManagedObject>(
     id: UUID,
-    fetchRequest: @escaping () -> NSFetchRequest<Entity>,
+    fetchRequest: @escaping @Sendable () -> NSFetchRequest<Entity>,
     entityLabel: String,
     in context: NSManagedObjectContext,
     refreshWidgets: Bool = true,
-    apply: @escaping (Entity) -> Void
+    apply: @escaping @Sendable (Entity) -> Void
 ) throws {
     do {
         try context.performAndWait {
@@ -89,14 +89,14 @@ func upsertEntity<Entity: NSManagedObject>(
 /// Upserts a sequence of domain objects in a single save. Identical semantics
 /// to `upsertEntity` but groups all writes into one `context.save()` and one
 /// widget refresh at the end.
-func batchUpsertEntities<Entity: NSManagedObject, Domain>(
+func batchUpsertEntities<Entity: NSManagedObject, Domain: Sendable>(
     _ domains: [Domain],
-    id: (Domain) -> UUID,
-    fetchRequest: @escaping () -> NSFetchRequest<Entity>,
+    id: @Sendable (Domain) -> UUID,
+    fetchRequest: @escaping @Sendable () -> NSFetchRequest<Entity>,
     entityLabel: String,
     in context: NSManagedObjectContext,
     refreshWidgets: Bool = true,
-    apply: @escaping (Domain, Entity) -> Void
+    apply: @escaping @Sendable (Domain, Entity) -> Void
 ) throws {
     do {
         try context.performAndWait {
@@ -137,7 +137,7 @@ func batchUpsertEntities<Entity: NSManagedObject, Domain>(
 ///   2. The cost being optimized is N transactions → 1 transaction (the
 ///      audit finding), not N object loads → 0 loads.
 func batchDeleteEntitiesByID<Entity: NSManagedObject>(
-    fetchRequest: @escaping () -> NSFetchRequest<Entity>,
+    fetchRequest: @escaping @Sendable () -> NSFetchRequest<Entity>,
     ids: [UUID],
     entityLabel: String,
     in context: NSManagedObjectContext,
@@ -173,7 +173,7 @@ func batchDeleteEntitiesByID<Entity: NSManagedObject>(
 /// timelines. A missing entity is a no-op (matches prior behavior — repos do
 /// not throw on delete-of-nonexistent).
 func deleteEntityByID<Entity: NSManagedObject>(
-    fetchRequest: @escaping () -> NSFetchRequest<Entity>,
+    fetchRequest: @escaping @Sendable () -> NSFetchRequest<Entity>,
     id: UUID,
     entityLabel: String,
     in context: NSManagedObjectContext,

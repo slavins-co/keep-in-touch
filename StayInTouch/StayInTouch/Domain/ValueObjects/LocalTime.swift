@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct LocalTime: Equatable, Codable {
+struct LocalTime: Equatable, Codable, Sendable {
     var hour: Int
     var minute: Int
 }

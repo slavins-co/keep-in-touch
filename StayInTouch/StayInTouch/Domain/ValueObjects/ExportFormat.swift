@@ -5,7 +5,7 @@
 
 import Foundation
 
-enum ExportFormat: String, CaseIterable {
+enum ExportFormat: String, CaseIterable, Sendable {
     case json
     case csv
 

@@ -87,11 +87,9 @@ struct BirthdayCacheRefresher {
     /// cache work that follows must not run on the main view context).
     static func defaultFetchPeople() -> [Person] {
         let context = CoreDataStack.shared.newBackgroundContext()
-        var people: [Person] = []
-        context.performAndWait {
-            people = CoreDataPersonRepository(context: context).fetchTracked(includePaused: true)
+        return context.performAndWait {
+            CoreDataPersonRepository(context: context).fetchTracked(includePaused: true)
         }
-        return people
     }
 
     /// True when Contacts access is sufficient to read birthdays. `.limited`

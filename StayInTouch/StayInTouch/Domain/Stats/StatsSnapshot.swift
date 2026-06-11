@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct StatsSnapshot: Equatable, Codable {
+struct StatsSnapshot: Equatable, Codable, Sendable {
     let range: StatsRange
     let generatedAt: Date
     let state: State

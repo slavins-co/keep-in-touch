@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct TouchEvent: Identifiable, Equatable {
+struct TouchEvent: Identifiable, Equatable, Sendable {
     let id: UUID
     var personId: UUID
     var at: Date

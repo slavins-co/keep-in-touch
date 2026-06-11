@@ -38,12 +38,8 @@ extension WidgetDataProvider {
         guard let context = WidgetCoreData.shared?.viewContext else {
             return ([], nil)
         }
-        var birthdays: [BirthdaySummary] = []
-        var theme: String?
-        context.performAndWait {
-            birthdays = upcomingBirthdays(context: context, now: now, within: days, limit: limit)
-            theme = themeOverride(context: context)
+        return context.performAndWait {
+            (upcomingBirthdays(context: context, now: now, within: days, limit: limit), themeOverride(context: context))
         }
-        return (birthdays, theme)
     }
 }

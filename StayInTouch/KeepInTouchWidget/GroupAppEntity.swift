@@ -21,7 +21,7 @@ struct GroupAppEntity: AppEntity, Identifiable {
     var name: String
 
     static var typeDisplayRepresentation: TypeDisplayRepresentation { "Group" }
-    static var defaultQuery = GroupAppEntityQuery()
+    static let defaultQuery = GroupAppEntityQuery()
 
     var displayRepresentation: DisplayRepresentation {
         DisplayRepresentation(title: "\(name)")
@@ -45,19 +45,17 @@ struct GroupAppEntityQuery: EntityQuery {
 
     static func fetchAllGroups() -> [GroupAppEntity] {
         guard let context = WidgetCoreData.shared?.viewContext else { return [] }
-        var results: [GroupAppEntity] = []
-        context.performAndWait {
+        return context.performAndWait {
             let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
             request.sortDescriptors = [
                 NSSortDescriptor(key: "sortOrder", ascending: true),
                 NSSortDescriptor(key: "name", ascending: true),
             ]
             let groups = (try? context.fetch(request)) ?? []
-            results = groups.compactMap { group in
+            return groups.compactMap { group in
                 guard let id = group.id, let name = group.name else { return nil }
                 return GroupAppEntity(id: id, name: name)
             }
         }
-        return results
     }
 }

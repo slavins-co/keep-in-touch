@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum NotificationGrouping: String, CaseIterable, Codable {
+enum NotificationGrouping: String, CaseIterable, Codable, Sendable {
     case perPerson = "per_person"
     case perType = "per_type"
     case perDay = "per_day"

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Group: Identifiable, Equatable {
+struct Group: Identifiable, Equatable, Sendable {
     let id: UUID
     var name: String
     var colorHex: String

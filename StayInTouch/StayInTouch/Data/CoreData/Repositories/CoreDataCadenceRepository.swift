@@ -7,7 +7,10 @@
 
 import CoreData
 
-final class CoreDataCadenceRepository: CadenceRepository {
+// @unchecked Sendable: `context` is confined to its own queue — every access goes
+// through `performAndWait`, which serializes on that queue. No `context` or
+// managed object escapes a perform block.
+final class CoreDataCadenceRepository: CadenceRepository, @unchecked Sendable {
     private let context: NSManagedObjectContext
 
     init(context: NSManagedObjectContext) {
@@ -15,32 +18,26 @@ final class CoreDataCadenceRepository: CadenceRepository {
     }
 
     func fetch(id: UUID) -> Cadence? {
-        var result: Cadence?
-        context.performAndWait {
-            result = fetchEntityByID(request: GroupEntity.fetchRequest(), id: id, in: context)?.toDomain()
+        return context.performAndWait {
+            fetchEntityByID(request: GroupEntity.fetchRequest(), id: id, in: context)?.toDomain()
         }
-        return result
     }
 
     func fetchAll() -> [Cadence] {
-        var results: [Cadence] = []
         context.performAndWait {
             let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
-            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
+            return (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
-        return results
     }
 
     func fetchDefaultCadences() -> [Cadence] {
-        var results: [Cadence] = []
         context.performAndWait {
             let request: NSFetchRequest<GroupEntity> = GroupEntity.fetchRequest()
             request.predicate = NSPredicate(format: "isDefault == YES")
             request.sortDescriptors = [NSSortDescriptor(key: "sortOrder", ascending: true)]
-            results = (try? context.fetch(request))?.map { $0.toDomain() } ?? []
+            return (try? context.fetch(request))?.map { $0.toDomain() } ?? []
         }
-        return results
     }
 
     func save(_ cadence: Cadence) throws {

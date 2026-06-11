@@ -10,7 +10,7 @@
 
 import Foundation
 
-struct Birthday: Equatable, Codable, Hashable {
+struct Birthday: Equatable, Codable, Hashable, Sendable {
     var month: Int   // 1-12
     var day: Int     // 1-31
     var year: Int?   // optional (nil if unknown)

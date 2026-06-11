@@ -248,15 +248,14 @@ struct DataImportService {
     }
 
     func executeImport(_ preview: ImportPreview) async -> ImportResult {
-        var importedNewPeople: [(id: UUID, displayName: String)] = []
-
-        await backgroundWorkScheduler.perform { scope in
+        let importedNewPeople = await backgroundWorkScheduler.perform { scope -> [(id: UUID, displayName: String)] in
             let peopleRepo = scope.personRepository
             let touchRepo = scope.touchEventRepository
             let cadenceRepo = scope.cadenceRepository
             let groupRepo = scope.groupRepository
 
             let now = Date()
+            var importedNewPeople: [(id: UUID, displayName: String)] = []
 
             // 1. Create new cadences from import (batch save)
             let existingCadenceCount = cadenceRepo.fetchAll().count
@@ -477,6 +476,8 @@ struct DataImportService {
                     }
                 }
             }
+
+            return importedNewPeople
         }
 
         return ImportResult(
