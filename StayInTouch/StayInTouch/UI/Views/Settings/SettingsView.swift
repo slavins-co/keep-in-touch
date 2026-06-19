@@ -6,12 +6,10 @@
 //
 
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
 
-    @State private var shareItem: ShareItem?
     @State private var showNoNewContactsAlert = false
     @State private var showLimitedAccessAlert = false
     @State private var showContactsSettingsAlert = false
@@ -20,17 +18,8 @@ struct SettingsView: View {
     @State private var showImportSuccessBanner = false
     @State private var importSuccessCount = 0
     @State private var importBannerTask: Task<Void, Never>?
-    @State private var showFilePicker = false
-    @State private var importPreview: ImportPreview?
-    @State private var showImportSuccessAlert = false
-    @State private var showImportErrorAlert = false
-    @State private var importResultMessage = ""
-    @State private var showExportFormatPicker = false
     @State private var showResetFrequenciesConfirmation = false
     @State private var showResetTipsConfirm = false
-    @State private var showPostImportMatch = false
-    @State private var postImportResult: ImportResult?
-    @State private var postImportMatchSummary: ContactMatchSummary?
 
     var body: some View {
         List {
@@ -52,13 +41,6 @@ struct SettingsView: View {
         .listStyle(.insetGrouped)
         .tint(DS.Colors.accent)
         .navigationTitle("Settings")
-        .sheet(item: $shareItem) { item in
-            ShareSheet(items: item.urls) {
-                for url in item.urls {
-                    try? FileManager.default.removeItem(at: url)
-                }
-            }
-        }
         .contactAccessAlerts(
             showNoNewContacts: $showNoNewContactsAlert,
             showLimitedAccess: $showLimitedAccessAlert,
@@ -133,80 +115,8 @@ struct SettingsView: View {
                 )
             }
         }
-        .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [UTType.json]) { result in
-            switch result {
-            case .success(let url):
-                Task {
-                    if let preview = await viewModel.parseImportFile(url: url) {
-                        importPreview = preview
-                    } else {
-                        importResultMessage = "Could not read the file. Make sure it is a valid Keep In Touch export."
-                        showImportErrorAlert = true
-                    }
-                }
-            case .failure:
-                importResultMessage = "Could not open the file."
-                showImportErrorAlert = true
-            }
-        }
-        .sheet(item: $importPreview) { preview in
-            ImportPreviewView(
-                preview: preview,
-                onImport: { resolvedPreview in
-                    importPreview = nil
-                    Task {
-                        let (result, matchSummary) = await viewModel.performFileImport(resolvedPreview)
-
-                        if let matchSummary {
-                            postImportResult = result
-                            postImportMatchSummary = matchSummary
-                            showPostImportMatch = true
-                        } else {
-                            var parts: [String] = []
-                            if result.totalPeople > 0 {
-                                parts.append("\(result.totalPeople) contact\(result.totalPeople == 1 ? "" : "s")")
-                            }
-                            if result.cadencesCreated > 0 {
-                                parts.append("\(result.cadencesCreated) frequenc\(result.cadencesCreated == 1 ? "y" : "ies")")
-                            }
-                            if result.groupsCreated > 0 {
-                                parts.append("\(result.groupsCreated) group\(result.groupsCreated == 1 ? "" : "s")")
-                            }
-                            importResultMessage = parts.isEmpty
-                                ? "Nothing was imported."
-                                : "Imported \(parts.joined(separator: ", ")) successfully."
-                            showImportSuccessAlert = true
-                        }
-                    }
-                },
-                onCancel: {
-                    importPreview = nil
-                }
-            )
-        }
-        .sheet(isPresented: $showPostImportMatch) {
-            if let result = postImportResult, let matchSummary = postImportMatchSummary {
-                PostImportMatchView(
-                    importResult: result,
-                    matchSummary: matchSummary,
-                    viewModel: viewModel,
-                    onDismiss: { showPostImportMatch = false }
-                )
-            }
-        }
-        .alert("Import Complete", isPresented: $showImportSuccessAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(importResultMessage)
-        }
-        .alert("Import Failed", isPresented: $showImportErrorAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(importResultMessage)
-        }
         .onAppear { viewModel.load() }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
-            guard !showPostImportMatch else { return }
             viewModel.load()
         }
     }
@@ -333,37 +243,8 @@ struct SettingsView: View {
 
     private var dataSection: some View {
         Section("Data") {
-            Button {
-                showExportFormatPicker = true
-            } label: {
-                Label("Export Contacts", systemImage: "square.and.arrow.up")
-            }
-            .confirmationDialog("Export Format", isPresented: $showExportFormatPicker) {
-                ForEach(ExportFormat.allCases, id: \.self) { format in
-                    Button(format.displayName) {
-                        let urls = viewModel.exportContacts(format: format)
-                        if !urls.isEmpty {
-                            shareItem = ShareItem(urls: urls)
-                        }
-                    }
-                }
-            } message: {
-                Text("Choose a format for your export.")
-            }
-
-            Button {
-                showFilePicker = true
-            } label: {
-                Label("Import Contacts", systemImage: "square.and.arrow.down")
-            }
-
-            if viewModel.isImporting {
-                HStack(spacing: DS.Spacing.md) {
-                    ProgressView()
-                    Text("Importing...")
-                        .font(DS.Typography.metadata)
-                        .foregroundStyle(DS.Colors.secondaryText)
-                }
+            NavigationLink(destination: DataSettingsView(viewModel: viewModel)) {
+                Label("Backup & Data", systemImage: "externaldrive.badge.icloud")
             }
         }
     }
@@ -402,7 +283,7 @@ struct SettingsView: View {
             Text("About")
         } footer: {
             VStack(spacing: DS.Spacing.md) {
-                Text("Your relationship data never leaves your phone. Anonymous usage statistics help us improve the app.")
+                Text("Your relationship data lives on your device and is never sent to us. Anonymous usage statistics help us improve the app.")
                 VStack(spacing: DS.Spacing.sm) {
                     Text("Keep In Touch \(appVersion)")
                         .font(DS.Typography.caption)
@@ -467,11 +348,6 @@ struct SettingsView: View {
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.top, DS.Spacing.sm)
     }
-}
-
-private struct ShareItem: Identifiable {
-    let id = UUID()
-    let urls: [URL]
 }
 
 private enum ContactImportStep: Identifiable {
