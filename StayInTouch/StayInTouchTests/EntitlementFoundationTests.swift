@@ -154,16 +154,32 @@ final class EntitlementFoundationTests: XCTestCase {
         XCTAssertEqual(repo.stored?.proStatusEvaluated, true)
     }
 
-    func testBootstrap_freshInstall_savesEvaluatedAndCachesFree() {
+    func testBootstrap_freshInstall_savesEvaluatedAndDoesNotCachePro() {
         let repo = MockSettingsRepository(stored: makeSettings(onboardingCompleted: false))
         var cached: Bool?
         let isPro = EntitlementBootstrap(settingsRepository: repo).run { cached = $0 }
 
         XCTAssertFalse(isPro)
-        XCTAssertEqual(cached, false)
+        // Set-only: a free user never triggers a cache write (readers default to
+        // free, and the cache must not be clobbered for a purchased user later).
+        XCTAssertNil(cached)
         XCTAssertEqual(repo.saveCount, 1)
         XCTAssertEqual(repo.stored?.isGrandfathered, false)
         XCTAssertEqual(repo.stored?.proStatusEvaluated, true)
+    }
+
+    func testBootstrap_freeAlreadyEvaluated_doesNotWriteCache() {
+        // A non-grandfathered, already-evaluated user must not write the cache —
+        // this is the guard that prevents clobbering a purchased user's cached Pro.
+        let repo = MockSettingsRepository(
+            stored: makeSettings(isGrandfathered: false, proStatusEvaluated: true)
+        )
+        var cacheWriteCount = 0
+        let isPro = EntitlementBootstrap(settingsRepository: repo).run { _ in cacheWriteCount += 1 }
+
+        XCTAssertFalse(isPro)
+        XCTAssertEqual(repo.saveCount, 0)
+        XCTAssertEqual(cacheWriteCount, 0)
     }
 
     func testBootstrap_alreadyEvaluated_doesNotResave() {

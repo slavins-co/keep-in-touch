@@ -32,14 +32,29 @@ struct EntitlementBootstrap {
 
         let evaluated = GrandfatherEvaluator.evaluate(settings)
         if evaluated != settings {
-            try? settingsRepository.save(evaluated)
+            do {
+                try settingsRepository.save(evaluated)
+            } catch {
+                // Don't silently swallow (project rule: zero silent failures). A
+                // failed persist means the grandfather decision isn't frozen and
+                // gets re-evaluated next launch — safe for existing users, whose
+                // `onboardingCompleted` is stable and yields the same result.
+                AppLogger.logError(error, category: AppLogger.coreData, context: "EntitlementBootstrap.save")
+            }
         }
 
         let isPro = Entitlements.isPro(
             isGrandfathered: evaluated.isGrandfathered,
             hasProPurchase: false
         )
-        writeCache(isPro)
+        // Set-only: write the cache here only to GRANT Pro (grandfather), never to
+        // clear it. The authoritative writer that can also clear Pro (on refund /
+        // entitlement revocation) is the StoreKit PurchaseManager added in a later
+        // stage. Keeping this bootstrap set-only means it can never clobber a
+        // purchased-but-not-grandfathered user's cached entitlement back to free.
+        if isPro {
+            writeCache(true)
+        }
         return isPro
     }
 }
