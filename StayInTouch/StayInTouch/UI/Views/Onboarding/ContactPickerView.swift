@@ -9,6 +9,9 @@ import SwiftUI
 
 struct ContactPickerView: View {
     @ObservedObject var viewModel: OnboardingViewModel
+    @EnvironmentObject private var purchaseManager: PurchaseManager
+
+    @State private var paywallTrigger: PaywallTrigger?
 
     private var groupedContacts: [(String, [ContactSummary])] {
         let grouped = Dictionary(grouping: viewModel.filteredContacts) { contact -> String in
@@ -90,11 +93,20 @@ struct ContactPickerView: View {
             }
 
             Button("Continue") {
-                viewModel.continueFromContactPicker()
+                if ContactCapGate.wouldExceedFreeLimit(currentTrackedCount: 0, adding: viewModel.selectedContactIds.count, isPro: purchaseManager.isPro) {
+                    AnalyticsService.track("pro.cap_blocked", parameters: ["source": "onboarding", "attempted": String(viewModel.selectedContactIds.count)])
+                    paywallTrigger = PaywallTrigger(source: "cap_onboarding")
+                } else {
+                    viewModel.continueFromContactPicker()
+                }
             }
             .buttonStyle(OnboardingPrimaryButtonStyle())
             .padding(.horizontal)
             .padding(.bottom)
+        }
+        .sheet(item: $paywallTrigger) { trigger in
+            PaywallView(source: trigger.source)
+                .environmentObject(purchaseManager)
         }
     }
 }

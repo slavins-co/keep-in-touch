@@ -10,7 +10,9 @@ import UniformTypeIdentifiers
 
 struct DataSettingsView: View {
     @ObservedObject var viewModel: SettingsViewModel
+    @EnvironmentObject private var purchaseManager: PurchaseManager
 
+    @State private var paywallTrigger: PaywallTrigger?
     @State private var shareItem: ShareItem?
     @State private var showFilePicker = false
     @State private var importPreview: ImportPreview?
@@ -109,6 +111,10 @@ struct DataSettingsView: View {
         } message: {
             Text(importResultMessage)
         }
+        .sheet(item: $paywallTrigger) { trigger in
+            PaywallView(source: trigger.source)
+                .environmentObject(purchaseManager)
+        }
     }
 
     // MARK: - Backup
@@ -157,7 +163,12 @@ struct DataSettingsView: View {
             }
 
             Button {
-                showFilePicker = true
+                if purchaseManager.isPro {
+                    showFilePicker = true
+                } else {
+                    AnalyticsService.track("pro.gate_tapped", parameters: ["source": "import"])
+                    paywallTrigger = PaywallTrigger(source: "import")
+                }
             } label: {
                 Label("Import Contacts", systemImage: "square.and.arrow.down")
             }

@@ -275,10 +275,24 @@ struct SettingsView: View {
 
     private var insightsSection: some View {
         Section("Insights") {
-            NavigationLink {
-                StatsView(viewModel: StatsViewModel())
-            } label: {
-                Label("Stats & insights", systemImage: "chart.bar")
+            if purchaseManager.isPro {
+                NavigationLink {
+                    StatsView(viewModel: StatsViewModel())
+                } label: {
+                    Label("Stats & insights", systemImage: "chart.bar")
+                }
+            } else {
+                Button {
+                    AnalyticsService.track("pro.gate_tapped", parameters: ["source": "stats"])
+                    paywallTrigger = PaywallTrigger(source: "stats")
+                } label: {
+                    HStack {
+                        Label("Stats & insights", systemImage: "chart.bar")
+                        Spacer()
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
+                }
             }
         }
     }
