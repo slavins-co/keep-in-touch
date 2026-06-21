@@ -49,6 +49,7 @@ Compact prevention rules. Full narratives archived in `tasks/lessons-archive.md`
 - **CoreData renamingIdentifier for attribute renames**: Add `renamingIdentifier="oldName"` to renamed attributes in versioned models. Without it, CoreData treats rename as delete+add, losing data
 - **Never auto-delete persistent store on failure**: Surface migration failures to the user with explicit confirmation before destructive recovery. Never silently delete the SQLite store
 - **Demo mode must apply immediately**: Settings toggles that affect data must trigger the data operation (seed/remove) immediately, not just update the settings flag
+- **Core Data model versions are NOT in pbxproj — adding vN+1 needs no project edit**: The `.xcdatamodeld` lives in a `PBXFileSystemSynchronizedRootGroup`, so individual `_vN.xcdatamodel` versions are picked up from disk automatically (v2–v10 aren't listed in pbxproj yet migrate fine). To add a version: create `StayInTouch_vN.xcdatamodel/contents` (copy prior version's `contents` verbatim, add only the new optional+defaulted attributes), then bump `.xccurrentversion`'s `_XCCurrentVersionName`. No `XCVersionGroup`/pbxproj edit. New optional attrs with `defaultValueString` = inferred lightweight migration; `CoreDataTestStack` loads the current version from the `.momd` so round-trip tests see it automatically (#351 PR1)
 
 ## Contacts Framework
 
