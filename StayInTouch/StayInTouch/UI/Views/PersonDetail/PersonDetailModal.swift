@@ -17,6 +17,7 @@ enum PersonDetailSheet: Identifiable {
     case snoozeDatePicker
     case customDueDatePicker
     case birthdayEditor
+    case paywall(source: String)
 
     var id: String {
         switch self {
@@ -29,6 +30,7 @@ enum PersonDetailSheet: Identifiable {
         case .snoozeDatePicker: return "snoozeDatePicker"
         case .customDueDatePicker: return "customDueDatePicker"
         case .birthdayEditor: return "birthdayEditor"
+        case .paywall(let source): return "paywall-\(source)"
         }
     }
 }
@@ -60,4 +62,5 @@ enum PersonSettingsAction {
     case snoozeDatePicker(initialDate: Date)
     case customDueDatePicker(initialDate: Date)
     case birthdayEditor
+    case requestPause
 }

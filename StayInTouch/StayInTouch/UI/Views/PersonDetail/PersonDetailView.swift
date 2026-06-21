@@ -12,6 +12,7 @@ struct PersonDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dependencies) private var dependencies
+    @EnvironmentObject private var purchaseManager: PurchaseManager
 
     @StateObject private var viewModel: PersonDetailViewModel
 
@@ -250,6 +251,8 @@ struct PersonDetailView: View {
             BirthdayEditorSheet(birthday: viewModel.displayBirthday,
                                 onSave: { viewModel.setBirthday($0); activeSheet = nil },
                                 onClear: { viewModel.setBirthday(nil); activeSheet = nil })
+        case .paywall(let source):
+            PaywallView(source: source).environmentObject(purchaseManager)
         }
     }
 
@@ -299,8 +302,22 @@ struct PersonDetailView: View {
         case .removeConfirm: activeAlert = .removeConfirm
         case .reminderTimePicker: activeSheet = .reminderTimePicker
         case .snoozeDatePicker(let d): pickedSnoozeDate = d; activeSheet = .snoozeDatePicker
-        case .customDueDatePicker(let d): pickedCustomDueDate = d; activeSheet = .customDueDatePicker
+        case .customDueDatePicker(let d):
+            if purchaseManager.isPro {
+                pickedCustomDueDate = d
+                activeSheet = .customDueDatePicker
+            } else {
+                AnalyticsService.track("pro.gate_tapped", parameters: ["source": "custom_due_date"])
+                activeSheet = .paywall(source: "custom_due_date")
+            }
         case .birthdayEditor: activeSheet = .birthdayEditor
+        case .requestPause:
+            if purchaseManager.isPro {
+                viewModel.togglePause()
+            } else {
+                AnalyticsService.track("pro.gate_tapped", parameters: ["source": "pause"])
+                activeSheet = .paywall(source: "pause")
+            }
         }
     }
 

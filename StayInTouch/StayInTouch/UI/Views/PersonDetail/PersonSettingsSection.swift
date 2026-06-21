@@ -305,7 +305,7 @@ struct PersonSettingsSection: View {
             get: { viewModel.person.isPaused },
             set: { newValue in
                 if newValue {
-                    viewModel.togglePause()
+                    onAction(.requestPause)
                 } else {
                     onAction(.resumePrompt)
                 }
