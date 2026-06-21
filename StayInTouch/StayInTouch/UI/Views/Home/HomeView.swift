@@ -12,6 +12,7 @@ import TipKit
 struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
     @ObservedObject var selectionCoordinator: SelectionCoordinator
+    @EnvironmentObject private var purchaseManager: PurchaseManager
     var recentGroups: [RecentGroup]
     var selectPerson: (Person) -> Void
     @StateObject private var settingsViewModel = SettingsViewModel()
@@ -76,6 +77,7 @@ struct HomeView: View {
         .sheet(isPresented: $showNewContactsPicker) {
             NewContactsPickerView(
                 contacts: settingsViewModel.pendingNewContacts,
+                currentTrackedCount: settingsViewModel.trackedContactCount,
                 onImport: { selected in
                     Task {
                         await settingsViewModel.importSelectedContacts(selected)
@@ -87,6 +89,7 @@ struct HomeView: View {
                     showNewContactsPicker = false
                 }
             )
+            .environmentObject(purchaseManager)
         }
         .contactAccessAlerts(
             showNoNewContacts: $showNoNewContactsAlert,

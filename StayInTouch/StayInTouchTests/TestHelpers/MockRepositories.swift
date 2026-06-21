@@ -66,6 +66,12 @@ final class MockPersonRepository: PersonRepository, @unchecked Sendable {
         snoozedCountCallCount += 1
         return people.filter { $0.isTracked && ($0.snoozedUntil.map { $0 > referenceDate } ?? false) }.count
     }
+
+    var trackedCountCallCount = 0
+    func trackedCount() -> Int {
+        trackedCountCallCount += 1
+        return people.filter { $0.isTracked && !$0.isDemoData }.count
+    }
 }
 
 // MARK: - MockCadenceRepository
@@ -202,7 +208,8 @@ enum TestFactory {
         customDueDate: Date? = nil,
         birthday: Birthday? = nil,
         birthdayNotificationsEnabled: Bool = true,
-        cnIdentifier: String? = nil
+        cnIdentifier: String? = nil,
+        isDemoData: Bool = false
     ) -> Person {
         Person(
             identity: Person.Identity(
@@ -231,7 +238,7 @@ enum TestFactory {
             ),
             metadata: Person.Metadata(
                 contactUnavailable: false,
-                isDemoData: false,
+                isDemoData: isDemoData,
                 createdAt: Date(),
                 modifiedAt: Date(),
                 sortOrder: 0

@@ -9,7 +9,9 @@ import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
+    @EnvironmentObject private var purchaseManager: PurchaseManager
 
+    @State private var paywallTrigger: PaywallTrigger?
     @State private var showNoNewContactsAlert = false
     @State private var showLimitedAccessAlert = false
     @State private var showContactsSettingsAlert = false
@@ -23,6 +25,7 @@ struct SettingsView: View {
 
     var body: some View {
         List {
+            proSection
             appearanceSection
             peopleSection
             notificationsSection
@@ -71,6 +74,7 @@ struct SettingsView: View {
             case .pickingContacts:
                 NewContactsPickerView(
                     contacts: viewModel.pendingNewContacts,
+                    currentTrackedCount: viewModel.trackedContactCount,
                     onImport: { selected in
                         pendingImportStep = .assigningGroups(selected: selected)
                         contactImportStep = nil
@@ -81,6 +85,7 @@ struct SettingsView: View {
                         contactImportStep = nil
                     }
                 )
+                .environmentObject(purchaseManager)
             case .assigningGroups(let selected):
                 SettingsCadenceAssignmentView(
                     contacts: selected,
@@ -115,9 +120,45 @@ struct SettingsView: View {
                 )
             }
         }
+        .sheet(item: $paywallTrigger) { trigger in
+            PaywallView(source: trigger.source)
+                .environmentObject(purchaseManager)
+        }
         .onAppear { viewModel.load() }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
             viewModel.load()
+        }
+    }
+
+    private var proSection: some View {
+        Section {
+            if purchaseManager.isPro {
+                HStack {
+                    Label("Keep In Touch Pro", systemImage: "checkmark.seal.fill")
+                        .foregroundStyle(DS.Colors.accent)
+                    Spacer()
+                    Text("Active")
+                        .font(DS.Typography.metadata)
+                        .foregroundStyle(DS.Colors.secondaryText)
+                }
+            } else {
+                Button {
+                    paywallTrigger = PaywallTrigger(source: "settings_upgrade")
+                } label: {
+                    Label("Unlock Keep In Touch Pro", systemImage: "star.circle.fill")
+                }
+            }
+
+            Button {
+                Task { await purchaseManager.restore() }
+            } label: {
+                Label("Restore Purchases", systemImage: "arrow.clockwise")
+            }
+            .accessibilityHint("Restores a previous Pro purchase")
+        } header: {
+            if !purchaseManager.isPro {
+                Text("Upgrade")
+            }
         }
     }
 

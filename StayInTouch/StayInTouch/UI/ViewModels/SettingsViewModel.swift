@@ -19,6 +19,7 @@ final class SettingsViewModel: ObservableObject, ViewModelErrorHandling {
     @Published private(set) var groupsCount: Int = 0
     @Published private(set) var pausedCount: Int = 0
     @Published private(set) var snoozedCount: Int = 0
+    @Published private(set) var trackedContactCount: Int = 0
     @Published var showNotificationsSettingsAlert = false
     @Published var pendingNewContacts: [ContactSummary] = []
     @Published var contactAccessDenied = false
@@ -102,6 +103,7 @@ final class SettingsViewModel: ObservableObject, ViewModelErrorHandling {
         groupsCount = groupRepository.count()
         pausedCount = personRepository.pausedCount()
         snoozedCount = personRepository.snoozedCount(referenceDate: Date())
+        trackedContactCount = personRepository.trackedCount()
     }
 
     func setTheme(_ theme: Theme) {

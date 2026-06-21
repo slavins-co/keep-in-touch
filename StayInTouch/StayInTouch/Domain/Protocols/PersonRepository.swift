@@ -31,4 +31,10 @@ protocol PersonRepository: Sendable {
     /// "active vs expired" depends on now, unlike `pausedCount()`. Backed
     /// by `count(for:)` — no row materialization.
     func snoozedCount(referenceDate: Date) -> Int
+
+    /// Returns the number of tracked, non-demo people — the count the free-tier
+    /// contact cap is measured against (#351). Paused people are included (a
+    /// paused contact still occupies a tracked slot). Backed by `count(for:)` —
+    /// no row materialization.
+    func trackedCount() -> Int
 }
