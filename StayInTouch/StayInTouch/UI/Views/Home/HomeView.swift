@@ -77,7 +77,8 @@ struct HomeView: View {
         .sheet(isPresented: $showNewContactsPicker) {
             NewContactsPickerView(
                 contacts: settingsViewModel.pendingNewContacts,
-                currentTrackedCount: settingsViewModel.trackedContactCount,
+                currentTrackedCount: { settingsViewModel.liveTrackedCount() },
+                capSource: "home",
                 onImport: { selected in
                     Task {
                         await settingsViewModel.importSelectedContacts(selected)

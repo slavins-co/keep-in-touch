@@ -12,7 +12,11 @@ struct NewContactsPickerView: View {
     @EnvironmentObject private var purchaseManager: PurchaseManager
 
     let contacts: [ContactSummary]
-    let currentTrackedCount: Int
+    /// Live count of currently-tracked people, evaluated at Import time (not a
+    /// snapshot) so the cap can't be bypassed by adds made after presentation.
+    let currentTrackedCount: () -> Int
+    /// Analytics source for the cap/paywall, e.g. "settings" or "home".
+    let capSource: String
     let onImport: ([ContactSummary]) -> Void
     let onCancel: () -> Void
 
@@ -85,15 +89,15 @@ struct NewContactsPickerView: View {
                     Button("Import") {
                         let selected = contacts.filter { selection.contains($0.identifier) }
                         if ContactCapGate.wouldExceedFreeLimit(
-                            currentTrackedCount: currentTrackedCount,
+                            currentTrackedCount: currentTrackedCount(),
                             adding: selected.count,
                             isPro: purchaseManager.isPro
                         ) {
                             AnalyticsService.track(
                                 "pro.cap_blocked",
-                                parameters: ["trigger": "settings", "attempted": String(selected.count)]
+                                parameters: ["source": capSource, "attempted": String(selected.count)]
                             )
-                            paywallTrigger = PaywallTrigger(source: "cap_settings")
+                            paywallTrigger = PaywallTrigger(source: "cap_\(capSource)")
                         } else {
                             onImport(selected)
                             dismiss()

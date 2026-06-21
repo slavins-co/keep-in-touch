@@ -13,8 +13,9 @@ enum ProConfig {
     /// `.storekit` configuration used for development/testing.
     static let proProductID = "slavins.co.KeepInTouch.pro"
 
-    /// Free-tier ceiling: the number of active tracked contacts a non-Pro user may
-    /// keep. Counts `isTracked && !isDemoData`. Pause is a Pro feature, so paused
-    /// contacts cannot exist for free users and never affect this count.
+    /// Free-tier ceiling: the number of tracked contacts a non-Pro user may keep.
+    /// Counts `isTracked && !isDemoData`, paused INCLUDED — a paused contact still
+    /// occupies a slot (matters for a grandfathered/ex-Pro user, since pause is a
+    /// Pro feature and free users can't create paused contacts in the first place).
     static let freeContactLimit = 12
 }

@@ -36,8 +36,10 @@ final class ContactCapTests: XCTestCase {
         XCTAssertTrue(ContactCapGate.wouldExceedFreeLimit(currentTrackedCount: 12, adding: 1, isPro: false))
     }
 
-    func testCap_onboardingBatchOverLimit_blocked() {
-        // Onboarding: trackedCount == 0, selecting 13 should be blocked.
+    func testCap_batchFromEmptyOverLimit_blocked() {
+        // From an empty base (e.g. trackedCount == 0), a batch of 13 is blocked,
+        // 12 is allowed. (Pure-function coverage; the onboarding *flow* gate lands
+        // in a later PR.)
         XCTAssertTrue(ContactCapGate.wouldExceedFreeLimit(currentTrackedCount: 0, adding: 13, isPro: false))
         XCTAssertFalse(ContactCapGate.wouldExceedFreeLimit(currentTrackedCount: 0, adding: 12, isPro: false))
     }

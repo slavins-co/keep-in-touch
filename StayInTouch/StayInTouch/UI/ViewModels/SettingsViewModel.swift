@@ -19,7 +19,6 @@ final class SettingsViewModel: ObservableObject, ViewModelErrorHandling {
     @Published private(set) var groupsCount: Int = 0
     @Published private(set) var pausedCount: Int = 0
     @Published private(set) var snoozedCount: Int = 0
-    @Published private(set) var trackedContactCount: Int = 0
     @Published var showNotificationsSettingsAlert = false
     @Published var pendingNewContacts: [ContactSummary] = []
     @Published var contactAccessDenied = false
@@ -103,7 +102,13 @@ final class SettingsViewModel: ObservableObject, ViewModelErrorHandling {
         groupsCount = groupRepository.count()
         pausedCount = personRepository.pausedCount()
         snoozedCount = personRepository.snoozedCount(referenceDate: Date())
-        trackedContactCount = personRepository.trackedCount()
+    }
+
+    /// Live count of tracked, non-demo people for the contact cap. Read at the
+    /// moment of an add (not a cached snapshot) so the cap can't be bypassed by
+    /// adding contacts after the last `load()`. See #351.
+    func liveTrackedCount() -> Int {
+        personRepository.trackedCount()
     }
 
     func setTheme(_ theme: Theme) {

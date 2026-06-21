@@ -74,7 +74,8 @@ struct SettingsView: View {
             case .pickingContacts:
                 NewContactsPickerView(
                     contacts: viewModel.pendingNewContacts,
-                    currentTrackedCount: viewModel.trackedContactCount,
+                    currentTrackedCount: { viewModel.liveTrackedCount() },
+                    capSource: "settings",
                     onImport: { selected in
                         pendingImportStep = .assigningGroups(selected: selected)
                         contactImportStep = nil
