@@ -75,6 +75,23 @@ enum ContactsFetcher {
         }
     }
 
+    /// True only when the app already holds full or limited Contacts access.
+    ///
+    /// Passive/background syncs must check this before reading: enumerating
+    /// contacts while the status is `.notDetermined` triggers the system
+    /// permission prompt and *blocks* until the user answers it. In a headless
+    /// context (CI) there is nobody to answer, so the call hangs until the job
+    /// times out (#342). Explicit, user-initiated flows ask via
+    /// `requestAccess()` instead; a sync must never surface the prompt.
+    static var isAuthorized: Bool {
+        switch CNContactStore.authorizationStatus(for: .contacts) {
+        case .authorized, .limited:
+            return true
+        default:
+            return false
+        }
+    }
+
     static func fetchAll() throws -> [ContactSummary] {
         // Check permission status first
         let status = CNContactStore.authorizationStatus(for: .contacts)
