@@ -37,4 +37,15 @@ struct AppSettings: Identifiable, Equatable, Sendable {
     var tutorialCompleted: Bool = false
     var tutorialVersion: String? = nil
     var lastSeenAppVersion: String? = nil
+
+    /// Pro entitlement granted free to the pre-monetization cohort (installs that
+    /// predate the freemium build). Set once at first launch of the IAP build via
+    /// `GrandfatherEvaluator`; never re-derived. Local + offline-safe — a
+    /// grandfathered user is Pro even with no network and StoreKit unavailable.
+    var isGrandfathered: Bool = false
+
+    /// Write-once guard for the grandfather decision. Once `true`, the grandfather
+    /// status is frozen and never re-evaluated (so a fresh install that later
+    /// completes onboarding is not retroactively grandfathered).
+    var proStatusEvaluated: Bool = false
 }

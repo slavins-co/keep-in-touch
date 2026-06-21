@@ -215,6 +215,12 @@ final class CoreDataStack: ObservableObject, @unchecked Sendable {
             let seeder = DefaultDataSeeder(context: context)
             try seeder.seedIfNeeded()
             AppLogger.logInfo("Successfully seeded default data", category: AppLogger.coreData)
+
+            // The AppSettings row now exists (freshly seeded or pre-existing).
+            // Evaluate the one-time Pro grandfather decision and refresh the App
+            // Group entitlement cache. See #351.
+            let settingsRepository = CoreDataAppSettingsRepository(context: context)
+            EntitlementBootstrap(settingsRepository: settingsRepository).run()
         } catch {
             AppLogger.logError(error, category: AppLogger.coreData, context: "CoreDataStack.seedDefaults")
             AppLogger.logWarning("App will continue without default groups/tags. User can create them manually.", category: AppLogger.coreData)

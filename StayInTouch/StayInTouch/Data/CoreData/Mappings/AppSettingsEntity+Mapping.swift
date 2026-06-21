@@ -31,7 +31,9 @@ extension AppSettingsEntity {
             appVersion: appVersion ?? "",
             tutorialCompleted: tutorialCompleted,
             tutorialVersion: tutorialVersion,
-            lastSeenAppVersion: lastSeenAppVersion
+            lastSeenAppVersion: lastSeenAppVersion,
+            isGrandfathered: isGrandfathered,
+            proStatusEvaluated: proStatusEvaluated
         )
     }
 
@@ -58,5 +60,7 @@ extension AppSettingsEntity {
         tutorialCompleted = settings.tutorialCompleted
         tutorialVersion = settings.tutorialVersion
         lastSeenAppVersion = settings.lastSeenAppVersion
+        isGrandfathered = settings.isGrandfathered
+        proStatusEvaluated = settings.proStatusEvaluated
     }
 }
