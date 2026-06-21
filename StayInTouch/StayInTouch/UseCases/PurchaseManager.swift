@@ -125,6 +125,7 @@ final class PurchaseManager: ObservableObject {
             }
         } catch {
             statusMessage = "Restore couldn't be completed. Please try again."
+            AnalyticsService.track("pro.restore_failed")
         }
     }
 }
