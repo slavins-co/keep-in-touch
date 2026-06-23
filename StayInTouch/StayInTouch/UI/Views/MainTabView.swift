@@ -158,6 +158,14 @@ struct MainTabView: View {
             viewModel.selectedCadenceId = nil
             viewModel.selectedGroupId = nil
             viewModel.applyFilters()
+        case .paywall:
+            deepLinkRouter.selectedTab = 0
+            // Guard against an already-Pro user tapping a stale locked widget
+            // (purchased, but its timeline hadn't reloaded yet) — never flash
+            // the paywall at someone who's already entitled.
+            guard !purchaseManager.isPro else { return }
+            AnalyticsService.track("pro.gate_tapped", parameters: ["source": "widget"])
+            paywallTrigger = PaywallTrigger(source: "widget")
         }
     }
 

@@ -78,15 +78,23 @@ final class PurchaseManagerTests: XCTestCase {
         var last: Bool? { values.last }
     }
 
+    private final class ReloadRecorder {
+        var count = 0
+    }
+
     private func makeManager(
         gateway: FakeGateway,
         grandfathered: Bool,
-        recorder: CacheRecorder
+        recorder: CacheRecorder,
+        reloadRecorder: ReloadRecorder? = nil
     ) -> PurchaseManager {
         PurchaseManager(
             gateway: gateway,
             settingsRepository: StubSettingsRepository(grandfathered: grandfathered),
-            writeCache: { recorder.values.append($0) }
+            writeCache: { recorder.values.append($0) },
+            // Always stub the widget reload so tests never touch WidgetCenter;
+            // pass a recorder to assert on it.
+            reloadWidgets: { reloadRecorder?.count += 1 }
         )
     }
 
@@ -135,6 +143,43 @@ final class PurchaseManagerTests: XCTestCase {
 
         XCTAssertTrue(manager.isPro)
         XCTAssertEqual(recorder.last, true)
+    }
+
+    // MARK: - widget reload on entitlement change (#351 PR6)
+
+    func testRefresh_entitlementBecomesPro_reloadsWidgets() async {
+        let gateway = FakeGateway()
+        gateway.owned = [ProConfig.proProductID]
+        let reload = ReloadRecorder()
+        // Seeded isPro = false (not grandfathered); refresh flips it to true.
+        let manager = makeManager(gateway: gateway, grandfathered: false, recorder: CacheRecorder(), reloadRecorder: reload)
+
+        await manager.refreshEntitlements()
+
+        XCTAssertTrue(manager.isPro)
+        XCTAssertEqual(reload.count, 1, "Flipping to Pro must reload widget timelines once")
+    }
+
+    func testRefresh_entitlementUnchangedFree_doesNotReloadWidgets() async {
+        let reload = ReloadRecorder()
+        // Not grandfathered, owns nothing → stays false. No change, no reload.
+        let manager = makeManager(gateway: FakeGateway(), grandfathered: false, recorder: CacheRecorder(), reloadRecorder: reload)
+
+        await manager.refreshEntitlements()
+
+        XCTAssertFalse(manager.isPro)
+        XCTAssertEqual(reload.count, 0)
+    }
+
+    func testRefresh_grandfatheredAlreadyPro_doesNotReloadWidgets() async {
+        let reload = ReloadRecorder()
+        // Seeded isPro = true; refresh recomputes true → no change, no thrash.
+        let manager = makeManager(gateway: FakeGateway(), grandfathered: true, recorder: CacheRecorder(), reloadRecorder: reload)
+
+        await manager.refreshEntitlements()
+
+        XCTAssertTrue(manager.isPro)
+        XCTAssertEqual(reload.count, 0, "An already-Pro user must not reload widgets on every launch refresh")
     }
 
     // MARK: - purchase

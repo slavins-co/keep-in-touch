@@ -12,6 +12,9 @@ import Foundation
 enum DeepLinkRoute: Equatable, Sendable {
     case overdue
     case person(UUID)
+    /// Opens the Pro paywall. Used by the upsell placeholder shown on Pro-only
+    /// widgets (lock-screen accessories, birthday widgets) for free users.
+    case paywall
 
     static let scheme = "keepintouch"
 
@@ -30,6 +33,8 @@ enum DeepLinkRoute: Equatable, Sendable {
         case "person" where segments.count == 2:
             guard let id = UUID(uuidString: segments[1]) else { return nil }
             self = .person(id)
+        case "paywall" where segments.count == 1:
+            self = .paywall
         default:
             return nil
         }
@@ -44,6 +49,8 @@ enum DeepLinkRoute: Equatable, Sendable {
         case .person(let id):
             components.host = "person"
             components.path = "/\(id.uuidString)"
+        case .paywall:
+            components.host = "paywall"
         }
         // Safe: scheme + host (+ optional path) are always set above, so
         // URLComponents can always produce a valid URL here.

@@ -30,16 +30,19 @@ final class PurchaseManager: ObservableObject {
     private let gateway: StoreKitGateway
     private let settingsRepository: AppSettingsRepository
     private let writeCache: (Bool) -> Void
+    private let reloadWidgets: () -> Void
     private var updatesTask: Task<Void, Never>?
 
     init(
         gateway: StoreKitGateway,
         settingsRepository: AppSettingsRepository,
-        writeCache: @escaping (Bool) -> Void = { EntitlementCache.write(isPro: $0) }
+        writeCache: @escaping (Bool) -> Void = { EntitlementCache.write(isPro: $0) },
+        reloadWidgets: @escaping () -> Void = WidgetRefresher.reloadAllTimelines
     ) {
         self.gateway = gateway
         self.settingsRepository = settingsRepository
         self.writeCache = writeCache
+        self.reloadWidgets = reloadWidgets
         // Seed from grandfather immediately so the UI is never briefly wrong
         // before entitlements load (and this path is offline-safe).
         self.isPro = settingsRepository.fetch()?.isGrandfathered ?? false
@@ -81,8 +84,14 @@ final class PurchaseManager: ObservableObject {
             isGrandfathered: isGrandfathered,
             hasProPurchase: owned.contains(ProConfig.proProductID)
         )
+        let changed = (pro != isPro)
         isPro = pro
         writeCache(pro)
+        // A StoreKit purchase/restore writes only the App Group cache — no Core
+        // Data save fires, so the repository-layer WidgetRefresher never runs.
+        // Reload here so Pro-only widgets flip locked↔unlocked. Only on a real
+        // change, to avoid thrashing widget timelines on every cold-launch refresh.
+        if changed { reloadWidgets() }
     }
 
     /// Purchase the Pro unlock.

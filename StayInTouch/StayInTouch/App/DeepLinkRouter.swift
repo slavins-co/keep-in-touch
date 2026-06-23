@@ -13,6 +13,8 @@ final class DeepLinkRouter: ObservableObject {
     enum Destination: Equatable {
         case person(UUID)
         case home
+        /// Present the Pro paywall (from a widget upsell tap).
+        case paywall
     }
 
     @Published var pending: Destination?
@@ -40,6 +42,8 @@ final class DeepLinkRouter: ObservableObject {
             pending = .home
         case .person(let id):
             pending = .person(id)
+        case .paywall:
+            pending = .paywall
         }
         return true
     }

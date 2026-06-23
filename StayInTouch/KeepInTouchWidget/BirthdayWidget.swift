@@ -58,15 +58,23 @@ struct BirthdayWidgetEntryView: View {
     @Environment(\.widgetFamily) private var family
     var entry: BirthdayEntry
 
+    /// Birthday widgets are Pro-only. Free users see the upsell placeholder.
+    /// Reads the App Group cache synchronously; defaults to locked on any failure.
+    private var isPro: Bool { EntitlementCache.readIsPro() }
+
     var body: some View {
         Group {
-            switch family {
-            case .systemSmall:
-                BirthdaySmallView(birthdays: entry.birthdays)
-            case .systemMedium:
-                BirthdayMediumView(birthdays: entry.birthdays)
-            default:
-                BirthdaySmallView(birthdays: entry.birthdays)
+            if !isPro {
+                WidgetProUpsellView()
+            } else {
+                switch family {
+                case .systemSmall:
+                    BirthdaySmallView(birthdays: entry.birthdays)
+                case .systemMedium:
+                    BirthdayMediumView(birthdays: entry.birthdays)
+                default:
+                    BirthdaySmallView(birthdays: entry.birthdays)
+                }
             }
         }
         .widgetAppTheme(entry.themeOverride)
