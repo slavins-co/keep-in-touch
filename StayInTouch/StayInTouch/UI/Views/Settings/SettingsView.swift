@@ -25,13 +25,21 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            proSection
+            // Pro upgrade sits up top while it's a call to action; once unlocked
+            // it drops to the bottom (just the "Active" + Restore rows) so it's
+            // out of the way.
+            if !purchaseManager.isPro {
+                proSection
+            }
             appearanceSection
             peopleSection
             notificationsSection
             insightsSection
             dataSection
             aboutSection
+            if purchaseManager.isPro {
+                proSection
+            }
             dangerZoneSection
         }
         .overlay(alignment: .top) {
@@ -205,29 +213,61 @@ struct SettingsView: View {
                 }
             }
 
-            NavigationLink {
-                PausedContactsView()
-            } label: {
-                HStack {
-                    Image(systemName: "pause.circle.fill")
-                        .foregroundStyle(DS.Colors.secondaryText)
-                    Text("Paused Contacts")
-                    Spacer()
-                    Text("\(viewModel.pausedCount)")
-                        .foregroundStyle(DS.Colors.secondaryText)
+            if purchaseManager.isPro {
+                NavigationLink {
+                    PausedContactsView()
+                } label: {
+                    HStack {
+                        Image(systemName: "pause.circle.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                        Text("Paused Contacts")
+                        Spacer()
+                        Text("\(viewModel.pausedCount)")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
+                }
+            } else {
+                Button {
+                    AnalyticsService.track("pro.gate_tapped", parameters: ["source": "paused_contacts"])
+                    paywallTrigger = PaywallTrigger(source: "paused_contacts")
+                } label: {
+                    HStack {
+                        Image(systemName: "pause.circle.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                        Text("Paused Contacts")
+                        Spacer()
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
                 }
             }
 
-            NavigationLink {
-                SnoozedContactsView()
-            } label: {
-                HStack {
-                    Image(systemName: "moon.zzz.fill")
-                        .foregroundStyle(DS.Colors.secondaryText)
-                    Text("Snoozed Contacts")
-                    Spacer()
-                    Text("\(viewModel.snoozedCount)")
-                        .foregroundStyle(DS.Colors.secondaryText)
+            if purchaseManager.isPro {
+                NavigationLink {
+                    SnoozedContactsView()
+                } label: {
+                    HStack {
+                        Image(systemName: "moon.zzz.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                        Text("Snoozed Contacts")
+                        Spacer()
+                        Text("\(viewModel.snoozedCount)")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
+                }
+            } else {
+                Button {
+                    AnalyticsService.track("pro.gate_tapped", parameters: ["source": "snoozed_contacts"])
+                    paywallTrigger = PaywallTrigger(source: "snoozed_contacts")
+                } label: {
+                    HStack {
+                        Image(systemName: "moon.zzz.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                        Text("Snoozed Contacts")
+                        Spacer()
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
                 }
             }
 

@@ -63,4 +63,6 @@ enum PersonSettingsAction {
     case customDueDatePicker(initialDate: Date)
     case birthdayEditor
     case requestPause
+    /// A locked (Pro) row was tapped by a non-Pro user — present the paywall.
+    case requestPaywall(source: String)
 }

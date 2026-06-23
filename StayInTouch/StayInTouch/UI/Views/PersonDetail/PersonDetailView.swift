@@ -302,22 +302,18 @@ struct PersonDetailView: View {
         case .removeConfirm: activeAlert = .removeConfirm
         case .reminderTimePicker: activeSheet = .reminderTimePicker
         case .snoozeDatePicker(let d): pickedSnoozeDate = d; activeSheet = .snoozeDatePicker
+        // Pro gating for these rows is owned by PersonSettingsSection (it shows
+        // the lock and routes non-Pro taps to `.requestPaywall`), so these
+        // handlers only run on the Pro path and just perform the action.
         case .customDueDatePicker(let d):
-            if purchaseManager.isPro {
-                pickedCustomDueDate = d
-                activeSheet = .customDueDatePicker
-            } else {
-                AnalyticsService.track("pro.gate_tapped", parameters: ["source": "custom_due_date"])
-                activeSheet = .paywall(source: "custom_due_date")
-            }
+            pickedCustomDueDate = d
+            activeSheet = .customDueDatePicker
         case .birthdayEditor: activeSheet = .birthdayEditor
         case .requestPause:
-            if purchaseManager.isPro {
-                viewModel.togglePause()
-            } else {
-                AnalyticsService.track("pro.gate_tapped", parameters: ["source": "pause"])
-                activeSheet = .paywall(source: "pause")
-            }
+            viewModel.togglePause()
+        case .requestPaywall(let source):
+            AnalyticsService.track("pro.gate_tapped", parameters: ["source": source])
+            activeSheet = .paywall(source: source)
         }
     }
 

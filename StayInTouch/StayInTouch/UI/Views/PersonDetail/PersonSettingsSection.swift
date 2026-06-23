@@ -10,6 +10,7 @@ struct PersonSettingsSection: View {
     @Binding var settingsExpanded: Bool
     var onAction: (PersonSettingsAction) -> Void
     @Environment(\.dependencies) private var dependencies
+    @EnvironmentObject private var purchaseManager: PurchaseManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -89,6 +90,46 @@ struct PersonSettingsSection: View {
 
     // MARK: - Settings Rows
 
+    // Pro-gated rows: free users see a lock and tapping opens the paywall.
+    // Unpause / clear-due-date stay free (they live on the active variants and
+    // on the resume-prompt path), so a refunded user is never trapped.
+
+    @ViewBuilder
+    private var settingsRowCustomDueDate: some View {
+        if purchaseManager.isPro {
+            settingsRowCustomDueDateActive
+        } else {
+            proLockedRow("Set A Reminder Date", source: "custom_due_date")
+        }
+    }
+
+    @ViewBuilder
+    private var settingsRowNotificationTime: some View {
+        if purchaseManager.isPro {
+            settingsRowNotificationTimeActive
+        } else {
+            proLockedRow("Custom Notification Time", source: "custom_notification_time")
+        }
+    }
+
+    @ViewBuilder
+    private var settingsRowSnooze: some View {
+        if purchaseManager.isPro {
+            settingsRowSnoozeActive
+        } else {
+            proLockedRow("Snooze", source: "snooze")
+        }
+    }
+
+    @ViewBuilder
+    private var settingsRowPauseTracking: some View {
+        if purchaseManager.isPro {
+            settingsRowPauseTrackingActive
+        } else {
+            proLockedRow("Pause Tracking", source: "pause")
+        }
+    }
+
     private var settingsRowFrequency: some View {
         Button { onAction(.changeCadence) } label: {
             HStack {
@@ -109,7 +150,7 @@ struct PersonSettingsSection: View {
         .buttonStyle(.plain)
     }
 
-    private var settingsRowCustomDueDate: some View {
+    private var settingsRowCustomDueDateActive: some View {
         HStack {
             Text("Set A Reminder Date")
                 .font(DS.Typography.settingsRowLabel)
@@ -140,7 +181,7 @@ struct PersonSettingsSection: View {
         .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
-    private var settingsRowSnooze: some View {
+    private var settingsRowSnoozeActive: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text("Snooze")
@@ -255,7 +296,7 @@ struct PersonSettingsSection: View {
         .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
-    private var settingsRowNotificationTime: some View {
+    private var settingsRowNotificationTimeActive: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             Button {
                 onAction(.reminderTimePicker)
@@ -300,7 +341,7 @@ struct PersonSettingsSection: View {
         .frame(minHeight: DS.Spacing.menuRowHeight)
     }
 
-    private var settingsRowPauseTracking: some View {
+    private var settingsRowPauseTrackingActive: some View {
         Toggle(isOn: Binding(
             get: { viewModel.person.isPaused },
             set: { newValue in
@@ -341,6 +382,28 @@ struct PersonSettingsSection: View {
     private func snooze(days: Int) {
         let date = Calendar.current.date(byAdding: .day, value: days, to: Date()) ?? Date()
         viewModel.snooze(until: date)
+    }
+
+    /// A Pro-locked settings row: shows the title with a trailing lock and routes
+    /// taps to the paywall. Mirrors the lock affordance used in Settings.
+    private func proLockedRow(_ title: String, source: String) -> some View {
+        Button {
+            onAction(.requestPaywall(source: source))
+        } label: {
+            HStack {
+                Text(title)
+                    .font(DS.Typography.settingsRowLabel)
+                    .foregroundStyle(DS.Colors.settingsItemLabel)
+                Spacer()
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundStyle(DS.Colors.settingsChevron)
+            }
+            .frame(minHeight: DS.Spacing.menuRowHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Unlocks with Pro")
     }
 
     private func reminderTimeLabel() -> String {

@@ -29,7 +29,7 @@ struct PaywallView: View {
         ("chart.bar.fill", "Stats & insights"),
         ("square.and.arrow.down", "Import from a backup file"),
         ("person.2.fill", "Group logging — log a whole hangout at once"),
-        ("slider.horizontal.3", "Unlimited custom cadences"),
+        ("slider.horizontal.3", "Unlimited custom frequencies"),
         ("calendar", "Custom due dates"),
         ("pause.circle", "Pause people"),
         ("rectangle.3.group.fill", "The full widget family"),
@@ -86,7 +86,7 @@ struct PaywallView: View {
                 .foregroundStyle(DS.Colors.primaryText)
                 .multilineTextAlignment(.center)
 
-            Text("Unlock unlimited people, plus stats, import, group logging, custom cadences, and the full widget family. Pay once. It's yours forever.")
+            Text("Unlock unlimited people, plus stats, import, group logging, custom frequencies, and the full widget family. Pay once. It's yours forever.")
                 .font(DS.Typography.notesBody)
                 .foregroundStyle(DS.Colors.secondaryText)
                 .multilineTextAlignment(.center)
@@ -122,6 +122,12 @@ struct PaywallView: View {
                     .font(DS.Typography.metadata)
                     .foregroundStyle(DS.Colors.secondaryText)
                     .multilineTextAlignment(.center)
+            }
+
+            if purchaseManager.proProduct != nil {
+                Text("Introductory launch price")
+                    .font(DS.Typography.metadata)
+                    .foregroundStyle(DS.Colors.accent)
             }
 
             unlockButton
