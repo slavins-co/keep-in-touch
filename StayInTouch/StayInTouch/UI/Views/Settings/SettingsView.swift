@@ -31,11 +31,11 @@ struct SettingsView: View {
             if !purchaseManager.isPro {
                 proSection
             }
-            appearanceSection
             peopleSection
             notificationsSection
             insightsSection
             dataSection
+            appearanceSection
             aboutSection
             if purchaseManager.isPro {
                 proSection
@@ -340,7 +340,7 @@ struct SettingsView: View {
     private var dataSection: some View {
         Section("Data") {
             NavigationLink(destination: DataSettingsView(viewModel: viewModel)) {
-                Label("Backup & Data", systemImage: "externaldrive.badge.icloud")
+                Label("Data & Privacy", systemImage: "lock.shield")
             }
         }
     }
@@ -351,13 +351,6 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section {
-            Toggle(isOn: Binding(
-                get: { viewModel.settings.analyticsEnabled },
-                set: { viewModel.setAnalyticsEnabled($0) }
-            )) {
-                Label("Anonymous Usage Analytics", systemImage: "shield.checkered")
-            }
-
             Button {
                 viewModel.replayTutorial()
             } label: {
@@ -378,19 +371,17 @@ struct SettingsView: View {
         } header: {
             Text("About")
         } footer: {
-            VStack(spacing: DS.Spacing.md) {
-                Text("Your relationship data lives on your device and is never sent to us. Anonymous usage statistics help us improve the app.")
-                VStack(spacing: DS.Spacing.sm) {
-                    Text("Keep In Touch \(appVersion)")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(DS.Colors.secondaryText)
-                    Text("Privacy-first personal CRM")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(DS.Colors.secondaryText)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, DS.Spacing.sm)
+            // Privacy story now lives in Data & Privacy; About keeps just the
+            // version + tagline.
+            VStack(spacing: DS.Spacing.sm) {
+                Text("Keep In Touch \(appVersion)")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Colors.secondaryText)
+                Text("Privacy-first personal CRM")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Colors.secondaryText)
             }
+            .frame(maxWidth: .infinity)
         }
     }
 

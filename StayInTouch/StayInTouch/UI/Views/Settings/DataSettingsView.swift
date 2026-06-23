@@ -28,10 +28,11 @@ struct DataSettingsView: View {
         List {
             backupSection
             exportImportSection
+            privacySection
         }
         .listStyle(.insetGrouped)
         .tint(DS.Colors.accent)
-        .navigationTitle("Backup & Data")
+        .navigationTitle("Data & Privacy")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $shareItem) { item in
             ShareSheet(items: item.urls) {
@@ -183,6 +184,33 @@ struct DataSettingsView: View {
             }
         } header: {
             Text("Export & Import")
+        }
+    }
+
+    // MARK: - Privacy
+
+    /// Hosted privacy policy (GitHub Pages from `main/docs`; same URL set in
+    /// App Store Connect). A hardcoded, known-valid literal — safe to unwrap.
+    private static let privacyPolicyURL = URL(string: "https://slavins-co.github.io/keep-in-touch/privacy-policy")!
+
+    private var privacySection: some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { viewModel.settings.analyticsEnabled },
+                set: { viewModel.setAnalyticsEnabled($0) }
+            )) {
+                Label("Anonymous Usage Analytics", systemImage: "shield.checkered")
+            }
+
+            Link(destination: Self.privacyPolicyURL) {
+                Label("Privacy Policy", systemImage: "hand.raised.fill")
+            }
+        } header: {
+            Text("Privacy")
+        } footer: {
+            Text("Your relationship data lives on your device and is never sent to us. Anonymous usage statistics (no names, no contact data) help improve the app — turn them off anytime.")
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Colors.secondaryText)
         }
     }
 }
