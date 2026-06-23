@@ -54,6 +54,28 @@ Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architect
 
 ---
 
+## Completed — Session 2026-06-21 → 2026-06-23 (Issue #351: Freemium / Pro unlock)
+
+Shipped the freemium model: 12-contact free tier + one-time non-consumable **Pro** unlock (StoreKit 2). Built across 6 stages, bundled into a single umbrella PR **#359** and squash-merged to `main` (commit `3f26716`). Grandfathered TestFlight users get Pro free via a write-once flag. Device QA passed (pre + post purchase). Both `/code-review high` + `/security-review` ran on the full feature diff vs main → PASS.
+
+- [x] **Stage 1** Entitlement foundation — Core Data v11 (`isGrandfathered`/`proStatusEvaluated`), `GrandfatherEvaluator`, `Entitlements.isPro`, App Group `EntitlementCache`, `EntitlementBootstrap`, `ProConfig`
+- [x] **Stage 2** StoreKit 2 — `StoreKitGateway` seam + `LiveStoreKitGateway`, `@MainActor PurchaseManager` (authoritative cache writer), `Configuration.storekit`
+- [x] **Stage 3** Paywall + 12-contact cap — `PaywallView`/`PaywallTrigger`, `ContactCapGate`, `PersonRepository.trackedCount()`
+- [x] **Stage 4** Feature gates — onboarding cap, stats, file import, bulk logging
+- [x] **Stage 5** In-detail gates — pause, custom due dates, custom cadences, snooze, custom notif time (SET gated; clear/unpause/undo stay free — never trap an ex-Pro user)
+- [x] **Stage 6 (PR6)** Widget gates — birthday + lock-screen/StandBy widgets are Pro (upsell placeholder + `keepintouch://paywall`); Overdue home widget stays free; `PurchaseManager` reloads widgets on entitlement change
+
+### Lessons captured from #351
+- StoreKit entitlement changes need an explicit widget reload (repo-layer `WidgetRefresher` only fires on Core Data saves)
+- Gate Pro widgets in the entry view, not the provider (`supportedFamilies` is compile-time static)
+- Single-merge umbrella PR pattern for a stacked feature; a required CI check with no producing workflow blocks all merges (needs `--admin`)
+
+### Follow-ups deferred from #351
+- [ ] **#360** Fix stale widget-accent API comment in `OverdueLockScreenWidget` (tech debt, comment-only)
+- [ ] **#353** Manual $7.99 → $9.99 price cutover (ASC, no app logic)
+- [ ] **Manual prereq (pre-release)** Create ASC non-consumable IAP `slavins.co.KeepInTouch.pro` ($7.99, Family Sharing on) + active Paid Apps Agreement
+- [ ] **#349** Land the CI pipeline — still open; needs one `--admin` merge to break the required-check deadlock on `main` (every PR to main is BLOCKED until then)
+
 ## Completed — Session 2026-05-27 → 2026-05-28 (Issue #302: Tech-debt audit sweep)
 
 Closed the full `/simplify` audit (#302). 13 child issues (#307-#319), 12 substantive PRs + 1 Swift-6 hotfix merged; #319 closed without a PR (findings resolved by prior waves or schema-blocked). North star held: zero observable behavior change, every PR manually QA'd against `main`.
