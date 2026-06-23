@@ -96,7 +96,9 @@ struct PersonSettingsSection: View {
 
     @ViewBuilder
     private var settingsRowCustomDueDate: some View {
-        if purchaseManager.isPro {
+        // Show the active row when Pro OR already set, so an ex-Pro user can
+        // still Clear it (free). Setting a new one is gated in the handler.
+        if purchaseManager.isPro || viewModel.person.customDueDate != nil {
             settingsRowCustomDueDateActive
         } else {
             proLockedRow("Set A Reminder Date", source: "custom_due_date")
@@ -105,7 +107,7 @@ struct PersonSettingsSection: View {
 
     @ViewBuilder
     private var settingsRowNotificationTime: some View {
-        if purchaseManager.isPro {
+        if purchaseManager.isPro || viewModel.person.customBreachTime != nil {
             settingsRowNotificationTimeActive
         } else {
             proLockedRow("Custom Notification Time", source: "custom_notification_time")
@@ -114,7 +116,7 @@ struct PersonSettingsSection: View {
 
     @ViewBuilder
     private var settingsRowSnooze: some View {
-        if purchaseManager.isPro {
+        if purchaseManager.isPro || viewModel.person.isSnoozed() {
             settingsRowSnoozeActive
         } else {
             proLockedRow("Snooze", source: "snooze")
@@ -123,7 +125,9 @@ struct PersonSettingsSection: View {
 
     @ViewBuilder
     private var settingsRowPauseTracking: some View {
-        if purchaseManager.isPro {
+        // Active (toggle) when Pro OR already paused, so unpause stays free for an
+        // ex-Pro user. Pausing a not-paused contact is gated in the handler.
+        if purchaseManager.isPro || viewModel.person.isPaused {
             settingsRowPauseTrackingActive
         } else {
             proLockedRow("Pause Tracking", source: "pause")

@@ -300,21 +300,28 @@ struct PersonDetailView: View {
         case .manageGroups: activeSheet = .manageGroups
         case .resumePrompt: activeAlert = .resumePrompt
         case .removeConfirm: activeAlert = .removeConfirm
-        case .reminderTimePicker: activeSheet = .reminderTimePicker
-        case .snoozeDatePicker(let d): pickedSnoozeDate = d; activeSheet = .snoozeDatePicker
-        // Pro gating for these rows is owned by PersonSettingsSection (it shows
-        // the lock and routes non-Pro taps to `.requestPaywall`), so these
-        // handlers only run on the Pro path and just perform the action.
-        case .customDueDatePicker(let d):
-            pickedCustomDueDate = d
-            activeSheet = .customDueDatePicker
         case .birthdayEditor: activeSheet = .birthdayEditor
+        // Pro-gated SET actions. PersonSettingsSection shows a lock and routes
+        // non-Pro taps to `.requestPaywall`, but we ALSO gate here so that when
+        // an ex-Pro user is shown the active row (to keep clear/undo reachable —
+        // never trap created data) any *set* path still requires Pro. Clear /
+        // unpause / remove call the view model directly and stay free.
+        case .reminderTimePicker:
+            purchaseManager.isPro ? (activeSheet = .reminderTimePicker) : presentPaywall("custom_notification_time")
+        case .snoozeDatePicker(let d):
+            if purchaseManager.isPro { pickedSnoozeDate = d; activeSheet = .snoozeDatePicker } else { presentPaywall("snooze") }
+        case .customDueDatePicker(let d):
+            if purchaseManager.isPro { pickedCustomDueDate = d; activeSheet = .customDueDatePicker } else { presentPaywall("custom_due_date") }
         case .requestPause:
-            viewModel.togglePause()
+            purchaseManager.isPro ? viewModel.togglePause() : presentPaywall("pause")
         case .requestPaywall(let source):
-            AnalyticsService.track("pro.gate_tapped", parameters: ["source": source])
-            activeSheet = .paywall(source: source)
+            presentPaywall(source)
         }
+    }
+
+    private func presentPaywall(_ source: String) {
+        AnalyticsService.track("pro.gate_tapped", parameters: ["source": source])
+        activeSheet = .paywall(source: source)
     }
 
     // MARK: - Date Picker Sheet Helper

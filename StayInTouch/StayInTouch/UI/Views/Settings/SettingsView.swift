@@ -244,6 +244,7 @@ struct SettingsView: View {
                             .foregroundStyle(DS.Colors.secondaryText)
                     }
                 }
+                .accessibilityHint("Unlocks with Pro")
             }
 
             if purchaseManager.isPro {
@@ -273,6 +274,7 @@ struct SettingsView: View {
                             .foregroundStyle(DS.Colors.secondaryText)
                     }
                 }
+                .accessibilityHint("Unlocks with Pro")
             }
 
             Button {
@@ -337,6 +339,7 @@ struct SettingsView: View {
                             .foregroundStyle(DS.Colors.secondaryText)
                     }
                 }
+                .accessibilityHint("Unlocks with Pro")
             }
         }
     }
