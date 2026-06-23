@@ -14,8 +14,10 @@ struct MainTabView: View {
     @State private var bulkLogState: BulkLogPresentation?
     @State private var batchEditContext: BatchEditContext?
     @State private var recentGroups: [RecentGroup] = []
+    @State private var paywallTrigger: PaywallTrigger?
     private let recentGroupsStore = RecentGroupsStore()
     @Environment(\.dependencies) private var dependencies
+    @EnvironmentObject private var purchaseManager: PurchaseManager
 
     var body: some View {
         TabView(selection: $deepLinkRouter.selectedTab) {
@@ -94,6 +96,10 @@ struct MainTabView: View {
         .sheet(item: $bulkLogState) { state in
             bulkLogSheet(for: state)
         }
+        .sheet(item: $paywallTrigger) { trigger in
+            PaywallView(source: trigger.source)
+                .environmentObject(purchaseManager)
+        }
         .onChange(of: deepLinkRouter.pending) { _, newValue in
             if newValue != nil { processPendingDeepLink() }
         }
@@ -152,6 +158,14 @@ struct MainTabView: View {
             viewModel.selectedCadenceId = nil
             viewModel.selectedGroupId = nil
             viewModel.applyFilters()
+        case .paywall:
+            deepLinkRouter.selectedTab = 0
+            // Guard against an already-Pro user tapping a stale locked widget
+            // (purchased, but its timeline hadn't reloaded yet) — never flash
+            // the paywall at someone who's already entitled.
+            guard !purchaseManager.isPro else { return }
+            AnalyticsService.track("pro.gate_tapped", parameters: ["source": "widget"])
+            paywallTrigger = PaywallTrigger(source: "widget")
         }
     }
 
@@ -191,6 +205,11 @@ struct MainTabView: View {
 
     private func commitBulkLog() {
         guard selectionCoordinator.hasSelection else { return }
+        if !purchaseManager.isPro {
+            AnalyticsService.track("pro.gate_tapped", parameters: ["source": "bulk_log"])
+            paywallTrigger = PaywallTrigger(source: "bulk_log")
+            return
+        }
         let ids = Array(selectionCoordinator.selection)
         let people = ids.compactMap { dependencies.personRepository.fetch(id: $0) }
         if let ctx = batchEditContext {

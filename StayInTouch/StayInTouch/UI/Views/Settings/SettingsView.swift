@@ -9,7 +9,9 @@ import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
+    @EnvironmentObject private var purchaseManager: PurchaseManager
 
+    @State private var paywallTrigger: PaywallTrigger?
     @State private var showNoNewContactsAlert = false
     @State private var showLimitedAccessAlert = false
     @State private var showContactsSettingsAlert = false
@@ -23,12 +25,21 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            appearanceSection
+            // Pro upgrade sits up top while it's a call to action; once unlocked
+            // it drops to the bottom (just the "Active" + Restore rows) so it's
+            // out of the way.
+            if !purchaseManager.isPro {
+                proSection
+            }
             peopleSection
             notificationsSection
             insightsSection
             dataSection
+            appearanceSection
             aboutSection
+            if purchaseManager.isPro {
+                proSection
+            }
             dangerZoneSection
         }
         .overlay(alignment: .top) {
@@ -71,6 +82,8 @@ struct SettingsView: View {
             case .pickingContacts:
                 NewContactsPickerView(
                     contacts: viewModel.pendingNewContacts,
+                    currentTrackedCount: { viewModel.liveTrackedCount() },
+                    capSource: "settings",
                     onImport: { selected in
                         pendingImportStep = .assigningGroups(selected: selected)
                         contactImportStep = nil
@@ -81,6 +94,7 @@ struct SettingsView: View {
                         contactImportStep = nil
                     }
                 )
+                .environmentObject(purchaseManager)
             case .assigningGroups(let selected):
                 SettingsCadenceAssignmentView(
                     contacts: selected,
@@ -115,9 +129,49 @@ struct SettingsView: View {
                 )
             }
         }
+        .sheet(item: $paywallTrigger) { trigger in
+            PaywallView(source: trigger.source)
+                .environmentObject(purchaseManager)
+        }
         .onAppear { viewModel.load() }
         .onReceive(NotificationCenter.default.publisher(for: .personDidChange)) { _ in
             viewModel.load()
+        }
+    }
+
+    private var proSection: some View {
+        Section {
+            if purchaseManager.isPro {
+                HStack {
+                    Label("Keep In Touch Pro", systemImage: "checkmark.seal.fill")
+                        .foregroundStyle(DS.Colors.accent)
+                    Spacer()
+                    Text("Active")
+                        .font(DS.Typography.metadata)
+                        .foregroundStyle(DS.Colors.secondaryText)
+                }
+            } else {
+                Button {
+                    paywallTrigger = PaywallTrigger(source: "settings_upgrade")
+                } label: {
+                    Label("Unlock Keep In Touch Pro", systemImage: "star.circle.fill")
+                }
+
+                // Restore only matters when the user isn't entitled — someone who
+                // already has Pro (incl. grandfathered) has nothing to restore.
+                // The paywall (non-Pro only) also carries Restore, so App Review
+                // still finds the required mechanism.
+                Button {
+                    Task { await purchaseManager.restore() }
+                } label: {
+                    Label("Restore Purchases", systemImage: "arrow.clockwise")
+                }
+                .accessibilityHint("Restores a previous Pro purchase")
+            }
+        } header: {
+            if !purchaseManager.isPro {
+                Text("Upgrade")
+            }
         }
     }
 
@@ -163,30 +217,64 @@ struct SettingsView: View {
                 }
             }
 
-            NavigationLink {
-                PausedContactsView()
-            } label: {
-                HStack {
-                    Image(systemName: "pause.circle.fill")
-                        .foregroundStyle(DS.Colors.secondaryText)
-                    Text("Paused Contacts")
-                    Spacer()
-                    Text("\(viewModel.pausedCount)")
-                        .foregroundStyle(DS.Colors.secondaryText)
+            if purchaseManager.isPro {
+                NavigationLink {
+                    PausedContactsView()
+                } label: {
+                    HStack {
+                        Image(systemName: "pause.circle.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                        Text("Paused Contacts")
+                        Spacer()
+                        Text("\(viewModel.pausedCount)")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
                 }
+            } else {
+                Button {
+                    AnalyticsService.track("pro.gate_tapped", parameters: ["source": "paused_contacts"])
+                    paywallTrigger = PaywallTrigger(source: "paused_contacts")
+                } label: {
+                    HStack {
+                        Image(systemName: "pause.circle.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                        Text("Paused Contacts")
+                        Spacer()
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
+                }
+                .accessibilityHint("Unlocks with Pro")
             }
 
-            NavigationLink {
-                SnoozedContactsView()
-            } label: {
-                HStack {
-                    Image(systemName: "moon.zzz.fill")
-                        .foregroundStyle(DS.Colors.secondaryText)
-                    Text("Snoozed Contacts")
-                    Spacer()
-                    Text("\(viewModel.snoozedCount)")
-                        .foregroundStyle(DS.Colors.secondaryText)
+            if purchaseManager.isPro {
+                NavigationLink {
+                    SnoozedContactsView()
+                } label: {
+                    HStack {
+                        Image(systemName: "moon.zzz.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                        Text("Snoozed Contacts")
+                        Spacer()
+                        Text("\(viewModel.snoozedCount)")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
                 }
+            } else {
+                Button {
+                    AnalyticsService.track("pro.gate_tapped", parameters: ["source": "snoozed_contacts"])
+                    paywallTrigger = PaywallTrigger(source: "snoozed_contacts")
+                } label: {
+                    HStack {
+                        Image(systemName: "moon.zzz.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                        Text("Snoozed Contacts")
+                        Spacer()
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
+                }
+                .accessibilityHint("Unlocks with Pro")
             }
 
             Button {
@@ -233,10 +321,25 @@ struct SettingsView: View {
 
     private var insightsSection: some View {
         Section("Insights") {
-            NavigationLink {
-                StatsView(viewModel: StatsViewModel())
-            } label: {
-                Label("Stats & insights", systemImage: "chart.bar")
+            if purchaseManager.isPro {
+                NavigationLink {
+                    StatsView(viewModel: StatsViewModel())
+                } label: {
+                    Label("Stats & insights", systemImage: "chart.bar")
+                }
+            } else {
+                Button {
+                    AnalyticsService.track("pro.gate_tapped", parameters: ["source": "stats"])
+                    paywallTrigger = PaywallTrigger(source: "stats")
+                } label: {
+                    HStack {
+                        Label("Stats & insights", systemImage: "chart.bar")
+                        Spacer()
+                        Image(systemName: "lock.fill")
+                            .foregroundStyle(DS.Colors.secondaryText)
+                    }
+                }
+                .accessibilityHint("Unlocks with Pro")
             }
         }
     }
@@ -244,7 +347,7 @@ struct SettingsView: View {
     private var dataSection: some View {
         Section("Data") {
             NavigationLink(destination: DataSettingsView(viewModel: viewModel)) {
-                Label("Backup & Data", systemImage: "externaldrive.badge.icloud")
+                Label("Data & Privacy", systemImage: "lock.shield")
             }
         }
     }
@@ -255,13 +358,6 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section {
-            Toggle(isOn: Binding(
-                get: { viewModel.settings.analyticsEnabled },
-                set: { viewModel.setAnalyticsEnabled($0) }
-            )) {
-                Label("Anonymous Usage Analytics", systemImage: "shield.checkered")
-            }
-
             Button {
                 viewModel.replayTutorial()
             } label: {
@@ -282,19 +378,17 @@ struct SettingsView: View {
         } header: {
             Text("About")
         } footer: {
-            VStack(spacing: DS.Spacing.md) {
-                Text("Your relationship data lives on your device and is never sent to us. Anonymous usage statistics help us improve the app.")
-                VStack(spacing: DS.Spacing.sm) {
-                    Text("Keep In Touch \(appVersion)")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(DS.Colors.secondaryText)
-                    Text("Privacy-first personal CRM")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(DS.Colors.secondaryText)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, DS.Spacing.sm)
+            // Privacy story now lives in Data & Privacy; About keeps just the
+            // version + tagline.
+            VStack(spacing: DS.Spacing.sm) {
+                Text("Keep In Touch \(appVersion)")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Colors.secondaryText)
+                Text("Privacy-first personal CRM")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Colors.secondaryText)
             }
+            .frame(maxWidth: .infinity)
         }
     }
 

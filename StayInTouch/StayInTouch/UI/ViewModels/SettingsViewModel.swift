@@ -104,6 +104,13 @@ final class SettingsViewModel: ObservableObject, ViewModelErrorHandling {
         snoozedCount = personRepository.snoozedCount(referenceDate: Date())
     }
 
+    /// Live count of tracked, non-demo people for the contact cap. Read at the
+    /// moment of an add (not a cached snapshot) so the cap can't be bypassed by
+    /// adding contacts after the last `load()`. See #351.
+    func liveTrackedCount() -> Int {
+        personRepository.trackedCount()
+    }
+
     func setTheme(_ theme: Theme) {
         AnalyticsService.track("settings.theme.changed", parameters: ["theme": theme.rawValue])
         settings.theme = theme

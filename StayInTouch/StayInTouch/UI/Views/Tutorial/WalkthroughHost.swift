@@ -12,6 +12,7 @@ import SwiftUI
 
 struct WalkthroughHost<Content: View>: View {
     @StateObject private var coordinator: WalkthroughCoordinator
+    @EnvironmentObject private var purchaseManager: PurchaseManager
     private let content: Content
 
     init(
@@ -41,6 +42,11 @@ struct WalkthroughHost<Content: View>: View {
                 }
             )) {
                 TutorialPersonDetailHost()
+                    // PersonDetailView (inside the host) requires PurchaseManager
+                    // from the environment; a fullScreenCover is a separate
+                    // presentation context that doesn't reliably inherit it, so
+                    // re-inject — matches every other modal in the freemium work.
+                    .environmentObject(purchaseManager)
                     .overlayPreferenceValue(TutorialAnchorKey.self) { anchors in
                         if coordinator.currentStep?.phase == .detailB {
                             WalkthroughOverlayView(coordinator: coordinator, anchors: anchors)

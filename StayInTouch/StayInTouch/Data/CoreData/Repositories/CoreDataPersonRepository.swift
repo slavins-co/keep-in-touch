@@ -172,6 +172,16 @@ final class CoreDataPersonRepository: PersonRepository, @unchecked Sendable {
         }
     }
 
+    func trackedCount() -> Int {
+        context.performAndWait {
+            let request: NSFetchRequest<PersonEntity> = PersonEntity.fetchRequest()
+            // `isDemoData != YES` matches both stored-false and legacy-nil rows.
+            // Paused people are included — a paused contact still occupies a slot.
+            request.predicate = NSPredicate(format: "isTracked == YES AND isDemoData != YES")
+            return (try? context.count(for: request)) ?? 0
+        }
+    }
+
     private func basePredicate(includePaused: Bool) -> NSPredicate {
         if includePaused {
             return NSPredicate(format: "isTracked == YES")

@@ -12,12 +12,9 @@ import TipKit
 @main
 struct KeepInTouchApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    private let coreDataStack: CoreDataStack = {
-        if ProcessInfo.processInfo.arguments.contains("-uiTesting") {
-            return CoreDataStack.make(inMemory: true, shouldSeedDefaults: false)
-        }
-        return CoreDataStack.shared
-    }()
+    private let coreDataStack: CoreDataStack
+    private let isUITesting: Bool
+    @StateObject private var purchaseManager: PurchaseManager
     @State private var showMigrationAlert = false
 
     init() {
@@ -29,6 +26,20 @@ struct KeepInTouchApp: App {
             .displayFrequency(.immediate),
             TipsDatastore.location(),
         ])
+
+        let isUITesting = ProcessInfo.processInfo.arguments.contains("-uiTesting")
+        let stack: CoreDataStack = isUITesting
+            ? CoreDataStack.make(inMemory: true, shouldSeedDefaults: false)
+            : CoreDataStack.shared
+        self.isUITesting = isUITesting
+        self.coreDataStack = stack
+
+        // Pro entitlement source of truth, bound to the same store the app uses
+        // (so it reads the correct grandfather flag, including under UI testing).
+        _purchaseManager = StateObject(wrappedValue: PurchaseManager(
+            gateway: LiveStoreKitGateway(),
+            settingsRepository: CoreDataAppSettingsRepository(context: stack.viewContext)
+        ))
     }
 
     var body: some Scene {
@@ -36,6 +47,12 @@ struct KeepInTouchApp: App {
             ContentView()
                 .environment(\.managedObjectContext, coreDataStack.viewContext)
                 .environment(\.dependencies, AppDependencies(context: coreDataStack.viewContext))
+                .environmentObject(purchaseManager)
+                .task {
+                    // Start StoreKit entitlement loading + the updates listener.
+                    // Skipped under UI testing to keep launch smoke tests hermetic.
+                    if !isUITesting { purchaseManager.start() }
+                }
                 // Note: in `-uiTesting` runs the coreDataStack is in-memory,
                 // so we pass it through explicitly here. Outside tests
                 // `AppDependencies.shared` already resolves to the same

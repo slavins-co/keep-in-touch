@@ -74,6 +74,30 @@ final class DeepLinkRouteTests: XCTestCase {
         XCTAssertEqual(DeepLinkRoute(url: route.url()), route)
     }
 
+    // MARK: - Paywall (widget upsell, #351 PR6)
+
+    func test_parse_paywall() {
+        let url = URL(string: "keepintouch://paywall")!
+        XCTAssertEqual(DeepLinkRoute(url: url), .paywall)
+    }
+
+    func test_parse_rejectsPaywallWithExtraPath() {
+        let url = URL(string: "keepintouch://paywall/extra")!
+        XCTAssertNil(DeepLinkRoute(url: url))
+    }
+
+    func test_url_paywall() {
+        XCTAssertEqual(
+            DeepLinkRoute.paywall.url().absoluteString,
+            "keepintouch://paywall"
+        )
+    }
+
+    func test_roundTrip_paywall() {
+        let route = DeepLinkRoute.paywall
+        XCTAssertEqual(DeepLinkRoute(url: route.url()), route)
+    }
+
     // MARK: - Router integration
 
     @MainActor
@@ -97,6 +121,17 @@ final class DeepLinkRouteTests: XCTestCase {
 
         XCTAssertTrue(handled)
         XCTAssertEqual(router.pending, .person(id))
+    }
+
+    @MainActor
+    func test_router_handleURL_paywallSetsPaywallDestination() {
+        let router = DeepLinkRouter.shared
+        router.pending = nil
+
+        let handled = router.handleURL(URL(string: "keepintouch://paywall")!)
+
+        XCTAssertTrue(handled)
+        XCTAssertEqual(router.pending, .paywall)
     }
 
     @MainActor

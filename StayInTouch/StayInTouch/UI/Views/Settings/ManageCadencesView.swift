@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ManageCadencesView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var purchaseManager: PurchaseManager
     @StateObject private var viewModel = ManageCadencesViewModel()
 
     @State private var showNewCadence = false
@@ -16,6 +17,7 @@ struct ManageCadencesView: View {
     @State private var deleteTarget: Cadence?
     @State private var showDeleteConfirm = false
     @State private var showCannotDeleteAlert = false
+    @State private var paywallTrigger: PaywallTrigger?
 
     var body: some View {
         List {
@@ -69,7 +71,12 @@ struct ManageCadencesView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    showNewCadence = true
+                    if purchaseManager.isPro {
+                        showNewCadence = true
+                    } else {
+                        AnalyticsService.track("pro.gate_tapped", parameters: ["source": "custom_cadence"])
+                        paywallTrigger = PaywallTrigger(source: "custom_cadence")
+                    }
                 } label: {
                     Image(systemName: "plus.circle.fill")
                 }
@@ -97,6 +104,9 @@ struct ManageCadencesView: View {
                 },
                 onCancel: { showNewCadence = false }
             )
+        }
+        .sheet(item: $paywallTrigger) { trigger in
+            PaywallView(source: trigger.source).environmentObject(purchaseManager)
         }
         .alert("Cannot Delete", isPresented: $showCannotDeleteAlert) {
             Button("OK", role: .cancel) {}

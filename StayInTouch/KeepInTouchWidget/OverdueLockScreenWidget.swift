@@ -36,17 +36,25 @@ struct LockScreenEntryView: View {
     @Environment(\.widgetFamily) private var family
     var entry: OverdueEntry
 
+    /// Lock-screen / StandBy accessories are Pro-only. Free users see the upsell
+    /// placeholder. Reads the App Group cache synchronously; defaults to locked.
+    private var isPro: Bool { EntitlementCache.readIsPro() }
+
     var body: some View {
         Group {
-            switch family {
-            case .accessoryCircular:
-                AccessoryCircularView(snapshot: entry.snapshot)
-            case .accessoryRectangular:
-                AccessoryRectangularView(snapshot: entry.snapshot)
-            case .accessoryInline:
-                AccessoryInlineView(snapshot: entry.snapshot)
-            default:
-                AccessoryInlineView(snapshot: entry.snapshot)
+            if !isPro {
+                AccessoryProUpsellView(family: family)
+            } else {
+                switch family {
+                case .accessoryCircular:
+                    AccessoryCircularView(snapshot: entry.snapshot)
+                case .accessoryRectangular:
+                    AccessoryRectangularView(snapshot: entry.snapshot)
+                case .accessoryInline:
+                    AccessoryInlineView(snapshot: entry.snapshot)
+                default:
+                    AccessoryInlineView(snapshot: entry.snapshot)
+                }
             }
         }
         .containerBackground(.clear, for: .widget)

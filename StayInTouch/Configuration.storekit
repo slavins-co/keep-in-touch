@@ -1,0 +1,30 @@
+{
+  "identifier" : "5C9F1A20",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "7.99",
+      "familyShareable" : true,
+      "internalID" : "PRO0000001",
+      "localizations" : [
+        {
+          "description" : "Unlock unlimited contacts, stats, import, group logging, custom cadences, custom due dates, pause, and the full widget family. Pay once.",
+          "displayName" : "Keep In Touch Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "slavins.co.KeepInTouch.pro",
+      "referenceName" : "Pro Unlock",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "0000000000",
+    "_developerTeamID" : "0000000000"
+  },
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

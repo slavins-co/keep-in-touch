@@ -9,13 +9,20 @@ import SwiftUI
 
 struct NewContactsPickerView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var purchaseManager: PurchaseManager
 
     let contacts: [ContactSummary]
+    /// Live count of currently-tracked people, evaluated at Import time (not a
+    /// snapshot) so the cap can't be bypassed by adds made after presentation.
+    let currentTrackedCount: () -> Int
+    /// Analytics source for the cap/paywall, e.g. "settings" or "home".
+    let capSource: String
     let onImport: ([ContactSummary]) -> Void
     let onCancel: () -> Void
 
     @State private var selection: Set<String> = []
     @State private var searchText = ""
+    @State private var paywallTrigger: PaywallTrigger?
 
     private var groupedContacts: [(String, [ContactSummary])] {
         let filtered = searchText.isEmpty ? contacts : contacts.filter { contact in
@@ -81,11 +88,27 @@ struct NewContactsPickerView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Import") {
                         let selected = contacts.filter { selection.contains($0.identifier) }
-                        onImport(selected)
-                        dismiss()
+                        if ContactCapGate.wouldExceedFreeLimit(
+                            currentTrackedCount: currentTrackedCount(),
+                            adding: selected.count,
+                            isPro: purchaseManager.isPro
+                        ) {
+                            AnalyticsService.track(
+                                "pro.cap_blocked",
+                                parameters: ["source": capSource, "attempted": String(selected.count)]
+                            )
+                            paywallTrigger = PaywallTrigger(source: "cap_\(capSource)")
+                        } else {
+                            onImport(selected)
+                            dismiss()
+                        }
                     }
                     .disabled(selection.isEmpty)
                 }
+            }
+            .sheet(item: $paywallTrigger) { trigger in
+                PaywallView(source: trigger.source)
+                    .environmentObject(purchaseManager)
             }
         }
     }
