@@ -156,14 +156,18 @@ struct SettingsView: View {
                 } label: {
                     Label("Unlock Keep In Touch Pro", systemImage: "star.circle.fill")
                 }
-            }
 
-            Button {
-                Task { await purchaseManager.restore() }
-            } label: {
-                Label("Restore Purchases", systemImage: "arrow.clockwise")
+                // Restore only matters when the user isn't entitled — someone who
+                // already has Pro (incl. grandfathered) has nothing to restore.
+                // The paywall (non-Pro only) also carries Restore, so App Review
+                // still finds the required mechanism.
+                Button {
+                    Task { await purchaseManager.restore() }
+                } label: {
+                    Label("Restore Purchases", systemImage: "arrow.clockwise")
+                }
+                .accessibilityHint("Restores a previous Pro purchase")
             }
-            .accessibilityHint("Restores a previous Pro purchase")
         } header: {
             if !purchaseManager.isPro {
                 Text("Upgrade")
