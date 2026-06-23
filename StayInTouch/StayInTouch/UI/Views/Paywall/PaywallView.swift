@@ -41,13 +41,26 @@ struct PaywallView: View {
                 VStack(spacing: DS.Spacing.xl) {
                     header
                     featureList
-                    Spacer(minLength: DS.Spacing.md)
-                    footer
                 }
                 .padding(.horizontal, DS.Spacing.xl)
-                .padding(.bottom, DS.Spacing.xl)
+                .padding(.top, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.md)
             }
             .background(DS.Colors.pageBg.ignoresSafeArea())
+            // Pin the price + Unlock + Restore so they're always visible (no
+            // scrolling needed), while the header + feature list scroll above.
+            .safeAreaInset(edge: .bottom) {
+                footer
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.top, DS.Spacing.md)
+                    .padding(.bottom, DS.Spacing.sm)
+                    .background(DS.Colors.pageBg)
+                    .overlay(alignment: .top) {
+                        Rectangle()
+                            .fill(DS.Colors.settingsSeparator)
+                            .frame(height: 0.5)
+                    }
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -76,11 +89,6 @@ struct PaywallView: View {
 
     private var header: some View {
         VStack(spacing: DS.Spacing.md) {
-            Image(systemName: "star.circle.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(DS.Colors.accent)
-                .padding(.top, DS.Spacing.lg)
-
             Text("A dozen friends, free.\nGot more people who matter?")
                 .font(DS.Typography.heroTitle)
                 .foregroundStyle(DS.Colors.primaryText)
