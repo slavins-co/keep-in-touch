@@ -1,7 +1,7 @@
 # TODO - Stay in Touch iOS App
 
 **Project Status:** v0.4.0 (Build 13) — Pre-release Beta
-**Last Updated:** May 19, 2026
+**Last Updated:** June 24, 2026
 
 > **TestFlight Status:** Code blockers resolved. Manual submission steps remain — see `tasks/testflight-guide.md`.
 > When creating PRs, confirm TestFlight readiness is not regressed (deployment target 17.0, PrivacyInfo.xcprivacy present, UIBackgroundModes declared, build number incremented).
@@ -54,6 +54,19 @@ Calendar integration (#234), WhatsApp (#233), ~~Dynamic Type (#202)~~, architect
 
 ---
 
+## Completed — Session 2026-06-24 (Issue #342/#349: CI pipeline landed)
+
+Fixed the bug that kept PR #349's own CI red, then merged the project's first CI pipeline to `main`. The hang: `ContactsSyncService.syncExistingContacts()` enumerated the real address book without an authorization check, so on a fresh CI runner (`.notDetermined`) the read blocked on the TCC permission prompt forever → 40-min timeout. Guarded the passive sync on `ContactsFetcher.isAuthorized` (mirrors the existing thumbnail/birthday "skip when unauthorized" pattern). Reproduced the hang on a freshly-erased simulator, verified the fix (full suite green on a `.notDetermined` sim). Rebased onto current `main` (freemium had merged in between) and re-added the `<StoreKitConfigurationFileReference>` the committed scheme had dropped, so local IAP testing survives. `/code-review` (xhigh) + `/security-review` both PASS. CI green on the PR and on post-merge `main`. Squash-merged `70adc83`.
+
+- [x] **#349 / #342** CI pipeline live (`.github/workflows/ci.yml` + shared `StayInTouch.xcscheme`); `main` mechanically gated on the `Build & Unit Test` check
+- [x] Contacts-sync authorization guard (`ContactsFetcher.isAuthorized` + `ContactsSyncService` early-return)
+- [x] StoreKit config reference restored to the now-canonical scheme (no CI impact; preserves local IAP testing)
+
+### Lessons captured from #342/#349
+- A real `CNContactStore` read hangs headless CI on a fresh sim (`.notDetermined` → TCC prompt blocks); guard passive syncs on authorization, keep unit tests off the real store
+- The PR that adds the CI workflow satisfies its own required check via its `pull_request` run — no `--admin` deadlock once the check is green (corrects the earlier #351 assumption)
+- Rebase-and-reverify a stale foundational-CI branch before merge so the green check reflects what actually lands on `main`
+
 ## Completed — Session 2026-06-21 → 2026-06-23 (Issue #351: Freemium / Pro unlock)
 
 Shipped the freemium model: 12-contact free tier + one-time non-consumable **Pro** unlock (StoreKit 2). Built across 6 stages, bundled into a single umbrella PR **#359** and squash-merged to `main` (commit `3f26716`). Grandfathered TestFlight users get Pro free via a write-once flag. Device QA passed (pre + post purchase). Both `/code-review high` + `/security-review` ran on the full feature diff vs main → PASS.
@@ -74,7 +87,7 @@ Shipped the freemium model: 12-contact free tier + one-time non-consumable **Pro
 - [ ] **#360** Fix stale widget-accent API comment in `OverdueLockScreenWidget` (tech debt, comment-only)
 - [ ] **#353** Manual $7.99 → $9.99 price cutover (ASC, no app logic)
 - [ ] **Manual prereq (pre-release)** Create ASC non-consumable IAP `slavins.co.KeepInTouch.pro` ($7.99, Family Sharing on) + active Paid Apps Agreement
-- [ ] **#349** Land the CI pipeline — still open; needs one `--admin` merge to break the required-check deadlock on `main` (every PR to main is BLOCKED until then)
+- [x] **#349** Land the CI pipeline — **merged 2026-06-24** (squash `70adc83`). No `--admin` needed: the PR's own `pull_request` run produces the `Build & Unit Test` check, which passed once the test hang was fixed. See Completed section below
 
 ## Completed — Session 2026-05-27 → 2026-05-28 (Issue #302: Tech-debt audit sweep)
 
