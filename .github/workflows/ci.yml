@@ -1,0 +1,106 @@
+name: CI
+
+# Build the app and run the unit-test suite on every PR to main (and on main
+# after merge). UI tests are intentionally excluded for speed/flakiness — the
+# committed StayInTouch scheme lists only StayInTouchTests as a Testable.
+# See issue #342 / tasks/ARCHITECTURE-REVIEW.md finding 2.2.3, step A2.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel an in-flight run when new commits land on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Unit Test
+    runs-on: macos-26
+    timeout-minutes: 40
+    env:
+      PROJECT: StayInTouch/StayInTouch.xcodeproj
+      SCHEME: StayInTouch
+      SPM_CACHE: .spm-cache
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode (latest stable on the image)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Cache SwiftPM dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SPM_CACHE }}
+          key: spm-${{ runner.os }}-${{ hashFiles('StayInTouch/StayInTouch.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            spm-${{ runner.os }}-
+
+      - name: Resolve Swift packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -clonedSourcePackagesDirPath "$SPM_CACHE"
+
+      - name: Select an available iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          def rtkey(rt):
+              parts = rt.rsplit('iOS-', 1)[-1].split('-')
+              try:
+                  return tuple(int(p) for p in parts)
+              except ValueError:
+                  return (0,)
+          runtimes = [(rtkey(rt), rt, devs) for rt, devs in data['devices'].items() if 'iOS' in rt]
+          runtimes.sort(reverse=True)
+          for _, rt, devs in runtimes:
+              for d in devs:
+                  if d.get('isAvailable') and d['name'].startswith('iPhone'):
+                      print(d['udid'])
+                      sys.exit(0)
+          sys.exit('No available iPhone simulator found')
+          ")
+          echo "Selected simulator UDID: $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Build & run unit tests
+        env:
+          NSUnbufferedIO: "YES"
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -clonedSourcePackagesDirPath "$SPM_CACHE" \
+            -resultBundlePath TestResults.xcresult \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee xcodebuild.log
+
+      - name: Upload test results on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            TestResults.xcresult
+            xcodebuild.log
+          retention-days: 7

@@ -28,6 +28,12 @@ xcodebuild -project StayInTouch/StayInTouch.xcodeproj -scheme StayInTouch -desti
 
 Background task ID: `com.slavins.keepintouch.refresh`
 
+### Continuous Integration
+
+`.github/workflows/ci.yml` builds the app and runs the **unit** suite (UI tests excluded) on every PR to `main` and on push to `main`, via the committed shared `StayInTouch.xcscheme`. Runner: `macos-26`, latest-stable Xcode, SwiftPM cache, runtime simulator selection (no hardcoded OS). ~10-13 min/run.
+
+**`main` branch protection requires the `Build & Unit Test` check to pass before merge.** This is the only *mechanical* merge gate — enforced by GitHub itself, not by an agent. It is distinct from the `/code-review` + `/security-review` requirements below, which are conventions the agent must remember to run. `enforce_admins` is off, so a human admin can override in an emergency; agents and the normal merge button cannot.
+
 ### Cutting a release
 
 The displayed app version comes from **build settings, not the git tag**. To release, global-replace both in `project.pbxproj` (each appears 8x: Debug/Release × App/Widget/Tests/UITests), then tag:

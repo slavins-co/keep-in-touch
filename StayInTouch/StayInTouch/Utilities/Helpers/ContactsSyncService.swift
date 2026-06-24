@@ -10,6 +10,19 @@ import Foundation
 
 enum ContactsSyncService {
     static func syncExistingContacts() async {
+        // A passive background sync must never trigger the Contacts permission
+        // prompt. When access hasn't been granted yet (e.g. .notDetermined),
+        // reading contacts would block on the system TCC dialog — which hangs
+        // headless CI runners until the job times out (#342). Bail out cleanly;
+        // onboarding owns the explicit access request. Still post the
+        // notification so observers (e.g. HomeView) refresh as before.
+        guard ContactsFetcher.isAuthorized else {
+            await MainActor.run {
+                NotificationCenter.default.post(name: .contactsDidSync, object: nil)
+            }
+            return
+        }
+
         let summaries = await Task.detached {
             do {
                 return try ContactsFetcher.fetchAll()
