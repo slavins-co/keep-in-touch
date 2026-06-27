@@ -84,7 +84,7 @@ Shipped the freemium model: 12-contact free tier + one-time non-consumable **Pro
 - Single-merge umbrella PR pattern for a stacked feature; a required CI check with no producing workflow blocks all merges (needs `--admin`)
 
 ### Follow-ups deferred from #351
-- [ ] **#360** Fix stale widget-accent API comment in `OverdueLockScreenWidget` (tech debt, comment-only)
+- [x] **#360** Fix stale widget-accent API comment in `OverdueLockScreenWidget` (tech debt, comment-only) — **PR #365**
 - [ ] **#353** Manual $7.99 → $9.99 price cutover (ASC, no app logic)
 - [ ] **Manual prereq (pre-release)** Create ASC non-consumable IAP `slavins.co.KeepInTouch.pro` ($7.99, Family Sharing on) + active Paid Apps Agreement
 - [x] **#349** Land the CI pipeline — **merged 2026-06-24** (squash `70adc83`). No `--admin` needed: the PR's own `pull_request` run produces the `Build & Unit Test` check, which passed once the test hang was fixed. See Completed section below
