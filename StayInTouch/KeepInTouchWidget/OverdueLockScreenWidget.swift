@@ -159,8 +159,8 @@ struct AccessoryCircularView: View {
         if let digit {
             // Bigger digit dominates the widget; small people icon stays
             // for "this is people" context. The digit is marked
-            // .widgetAccentedRenderingMode(.accented) on iOS 18+ so it
-            // picks up the wallpaper-derived accent color instead of
+            // .widgetAccentable(true) (via accentedIfAvailable(), iOS 16+)
+            // so it picks up the wallpaper-derived accent color instead of
             // pure white in monochrome contexts.
             VStack(spacing: 0) {
                 Image(systemName: "person.2.fill")
