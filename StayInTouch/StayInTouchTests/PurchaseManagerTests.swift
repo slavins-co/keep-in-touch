@@ -86,7 +86,8 @@ final class PurchaseManagerTests: XCTestCase {
         gateway: FakeGateway,
         grandfathered: Bool,
         recorder: CacheRecorder,
-        reloadRecorder: ReloadRecorder? = nil
+        reloadRecorder: ReloadRecorder? = nil,
+        grantsProForTesting: Bool = false
     ) -> PurchaseManager {
         PurchaseManager(
             gateway: gateway,
@@ -94,7 +95,10 @@ final class PurchaseManagerTests: XCTestCase {
             writeCache: { recorder.values.append($0) },
             // Always stub the widget reload so tests never touch WidgetCenter;
             // pass a recorder to assert on it.
-            reloadWidgets: { reloadRecorder?.count += 1 }
+            reloadWidgets: { reloadRecorder?.count += 1 },
+            // Explicit default keeps every existing test hermetic (independent of the
+            // real bundle / #362 override); the override tests pass true.
+            grantsProForTesting: grantsProForTesting
         )
     }
 
@@ -180,6 +184,37 @@ final class PurchaseManagerTests: XCTestCase {
 
         XCTAssertTrue(manager.isPro)
         XCTAssertEqual(reload.count, 0, "An already-Pro user must not reload widgets on every launch refresh")
+    }
+
+    // MARK: - testing override (#362)
+
+    func testInit_grantsProForTesting_seedsProTrue() {
+        // Not grandfathered, no purchase — the beta override seeds Pro at init so the
+        // first-frame UI is correct before entitlements load.
+        let manager = makeManager(
+            gateway: FakeGateway(),
+            grandfathered: false,
+            recorder: CacheRecorder(),
+            grantsProForTesting: true
+        )
+        XCTAssertTrue(manager.isPro)
+    }
+
+    func testRefresh_grantsProForTesting_isProAndCachesTrue() async {
+        // Not grandfathered, owns nothing — refresh still computes Pro and writes the
+        // authoritative cache true because of the override.
+        let recorder = CacheRecorder()
+        let manager = makeManager(
+            gateway: FakeGateway(),
+            grandfathered: false,
+            recorder: recorder,
+            grantsProForTesting: true
+        )
+
+        await manager.refreshEntitlements()
+
+        XCTAssertTrue(manager.isPro)
+        XCTAssertEqual(recorder.last, true)
     }
 
     // MARK: - purchase

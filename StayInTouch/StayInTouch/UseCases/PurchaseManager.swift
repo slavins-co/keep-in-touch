@@ -31,21 +31,31 @@ final class PurchaseManager: ObservableObject {
     private let settingsRepository: AppSettingsRepository
     private let writeCache: (Bool) -> Void
     private let reloadWidgets: () -> Void
+    /// TestFlight/sandbox beta override (#362). Defaulted from the real bundle for
+    /// production; injected explicitly in tests so they never read the bundle.
+    private let grantsProForTesting: Bool
     private var updatesTask: Task<Void, Never>?
 
     init(
         gateway: StoreKitGateway,
         settingsRepository: AppSettingsRepository,
         writeCache: @escaping (Bool) -> Void = { EntitlementCache.write(isPro: $0) },
-        reloadWidgets: @escaping () -> Void = WidgetRefresher.reloadAllTimelines
+        reloadWidgets: @escaping () -> Void = WidgetRefresher.reloadAllTimelines,
+        grantsProForTesting: Bool = BuildEnvironment.grantsProForTesting
     ) {
         self.gateway = gateway
         self.settingsRepository = settingsRepository
         self.writeCache = writeCache
         self.reloadWidgets = reloadWidgets
-        // Seed from grandfather immediately so the UI is never briefly wrong
-        // before entitlements load (and this path is offline-safe).
-        self.isPro = settingsRepository.fetch()?.isGrandfathered ?? false
+        self.grantsProForTesting = grantsProForTesting
+        // Seed immediately so the UI is never briefly wrong before entitlements
+        // load: grandfather OR the beta override (both offline-safe; no purchase
+        // state yet, so hasProPurchase is false here).
+        self.isPro = Entitlements.isPro(
+            isGrandfathered: settingsRepository.fetch()?.isGrandfathered ?? false,
+            hasProPurchase: false,
+            grantsProForTesting: grantsProForTesting
+        )
     }
 
     deinit { updatesTask?.cancel() }
@@ -82,7 +92,8 @@ final class PurchaseManager: ObservableObject {
         let isGrandfathered = settingsRepository.fetch()?.isGrandfathered ?? false
         let pro = Entitlements.isPro(
             isGrandfathered: isGrandfathered,
-            hasProPurchase: owned.contains(ProConfig.proProductID)
+            hasProPurchase: owned.contains(ProConfig.proProductID),
+            grantsProForTesting: grantsProForTesting
         )
         let changed = (pro != isPro)
         isPro = pro

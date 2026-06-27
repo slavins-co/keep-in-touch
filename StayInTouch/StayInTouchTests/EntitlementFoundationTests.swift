@@ -108,10 +108,34 @@ final class EntitlementFoundationTests: XCTestCase {
     // MARK: - Entitlements.isPro rule
 
     func testIsPro_truthTable() {
-        XCTAssertFalse(Entitlements.isPro(isGrandfathered: false, hasProPurchase: false))
-        XCTAssertTrue(Entitlements.isPro(isGrandfathered: true, hasProPurchase: false))
-        XCTAssertTrue(Entitlements.isPro(isGrandfathered: false, hasProPurchase: true))
-        XCTAssertTrue(Entitlements.isPro(isGrandfathered: true, hasProPurchase: true))
+        // #362 adds a third input (grantsProForTesting). Only all-false is free;
+        // ANY input true grants Pro. All 8 combinations enumerated.
+        XCTAssertFalse(Entitlements.isPro(isGrandfathered: false, hasProPurchase: false, grantsProForTesting: false))
+        XCTAssertTrue(Entitlements.isPro(isGrandfathered: false, hasProPurchase: false, grantsProForTesting: true))
+        XCTAssertTrue(Entitlements.isPro(isGrandfathered: false, hasProPurchase: true, grantsProForTesting: false))
+        XCTAssertTrue(Entitlements.isPro(isGrandfathered: false, hasProPurchase: true, grantsProForTesting: true))
+        XCTAssertTrue(Entitlements.isPro(isGrandfathered: true, hasProPurchase: false, grantsProForTesting: false))
+        XCTAssertTrue(Entitlements.isPro(isGrandfathered: true, hasProPurchase: false, grantsProForTesting: true))
+        XCTAssertTrue(Entitlements.isPro(isGrandfathered: true, hasProPurchase: true, grantsProForTesting: false))
+        XCTAssertTrue(Entitlements.isPro(isGrandfathered: true, hasProPurchase: true, grantsProForTesting: true))
+    }
+
+    // MARK: - BuildEnvironment.grantsPro (pure detection core, #362)
+
+    func testBuildEnvironment_grantsProOnlyForExistingSandboxReceipt() {
+        // The single positive case: an existing receipt file named `sandboxReceipt`
+        // (TestFlight / StoreKit sandbox).
+        XCTAssertTrue(BuildEnvironment.grantsPro(receiptName: "sandboxReceipt", receiptExists: true))
+        // Production App Store receipt is named `receipt` → never granted.
+        XCTAssertFalse(BuildEnvironment.grantsPro(receiptName: "receipt", receiptExists: true))
+        // No receipt file (simulator / dev) → never granted.
+        XCTAssertFalse(BuildEnvironment.grantsPro(receiptName: nil, receiptExists: false))
+        // Right name but file doesn't exist → never granted (both conditions required).
+        XCTAssertFalse(BuildEnvironment.grantsPro(receiptName: "sandboxReceipt", receiptExists: false))
+        // Belt-and-suspenders: production name w/o file, and a phantom existing file
+        // with no name — neither grants.
+        XCTAssertFalse(BuildEnvironment.grantsPro(receiptName: "receipt", receiptExists: false))
+        XCTAssertFalse(BuildEnvironment.grantsPro(receiptName: nil, receiptExists: true))
     }
 
     // MARK: - EntitlementCache round-trip
@@ -202,6 +226,37 @@ final class EntitlementFoundationTests: XCTestCase {
         XCTAssertFalse(isPro)
         XCTAssertEqual(repo.saveCount, 0)
         XCTAssertEqual(cacheWriteCount, 0, "Cache untouched when there is no settings row to evaluate")
+    }
+
+    // MARK: - EntitlementBootstrap × testing override (#362)
+
+    func testBootstrap_grantsProForTesting_cachesProForNonGrandfatheredFreshInstall() {
+        // Brand-new (non-grandfathered) install in a TestFlight/sandbox build: the
+        // override makes the bootstrap cache Pro at launch even though grandfather
+        // evaluates false. Grandfather still evaluates + persists as usual.
+        let repo = MockSettingsRepository(stored: makeSettings(onboardingCompleted: false))
+        var cached: Bool?
+        let isPro = EntitlementBootstrap(settingsRepository: repo, grantsProForTesting: true)
+            .run { cached = $0 }
+
+        XCTAssertTrue(isPro)
+        XCTAssertEqual(cached, true)
+        XCTAssertEqual(repo.saveCount, 1)
+        XCTAssertEqual(repo.stored?.isGrandfathered, false, "Override grants Pro without changing the grandfather decision")
+        XCTAssertEqual(repo.stored?.proStatusEvaluated, true)
+    }
+
+    func testBootstrap_grantsProForTestingFalse_freshInstall_doesNotCachePro() {
+        // Regression guard: explicitly false → identical to production-free behavior
+        // (monetization intact for non-grandfathered users in dev/production).
+        let repo = MockSettingsRepository(stored: makeSettings(onboardingCompleted: false))
+        var cached: Bool?
+        let isPro = EntitlementBootstrap(settingsRepository: repo, grantsProForTesting: false)
+            .run { cached = $0 }
+
+        XCTAssertFalse(isPro)
+        XCTAssertNil(cached)
+        XCTAssertEqual(repo.saveCount, 1)
     }
 
     // MARK: - Core Data v11 round-trip (model + mapping)

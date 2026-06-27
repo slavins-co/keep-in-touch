@@ -17,6 +17,10 @@ import Foundation
 
 struct EntitlementBootstrap {
     let settingsRepository: AppSettingsRepository
+    /// TestFlight/sandbox beta override (#362). Defaulted from the real bundle for
+    /// production; injected explicitly in tests so they never read the bundle. When
+    /// true, a fresh (non-grandfathered) install still caches Pro at launch.
+    var grantsProForTesting: Bool = BuildEnvironment.grantsProForTesting
 
     /// Evaluate + persist the grandfather decision and refresh the entitlement
     /// cache. `writeCache` is injectable so tests don't touch the App Group.
@@ -45,7 +49,8 @@ struct EntitlementBootstrap {
 
         let isPro = Entitlements.isPro(
             isGrandfathered: evaluated.isGrandfathered,
-            hasProPurchase: false
+            hasProPurchase: false,
+            grantsProForTesting: grantsProForTesting
         )
         // Set-only: write the cache here only to GRANT Pro (grandfather), never to
         // clear it. The authoritative writer that can also clear Pro (on refund /

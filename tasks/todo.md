@@ -88,6 +88,7 @@ Shipped the freemium model: 12-contact free tier + one-time non-consumable **Pro
 - [ ] **#353** Manual $7.99 → $9.99 price cutover (ASC, no app logic)
 - [ ] **Manual prereq (pre-release)** Create ASC non-consumable IAP `slavins.co.KeepInTouch.pro` ($7.99, Family Sharing on) + active Paid Apps Agreement
 - [x] **#349** Land the CI pipeline — **merged 2026-06-24** (squash `70adc83`). No `--admin` needed: the PR's own `pull_request` run produces the `Build & Unit Test` check, which passed once the test hang was fixed. See Completed section below
+- [x] **#362** Beta builds grant Pro to all TestFlight testers — `BuildEnvironment` sandbox-receipt override OR'd into `Entitlements.isPro`, propagated via the App Group cache. **PR #363** (pending simulator + TestFlight manual QA + merge). Side effect: ASC IAP is no longer a *beta* blocker (still an App-Store-submission prereq)
 
 ## Completed — Session 2026-05-27 → 2026-05-28 (Issue #302: Tech-debt audit sweep)
 
